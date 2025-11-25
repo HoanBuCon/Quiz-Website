@@ -15,9 +15,10 @@ console.log(`
 1. Xóa tài khoản người dùng
 2. Xóa tin nhắn người dùng
 3. Quản lý quiz và lớp học của người dùng
+4. Quản lý nội dung Public (Class/Quiz)
 `);
 
-rl.question("Nhập lựa chọn (1/2/3): ", async (choice) => {
+rl.question("Nhập lựa chọn (1/2/3/4): ", async (choice) => {
   try {
     switch (choice.trim()) {
       // ==================================================
@@ -178,8 +179,16 @@ c. Xóa toàn bộ tin nhắn
         break;
       }
 
+      // ==================================================
+      // 4. QUẢN LÝ NỘI DUNG PUBLIC (CLASS / QUIZ)
+      // ==================================================
+      case "4": {
+        await handlePublicContent();
+        break;
+      }
+
       default:
-        console.log("❌ Lựa chọn không hợp lệ. Vui lòng chọn 1, 2 hoặc 3.");
+        console.log("❌ Lựa chọn không hợp lệ. Vui lòng chọn 1, 2, 3 hoặc 4.");
         rl.close();
         await prisma.$disconnect();
         break;
@@ -311,5 +320,183 @@ c. Xóa toàn bộ lớp học và quiz của người dùng này
           break;
       }
     });
+  });
+}
+
+// ==================================================
+// HÀM CON: QUẢN LÝ NỘI DUNG PUBLIC (CLASS / QUIZ)
+// ==================================================
+async function handlePublicContent() {
+  console.log("\n🔄 Đang tải danh sách các Class và Quiz đang công khai...");
+
+  // 1. Lấy danh sách Class public
+  const publicClasses = await prisma.class.findMany({
+    where: { isPublic: true },
+    include: { owner: true },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  // 2. Lấy danh sách Quiz published
+  const publicQuizzes = await prisma.quiz.findMany({
+    where: { published: true },
+    include: { owner: true },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const hasClasses = publicClasses.length > 0;
+  const hasQuizzes = publicQuizzes.length > 0;
+
+  if (!hasClasses && !hasQuizzes) {
+    console.log("✅ Hiện tại không có Class hay Quiz nào đang công khai.");
+    rl.close();
+    await prisma.$disconnect();
+    return;
+  }
+
+  // Hiển thị bảng Class Public
+  if (hasClasses) {
+    console.log(`\n📚 CLASS ĐANG PUBLIC (${publicClasses.length}):`);
+    console.table(
+      publicClasses.map((c) => ({
+        ID: c.id,
+        Tên_Lớp: c.name.substring(0, 30) + (c.name.length > 30 ? "..." : ""),
+        Người_tạo: c.owner.email,
+        Ngày_tạo: new Date(c.createdAt).toLocaleDateString(),
+      }))
+    );
+  }
+
+  // Hiển thị bảng Quiz Public
+  if (hasQuizzes) {
+    console.log(`\n🧩 QUIZ ĐANG PUBLIC (${publicQuizzes.length}):`);
+    console.table(
+      publicQuizzes.map((q) => ({
+        ID: q.id,
+        Tiêu_đề: q.title.substring(0, 30) + (q.title.length > 30 ? "..." : ""),
+        Người_tạo: q.owner.email,
+        Ngày_tạo: new Date(q.createdAt).toLocaleDateString(),
+      }))
+    );
+  }
+
+  console.log(`
+=============================================
+Bạn muốn làm gì?
+a. Đặt Private cho 1 Class (theo ID)
+b. Đặt Private cho 1 Quiz (theo ID)
+c. Thoát
+=============================================
+`);
+
+  rl.question("Nhập lựa chọn (a/b/c): ", async (subChoice) => {
+    switch (subChoice.trim().toLowerCase()) {
+      case "a": {
+        if (!hasClasses) {
+          console.log("❌ Không có Class nào để xử lý.");
+          rl.close(); await prisma.$disconnect(); return;
+        }
+        rl.question("Nhập ID của Class cần ẩn (Private): ", async (classId) => {
+          const cls = await prisma.class.findUnique({ where: { id: classId.trim() } });
+          
+          if (!cls) {
+            console.log("❌ Không tìm thấy Class với ID này.");
+          } else {
+            console.log(`⏳ Đang xử lý class "${cls.name}" và các quiz bên trong...`);
+
+            // 1. Cập nhật bảng Class (Set Private)
+            await prisma.class.update({
+              where: { id: cls.id },
+              data: { isPublic: false },
+            });
+
+            // 2. Xóa Class khỏi bảng PublicItem
+            await prisma.publicItem.deleteMany({
+              where: {
+                targetType: 'class',
+                targetId: cls.id
+              }
+            });
+
+            // =========================================================
+            // XỬ LÝ CASCADE: ẨN TOÀN BỘ QUIZ TRONG CLASS
+            // =========================================================
+            
+            // Lấy danh sách ID các quiz trong class này
+            const quizzesInClass = await prisma.quiz.findMany({
+              where: { classId: cls.id },
+              select: { id: true }
+            });
+
+            const quizIds = quizzesInClass.map(q => q.id);
+
+            if (quizIds.length > 0) {
+              // 3. Set published = false cho tất cả quiz trong class
+              const updateResult = await prisma.quiz.updateMany({
+                where: { classId: cls.id },
+                data: { published: false }
+              });
+
+              // 4. Xóa các quiz này khỏi bảng PublicItem (nếu có)
+              const deletePublicItemsResult = await prisma.publicItem.deleteMany({
+                where: {
+                  targetType: 'quiz',
+                  targetId: { in: quizIds }
+                }
+              });
+
+              console.log(`   ↳ Đã ẩn thêm ${updateResult.count} quiz thuộc class này.`);
+              console.log(`   ↳ Đã gỡ ${deletePublicItemsResult.count} quiz khỏi trang Public.`);
+            } else {
+              console.log("   ↳ Class này không chứa quiz nào.");
+            }
+
+            console.log(`✅ Hoàn tất! Class "${cls.name}" và toàn bộ nội dung bên trong đã chuyển sang Private.`);
+          }
+          rl.close();
+          await prisma.$disconnect();
+        });
+        break;
+      }
+
+      case "b": {
+        if (!hasQuizzes) {
+          console.log("❌ Không có Quiz nào để xử lý.");
+          rl.close(); await prisma.$disconnect(); return;
+        }
+        rl.question("Nhập ID của Quiz cần ẩn (Unpublish): ", async (quizId) => {
+          const quiz = await prisma.quiz.findUnique({ where: { id: quizId.trim() } });
+
+          if (!quiz) {
+            console.log("❌ Không tìm thấy Quiz với ID này.");
+          } else {
+            // 1. Cập nhật bảng Quiz
+            await prisma.quiz.update({
+              where: { id: quiz.id },
+              data: { published: false },
+            });
+
+            // 2. Xóa khỏi bảng PublicItem (Quan trọng để ẩn trên web)
+            await prisma.publicItem.deleteMany({
+              where: {
+                targetType: 'quiz',
+                targetId: quiz.id
+              }
+            });
+
+            console.log(`✅ Đã chuyển Quiz "${quiz.title}" sang trạng thái Private và xóa khỏi PublicItem.`);
+          }
+          rl.close();
+          await prisma.$disconnect();
+        });
+        break;
+      }
+
+      case "c":
+      default:
+        console.log("👋 Kết thúc thao tác.");
+        rl.close();
+        await prisma.$disconnect();
+        break;
+    }
   });
 }
