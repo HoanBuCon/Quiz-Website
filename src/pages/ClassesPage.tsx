@@ -393,12 +393,27 @@ const ClassesPage: React.FC = () => {
       setClasses(classesWithQuizzes);
       await loadStats(classesWithQuizzes);
       
-      // Update share status map
+      // === [PHẦN SỬA LỖI] ===
+      // Cập nhật trạng thái chia sẻ cho cả Class và Quiz với key đúng format
       const statusMap: Record<string, boolean> = {};
       classesWithQuizzes.forEach((c: any) => {
-          if (c.accessType === 'shared') statusMap[c.id] = true;
+          // 1. Check Class (dùng key 'class_ID')
+          // Kiểm tra nếu lớp ĐANG ĐƯỢC MÌNH CHIA SẺ (isShared) hoặc MÌNH ĐƯỢC CHIA SẺ (accessType='shared')
+          if (c.isShared || c.accessType === 'shared') {
+             statusMap[`class_${c.id}`] = true;
+          }
+
+          // 2. Check Quiz (dùng key 'quiz_ID')
+          if (Array.isArray(c.quizzes)) {
+             c.quizzes.forEach((q: any) => {
+                if (q.isShared) {
+                   statusMap[`quiz_${q.id}`] = true;
+                }
+             });
+          }
       });
       setShareStatus(statusMap);
+      // =======================
 
     } catch (err) {
       console.error("Error fetching classes:", err);

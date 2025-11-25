@@ -7,7 +7,11 @@ router.get('/', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const mine = req.query.mine === 'true';
 
+  // --- GIỮ NGUYÊN PHẦN XỬ LÝ 'MINE' (NẾU CÓ) ---
   if (mine) {
+    // ... (code cũ của phần mine) ...
+    // Lưu ý: Nếu phần mine của bạn chưa có logic lấy isShared, bạn cũng nên thêm vào tương tự bên dưới
+    // Nhưng quan trọng nhất là phần Public bên dưới đây:
     const owned = await prisma.class.findMany({ where: { ownerId: req.user.id }, include: { quizzes: true } });
     const sharedAccess = await prisma.sharedAccess.findMany({ where: { userId: req.user.id, targetType: 'class' } });
     const sharedIds = sharedAccess.map(s => s.targetId);
@@ -15,14 +19,27 @@ router.get('/', authRequired, async (req, res) => {
       ? await prisma.class.findMany({ where: { id: { in: sharedIds } }, include: { quizzes: true } })
       : [];
 
+    // Lấy thông tin ShareItem cho các lớp mình sở hữu để biết lớp nào đang bật Share
+    const ownedIds = owned.map(c => c.id);
+    const shareItems = await prisma.shareItem.findMany({
+      where: { targetType: 'class', targetId: { in: ownedIds } }
+    });
+    const shareMap = new Set(shareItems.map(s => s.targetId));
+
     const withFlags = [
-      ...owned.map(c => ({ ...c, accessType: 'owner' })),
-      ...shared.map(c => ({ ...c, accessType: 'shared' })),
+      ...owned.map(c => ({ 
+          ...c, 
+          accessType: 'owner',
+          isShared: shareMap.has(c.id) // <--- CỜ QUAN TRỌNG
+      })),
+      ...shared.map(c => ({ ...c, accessType: 'shared', isShared: true })),
     ];
     return res.json(withFlags);
   }
 
-  // public classes from PublicItem table OR legacy isPublic flag
+  // --- SỬA PHẦN LẤY LIST PUBLIC ---
+  
+  // 1. Lấy danh sách Public (như cũ)
   const pub = await prisma.publicItem.findMany({ where: { targetType: 'class' } });
   const ids = pub.map(p => p.targetId);
   const classes = await prisma.class.findMany({
@@ -35,8 +52,23 @@ router.get('/', authRequired, async (req, res) => {
     include: { quizzes: true }
   });
 
-  // mark as public for FE backward-compat
-  const withPublic = classes.map(c => ({ ...c, isPublic: true, accessType: 'public' }));
+  // 2. [MỚI] Lấy danh sách các lớp đang được Share (có code)
+  const shareItems = await prisma.shareItem.findMany({
+    where: { targetType: 'class' }
+  });
+
+  // 3. Map dữ liệu để thêm cờ isShared
+  const withPublic = classes.map(c => {
+    const shareInfo = shareItems.find(s => s.targetId === c.id);
+    return { 
+        ...c, 
+        isPublic: true, 
+        accessType: 'public',
+        isShared: !!shareInfo,       // <--- Backend báo cho Frontend biết: Lớp này đang Share
+        shareCode: shareInfo?.code   // <--- Gửi kèm mã share
+    };
+  });
+
   res.json(withPublic);
 });
 

@@ -36,6 +36,15 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
       _count: { select: { questions: true } },
     }
   });
+
+  const quizIds = quizzes.map(q => q.id);
+  const shareItems = await prisma.shareItem.findMany({
+    where: { 
+      targetType: 'quiz',
+      targetId: { in: quizIds }
+    }
+  });
+  const sharedSet = new Set(shareItems.map(s => s.targetId));
   
   // ===== FILTER QUIZZES DỰA TRÊN QUYỀN TRUY CẬP =====
   let accessibleQuizzes = quizzes;
@@ -71,6 +80,7 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
     createdAt: q.createdAt,
     updatedAt: q.updatedAt,
     questionCount: q._count?.questions || 0,
+    isShared: sharedSet.has(q.id)
   }));
   
   res.json(payload);

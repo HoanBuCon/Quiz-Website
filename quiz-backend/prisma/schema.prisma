@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -93,7 +93,7 @@ model UploadedFile {
   name       String
   type       FileType
   size       Int
-  content    String?  @db.LongText
+  content    String?  @db.Text
   uploadedAt DateTime @default(now())
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
