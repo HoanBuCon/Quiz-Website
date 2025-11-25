@@ -433,7 +433,9 @@ const MaintenancePage: React.FC = () => {
                   {/* START SCREEN (Logged In) */}
                   {activeTab === 'start' && (
                     <div className="text-center space-y-6 animate-fadeIn">
-                      <h3 className="text-2xl font-serif font-light italic text-white tracking-wide my-6">Xin chào {currentUser?.name}!</h3>
+                    <h3 className="text-2xl font-sans italic text-white my-6">
+                      Xin chào {currentUser?.name}!
+                    </h3>
                       <button
                         onClick={handleEnterWebsite}
                         className="
