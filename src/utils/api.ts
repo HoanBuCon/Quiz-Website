@@ -256,10 +256,11 @@ export const FilesAPI = {
 
 // Chat API
 export const ChatAPI = {
-  list: (params: { limit?: number; before?: string }, token: string) => {
+  list: (params: { limit?: number; before?: string; after?: string }, token: string) => {
     const q = new URLSearchParams();
     if (params.limit) q.set("limit", String(params.limit));
     if (params.before) q.set("before", params.before);
+    if (params.after) q.set("after", params.after);
     return apiRequest<any[]>(`/chat/messages${q.toString() ? `?${q.toString()}` : ""}`, { token });
   },
   getOnlineCount: (token: string) =>

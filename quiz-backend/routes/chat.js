@@ -4,10 +4,11 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { authRequired } = require('../middleware/auth');
-const jwt = require('jsonwebtoken');
+// const jwt = require('jsonwebtoken'); // Không cần dùng cho Polling
 
+// Cache số người online để tránh query DB liên tục
 let onlineCountCache = { count: 0, timestamp: 0, windowMinutes: 5 };
-const CACHE_DURATION_MS = 10000; 
+const CACHE_DURATION_MS = 10000; // 10 giây
 
 const isProd = process.env.NODE_ENV === 'production';
 // Local dev: quiz-backend/public/chatbox/uploads
@@ -75,7 +76,6 @@ router.get('/online-count', authRequired, async (req, res) => {
   // 1. Kiểm tra cache trước
   const now = Date.now();
   if (now - onlineCountCache.timestamp < CACHE_DURATION_MS) {
-    // Cache còn hạn, trả về cache
     return res.json(onlineCountCache);
   }
 
@@ -96,7 +96,7 @@ router.get('/online-count', authRequired, async (req, res) => {
   }
 });
 
-// Build public URL for saved file relative to root (Apache/Dev serve)
+// Build public URL for saved file relative to root
 function buildPublicUrl(filename, mimetype) {
   const sub = mimetype.startsWith('image/')
     ? 'images'
@@ -112,15 +112,12 @@ router.get('/unread-count', authRequired, async (req, res) => {
   const userId = req.user.id;
   
   try {
-    // Get user's last read timestamp
     const readStatus = await prisma.chatReadStatus.findUnique({
       where: { userId },
     });
     
-    // If no read status, count all messages from others
     const lastReadAt = readStatus?.lastReadAt || new Date(0);
     
-    // Count messages created after lastReadAt, excluding user's own messages
     const count = await prisma.chatMessage.count({
       where: {
         createdAt: { gt: lastReadAt },
@@ -135,7 +132,7 @@ router.get('/unread-count', authRequired, async (req, res) => {
   }
 });
 
-// Mark messages as read (update lastReadAt to now)
+// Mark messages as read
 router.post('/mark-read', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const userId = req.user.id;
@@ -159,18 +156,27 @@ router.post('/mark-read', authRequired, async (req, res) => {
   }
 });
 
-// List recent messages (public for all authenticated users)
+// List recent messages (Polling endpoint)
 router.get('/messages', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const limit = Math.min(Number(req.query.limit || 50), 200);
   const before = req.query.before ? new Date(req.query.before) : null;
-  const where = before ? { createdAt: { lt: before } } : {};
+  const after = req.query.after ? new Date(req.query.after) : null;
+  
+  let where = {};
+  if (before) {
+    where = { createdAt: { lt: before } };
+  } else if (after) {
+    where = { createdAt: { gt: after } };
+  }
+
   const messages = await prisma.chatMessage.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     take: limit,
     include: { user: { select: { id: true, name: true, email: true } } },
   });
+  // Trả về thứ tự cũ nhất -> mới nhất để UI render đúng
   res.json(messages.reverse());
 });
 
@@ -196,101 +202,53 @@ router.post(
       else attachmentType = 'file';
     }
 
-    const created = await prisma.chatMessage.create({
-      data: {
-        userId: req.user.id,
-        content: content || null,
-        attachmentUrl,
-        attachmentType,
-      },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+    try {
+      const created = await prisma.chatMessage.create({
+        data: {
+          userId: req.user.id,
+          content: content || null,
+          attachmentUrl,
+          attachmentType,
+        },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      });
 
-    // Broadcast to SSE listeners
-    try { broadcastMessage(created); } catch (_) {}
+      // Với Shared Hosting, ta KHÔNG dùng broadcast SSE. 
+      // Client sẽ tự động Polling và thấy tin nhắn mới sau vài giây.
 
-    res.status(201).json(created);
+      res.status(201).json(created);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Lỗi lưu tin nhắn" });
+    }
   }
 );
 
-// Delete a message (only owner can delete)
+// Delete a message
 router.delete('/messages/:id', authRequired, async (req, res) => {
   const prisma = req.prisma;
   const id = req.params.id;
-  const msg = await prisma.chatMessage.findUnique({ where: { id } });
-  if (!msg) return res.status(404).json({ message: 'Không tìm thấy' });
-  if (msg.userId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
-
-  // Try delete file if exists
-  if (msg.attachmentUrl && msg.attachmentUrl.includes('/chatbox/uploads/')) {
-    try {
-      const rel = msg.attachmentUrl.split('/chatbox/uploads/').pop();
-      const filePath = path.join(baseChatUploadDir, rel);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    } catch (e) {
-      console.error('Failed to delete chat attachment:', e);
-    }
-  }
-
-  await prisma.chatMessage.delete({ where: { id } });
-  res.status(204).end();
-});
-
-// ===== SSE clients store (in-memory per process) =====
-const sseClients = new Set(); // each item: { res, userId }
-
-// SSE: stream new messages only when they arrive
-router.get('/stream', (req, res) => {
-  // Auth via query token to support EventSource
-  const token = req.query.token;
-  if (!token || typeof token !== 'string') {
-    return res.status(401).end();
-  }
   try {
-    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
-    if (!secret) return res.status(500).end();
-    const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
-    const userId = payload.sub;
+    const msg = await prisma.chatMessage.findUnique({ where: { id } });
+    if (!msg) return res.status(404).json({ message: 'Không tìm thấy' });
+    if (msg.userId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
 
-    // SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.flushHeaders?.();
+    // Try delete file if exists
+    if (msg.attachmentUrl && msg.attachmentUrl.includes('/chatbox/uploads/')) {
+      try {
+        const rel = msg.attachmentUrl.split('/chatbox/uploads/').pop();
+        const filePath = path.join(baseChatUploadDir, rel);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch (e) {
+        console.error('Failed to delete chat attachment:', e);
+      }
+    }
 
-    // Register client
-    const client = { res, userId };
-    sseClients.add(client);
-
-    // Initial comment to establish stream
-    res.write(':ok\n\n');
-
-    // Keep-alive pings
-    const ping = setInterval(() => {
-      try { res.write('event: ping\ndata: {}\n\n'); } catch (_) {}
-    }, 25000);
-
-    req.on('close', () => {
-      clearInterval(ping);
-      sseClients.delete(client);
-      try { res.end(); } catch (_) {}
-    });
-  } catch (_e) {
-    return res.status(401).end();
+    await prisma.chatMessage.delete({ where: { id } });
+    res.status(204).end();
+  } catch (e) {
+    res.status(500).json({ message: "Lỗi xóa tin nhắn" });
   }
 });
-
-// Helper to broadcast a new message to SSE clients
-function broadcastMessage(msg) {
-  const payload = JSON.stringify(msg);
-  for (const { res } of sseClients) {
-    try {
-      res.write(`event: message\n`);
-      res.write(`data: ${payload}\n\n`);
-    } catch (_e) {
-      // ignore broken pipe, will be cleaned up on close
-    }
-  }
-}
 
 module.exports = router;
