@@ -4,15 +4,12 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { authRequired } = require('../middleware/auth');
-// const jwt = require('jsonwebtoken'); // Không cần dùng cho Polling
 
-// Cache số người online để tránh query DB liên tục
+// Cache số người online
 let onlineCountCache = { count: 0, timestamp: 0, windowMinutes: 5 };
 const CACHE_DURATION_MS = 10000; // 10 giây
 
 const isProd = process.env.NODE_ENV === 'production';
-// Local dev: quiz-backend/public/chatbox/uploads
-// Production (cPanel): public_html/chatbox/uploads (resolve relative to app dir)
 const baseChatUploadDir = isProd
   ? path.join(__dirname, '../../chatbox/uploads')
   : path.join(__dirname, '../public/chatbox/uploads');
@@ -23,7 +20,7 @@ for (const sub of ['', '/images', '/videos', '/files']) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-// Multer storage config: decide subfolder by mimetype
+// Multer storage config
 const storage = multer.diskStorage({
   destination: (_req, file, cb) => {
     let sub = 'files';
@@ -49,7 +46,6 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (_req, file, cb) => {
-    // Allow images, videos, and common docs
     const ok =
       file.mimetype.startsWith('image/') ||
       file.mimetype.startsWith('video/') ||
@@ -71,32 +67,36 @@ const upload = multer({
   },
 });
 
-// Online count (users active within last N minutes)
-router.get('/online-count', authRequired, async (req, res) => {
-  // 1. Kiểm tra cache trước
-  const now = Date.now();
-  if (now - onlineCountCache.timestamp < CACHE_DURATION_MS) {
-    return res.json(onlineCountCache);
-  }
+// Helper function để kiểm tra Date hợp lệ
+function isValidDate(d) {
+  return d instanceof Date && !isNaN(d);
+}
 
-  // 2. Nếu cache cũ, truy vấn DB
-  const prisma = req.prisma;
-  const minutes = Number(process.env.ONLINE_WINDOW_MINUTES || 5);
-  const since = new Date(now - minutes * 60 * 1000);
+// Online count
+router.get('/online-count', authRequired, async (req, res) => {
   try {
+    const now = Date.now();
+    if (now - onlineCountCache.timestamp < CACHE_DURATION_MS) {
+      return res.json(onlineCountCache);
+    }
+
+    const prisma = req.prisma;
+    const minutes = Number(process.env.ONLINE_WINDOW_MINUTES || 5);
+    const since = new Date(now - minutes * 60 * 1000);
+    
     const count = await prisma.user.count({
       where: { lastActivityAt: { gt: since } },
     });
     
-    // 3. Cập nhật cache và trả về
     onlineCountCache = { count, timestamp: now, windowMinutes: minutes };
     res.json(onlineCountCache);
   } catch (e) {
-    res.status(500).json({ message: 'Lỗi khi lấy số người online' });
+    console.error("Online count error:", e);
+    // Trả về cache cũ nếu lỗi DB để tránh sập UI
+    res.json(onlineCountCache); 
   }
 });
 
-// Build public URL for saved file relative to root
 function buildPublicUrl(filename, mimetype) {
   const sub = mimetype.startsWith('image/')
     ? 'images'
@@ -106,12 +106,12 @@ function buildPublicUrl(filename, mimetype) {
   return `/chatbox/uploads/${sub}/${filename}`;
 }
 
-// Get unread count for current user
+// Unread count
 router.get('/unread-count', authRequired, async (req, res) => {
-  const prisma = req.prisma;
-  const userId = req.user.id;
-  
   try {
+    const prisma = req.prisma;
+    const userId = req.user.id;
+    
     const readStatus = await prisma.chatReadStatus.findUnique({
       where: { userId },
     });
@@ -121,88 +121,95 @@ router.get('/unread-count', authRequired, async (req, res) => {
     const count = await prisma.chatMessage.count({
       where: {
         createdAt: { gt: lastReadAt },
-        userId: { not: userId }, // Exclude own messages
+        userId: { not: userId },
       },
     });
     
     res.json({ count });
   } catch (error) {
     console.error('Error getting unread count:', error);
-    res.status(500).json({ message: 'Lỗi khi lấy số tin nhắn chưa đọc' });
+    res.status(500).json({ message: 'Lỗi server' });
   }
 });
 
-// Mark messages as read
+// Mark read
 router.post('/mark-read', authRequired, async (req, res) => {
-  const prisma = req.prisma;
-  const userId = req.user.id;
-  
   try {
+    const prisma = req.prisma;
+    const userId = req.user.id;
+    
     await prisma.chatReadStatus.upsert({
       where: { userId },
-      create: {
-        userId,
-        lastReadAt: new Date(),
-      },
-      update: {
-        lastReadAt: new Date(),
-      },
+      create: { userId, lastReadAt: new Date() },
+      update: { lastReadAt: new Date() },
     });
     
     res.json({ success: true });
   } catch (error) {
     console.error('Error marking as read:', error);
-    res.status(500).json({ message: 'Lỗi khi đánh dấu đã đọc' });
+    res.status(500).json({ message: 'Lỗi server' });
   }
 });
 
-// List recent messages (Polling endpoint)
+// --- FIX QUAN TRỌNG: Thêm Try/Catch và Validate Date ---
 router.get('/messages', authRequired, async (req, res) => {
-  const prisma = req.prisma;
-  const limit = Math.min(Number(req.query.limit || 50), 200);
-  const before = req.query.before ? new Date(req.query.before) : null;
-  const after = req.query.after ? new Date(req.query.after) : null;
-  
-  let where = {};
-  if (before) {
-    where = { createdAt: { lt: before } };
-  } else if (after) {
-    where = { createdAt: { gt: after } };
-  }
+  try {
+    const prisma = req.prisma;
+    const limit = Math.min(Number(req.query.limit || 50), 200);
+    
+    // Parse date an toàn
+    let before = req.query.before ? new Date(req.query.before) : null;
+    let after = req.query.after ? new Date(req.query.after) : null;
+    
+    // Nếu date không hợp lệ (do sai lệch múi giờ client gửi lên chuỗi lạ), gán về null
+    if (before && !isValidDate(before)) before = null;
+    if (after && !isValidDate(after)) after = null;
+    
+    let where = {};
+    if (before) {
+      where = { createdAt: { lt: before } };
+    } else if (after) {
+      where = { createdAt: { gt: after } };
+    }
 
-  const messages = await prisma.chatMessage.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-    include: { user: { select: { id: true, name: true, email: true } } },
-  });
-  // Trả về thứ tự cũ nhất -> mới nhất để UI render đúng
-  res.json(messages.reverse());
+    const messages = await prisma.chatMessage.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+    
+    res.json(messages.reverse());
+  } catch (e) {
+    console.error("Get messages error:", e);
+    // Quan trọng: Trả về lỗi 500 thay vì để nodejs crash
+    res.status(500).json({ message: "Lỗi tải tin nhắn" });
+  }
 });
 
-// Post a message (text + optional attachment)
+// Post message
 router.post(
   '/messages',
   authRequired,
   upload.single('attachment'),
   async (req, res) => {
-    const prisma = req.prisma;
-    const { content } = req.body || {};
-    if (!content && !req.file) {
-      return res.status(400).json({ message: 'Nội dung trống' });
-    }
-
-    let attachmentUrl = null;
-    let attachmentType = null;
-
-    if (req.file) {
-      attachmentUrl = buildPublicUrl(req.file.filename, req.file.mimetype);
-      if (req.file.mimetype.startsWith('image/')) attachmentType = 'image';
-      else if (req.file.mimetype.startsWith('video/')) attachmentType = 'video';
-      else attachmentType = 'file';
-    }
-
     try {
+      const prisma = req.prisma;
+      const { content } = req.body || {};
+      if (!content && !req.file) {
+        return res.status(400).json({ message: 'Nội dung trống' });
+      }
+
+      let attachmentUrl = null;
+      let attachmentType = null;
+
+      if (req.file) {
+        attachmentUrl = buildPublicUrl(req.file.filename, req.file.mimetype);
+        if (req.file.mimetype.startsWith('image/')) attachmentType = 'image';
+        else if (req.file.mimetype.startsWith('video/')) attachmentType = 'video';
+        else attachmentType = 'file';
+      }
+
       const created = await prisma.chatMessage.create({
         data: {
           userId: req.user.id,
@@ -213,27 +220,24 @@ router.post(
         include: { user: { select: { id: true, name: true, email: true } } },
       });
 
-      // Với Shared Hosting, ta KHÔNG dùng broadcast SSE. 
-      // Client sẽ tự động Polling và thấy tin nhắn mới sau vài giây.
-
       res.status(201).json(created);
     } catch (e) {
-      console.error(e);
+      console.error("Post message error:", e);
       res.status(500).json({ message: "Lỗi lưu tin nhắn" });
     }
   }
 );
 
-// Delete a message
+// Delete message
 router.delete('/messages/:id', authRequired, async (req, res) => {
-  const prisma = req.prisma;
-  const id = req.params.id;
   try {
+    const prisma = req.prisma;
+    const id = req.params.id;
     const msg = await prisma.chatMessage.findUnique({ where: { id } });
+    
     if (!msg) return res.status(404).json({ message: 'Không tìm thấy' });
     if (msg.userId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
 
-    // Try delete file if exists
     if (msg.attachmentUrl && msg.attachmentUrl.includes('/chatbox/uploads/')) {
       try {
         const rel = msg.attachmentUrl.split('/chatbox/uploads/').pop();
@@ -247,6 +251,7 @@ router.delete('/messages/:id', authRequired, async (req, res) => {
     await prisma.chatMessage.delete({ where: { id } });
     res.status(204).end();
   } catch (e) {
+    console.error("Delete message error:", e);
     res.status(500).json({ message: "Lỗi xóa tin nhắn" });
   }
 });

@@ -4,6 +4,7 @@ import { getToken } from "../utils/auth";
 import { ChatAPI, getApiBaseUrl } from "../utils/api";
 import { FiPaperclip, FiSend, FiTrash2, FiEyeOff } from "react-icons/fi";
 
+// --- INTERFACES & HELPERS ---
 interface ChatMessage {
   id: string;
   userId: string;
@@ -14,240 +15,311 @@ interface ChatMessage {
   user?: { id: string; name?: string | null; email: string };
   replyTo?: string | null;
   hidden?: boolean;
-  showDateSeparator?: boolean;
 }
 
 function formatDateSeparator(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
+    const date = new Date(dateString);
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
 
-  const isSameDay = (d1: Date, d2: Date) =>
-    d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate();
+    const isSameDay = (d1: Date, d2: Date) => 
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
+        d1.getDate() === d2.getDate();
 
-  if (isSameDay(date, now)) {
-    return "Hôm nay";
-  }
-  if (isSameDay(date, yesterday)) {
-    return "Hôm qua";
-  }
+    if (isSameDay(date, now)) return "Hôm nay";
+    if (isSameDay(date, yesterday)) return "Hôm qua";
 
-  return date.toLocaleDateString('vi-VN', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+    return date.toLocaleDateString('vi-VN', {
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+    });
 }
 
-// Helper utility
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-const ChatBox = () => {
-  // --- 1. STATE & REF ---
+const ChatBox: React.FC = () => {
+  // --- 1. STATE & REF (UI) ---
   const [open, setOpen] = useState(false);
-  const [unread, setUnread] = useState(0);
-  const [isMultiline, setIsMultiline] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(new Set());
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [input, setInput] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const [btnPos, setBtnPos] = useState({ x: 20, y: 20 });
-  const [onlineCount, setOnlineCount] = useState<number | null>(null);
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const openRef = useRef<boolean>(false);
+  useEffect(() => { openRef.current = open; }, [open]);
+  const [unread, setUnread] = useState<number>(0);
+  
+  // Auth Token
+  const token = useMemo(() => getToken(), []);
+  
+  // Decode Token to get UserID (Logic from Old ChatBox)
+  const currentUserId = useMemo(() => {
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      return payload.sub || null;
+    } catch {
+      return null;
+    }
+  }, [token]);
 
-  // Viewport dimensions
-  const [vw, setVw] = useState(typeof window !== 'undefined' ? window.innerWidth : 1000);
-  const [vh, setVh] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Refs
-  const openRef = useRef(open);
-  const bubbleRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const pendingPosRef = useRef<{ x: number, y: number } | null>(null);
-  const pendingPanelPosRef = useRef<{ x: number, y: number } | null>(null);
-
-  // Constants
-  const btnSize = isMobile ? 56 : 60;
-  const gap = 16;
-  const panelWidth = isMobile ? vw : 350;
-  const panelHeight = isMobile ? vh : 500;
-  const token = getToken();
-
-  // Fake currentUserId (Bạn cần thay thế logic này bằng user ID thật từ AuthContext của bạn)
-  const currentUserId = "current_user_id_placeholder";
-
-  // --- 2. LOGIC CƠ BẢN ---
-
-  // Sync openRef
-  useEffect(() => {
-    openRef.current = open;
-  }, [open]);
-
-  // Handle Resize
-  useEffect(() => {
-    const handleResize = () => {
-      setVw(window.innerWidth);
-      setVh(window.innerHeight);
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Lấy vị trí ban đầu của panel
-  const getPanelPos = () => {
-    if (isMobile) return { x: 0, y: 0 };
-    return { x: vw - panelWidth - 20, y: vh - panelHeight - 20 };
-  };
-
-  const persistBtnPos = (pos: { x: number, y: number }) => {
-    localStorage.setItem('chat_btn_pos', JSON.stringify(pos));
+  // Open/Close Handlers
+  const openChat = () => { 
+    if (!openRef.current) { 
+      setOpen(true); 
+      setUnread(0);
+      if (token) ChatAPI.markAsRead(token).catch(() => {});
+    } 
   };
 
   const closeChat = () => { if (openRef.current) setOpen(false); };
-
-  const toggleChat = () => setOpen((v) => {
-    const nv = !v;
-    if (nv) setUnread(0);
-    return nv;
+  
+  const toggleChat = () => setOpen((v) => { 
+    const nv = !v; 
+    if (nv) {
+      setUnread(0);
+      if (token) ChatAPI.markAsRead(token).catch(() => {});
+    }
+    return nv; 
   });
 
-  // --- 3. LOGIC POLLING (TỰ ĐỘNG CẬP NHẬT) ---
+  // Sync Unread to LocalStorage/Window
+  useEffect(() => {
+    try { localStorage.setItem('chat_unread_count', String(unread)); } catch {}
+    try { window.dispatchEvent(new CustomEvent('chat:unread', { detail: { count: unread } })); } catch {}
+  }, [unread]);
 
-  // 3.1. Polling tin nhắn mới (Chỉ chạy khi Chat đang mở)
+  // Header event integration
+  useEffect(() => {
+    const handleChatOpen: EventListener = () => openChat();
+    const handleChatClose: EventListener = () => closeChat();
+    const handleChatToggle: EventListener = () => toggleChat();
+    window.addEventListener("chat:open", handleChatOpen);
+    window.addEventListener("chat:close", handleChatClose);
+    window.addEventListener("chat:toggle", handleChatToggle);
+    return () => {
+      window.removeEventListener("chat:open", handleChatOpen);
+      window.removeEventListener("chat:close", handleChatClose);
+      window.removeEventListener("chat:toggle", handleChatToggle);
+    };
+  }, []);
+
+  // --- 2. DATA STATE ---
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const PAGE_SIZE = 10;
+  const [hasMore, setHasMore] = useState(true);
+  const loadingOlderRef = useRef(false);
+  
+  // UI Refs
+  const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // UI State
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isMultiline, setIsMultiline] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [onlineCount, setOnlineCount] = useState<number | null>(null);
+  // Biến này để lưu config từ server, có thể dùng để hiển thị text "Active in 5m" nếu cần
+  // eslint-disable-next-line
+  const [onlineWindow, setOnlineWindow] = useState<number>(5);
+
+  // Hidden Messages
+  const [hiddenMessages, setHiddenMessages] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('chat_hidden_messages');
+      if (stored) return new Set(JSON.parse(stored));
+    } catch {}
+    return new Set();
+  });
+  useEffect(() => {
+    try { localStorage.setItem('chat_hidden_messages', JSON.stringify(Array.from(hiddenMessages))); } catch {}
+  }, [hiddenMessages]);
+
+  // Click Outside Menu
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setActiveMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // --- 3. LOGIC MẠNG MỚI (POLLING & INSTANT UI) ---
+
+  // Helper: Merge messages để tránh trùng lặp
+  const mergeMessages = (prev: ChatMessage[], incoming: ChatMessage[]) => {
+    const map = new Map<string, ChatMessage>();
+    for (const m of prev) map.set(m.id, m);
+    for (const m of incoming) map.set(m.id, m);
+    return Array.from(map.values()).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  };
+
+  // 3.1. Poll Online Count (10s/lần)
+  useEffect(() => {
+    if (!token) return;
+    const fetchOnline = async () => {
+      try {
+        const res = await ChatAPI.getOnlineCount(token);
+        setOnlineCount(res.count);
+        setOnlineWindow(res.windowMinutes);
+      } catch {}
+    };
+    fetchOnline();
+    const timer = setInterval(fetchOnline, 10000);
+    return () => clearInterval(timer);
+  }, [token]);
+
+  // 3.2. Poll Unread Count (Khi chat đóng - 10s/lần)
+  useEffect(() => {
+    if (open || !token) return;
+    const fetchUnread = () => {
+        ChatAPI.getUnreadCount(token)
+          .then(data => setUnread(data.count))
+          .catch(() => {});
+    };
+    fetchUnread();
+    const timer = setInterval(fetchUnread, 10000);
+    return () => clearInterval(timer);
+  }, [open, token]);
+
+  // 3.3. Poll New Messages (Khi chat mở - 3s/lần)
+  // Thay thế hoàn toàn SSE
   useEffect(() => {
     if (!open || !token) return;
 
     let isCancelled = false;
-
     const fetchNewMessages = async () => {
-      // Nếu tab trình duyệt đang ẩn, không cần poll để tiết kiệm tài nguyên
-      if (document.hidden) return;
+        if (document.hidden) return; // Tiết kiệm tài nguyên khi tab ẩn
 
-      try {
-        // Lấy thời gian của tin nhắn cuối cùng để chỉ tải tin mới hơn
-        const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
-        const afterParam = lastMsg ? lastMsg.createdAt : undefined;
+        try {
+            // Lấy thời gian tin nhắn cuối cùng để chỉ tải tin mới hơn
+            const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
+            const afterParam = lastMsg ? lastMsg.createdAt : undefined;
 
-        // Gọi API
-        const newMsgs = await ChatAPI.list({
-          limit: 20,
-          after: afterParam
-        }, token);
+            const newMsgs = await ChatAPI.list({ limit: 20, after: afterParam }, token);
 
-        if (!isCancelled && newMsgs && newMsgs.length > 0) {
-          setMessages(prev => {
-            // Lọc trùng lặp bằng ID để an toàn
-            const existingIds = new Set(prev.map(m => m.id));
-            const uniqueNew = newMsgs.filter((m: ChatMessage) => !existingIds.has(m.id));
-
-            if (uniqueNew.length === 0) return prev;
-
-            // Nối tin nhắn mới vào cuối danh sách
-            return [...prev, ...uniqueNew];
-          });
-
-          // Tự động cuộn xuống dưới cùng nếu người dùng đang ở gần đáy
-          if (listRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-            if (isNearBottom) {
-              setTimeout(() => {
-                listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
-              }, 100);
+            if (!isCancelled && newMsgs && newMsgs.length > 0) {
+                setMessages(prev => {
+                    const merged = mergeMessages(prev, newMsgs);
+                    // Nếu có tin mới, scroll xuống dưới
+                    if (merged.length > prev.length) {
+                         setTimeout(() => {
+                            if (listRef.current) {
+                                const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+                                const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+                                if (isNearBottom) listRef.current.scrollTo({ top: scrollHeight, behavior: 'smooth' });
+                            }
+                        }, 100);
+                    }
+                    return merged;
+                });
             }
-          }
-        }
-      } catch (error) {
-        // Silent error (không log để tránh rác console)
-      }
+        } catch {}
     };
 
-    // Gọi lần đầu ngay khi mở
-    fetchNewMessages();
-
-    // Thiết lập chu kỳ 3 giây/lần
+    fetchNewMessages(); // Gọi ngay lần đầu
     const intervalId = setInterval(fetchNewMessages, 3000);
 
     return () => {
-      isCancelled = true;
-      clearInterval(intervalId);
+        isCancelled = true;
+        clearInterval(intervalId);
     };
-  }, [open, messages, token]);
+  }, [open, token, messages]); // messages dependency quan trọng để lấy lastMsg
 
-  // 3.2. Polling số tin chưa đọc (Chỉ chạy khi Chat đóng)
-  useEffect(() => {
-    if (open || !token) return;
-
-    const fetchUnread = async () => {
-      try {
-        const res = await ChatAPI.getUnreadCount(token);
-        setUnread(res.count);
-      } catch (e) { }
-    };
-
-    // Chu kỳ chậm hơn: 10 giây/lần
-    const intervalId = setInterval(fetchUnread, 10000);
-    fetchUnread(); // Gọi ngay
-
-    return () => clearInterval(intervalId);
-  }, [open, token]);
-
-  // 3.3. Load tin nhắn cũ (Khi cuộn lên trên)
-  const loadOlder = async () => {
-    if (loading || messages.length === 0) return;
-    // Logic load thêm tin nhắn cũ (Todo: Implement based on 'before' param)
-    // Hiện tại giữ placeholder để tránh lỗi
-    console.log("Load older messages...");
+  // 3.4. Load Initial Messages (Khi mở chat)
+  const loadInitial = async () => {
+    if (!token) return;
+    try {
+      const data = await ChatAPI.list({ limit: PAGE_SIZE }, token);
+      setMessages(() => mergeMessages([], data));
+      setHasMore((data?.length || 0) === PAGE_SIZE);
+      requestAnimationFrame(() => {
+        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "auto" });
+      });
+    } catch {}
   };
 
-  // --- 4. GỬI TIN NHẮN ---
+  useEffect(() => {
+    if (!open) return;
+    setMessages([]);
+    setHasMore(true);
+    loadInitial();
+    requestAnimationFrame(() => { if (inputRef.current) autoResizeTextarea(inputRef.current); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
+  // 3.5. Load Older Messages (Khi cuộn lên trên)
+  const loadOlder = async () => {
+    if (!token || loadingOlderRef.current || !hasMore) return;
+    const earliest = messages.length ? messages[0].createdAt : null;
+    if (!earliest) return;
+    
+    loadingOlderRef.current = true;
+    const el = listRef.current;
+    const prevH = el?.scrollHeight || 0;
+    
+    try {
+      const data = await ChatAPI.list({ limit: PAGE_SIZE, before: earliest }, token);
+      setHasMore((data?.length || 0) === PAGE_SIZE);
+      if (data && data.length) {
+        setMessages((prev) => mergeMessages(data, prev));
+        requestAnimationFrame(() => {
+          const newH = el?.scrollHeight || 0;
+          if (el) el.scrollTop = newH - prevH;
+        });
+      }
+    } catch {}
+    finally {
+      loadingOlderRef.current = false;
+    }
+  };
+
+  // 3.6. SEND MESSAGE (Instant UI Update)
   const doSend = async () => {
-    if ((!input.trim() && !file) || !token) return;
+    if (!token) return;
+    const text = input.trim();
+    if (!text && !file) return;
+    if (text.length > 2000) { alert('Tin nhắn tối đa 2000 ký tự'); return; }
+    if (file && file.size > 10 * 1024 * 1024) { alert('Giới hạn tệp là 10MB'); return; }
+
     setLoading(true);
     try {
-      await ChatAPI.send({ content: input, file: file || undefined }, token);
-
-      // Clear input ngay lập tức cho trải nghiệm mượt (tin nhắn sẽ hiện sau khi Polling chạy - max 3s)
-      // Hoặc tối ưu hơn: Tự thêm tin nhắn ảo vào state ngay tại đây (Optimistic UI)
+      // Gửi và nhận lại tin nhắn vừa tạo từ server
+      const sentMsg = await ChatAPI.send({ content: text || undefined, file: file || undefined }, token);
+      
+      // Reset input ngay lập tức
       setInput("");
       setFile(null);
       setIsMultiline(false);
-      if (inputRef.current) inputRef.current.style.height = 'auto';
+      requestAnimationFrame(() => {
+        if (inputRef.current) {
+          inputRef.current.style.height = 'auto';
+          inputRef.current.style.overflowY = 'hidden';
+        }
+      });
 
-      // Gọi poll ngay lập tức để hiện tin nhắn vừa gửi
-      const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
-      const newMsgs = await ChatAPI.list({ limit: 1, after: lastMsg?.createdAt }, token);
-      if (newMsgs && newMsgs.length > 0) {
-        setMessages(prev => {
-          const existingIds = new Set(prev.map(m => m.id));
-          const uniqueNew = newMsgs.filter((m: ChatMessage) => !existingIds.has(m.id));
-          return [...prev, ...uniqueNew];
-        });
-        setTimeout(() => {
-          listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
-        }, 100);
+      // INSTANT UPDATE: Thêm ngay vào state
+      if (sentMsg) {
+          setMessages(prev => {
+              const exists = prev.some(m => m.id === sentMsg.id);
+              if (exists) return prev;
+              return [...prev, sentMsg];
+          });
+          // Scroll xuống đáy
+          setTimeout(() => {
+             listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+          }, 100);
       }
-
     } catch (e) {
-      console.error(e);
-      alert("Gửi tin nhắn thất bại");
-    } finally {
-      setLoading(false);
+        console.error("Gửi lỗi:", e);
+    } finally { 
+        setLoading(false); 
     }
   };
 
@@ -256,119 +328,72 @@ const ChatBox = () => {
     await doSend();
   };
 
-  const autoResizeTextarea = (el: HTMLTextAreaElement) => {
+  // --- 4. VIEWPORT & DRAG LOGIC (GIỮ NGUYÊN TỪ OLD CHATBOX) ---
+
+  const [vw, setVw] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1200));
+  const [vh, setVh] = useState(() => (typeof window !== 'undefined' ? window.innerHeight : 800));
+  const isMobile = vw < 1024;
+  
+  useEffect(() => {
+    const onResize = () => { 
+      setVw(window.innerWidth); 
+      setVh(window.innerHeight); 
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const btnSize = isMobile ? 56 : 60;
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+  const panelWidth = isMobile ? Math.min(vw - 16, 500) : 500;
+  const panelHeight = isMobile ? vh - 80 : Math.min(750, vh - 100);
+  const gap = 16;
+  
+  const getDefaultBtnPos = (viewportWidth: number, viewportHeight: number) => ({
+    x: viewportWidth - btnSize - 24,
+    y: viewportHeight - btnSize - 24
+  });
+
+  const readBtnPos = (viewportWidth: number, viewportHeight: number) => {
     try {
-      el.style.height = 'auto';
-      const styles = window.getComputedStyle(el);
-      const lineHeight = parseFloat(styles.lineHeight || '20');
-      const maxH = lineHeight * 5;
-      const newH = Math.min(el.scrollHeight, maxH);
-      el.style.height = `${newH}px`;
-      el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
-      setIsMultiline(newH > lineHeight * 1.6);
-    } catch { }
+      const raw = localStorage.getItem('chat_btn_pos');
+      if (raw) {
+        const p = JSON.parse(raw);
+        return { 
+          x: clamp(p.x, 8, viewportWidth - btnSize - 8), 
+          y: clamp(p.y, 8, viewportHeight - btnSize - 8) 
+        };
+      }
+    } catch {}
+    return getDefaultBtnPos(viewportWidth, viewportHeight);
   };
 
-  // --- 5. CÁC HÀM XỬ LÝ KHÁC (XÓA, ẨN, KÉO THẢ) ---
+  const [btnPos, setBtnPos] = useState(() => readBtnPos(vw, vh));
+  const [isDragging, setIsDragging] = useState(false);
+  const pendingPosRef = useRef<{ x: number; y: number } | null>(null);
+  const pendingPanelPosRef = useRef<{ x: number; y: number } | null>(null);
 
-  const handleDelete = async (id: string) => {
-    if (!token) return;
-    try {
-      await ChatAPI.remove(id, token);
-      setMessages((prev) => prev.filter((m) => m.id !== id));
-      setActiveMenu(null);
-    } catch { }
+  useEffect(() => {
+    setBtnPos(p => ({ 
+      x: clamp(p.x, 8, vw - btnSize - 8), 
+      y: clamp(p.y, 8, vh - btnSize - 8) 
+    }));
+  }, [vw, vh, btnSize]);
+
+  const persistBtnPos = (p: { x: number; y: number }) => {
+    try { localStorage.setItem('chat_btn_pos', JSON.stringify(p)); } catch {}
   };
 
-  const handleHide = (id: string) => {
-    setHiddenMessages(prev => {
-      const newSet = new Set(prev);
-      newSet.add(id);
-      return newSet;
-    });
-    setActiveMenu(null);
+  const getPanelPos = () => {
+    if (isMobile) return { x: (vw - panelWidth) / 2, y: 40 };
+    let panelX = btnPos.x + btnSize + gap;
+    let panelY = btnPos.y;
+    if (panelX + panelWidth > vw - 8) panelX = btnPos.x - panelWidth - gap;
+    panelY = clamp(panelY, 8, vh - panelHeight - 8);
+    return { x: panelX, y: panelY };
   };
 
-  const handleUnhide = (id: string) => {
-    setHiddenMessages(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
-    });
-  };
-
-  const handleLongPressStart = (msgId: string) => {
-    const timer = setTimeout(() => {
-      setActiveMenu(msgId);
-    }, 500);
-    setLongPressTimer(timer);
-  };
-
-  const handleLongPressEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-  };
-
-  const renderAttachment = (m: ChatMessage) => {
-    if (!m.attachmentUrl) return null;
-    const API_BASE = getApiBaseUrl().replace(/\/$/, "");
-    const primaryUrl = m.attachmentUrl.startsWith("http")
-      ? m.attachmentUrl
-      : `${API_BASE}${m.attachmentUrl}`;
-    const fallbackUrl = m.attachmentUrl;
-
-    if (m.attachmentType === "image") {
-      return (
-        <a href={primaryUrl} target="_blank" rel="noreferrer">
-          <img
-            src={primaryUrl}
-            alt="attachment"
-            className="max-h-48 rounded-lg"
-            onError={(e) => {
-              const img = e.currentTarget as HTMLImageElement;
-              if (img.src !== fallbackUrl) img.src = fallbackUrl;
-            }}
-          />
-        </a>
-      );
-    }
-    if (m.attachmentType === "video") {
-      return (
-        <video controls preload="metadata" className="max-h-60 rounded-lg bg-black/10">
-          <source
-            src={primaryUrl}
-            onError={(e) => {
-              const source = e.currentTarget as HTMLSourceElement;
-              if (source.src !== fallbackUrl) {
-                source.src = fallbackUrl;
-                const video = source.parentElement as HTMLVideoElement | null;
-                video?.load();
-              }
-            }}
-          />
-        </video>
-      );
-    }
-    const fileUrl = primaryUrl;
-    const fileName = (m.attachmentUrl.split("/").pop() || "Tệp").split("?")[0];
-    return (
-      <a
-        href={fileUrl}
-        className="inline-flex items-center gap-2 text-blue-600 hover:underline break-all"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M8 2a2 2 0 00-2 2v9a2 2 0 002 2h4a2 2 0 002-2V8l-4-4H8z" />
-        </svg>
-        <span className="truncate max-w-[14rem]" title={fileName}>{fileName}</span>
-      </a>
-    );
-  };
-
-  // --- DRAG & DROP LOGIC ---
+  // Drag Bubble
   const startDragBubble = (startX: number, startY: number) => {
     setIsDragging(true);
     const sx = btnPos.x;
@@ -406,6 +431,7 @@ const ChatBox = () => {
     return { onMove, onEnd };
   };
 
+  // Drag Panel
   const startDragPanel = (startX: number, startY: number) => {
     setIsDragging(true);
     const startPanel = getPanelPos();
@@ -447,11 +473,12 @@ const ChatBox = () => {
     return { onMove, onEnd };
   };
 
+  // Pointer Handlers
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const el = e.currentTarget as Element | null;
-    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch { }
+    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch {}
     const { onMove, onEnd } = startDragBubble(e.clientX, e.clientY);
     const moveHandler = (ev: PointerEvent) => onMove(ev.clientX, ev.clientY);
     const upHandler = (ev: PointerEvent) => {
@@ -459,7 +486,7 @@ const ChatBox = () => {
       window.removeEventListener('pointermove', moveHandler);
       window.removeEventListener('pointerup', upHandler);
       window.removeEventListener('pointercancel', upHandler);
-      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch { }
+      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch {}
     };
     window.addEventListener('pointermove', moveHandler, { passive: true });
     window.addEventListener('pointerup', upHandler, { passive: true });
@@ -473,7 +500,7 @@ const ChatBox = () => {
     e.preventDefault();
     e.stopPropagation();
     const el = e.currentTarget as Element | null;
-    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch { }
+    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch {}
     const { onMove, onEnd } = startDragPanel(e.clientX, e.clientY);
     const moveHandler = (ev: PointerEvent) => onMove(ev.clientX, ev.clientY);
     const upHandler = (ev: PointerEvent) => {
@@ -481,7 +508,7 @@ const ChatBox = () => {
       window.removeEventListener('pointermove', moveHandler);
       window.removeEventListener('pointerup', upHandler);
       window.removeEventListener('pointercancel', upHandler);
-      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch { }
+      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch {}
     };
     window.addEventListener('pointermove', moveHandler, { passive: true });
     window.addEventListener('pointerup', upHandler, { passive: true });
@@ -489,6 +516,101 @@ const ChatBox = () => {
   };
 
   const panelPos = getPanelPos();
+
+  // --- 5. OTHER UTILS (RESIZING, FILE DROP, RENDER) ---
+
+  const autoResizeTextarea = (el: HTMLTextAreaElement) => {
+    try {
+      el.style.height = 'auto';
+      const styles = window.getComputedStyle(el);
+      const lineHeight = parseFloat(styles.lineHeight || '20');
+      const maxH = lineHeight * 5;
+      const newH = Math.min(el.scrollHeight, maxH);
+      el.style.height = `${newH}px`;
+      el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
+      setIsMultiline(newH > lineHeight * 1.6);
+    } catch {}
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!token) return;
+    try { 
+      await ChatAPI.remove(id, token); 
+      setMessages((prev) => prev.filter((m) => m.id !== id)); 
+      setActiveMenu(null);
+    } catch {}
+  };
+
+  const handleHide = (id: string) => {
+    setHiddenMessages(prev => {
+      const newSet = new Set(prev);
+      newSet.add(id);
+      return newSet;
+    });
+    setActiveMenu(null);
+  };
+
+  const handleUnhide = (id: string) => {
+    setHiddenMessages(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
+  };
+
+  const handleLongPressStart = (msgId: string) => {
+    const timer = setTimeout(() => { setActiveMenu(msgId); }, 500);
+    setLongPressTimer(timer);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) { clearTimeout(longPressTimer); setLongPressTimer(null); }
+  };
+
+  const renderAttachment = (m: ChatMessage) => {
+    if (!m.attachmentUrl) return null;
+    const API_BASE = getApiBaseUrl().replace(/\/$/, "");
+    const primaryUrl = m.attachmentUrl.startsWith("http") ? m.attachmentUrl : `${API_BASE}${m.attachmentUrl}`;
+    const fallbackUrl = m.attachmentUrl;
+
+    if (m.attachmentType === "image") {
+      return (
+        <a href={primaryUrl} target="_blank" rel="noreferrer">
+          <img
+            src={primaryUrl}
+            alt="attachment"
+            className="max-h-48 rounded-lg"
+            onError={(e) => { const img = e.currentTarget as HTMLImageElement; if (img.src !== fallbackUrl) img.src = fallbackUrl; }}
+          />
+        </a>
+      );
+    }
+    if (m.attachmentType === "video") {
+      return (
+        <video controls preload="metadata" className="max-h-60 rounded-lg bg-black/10">
+          <source
+            src={primaryUrl}
+            onError={(e) => {
+              const source = e.currentTarget as HTMLSourceElement;
+              if (source.src !== fallbackUrl) {
+                source.src = fallbackUrl;
+                const video = source.parentElement as HTMLVideoElement | null;
+                video?.load();
+              }
+            }}
+          />
+        </video>
+      );
+    }
+    const fileUrl = primaryUrl;
+    const fileName = (m.attachmentUrl.split("/").pop() || "Tệp").split("?")[0];
+    return (
+      <a href={fileUrl} className="inline-flex items-center gap-2 text-blue-600 hover:underline break-all" target="_blank" rel="noreferrer">
+        <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M8 2a2 2 0 00-2 2v9a2 2 0 002 2h4a2 2 0 002-2V8l-4-4H8z" /></svg>
+        <span className="truncate max-w-[14rem]" title={fileName}>{fileName}</span>
+      </a>
+    );
+  };
 
   // Drag & Drop File
   useEffect(() => {
@@ -498,23 +620,14 @@ const ChatBox = () => {
       const hasImage = Array.from(e.dataTransfer?.items || []).some(item => item.type.startsWith("image/"));
       if (hasImage) setIsDraggingFile(true);
     };
-
-    const handleDragLeave = (e: DragEvent) => {
-      if (!open) return;
-      e.preventDefault();
-      setIsDraggingFile(false);
-    };
-
+    const handleDragLeave = (e: DragEvent) => { if (!open) return; e.preventDefault(); setIsDraggingFile(false); };
     const handleDrop = (e: DragEvent) => {
       if (!open) return;
       e.preventDefault();
       setIsDraggingFile(false);
       const files = Array.from(e.dataTransfer?.files || []).filter(f => f.type.startsWith("image/"));
-      if (files.length) {
-        setFile(files[0]);
-      }
+      if (files.length) setFile(files[0]);
     };
-
     window.addEventListener("dragover", handleDragOver);
     window.addEventListener("dragleave", handleDragLeave);
     window.addEventListener("drop", handleDrop);
@@ -525,28 +638,22 @@ const ChatBox = () => {
     };
   }, [open]);
 
+  // Messages Render Logic
   const messagesToRender = messages.filter(m => !hiddenMessages.has(m.id));
-
   const messagesWithDateSeparator = messagesToRender.map((m, index) => {
     const prevMessage = index > 0 ? messagesToRender[index - 1] : null;
     let showDateSeparator = false;
-
     if (!prevMessage) {
-      showDateSeparator = true;
-    } else {
-      const currentDate = new Date(m.createdAt);
-      const prevDate = new Date(prevMessage.createdAt);
-
-      const isSameDay =
-        currentDate.getFullYear() === prevDate.getFullYear() &&
-        currentDate.getMonth() === prevDate.getMonth() &&
-        currentDate.getDate() === prevDate.getDate();
-
-      if (!isSameDay) {
         showDateSeparator = true;
-      }
+    } else {
+        const currentDate = new Date(m.createdAt);
+        const prevDate = new Date(prevMessage.createdAt);
+        const isSameDay = 
+            currentDate.getFullYear() === prevDate.getFullYear() &&
+            currentDate.getMonth() === prevDate.getMonth() &&
+            currentDate.getDate() === prevDate.getDate();
+        if (!isSameDay) showDateSeparator = true;
     }
-
     return { ...m, showDateSeparator };
   });
 
@@ -554,7 +661,7 @@ const ChatBox = () => {
     <>
       {/* Backdrop for mobile */}
       {isMobile && open && (
-        <div
+        <div 
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9997]"
           onClick={closeChat}
         />
@@ -565,10 +672,11 @@ const ChatBox = () => {
         <button
           ref={bubbleRef}
           onPointerDown={handlePointerDown}
-          className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white hover:from-primary-600 hover:to-primary-800 focus:outline-none ${isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110 transition-all'
-            } ${isMobile ? 'w-14 h-14' : 'w-[60px] h-[60px]'}`}
+          className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white hover:from-primary-600 hover:to-primary-800 focus:outline-none ${
+            isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110 transition-all'
+          } ${isMobile ? 'w-14 h-14' : 'w-[60px] h-[60px]'}`}
           aria-label="Mở chat"
-          style={{
+          style={{ 
             position: 'fixed',
             left: 0,
             top: 0,
@@ -579,30 +687,27 @@ const ChatBox = () => {
             willChange: 'transform'
           }}
         >
-          <svg className={isMobile ? 'w-6 h-6' : 'w-7 h-7'} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-          </svg>
-          {unread > 0 && (
-            <span
-              className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-lg ring-2 ring-white"
-              style={{
-                position: 'absolute',
-                top: '-6px',
-                right: '-6px'
-              }}
-            >
-              {unread > 99 ? '99+' : unread}
-            </span>
-          )}
-        </button>
+        <svg className={isMobile ? 'w-6 h-6' : 'w-7 h-7'} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+        </svg>
+        {unread > 0 && (
+          <span 
+            className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-lg ring-2 ring-white"
+            style={{ position: 'absolute', top: '-6px', right: '-6px' }}
+          >
+            {unread > 99 ? '99+' : unread}
+          </span>
+        )}
+      </button>
       )}
 
       {/* Chat Panel */}
       <div
         ref={panelRef}
         onPointerDown={handlePanelPointerDown}
-        className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          } ${isMobile ? 'border-0' : 'border border-slate-200 dark:border-slate-700'}`}
+        className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col ${
+          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        } ${isMobile ? 'border-0' : 'border border-slate-200 dark:border-slate-700'}`}
         style={{
           position: 'fixed',
           transition: isDragging ? 'none' : 'opacity 200ms ease-in-out, transform 200ms ease-in-out',
@@ -615,8 +720,9 @@ const ChatBox = () => {
         }}
       >
         {/* Header */}
-        <div className={`chat-panel-header flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md select-none ${!isMobile && 'cursor-grab active:cursor-grabbing'
-          }`} style={{ touchAction: 'none' }}>
+        <div className={`chat-panel-header flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md select-none ${
+          !isMobile && 'cursor-grab active:cursor-grabbing'
+        }`} style={{ touchAction: 'none' }}>
           <div className="flex items-center gap-3 pointer-events-none">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -630,8 +736,8 @@ const ChatBox = () => {
               </div>
             </div>
           </div>
-          <button
-            onClick={closeChat}
+          <button 
+            onClick={closeChat} 
             aria-label="Đóng"
             className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors pointer-events-auto no-drag leading-none"
             onMouseDown={(e) => e.stopPropagation()}
@@ -644,9 +750,9 @@ const ChatBox = () => {
           </button>
         </div>
 
-        {/* Messages List */}
-        <div
-          ref={listRef}
+        {/* Messages */}
+        <div 
+          ref={listRef} 
           className="chat-scroll flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50 dark:bg-slate-800"
           style={{ userSelect: 'text' }}
           onScroll={(e) => {
@@ -655,148 +761,150 @@ const ChatBox = () => {
           }}
         >
 
-          {messagesWithDateSeparator.map((m) => {
-            const mine = currentUserId === m.userId;
+        {messagesWithDateSeparator.map((m) => {
+          const mine = currentUserId === m.userId;
 
-            return (
-              <React.Fragment key={m.id}>
-                {m.showDateSeparator && (
-                  <div className="text-center py-2">
-                    <span className="inline-block px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full shadow-sm">
-                      {formatDateSeparator(m.createdAt)}
-                    </span>
-                  </div>
-                )}
-                <div className={`flex ${mine ? 'justify-end' : 'justify-start'} group`}>
-                  <div className="relative max-w-[75%]">
-                    {!isMobile && (
-                      <div
-                        className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 ${mine ? '-left-10' : '-right-10'
-                          }`}
-                      >
-                        <div className="relative">
-                          <button
-                            onClick={() => setActiveMenu(activeMenu === m.id ? null : m.id)}
-                            className="p-1.5 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
-                          >
-                            <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" viewBox="0 0 24 24" fill="currentColor">
-                              <circle cx="12" cy="5" r="2" />
-                              <circle cx="12" cy="12" r="2" />
-                              <circle cx="12" cy="19" r="2" />
-                            </svg>
-                          </button>
-
-                          {activeMenu === m.id && (
-                            <div
-                              ref={menuRef}
-                              className={`absolute top-1/2 -translate-y-1/2 ${mine ? 'right-full mr-2' : 'left-full ml-2'
-                                } bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
-                            >
-                              {mine ? (
-                                <button
-                                  onClick={() => handleDelete(m.id)}
-                                  className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
-                                  title="Xóa"
-                                >
-                                  <FiTrash2 className="w-4 h-4" />
-                                  <span>Xóa</span>
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
-                                  className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
-                                  title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
-                                >
-                                  <FiEyeOff className="w-4 h-4" />
-                                  <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div
-                      onTouchStart={() => handleLongPressStart(m.id)}
-                      onTouchEnd={handleLongPressEnd}
-                      onTouchMove={handleLongPressEnd}
-                      className={`rounded-2xl shadow-sm ${mine
-                        ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-br-md'
-                        : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-bl-md'
-                        } px-3 py-3 cursor-text ${hiddenMessages.has(m.id) ? 'relative' : ''}`}
+          return (
+            <React.Fragment key={m.id}>
+            {m.showDateSeparator && (
+            <div className="text-center py-2">
+              <span className="inline-block px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full shadow-sm">
+                {formatDateSeparator(m.createdAt)}
+              </span>
+            </div>
+            )}
+              <div className={`flex ${mine ? 'justify-end' : 'justify-start'} group`}> 
+                <div className="relative max-w-[75%]">
+                  {!isMobile && (
+                    <div 
+                      className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 ${
+                        mine ? '-left-10' : '-right-10'
+                      }`}
                     >
-                      {hiddenMessages.has(m.id) && (
-                        <div
-                          onClick={() => handleUnhide(m.id)}
-                          className={`absolute inset-0 ${mine ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-bl-md'} bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border border-white/40 dark:border-white/10 flex items-center justify-center cursor-pointer select-none`}
-                          title="Nhấn để hiện lại"
-                          role="button"
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveMenu(activeMenu === m.id ? null : m.id)}
+                          className="p-1.5 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
                         >
-                          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 text-xs font-medium">
-                            <FiEyeOff className="w-4 h-4" />
-                            <span>Tin nhắn đã ẩn — Nhấn để hiện lại</span>
+                          <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2"/>
+                            <circle cx="12" cy="12" r="2"/>
+                            <circle cx="12" cy="19" r="2"/>
+                          </svg>
+                        </button>
+                        
+                        {activeMenu === m.id && (
+                          <div 
+                            ref={menuRef}
+                            className={`absolute top-1/2 -translate-y-1/2 ${
+                              mine ? 'right-full mr-2' : 'left-full ml-2'
+                            } bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
+                          >
+                            {mine ? (
+                              <button
+                                onClick={() => handleDelete(m.id)}
+                                className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
+                                title="Xóa"
+                              >
+                                <FiTrash2 className="w-4 h-4" />
+                                <span>Xóa</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
+                                className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
+                                title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
+                              >
+                                <FiEyeOff className="w-4 h-4" />
+                                <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
+                              </button>
+                            )}
                           </div>
-                        </div>
-                      )}
-
-                      {!mine && (
-                        <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-3">
-                          {m.user?.name || m.user?.email?.split("@")[0] || 'Người dùng'}
-                        </div>
-                      )}
-
-                      {m.content && (
-                        <div className="text-sm whitespace-pre-wrap break-words select-text">{m.content}</div>
-                      )}
-
-                      {renderAttachment(m)}
-
-                      <div className={`text-[10px] mt-1 ${mine ? 'text-white/70' : 'text-slate-400'}`}>
-                        {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-
-                    {isMobile && activeMenu === m.id && (
-                      <div
-                        ref={menuRef}
-                        className={`absolute ${mine ? 'right-0' : 'left-0'} mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
-                      >
-                        {mine ? (
-                          <button
-                            onClick={() => handleDelete(m.id)}
-                            className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
-                            title="Xóa"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                            <span>Xóa</span>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
-                            className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
-                            title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
-                          >
-                            <FiEyeOff className="w-4 h-4" />
-                            <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
-                          </button>
                         )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              </React.Fragment>
-            );
-          })}
+                    </div>
+                  )}
 
-          {messagesWithDateSeparator.length === 0 && (
-            <div className="text-center text-sm text-slate-400 py-8">
-              <svg className="w-12 h-12 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-              </svg>
-              Chưa có tin nhắn
-            </div>
-          )}
+                  <div
+                    onTouchStart={() => handleLongPressStart(m.id)}
+                    onTouchEnd={handleLongPressEnd}
+                    onTouchMove={handleLongPressEnd}
+                    className={`rounded-2xl shadow-sm ${
+                      mine 
+                        ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-br-md' 
+                        : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-bl-md'
+                    } px-3 py-3 cursor-text ${hiddenMessages.has(m.id) ? 'relative' : ''}`}
+                  >
+                    {hiddenMessages.has(m.id) && (
+                      <div
+                        onClick={() => handleUnhide(m.id)}
+                        className={`absolute inset-0 ${mine ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-bl-md'} bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border border-white/40 dark:border-white/10 flex items-center justify-center cursor-pointer select-none`}
+                        title="Nhấn để hiện lại"
+                        role="button"
+                      >
+                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 text-xs font-medium">
+                          <FiEyeOff className="w-4 h-4" />
+                          <span>Tin nhắn đã ẩn — Nhấn để hiện lại</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {!mine && (
+                      <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-3">
+                        {m.user?.name || m.user?.email?.split("@")[0] || 'Người dùng'}
+                      </div>
+                    )}
+
+                    {m.content && (
+                      <div className="text-sm whitespace-pre-wrap break-words select-text">{m.content}</div>
+                    )}
+                    
+                    {renderAttachment(m)}
+
+                    <div className={`text-[10px] mt-1 ${mine ? 'text-white/70' : 'text-slate-400'}`}>
+                      {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+
+                  {isMobile && activeMenu === m.id && (
+                    <div 
+                      ref={menuRef}
+                      className={`absolute ${mine ? 'right-0' : 'left-0'} mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
+                    >
+                      {mine ? (
+                        <button
+                          onClick={() => handleDelete(m.id)}
+                          className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
+                          title="Xóa"
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                          <span>Xóa</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
+                          className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
+                          title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
+                        >
+                          <FiEyeOff className="w-4 h-4" />
+                          <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </React.Fragment>
+          );
+        })}
+        {messagesWithDateSeparator.length === 0 && (
+          <div className="text-center text-sm text-slate-400 py-8">
+            <svg className="w-12 h-12 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+            </svg>
+            Chưa có tin nhắn
+          </div>
+        )}
 
         </div>
 
@@ -830,8 +938,8 @@ const ChatBox = () => {
           {file && (
             <div className="mb-2 flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600">
               <span className="text-xs text-slate-600 dark:text-slate-300 truncate flex-1">{file.name}</span>
-              <button
-                type="button"
+              <button 
+                type="button" 
                 onClick={() => setFile(null)}
                 className="ml-2 text-red-600 hover:text-red-700 text-xs font-medium"
               >
