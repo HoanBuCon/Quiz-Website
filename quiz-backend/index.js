@@ -9,7 +9,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
-const { PrismaClient } = require('@prisma/client');
+const db = require('./utils/db');
 
 // ====== Detect Passenger environment ======
 // Giữ lại để có thể dùng biến này ở nơi khác nếu cần
@@ -36,31 +36,10 @@ const BASE_PATH =
   (isProd ? '/api' : '');
 console.log('Base path (for cPanel mapping):', BASE_PATH || '(root)');
 
-// ====== THAY ĐỔI 2: Tối ưu Prisma Initialization (Fix Lỗi Spawn) ======
-// Khởi tạo Prisma ngay lập tức (Eager)
-const prisma = new PrismaClient();
-console.log('[INIT] PrismaClient initialized eagerly');
-
-// Hàm này vẫn giữ lại, nhưng chúng ta sẽ KHÔNG gọi nó
-async function connectPrisma() {
-  try {
-    await prisma.$connect();
-    console.log('[INIT] Prisma database connected successfully');
-  } catch (e) {
-    console.error('[FATAL] Failed to connect to database on startup', e);
-    // QUAN TRỌNG: KHÔNG DÙNG process.exit(1) TẠI ĐÂY
-    // process.exit(1); // <-- Đây là nguyên nhân gây ra crash-loop/spawn storm
-    console.error(
-      '[WARN] Server will start, but DB connection failed. Prisma will retry lazily.'
-    );
-  }
-}
-
-// QUAN TRỌNG: Không gọi connectPrisma() khi khởi động.
-// Cứ để Prisma tự kết nối (lazy connect) khi có request đầu tiên.
-// Điều này giải quyết cả lỗi "cold start" và lỗi "spawn storm".
-// connectPrisma(); // <--- KHÔNG GỌI HÀM NÀY
-
+// ====== Database Connection (MySQL) ======
+// Test connection on startup (không block)
+db.testConnection();
+console.log('[INIT] MySQL connection pool initialized');
 // ===================================================
 
 // ====== Express app setup (GIỮ NGUYÊN) ======
@@ -111,15 +90,7 @@ app.use(
   })
 );
 
-// ====== Prisma Middleware (GIỮ NGUYÊN) ======
-// Gán instance đã khởi tạo, không cần 'async' và 'await'
-app.use((req, _res, next) => {
-  req.prisma = prisma;
-  next();
-});
-// =================================================
-
-// ====== THAY ĐỔI 3: Static file serving (ĐÃ SỬA LỖI) ======
+// ====== Static file serving ======
 const uploadPath = isProd
   ? path.join(__dirname, '../uploads')
   : path.join(__dirname, 'public/uploads');
@@ -132,12 +103,11 @@ const chatUploadPath = isProd
 try {
   if (!fs.existsSync(uploadPath)) {
     fs.mkdirSync(uploadPath, { recursive: true });
-    console.log(`[INIT] Đã tạo thư mục: ${uploadPath}`);
   }
   if (!fs.existsSync(chatUploadPath)) {
     fs.mkdirSync(chatUploadPath, { recursive: true });
-    console.log(`[INIT] Đã tạo thư mục: ${chatUploadPath}`);
   }
+  console.log('[INFO] Upload directories ensured');
 } catch (e) {
   console.error(
     `[FATAL STARTUP ERROR] Không thể tạo thư mục /uploads hoặc /chatbox/uploads.`
@@ -145,6 +115,14 @@ try {
   console.error('Vui lòng tạo các thư mục này bằng tay qua CPanel File Manager.');
   console.error(e);
 }
+
+// ====== Database Middleware ======
+// Attach db utilities to req for easy access
+app.use((req, _res, next) => {
+  req.db = db;
+  next();
+});
+// =================================================
 
 app.use(
   `${BASE_PATH}/uploads`,
@@ -264,8 +242,7 @@ async function gracefulShutdown(signal) {
     console.log('HTTP server closed');
   });
   try {
-    // Dùng instance toàn cục (GIỮ NGUYÊN)
-    await prisma.$disconnect();
+    await db.close();
     console.log('Database disconnected');
   } catch (err) {
     console.error('Error disconnecting database:', err);

@@ -4,16 +4,17 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { authRequired } = require('../middleware/auth');
+const { query, queryOne, transaction } = require('../utils/db');
+const { generateCuid, formatDateForMySQL } = require('../utils/helpers');
 const router = express.Router();
 
 // Get current user info (consistent response shape)
 router.get('/me', authRequired, async (req, res) => {
-  const prisma = req.prisma;
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: { id: true, email: true, name: true }
-    });
+    const user = await queryOne(
+      'SELECT id, email, name FROM User WHERE id = ?',
+      [req.user.id]
+    );
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ user });
   } catch (e) {
@@ -22,57 +23,67 @@ router.get('/me', authRequired, async (req, res) => {
 });
 
 router.post('/signup', async (req, res) => {
-  const prisma = req.prisma;
   const { email, password, name } = req.body || {};
   if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
   const normalizedEmail = email.toLowerCase().trim();
-  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  
+  const existing = await queryOne('SELECT id FROM User WHERE email = ?', [normalizedEmail]);
   if (existing) return res.status(409).json({ message: 'Email already registered' });
+  
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({ data: { email: normalizedEmail, passwordHash, name } });
+  const userId = generateCuid();
+  const now = formatDateForMySQL();
+  
+  await query(
+    'INSERT INTO User (id, email, passwordHash, name, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+    [userId, normalizedEmail, passwordHash, name || null, now, now]
+  );
+  
   const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
   if (!secret) return res.status(500).json({ message: 'Server misconfigured' });
-  const token = jwt.sign({ sub: user.id, email: user.email }, secret, { expiresIn: '7d' });
-  res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name } });
+  const token = jwt.sign({ sub: userId, email: normalizedEmail }, secret, { expiresIn: '7d' });
+  res.status(201).json({ token, user: { id: userId, email: normalizedEmail, name: name || null } });
 });
 
 router.post('/login', async (req, res) => {
-  const prisma = req.prisma;
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
   const normalizedEmail = email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  
+  const user = await queryOne('SELECT id, email, name, passwordHash FROM User WHERE email = ?', [normalizedEmail]);
   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+  
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
+  
   const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
   if (!secret) return res.status(500).json({ message: 'Server misconfigured' });
   const token = jwt.sign({ sub: user.id, email: user.email }, secret, { expiresIn: '7d' });
+  
   // update lastLoginAt + lastActivityAt
   try {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date(), lastActivityAt: new Date() },
-    });
+    const now = formatDateForMySQL();
+    await query(
+      'UPDATE User SET lastLoginAt = ?, lastActivityAt = ?, updatedAt = ? WHERE id = ?',
+      [now, now, now, user.id]
+    );
   } catch (_) {}
+  
   res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
 });
 
 // Logout
 router.post('/logout', authRequired, async (req, res) => {
-  const prisma = req.prisma;
   try {
     // Đặt lastActivityAt về 6 phút trước để
     // user rớt khỏi danh sách online ngay lập tức.
-    const sixMinutesAgo = new Date(Date.now() - 6 * 60 * 1000);
+    const sixMinutesAgo = formatDateForMySQL(new Date(Date.now() - 6 * 60 * 1000));
+    const now = formatDateForMySQL();
     
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data: { 
-        lastLogoutAt: new Date(),
-        lastActivityAt: sixMinutesAgo
-      },
-    });
+    await query(
+      'UPDATE User SET lastLogoutAt = ?, lastActivityAt = ?, updatedAt = ? WHERE id = ?',
+      [now, sixMinutesAgo, now, req.user.id]
+    );
     res.status(204).end();
   } catch (_e) {
     res.status(500).json({ message: 'Server error' });
@@ -81,7 +92,6 @@ router.post('/logout', authRequired, async (req, res) => {
 
 // Endpoint này được gọi bằng sendBeacon từ frontend khi tab trình duyệt đóng
 router.post('/offline-signal', async (req, res) => {
-  const prisma = req.prisma;
   const token = req.query.token; // Lấy token từ query
   
   if (!token) {
@@ -103,14 +113,13 @@ router.post('/offline-signal', async (req, res) => {
 
   // Nếu token hợp lệ, thực hiện logic tương tự như logout
   try {
-    const sixMinutesAgo = new Date(Date.now() - 6 * 60 * 1000);
+    const sixMinutesAgo = formatDateForMySQL(new Date(Date.now() - 6 * 60 * 1000));
+    const now = formatDateForMySQL();
     
-    await prisma.user.update({
-      where: { id: userId }, // Dùng userId từ token
-      data: { 
-        lastActivityAt: sixMinutesAgo 
-      },
-    });
+    await query(
+      'UPDATE User SET lastActivityAt = ?, updatedAt = ? WHERE id = ?',
+      [sixMinutesAgo, now, userId]
+    );
     
     res.status(204).end();
   } catch (_e) {
@@ -120,11 +129,10 @@ router.post('/offline-signal', async (req, res) => {
 
 // Forgot password: return resetToken/resetLink (demo; normally email this)
 router.post('/forgot', async (req, res) => {
-  const prisma = req.prisma;
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ message: 'Email is required' });
   const normalizedEmail = email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await queryOne('SELECT id, email FROM User WHERE email = ?', [normalizedEmail]);
   // Do not reveal whether user exists
   if (!user) return res.status(204).end();
 
@@ -142,7 +150,6 @@ router.post('/forgot', async (req, res) => {
 
 // Reset password using reset token
 router.post('/reset', async (req, res) => {
-  const prisma = req.prisma;
   const { token, newPassword } = req.body || {};
   if (!token || !newPassword) return res.status(400).json({ message: 'Invalid payload' });
   try {
@@ -152,7 +159,8 @@ router.post('/reset', async (req, res) => {
     if (payload.type !== 'reset') return res.status(400).json({ message: 'Invalid token type' });
     const userId = payload.sub;
     const hash = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({ where: { id: userId }, data: { passwordHash: hash } });
+    const now = formatDateForMySQL();
+    await query('UPDATE User SET passwordHash = ?, updatedAt = ? WHERE id = ?', [hash, now, userId]);
     res.status(204).end();
   } catch (e) {
     res.status(400).json({ message: 'Invalid or expired token' });
@@ -174,21 +182,21 @@ function buildTransporter() {
 function genOtp() { return (Math.floor(100000 + Math.random() * 900000)).toString(); }
 
 router.post('/forgot-otp', async (req, res) => {
-  const prisma = req.prisma;
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ message: 'Email is required' });
   const normalizedEmail = email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await queryOne('SELECT id, email FROM User WHERE email = ?', [normalizedEmail]);
   if (!user) return res.status(404).json({ message: 'Email không tồn tại' });
 
   const throttleSec = Number(process.env.OTP_THROTTLE_SECONDS || 60);
   const ttlSec = Number(process.env.OTP_TTL_SECONDS || 600);
 
   // throttle: if a recent request within throttleSec exists, deny
-  const recent = await prisma.passwordReset.findFirst({
-    where: { email: normalizedEmail, usedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: 'desc' }
-  });
+  const now = formatDateForMySQL();
+  const recent = await queryOne(
+    'SELECT id, createdAt FROM PasswordReset WHERE email = ? AND usedAt IS NULL AND expiresAt > ? ORDER BY createdAt DESC LIMIT 1',
+    [normalizedEmail, now]
+  );
   if (recent) {
     const diff = Date.now() - new Date(recent.createdAt).getTime();
     if (diff < throttleSec * 1000) return res.status(429).json({ message: 'Vui lòng thử lại sau ít phút' });
@@ -196,7 +204,7 @@ router.post('/forgot-otp', async (req, res) => {
 
   const otp = genOtp();
   const otpHash = await bcrypt.hash(otp, 10);
-  const expiresAt = new Date(Date.now() + ttlSec * 1000);
+  const expiresAt = formatDateForMySQL(new Date(Date.now() + ttlSec * 1000));
 
   try {
     const transporter = buildTransporter();
@@ -209,7 +217,12 @@ router.post('/forgot-otp', async (req, res) => {
       html: `<p>Mã OTP của bạn là: <b>${otp}</b></p><p>Mã sẽ hết hạn sau ${Math.round(ttlSec/60)} phút.</p>`
     });
     // Only persist after successful send
-    await prisma.passwordReset.create({ data: { email: normalizedEmail, userId: user.id, otpHash, expiresAt } });
+    const resetId = generateCuid();
+    const createdAt = formatDateForMySQL();
+    await query(
+      'INSERT INTO PasswordReset (id, email, userId, otpHash, expiresAt, attempts, createdAt) VALUES (?, ?, ?, ?, ?, 0, ?)',
+      [resetId, normalizedEmail, user.id, otpHash, expiresAt, createdAt]
+    );
     return res.status(204).end();
   } catch (e) {
     console.error('Failed to send OTP email');
@@ -218,31 +231,33 @@ router.post('/forgot-otp', async (req, res) => {
 });
 
 router.post('/reset-with-otp', async (req, res) => {
-  const prisma = req.prisma;
   const { email, otp, newPassword } = req.body || {};
   if (!email || !otp || !newPassword) return res.status(400).json({ message: 'Thiếu dữ liệu' });
   const normalizedEmail = email.toLowerCase().trim();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await queryOne('SELECT id, email FROM User WHERE email = ?', [normalizedEmail]);
   if (!user) return res.status(404).json({ message: 'Email không tồn tại' });
 
-  const record = await prisma.passwordReset.findFirst({
-    where: { email: normalizedEmail, usedAt: null, expiresAt: { gt: new Date() } },
-    orderBy: { createdAt: 'desc' }
-  });
+  const now = formatDateForMySQL();
+  const record = await queryOne(
+    'SELECT id, otpHash, attempts FROM PasswordReset WHERE email = ? AND usedAt IS NULL AND expiresAt > ? ORDER BY createdAt DESC LIMIT 1',
+    [normalizedEmail, now]
+  );
   if (!record) return res.status(400).json({ message: 'OTP không hợp lệ hoặc đã hết hạn' });
   const maxAttempts = Number(process.env.OTP_MAX_ATTEMPTS || 5);
   if (record.attempts >= maxAttempts) return res.status(429).json({ message: 'Quá số lần nhập OTP. Vui lòng yêu cầu mã mới.' });
 
   const ok = await bcrypt.compare(otp, record.otpHash);
   if (!ok) {
-    await prisma.passwordReset.update({ where: { id: record.id }, data: { attempts: record.attempts + 1 } });
+    await query('UPDATE PasswordReset SET attempts = attempts + 1 WHERE id = ?', [record.id]);
     return res.status(400).json({ message: 'OTP không đúng' });
   }
 
   const hash = await bcrypt.hash(newPassword, 10);
-  await prisma.$transaction(async (tx) => {
-    await tx.user.update({ where: { id: user.id }, data: { passwordHash: hash } });
-    await tx.passwordReset.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+  await transaction(async (conn) => {
+    const updateTime = formatDateForMySQL();
+    const usedAt = formatDateForMySQL();
+    await conn.execute('UPDATE User SET passwordHash = ?, updatedAt = ? WHERE id = ?', [hash, updateTime, user.id]);
+    await conn.execute('UPDATE PasswordReset SET usedAt = ? WHERE id = ?', [usedAt, record.id]);
   });
   return res.status(204).end();
 });

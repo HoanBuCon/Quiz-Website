@@ -92,7 +92,7 @@ router.post('/upload', authRequired, upload.single('image'), (req, res) => {
  */
 router.delete('/:filename', authRequired, async (req, res) => {
   try {
-    const prisma = req.prisma;
+    const { queryOne } = require('../utils/db');
     const filename = req.params.filename;
     const filePath = path.join(uploadDir, filename);
 
@@ -102,18 +102,17 @@ router.delete('/:filename', authRequired, async (req, res) => {
     }
 
     // Xác minh quyền sở hữu: chỉ cho phép xóa nếu ảnh đang được tham chiếu bởi câu hỏi thuộc quiz của owner
-    const likeExpr = filename; // so khớp theo phần đuôi tên file
-    const referenced = await prisma.question.findFirst({
-      where: {
-        OR: [
-          { questionImage: { contains: likeExpr } },
-          { optionImages: { contains: likeExpr } },
-        ],
-      },
-      include: { quiz: true },
-    });
+    // Tìm question có chứa filename trong questionImage hoặc optionImages
+    const referenced = await queryOne(`
+      SELECT q.id, q.quizId, qz.ownerId
+      FROM Question q
+      JOIN Quiz qz ON q.quizId = qz.id
+      WHERE q.questionImage LIKE ? 
+         OR q.optionImages LIKE ?
+      LIMIT 1
+    `, [`%${filename}%`, `%${filename}%`]);
 
-    if (referenced && referenced.quiz && referenced.quiz.ownerId !== req.user.id) {
+    if (referenced && referenced.ownerId !== req.user.id) {
       return res.status(403).json({ error: 'Forbidden: Bạn không có quyền xóa ảnh này' });
     }
 

@@ -8,18 +8,13 @@
     "start": "node index.js",
     "start:pm2": "pm2 start index.js --name quiz-api --env production",
     "kill:port": "node kill-port.js 6969",
-    "kill:all": "taskkill /F /IM node.exe || killall node",
-    "prisma:generate": "prisma generate --schema=./prisma/schema.prisma",
-    "prisma:migrate": "prisma migrate dev --schema=./prisma/schema.prisma",
-    "prisma:deploy": "prisma migrate deploy --schema=./prisma/schema.prisma",
-    "postinstall": "prisma generate --schema=./prisma/schema.prisma"
+    "kill:all": "taskkill /F /IM node.exe || killall node"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^6.18.0",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -30,6 +25,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "mysql2": "^3.6.5",
     "nodemailer": "^6.10.1",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
@@ -42,7 +38,6 @@
     "cross-env": "^10.1.0",
     "jest": "^30.2.0",
     "nodemon": "^3.1.10",
-    "prisma": "^6.18.0",
     "supertest": "^7.1.4"
   }
 }

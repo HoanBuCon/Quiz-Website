@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const { query } = require('../utils/db');
+const { formatDateForMySQL } = require('../utils/helpers');
 
 function authRequired(req, res, next) {
   const header = req.headers.authorization || '';
@@ -11,11 +13,12 @@ function authRequired(req, res, next) {
     req.user = { id: payload.sub, email: payload.email };
     // Update lastActivityAt in background; don't block request
     try {
-      if (req.prisma && req.user?.id) {
-        req.prisma.user.update({
-          where: { id: req.user.id },
-          data: { lastActivityAt: new Date() },
-        }).catch(() => {});
+      if (req.user?.id) {
+        const now = formatDateForMySQL();
+        query(
+          'UPDATE User SET lastActivityAt = ?, updatedAt = ? WHERE id = ?',
+          [now, now, req.user.id]
+        ).catch(() => {});
       }
     } catch (_) {}
     next();
