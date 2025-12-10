@@ -25,6 +25,7 @@ interface UserStats {
 interface RecentSession {
     id: string;
     quizTitle: string;
+    className: string;
     score: number;
     totalQuestions: number;
     percentage: number;
@@ -525,7 +526,12 @@ const ProfilePage: React.FC = () => {
                                     <tbody>
                                         {stats.recentSessions.map((session) => (
                                             <tr key={session.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                                <td className="py-4 px-4 text-gray-900 dark:text-white">{session.quizTitle}</td>
+                                                <td className="py-4 px-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400">{session.className}</span>
+                                                        <span className="text-gray-900 dark:text-white font-medium">{session.quizTitle}</span>
+                                                    </div>
+                                                </td>
                                                 <td className="py-4 px-4 text-center text-gray-900 dark:text-white">
                                                     {session.score}/{session.totalQuestions}
                                                 </td>
@@ -552,7 +558,10 @@ const ProfilePage: React.FC = () => {
                             <div className="md:hidden space-y-4">
                                 {stats.recentSessions.map((session) => (
                                     <div key={session.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-2">
-                                        <h3 className="font-medium text-gray-900 dark:text-white">{session.quizTitle}</h3>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-gray-500 dark:text-gray-400">{session.className}</span>
+                                            <h3 className="font-medium text-gray-900 dark:text-white">{session.quizTitle}</h3>
+                                        </div>
                                         <div className="flex justify-between items-center text-sm">
                                             <span className="text-gray-600 dark:text-gray-400">Điểm:</span>
                                             <span className="text-gray-900 dark:text-white font-medium">

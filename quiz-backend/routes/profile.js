@@ -200,9 +200,11 @@ router.get('/stats', authRequired, async (req, res) => {
     const recentSessions = await query(
       `SELECT 
         s.id, s.quizId, s.score, s.totalQuestions, s.timeSpent, s.completedAt,
-        q.title as quizTitle
+        q.title as quizTitle,
+        c.name as className
        FROM QuizSession s
        JOIN Quiz q ON s.quizId = q.id
+       JOIN Class c ON q.classId = c.id
        WHERE s.userId = ?
        ORDER BY s.completedAt DESC
        LIMIT 10`,
