@@ -209,12 +209,53 @@ router.post('/forgot-otp', async (req, res) => {
   try {
     const transporter = buildTransporter();
     const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .header { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); padding: 32px 20px; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; }
+    .content { padding: 40px 32px; color: #334155; line-height: 1.6; }
+    .otp-box { background-color: #fff7ed; border: 2px dashed #fdba74; border-radius: 8px; padding: 24px; text-align: center; margin: 32px 0; }
+    .otp-code { font-family: monospace; font-size: 36px; font-weight: 800; color: #ea580c; letter-spacing: 6px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; color: #94a3b8; font-size: 13px; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Mã Xác Nhận OTP</h1>
+    </div>
+    <div class="content">
+      <p style="margin-top: 0">Xin chào,</p>
+      <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Đây là mã xác thực <b>(OTP)</b> của bạn:</p>
+      
+      <div class="otp-box">
+        <span class="otp-code">${otp}</span>
+      </div>
+      
+      <p style="text-align: center; color: #64748b; font-size: 14px;">Mã này sẽ hết hạn sau <b>${Math.round(ttlSec/60)} phút</b>.</p>
+      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0;">
+      <p style="font-size: 13px; color: #94a3b8; text-align: center; margin-bottom: 0;">Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.<br>Tuyệt đối không chia sẻ mã này cho bất kỳ ai.</p>
+    </div>
+    <div class="footer">
+      <p style="margin: 0;">&copy; ${new Date().getFullYear()} Quiz Website. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
     await transporter.sendMail({
       from,
       to: normalizedEmail,
-      subject: 'Mã xác thực đặt lại mật khẩu (OTP)',
-      text: `Mã OTP của bạn là: ${otp}. Mã sẽ hết hạn sau ${Math.round(ttlSec/60)} phút. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.`,
-      html: `<p>Mã OTP của bạn là: <b>${otp}</b></p><p>Mã sẽ hết hạn sau ${Math.round(ttlSec/60)} phút.</p>`
+      subject: '🔑 Mã xác thực đặt lại mật khẩu (Quiz Website)',
+      text: `Mã OTP của bạn là: ${otp}. Mã này sẽ hết hạn sau ${Math.round(ttlSec/60)} phút.`,
+      html: htmlContent
     });
     // Only persist after successful send
     const resetId = generateCuid();

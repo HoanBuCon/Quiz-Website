@@ -21,20 +21,44 @@ const InputField = ({
   value: string,
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
   icon: React.ReactNode
-}) => (
-  <div className="relative group">
-    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-orange-500 transition-colors">
-      {icon}
+}) => {
+  const [showPassword, setShowPassword] = React.useState(false);
+  const isPassword = type === 'password';
+
+  return (
+    <div className="relative group">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-orange-500 transition-colors">
+        {icon}
+      </div>
+      <input
+        type={isPassword ? (showPassword ? 'text' : 'password') : type}
+        className={`w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 ${isPassword ? 'pr-12' : 'pr-4'} text-white placeholder-gray-400 focus:outline-none focus:border-orange-500/50 focus:bg-white/10 transition-all`}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors focus:outline-none"
+          tabIndex={-1}
+        >
+          {showPassword ? (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          )}
+        </button>
+      )}
     </div>
-    <input
-      type={type}
-      className="w-full bg-white/5 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:border-orange-500/50 focus:bg-white/10 transition-all"
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-    />
-  </div>
-);
+  );
+};
 
 const MaintenancePage: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -262,6 +286,11 @@ const MaintenancePage: React.FC = () => {
         0% { opacity: 1; transform: scale(1); filter: blur(0px); }
         100% { opacity: 0; transform: scale(2); filter: blur(10px); }
       }
+      /* Hide default password toggle in Edge/IE */
+      input::-ms-reveal,
+      input::-ms-clear {
+        display: none;
+      }
       `}</style>
 
       {/* Video Background */}
@@ -335,8 +364,9 @@ const MaintenancePage: React.FC = () => {
                 className="
                   absolute inset-0 rounded-full pointer-events-none
                   -translate-x-full group-hover:translate-x-full
-                  transition-transform duration-[1200ms] ease-out
-                  bg-gradient-to-r from-transparent via-white/15 to-transparent
+                  transition-transform duration-0 group-hover:duration-[1000ms] ease-out
+                  bg-gradient-to-r from-transparent via-white/10 to-transparent
+                  blur-[1px]
                 "
                 style={{ zIndex: 1 }}
               />
@@ -433,9 +463,9 @@ const MaintenancePage: React.FC = () => {
                   {/* START SCREEN (Logged In) */}
                   {activeTab === 'start' && (
                     <div className="text-center space-y-6 animate-fadeIn">
-                    <h3 className="text-2xl font-sans italic text-white my-6">
-                      Xin chào {currentUser?.name}!
-                    </h3>
+                      <h3 className="text-2xl font-sans italic text-white my-6">
+                        Xin chào {currentUser?.name}!
+                      </h3>
                       <button
                         onClick={handleEnterWebsite}
                         className="
