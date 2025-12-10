@@ -325,7 +325,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Account Settings */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Thông tin tài khoản</h2>
+                    <h2 className="text-2xl font-mono font-bold text-gray-900 dark:text-white mb-6">Thông tin tài khoản</h2>
 
                     <div className="space-y-6">
                         {/* Username */}
@@ -506,7 +506,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Recent Activity */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Lịch sử làm bài</h2>
+                    <h2 className="text-2xl font-mono font-bold text-gray-900 dark:text-white mb-6">Lịch sử làm bài</h2>
 
                     {stats.recentSessions.length === 0 ? (
                         <p className="text-gray-500 dark:text-gray-400 text-center py-8">Chưa có hoạt động nào</p>
