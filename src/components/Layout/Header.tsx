@@ -33,7 +33,7 @@ const Header: React.FC = () => {
         const count = (ce as any)?.detail?.count;
         if (typeof count === 'number') {
           setChatUnread(count);
-          try { localStorage.setItem('chat_unread_count', String(count)); } catch {}
+          try { localStorage.setItem('chat_unread_count', String(count)); } catch { }
         } else {
           readUnread();
         }
@@ -220,10 +220,9 @@ const Header: React.FC = () => {
               {/* Highlight nền trượt (luôn nằm dưới các nút) */}
               <div
                 className={`absolute top-0 bottom-0 rounded-lg transition-all duration-500 ease-out z-0
-                  ${
-                    isDarkMode
-                      ? "bg-gradient-to-r from-primary-900/40 to-primary-700/40"
-                      : "bg-transparent" /* để light mode giữ màu nền nút cũ (tránh đè màu) */
+                  ${isDarkMode
+                    ? "bg-gradient-to-r from-primary-900/40 to-primary-700/40"
+                    : "bg-transparent" /* để light mode giữ màu nền nút cũ (tránh đè màu) */
                   }
                 `}
                 style={highlightStyle}
@@ -242,14 +241,12 @@ const Header: React.FC = () => {
                     className={`relative z-10 nav-item group px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2
                       border border-transparent outline-none ring-0 focus:outline-none focus:ring-0
                       transition-colors transition-shadow duration-300 ease-out overflow-hidden
-                      ${
-                        active
-                          ? `${
-                              isDarkMode
-                                ? "bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20"
-                                : "header-nav-active border-0 shadow-md" /* KHÔI PHỤC màu lightmode cũ */
-                            }`
-                          : "text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0"
+                      ${active
+                        ? `${isDarkMode
+                          ? "bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20"
+                          : "header-nav-active border-0 shadow-md" /* KHÔI PHỤC màu lightmode cũ */
+                        }`
+                        : "text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0"
                       }`}
                   >
                     <IconComponent className="w-4 h-4 transition-colors duration-300 ease-out" />
@@ -290,11 +287,10 @@ const Header: React.FC = () => {
                 style={{ willChange: "box-shadow,border-color" }}
               >
                 {React.createElement(FaMusic as React.ComponentType<any>, {
-                  className: `w-5 h-5 ${isPlaying ? "animate-spin" : ""} ${
-                    showMusicPlayer
-                      ? "text-sky-600 dark:text-sky-300"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`,
+                  className: `w-5 h-5 ${isPlaying ? "animate-spin" : ""} ${showMusicPlayer
+                    ? "text-sky-600 dark:text-sky-300"
+                    : "text-slate-600 dark:text-slate-400"
+                    }`,
                   style: isPlaying ? { animationDuration: "2s" } : undefined,
                 })}
               </button>
@@ -340,9 +336,8 @@ const Header: React.FC = () => {
                     <FaUser className="w-4 h-4" />
                     <span>{userName || "Tài khoản"}</span>
                     <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${
-                        isUserMenuOpen ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 transition-transform duration-200 ${isUserMenuOpen ? "rotate-180" : ""
+                        }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -367,6 +362,15 @@ const Header: React.FC = () => {
                         >
                           <FaGraduationCap className="w-4 h-4 mr-3" />
                           <span>Lớp học của tôi</span>
+                        </Link>
+
+                        <Link
+                          to="/profile"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                        >
+                          <FaUser className="w-4 h-4 mr-3" />
+                          <span>Trang cá nhân</span>
                         </Link>
 
                         <div className="border-t border-gray-200 dark:border-gray-700"></div>
@@ -405,11 +409,10 @@ const Header: React.FC = () => {
                 style={{ willChange: "box-shadow,border-color" }}
               >
                 {React.createElement(FaMusic as React.ComponentType<any>, {
-                  className: `w-5 h-5 ${isPlaying ? "animate-spin" : ""} ${
-                    showMusicPlayer
-                      ? "text-sky-600 dark:text-sky-300"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`,
+                  className: `w-5 h-5 ${isPlaying ? "animate-spin" : ""} ${showMusicPlayer
+                    ? "text-sky-600 dark:text-sky-300"
+                    : "text-slate-600 dark:text-slate-400"
+                    }`,
                   style: isPlaying ? { animationDuration: "2s" } : undefined,
                 })}
               </button>
@@ -451,11 +454,11 @@ const Header: React.FC = () => {
               >
                 {isMobileMenuOpen
                   ? React.createElement(FaTimes as React.ComponentType<any>, {
-                      className: "w-5 h-5",
-                    })
+                    className: "w-5 h-5",
+                  })
                   : React.createElement(FaBars as React.ComponentType<any>, {
-                      className: "w-5 h-5",
-                    })}
+                    className: "w-5 h-5",
+                  })}
                 {!isMobileMenuOpen && chatUnread > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow-md">
                     {chatUnread > 99 ? '99+' : chatUnread}
@@ -469,9 +472,8 @@ const Header: React.FC = () => {
 
       {/* Mobile Navigation Menu */}
       <div
-        className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${
-          isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
-        }`}
+        className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
+          }`}
       >
         <div className="max-w-screen-2xl mx-auto">
           <div className="py-4 px-4 sm:px-6 lg:px-8 space-y-2">
@@ -482,11 +484,10 @@ const Header: React.FC = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
-                    isActive(item.path)
-                      ? "bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 border-l-4 border-primary-600"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${isActive(item.path)
+                    ? "bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 border-l-4 border-primary-600"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                    }`}
                 >
                   <IconComponent className="w-4 h-4" />
                   <span>{item.label}</span>
@@ -524,8 +525,16 @@ const Header: React.FC = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
                   >
+                    <FaGraduationCap className="w-4 h-4 mr-2" />
+                    <span>Lớp học của tôi</span>
+                  </Link>
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
+                  >
                     <FaUser className="w-4 h-4 mr-2" />
-                    <span>{userName || "Tài khoản"}</span>
+                    <span>Trang cá nhân</span>
                   </Link>
                   <button
                     onClick={() => {

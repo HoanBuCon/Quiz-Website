@@ -16,6 +16,7 @@ import DocumentsPage from "./pages/DocumentsPage";
 import QuizPage from "./pages/QuizPage";
 import ResultsPage from "./pages/ResultsPage";
 import ClassViewPage from "./pages/ClassViewPage";
+import ProfilePage from "./pages/ProfilePage";
 import MaintenancePage from "./pages/MaintenancePage";
 import { getToken } from "./utils/auth";
 import { getApiBaseUrl } from "./utils/api";
@@ -36,38 +37,38 @@ function ThemedToaster() {
         duration: 4000,
         style: isDarkMode
           ? {
-              background:
-                "linear-gradient(135deg, rgba(45, 55, 72, 0.95), rgba(26, 32, 44, 0.95))",
-              color: "#f7fafc",
-              borderRadius: "10px",
-              padding: "12px 16px",
-              fontSize: "13px",
-              fontWeight: "500",
-              boxShadow: "0 8px 20px rgba(0, 0, 0, 0.35)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(116, 129, 140, 0.3)",
-              minWidth: "200px",
-              maxWidth: "400px",
-              whiteSpace: "nowrap" as const,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }
+            background:
+              "linear-gradient(135deg, rgba(45, 55, 72, 0.95), rgba(26, 32, 44, 0.95))",
+            color: "#f7fafc",
+            borderRadius: "10px",
+            padding: "12px 16px",
+            fontSize: "13px",
+            fontWeight: "500",
+            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.35)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(116, 129, 140, 0.3)",
+            minWidth: "200px",
+            maxWidth: "400px",
+            whiteSpace: "nowrap" as const,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }
           : {
-              background: "linear-gradient(135deg, #fff, #f3f4f6)",
-              color: "#222",
-              borderRadius: "10px",
-              padding: "12px 16px",
-              fontSize: "13px",
-              fontWeight: "500",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid #e5e7eb",
-              minWidth: "200px",
-              maxWidth: "400px",
-              whiteSpace: "nowrap" as const,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            },
+            background: "linear-gradient(135deg, #fff, #f3f4f6)",
+            color: "#222",
+            borderRadius: "10px",
+            padding: "12px 16px",
+            fontSize: "13px",
+            fontWeight: "500",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid #e5e7eb",
+            minWidth: "200px",
+            maxWidth: "400px",
+            whiteSpace: "nowrap" as const,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          },
         success: {
           duration: 3000,
           iconTheme: {
@@ -76,38 +77,38 @@ function ThemedToaster() {
           },
           style: isDarkMode
             ? {
-                background:
-                  "linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))",
-                color: "#fff",
-                borderRadius: "10px",
-                padding: "12px 16px",
-                fontSize: "13px",
-                fontWeight: "500",
-                boxShadow: "0 8px 20px rgba(16, 185, 129, 0.3)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(16, 185, 129, 0.4)",
-                minWidth: "200px",
-                maxWidth: "400px",
-                whiteSpace: "nowrap" as const,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }
+              background:
+                "linear-gradient(135deg, rgba(16, 185, 129, 0.9), rgba(5, 150, 105, 0.9))",
+              color: "#fff",
+              borderRadius: "10px",
+              padding: "12px 16px",
+              fontSize: "13px",
+              fontWeight: "500",
+              boxShadow: "0 8px 20px rgba(16, 185, 129, 0.3)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(16, 185, 129, 0.4)",
+              minWidth: "200px",
+              maxWidth: "400px",
+              whiteSpace: "nowrap" as const,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }
             : {
-                background: "linear-gradient(135deg, #6ee7b7, #a7f3d0)",
-                color: "#065f46",
-                borderRadius: "10px",
-                padding: "12px 16px",
-                fontSize: "13px",
-                fontWeight: "500",
-                boxShadow: "0 8px 20px rgba(16, 185, 129, 0.08)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid #6ee7b7",
-                minWidth: "200px",
-                maxWidth: "400px",
-                whiteSpace: "nowrap" as const,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              },
+              background: "linear-gradient(135deg, #6ee7b7, #a7f3d0)",
+              color: "#065f46",
+              borderRadius: "10px",
+              padding: "12px 16px",
+              fontSize: "13px",
+              fontWeight: "500",
+              boxShadow: "0 8px 20px rgba(16, 185, 129, 0.08)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid #6ee7b7",
+              minWidth: "200px",
+              maxWidth: "400px",
+              whiteSpace: "nowrap" as const,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            },
         },
         error: {
           duration: 4000,
@@ -117,38 +118,38 @@ function ThemedToaster() {
           },
           style: isDarkMode
             ? {
-                background:
-                  "linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9))",
-                color: "#fff",
-                borderRadius: "10px",
-                padding: "12px 16px",
-                fontSize: "13px",
-                fontWeight: "500",
-                boxShadow: "0 8px 20px rgba(239, 68, 68, 0.3)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(239, 68, 68, 0.4)",
-                minWidth: "200px",
-                maxWidth: "400px",
-                whiteSpace: "nowrap" as const,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }
+              background:
+                "linear-gradient(135deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9))",
+              color: "#fff",
+              borderRadius: "10px",
+              padding: "12px 16px",
+              fontSize: "13px",
+              fontWeight: "500",
+              boxShadow: "0 8px 20px rgba(239, 68, 68, 0.3)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(239, 68, 68, 0.4)",
+              minWidth: "200px",
+              maxWidth: "400px",
+              whiteSpace: "nowrap" as const,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }
             : {
-                background: "linear-gradient(135deg, #fca5a5, #fecaca)",
-                color: "#991b1b",
-                borderRadius: "10px",
-                padding: "12px 16px",
-                fontSize: "13px",
-                fontWeight: "500",
-                boxShadow: "0 8px 20px rgba(239, 68, 68, 0.08)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid #fca5a5",
-                minWidth: "200px",
-                maxWidth: "400px",
-                whiteSpace: "nowrap" as const,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              },
+              background: "linear-gradient(135deg, #fca5a5, #fecaca)",
+              color: "#991b1b",
+              borderRadius: "10px",
+              padding: "12px 16px",
+              fontSize: "13px",
+              fontWeight: "500",
+              boxShadow: "0 8px 20px rgba(239, 68, 68, 0.08)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid #fca5a5",
+              minWidth: "200px",
+              maxWidth: "400px",
+              whiteSpace: "nowrap" as const,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            },
         },
       }}
     />
@@ -171,7 +172,7 @@ const MaintenanceGuard: React.FC<{ children: React.ReactNode }> = ({ children })
   }
 
   // 2. Chế độ bình thường (Landing Mode)
-  
+
   // Nếu đang ở trang Welcome -> Luôn cho phép
   if (location.pathname === "/welcome") {
     return <>{children}</>;
@@ -234,13 +235,13 @@ function App() {
           <Router>
             <Routes>
               {/* Trang bảo trì / Landing Page */}
-              <Route 
-                path="/welcome" 
+              <Route
+                path="/welcome"
                 element={
                   <MaintenanceGuard>
                     <MaintenancePage />
                   </MaintenanceGuard>
-                } 
+                }
               />
 
               {/* Tất cả các route khác đều được bảo vệ bởi MaintenanceGuard */}
@@ -260,6 +261,16 @@ function App() {
                   <MaintenanceGuard>
                     <Layout>
                       <ClassesPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <ProfilePage />
                     </Layout>
                   </MaintenanceGuard>
                 }
@@ -340,7 +351,7 @@ function App() {
 
             {/* Background Music Player - Chỉ hiện khi KHÔNG bảo trì VÀ KHÔNG ở trang Welcome */}
             <RenderMusicPlayer />
-            
+
             {/* Toast notifications */}
             <ThemedToaster />
           </Router>
