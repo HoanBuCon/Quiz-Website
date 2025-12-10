@@ -356,15 +356,6 @@ const Header: React.FC = () => {
                     <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
                       <div className="py-1">
                         <Link
-                          to="/classes"
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-                        >
-                          <FaGraduationCap className="w-4 h-4 mr-3" />
-                          <span>Lớp học của tôi</span>
-                        </Link>
-
-                        <Link
                           to="/profile"
                           onClick={() => setIsUserMenuOpen(false)}
                           className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"

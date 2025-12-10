@@ -324,7 +324,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Account Settings */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Cài đặt tài khoản</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Thông tin tài khoản</h2>
 
                     <div className="space-y-6">
                         {/* Username */}
