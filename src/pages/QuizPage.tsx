@@ -1286,14 +1286,14 @@ const QuizPage: React.FC = () => {
                                     // Tính toán icon background classes
                                     let iconBgClasses = "";
                                     if (shouldReveal && isCorrect) {
-                                      iconBgClasses = "bg-green-500 text-white dark:bg-green-700/70 dark:text-green-100";
+                                      iconBgClasses = "bg-green-500 text-white dark:bg-green-600/20 dark:text-green-100";
                                     } else if (shouldReveal && isChosen && !isCorrect) {
-                                      iconBgClasses = "bg-red-600 text-white dark:bg-red-700/70 dark:text-red-100";
+                                      iconBgClasses = "bg-red-600 text-white dark:bg-red-600/20 dark:text-red-100";
                                     } else if (isChosen && !shouldReveal) {
-                                      iconBgClasses = "bg-primary-200/40 text-primary-900 dark:bg-primary-300/30 dark:text-primary-100";
+                                      iconBgClasses = "bg-primary-300/30 text-primary-900 dark:bg-primary-600/20 dark:text-primary-100";
                                     } else {
                                       // Chỉ có hover khi ở trạng thái default
-                                      iconBgClasses = "bg-gray-100 group-hover/answer:bg-gray-200 text-gray-900 dark:bg-gray-700/50 dark:group-hover/answer:bg-gray-700/50 dark:text-gray-100";
+                                      iconBgClasses = "bg-gray-100 group-hover/answer:bg-gray-200 text-gray-800 dark:bg-gray-700/20 dark:group-hover/answer:bg-gray-700/20 dark:text-gray-100";
                                     }
 
                                     return (
