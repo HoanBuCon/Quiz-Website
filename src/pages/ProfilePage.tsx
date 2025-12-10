@@ -506,14 +506,14 @@ const ProfilePage: React.FC = () => {
 
                 {/* Recent Activity */}
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Hoạt động gần đây</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Lịch sử làm bài</h2>
 
                     {stats.recentSessions.length === 0 ? (
                         <p className="text-gray-500 dark:text-gray-400 text-center py-8">Chưa có hoạt động nào</p>
                     ) : (
                         <>
                             {/* Desktop Table */}
-                            <div className="hidden md:block overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                            <div className="hidden md:block overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg custom-thin-scrollbar">
                                 <table className="w-full">
                                     <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10">
                                         <tr className="border-b border-gray-200 dark:border-gray-700">
@@ -555,7 +555,7 @@ const ProfilePage: React.FC = () => {
                             </div>
 
                             {/* Mobile Cards */}
-                            <div className="md:hidden space-y-4 max-h-[500px] overflow-y-auto">
+                            <div className="md:hidden space-y-4 max-h-[500px] overflow-y-auto custom-thin-scrollbar">
                                 {stats.recentSessions.map((session) => (
                                     <div key={session.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-2">
                                         <div className="flex flex-col">
