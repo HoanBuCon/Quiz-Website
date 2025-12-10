@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit, FaGraduationCap, FaClipboardList, FaTrophy, FaClock } from 'react-icons/fa';
+import { getApiBaseUrl } from '../utils/api';
 import { getToken } from '../utils/auth';
 import { toast } from 'react-hot-toast';
 
@@ -57,7 +58,7 @@ const ProfilePage: React.FC = () => {
     const [savingEmail, setSavingEmail] = useState(false);
     const [savingPassword, setSavingPassword] = useState(false);
 
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+    const API_URL = getApiBaseUrl();
 
     useEffect(() => {
         loadProfileData();
