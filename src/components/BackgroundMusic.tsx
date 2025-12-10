@@ -16,6 +16,7 @@ const BackgroundMusic = () => {
       name: 'Phonk',
       tracks: [
         { name: "ALONE IN LORDRAN - INTERWORLD X HOSPICEMANE", src: require("../assets/music/chill_phonk/alone_in_lordran.mp3") },
+        { name: "AYLEOND - NNX LXSY", src: require("../assets/music/chill_phonk/ayleond_nnx_lxsy.mp3") },
         { name: "NUMB - INTERWORLD X DEVILISH TRIO", src: require("../assets/music/chill_phonk/numb.mp3") },
         { name: "CLOSE EYES - DVRST", src: require("../assets/music/chill_phonk/close_eyes.mp3") },
         { name: "DEAD INSIDE - АДЛИН", src: require("../assets/music/chill_phonk/dead_inside.mp3") },
@@ -39,9 +40,9 @@ const BackgroundMusic = () => {
         { name: "LONELY WORLD - K-391 & VICTOR CRONE", src: require("../assets/music/edm/lonely_world.mp3") },
         { name: "HEROES TONIGHT - JANJI", src: require("../assets/music/edm/heroes_tonight.mp3") },
         { name: "FEELING - ALTERO", src: require("../assets/music/edm/feeling.mp3") },
-        { name: "EARTH - K-391", src: require("../assets/music/edm/earth.mp3") },        
+        { name: "EARTH - K-391", src: require("../assets/music/edm/earth.mp3") },
         { name: "THE SPECTRE - ALAN WALKER", src: require("../assets/music/edm/the_spectre.mp3") },
-        { name: "THE SPECTRE - ALAN WALKER [ALOSA CATCHING SUNRISES GENERATED]", src: require("../assets/music/edm/the_spectre_remix.mp3")},
+        { name: "THE SPECTRE - ALAN WALKER [ALOSA CATCHING SUNRISES GENERATED]", src: require("../assets/music/edm/the_spectre_remix.mp3") },
         { name: "GIZMO - SYN COLE", src: require("../assets/music/edm/gizmo.mp3") },
         { name: "PRETTY GIRL - MAGGIE LINDERMANN", src: require("../assets/music/edm/pretty_girl.mp3") },
         { name: "VIETNAM - FRED EDDY", src: require("../assets/music/edm/vietnam.mp3") },
@@ -85,11 +86,11 @@ const BackgroundMusic = () => {
   // Hàng đợi xáo trộn cho Random mode
   const [shuffledQueue, setShuffledQueue] = useState<number[]>([]); // mảng index
   const [shuffledPointer, setShuffledPointer] = useState<number>(0); // vị trí hiện tại trong queue
-  
+
   // Refs để track user interaction
   const hasPlayedOnce = useRef(false);
   const hasUserInteracted = useRef(false);
-  
+
   const { isDarkMode } = useTheme();
   const { showMusicPlayer, setShowMusicPlayer, setIsPlaying: setCtxIsPlaying } = useMusic();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -100,7 +101,7 @@ const BackgroundMusic = () => {
       const saved = localStorage.getItem('mediaPlayerVolume');
       const n = saved != null ? parseInt(saved) : NaN;
       if (Number.isFinite(n) && n >= 0 && n <= 100) return n;
-    } catch {}
+    } catch { }
     return 50;
   };
 
@@ -118,7 +119,7 @@ const BackgroundMusic = () => {
     ? shuffledQueue
     : tracks.map((_, i) => i);
   const displayTracks = displayIndices.map(i => tracks[i]).filter(Boolean);
-  
+
   // Helper function để lấy track name chính xác
   const getCurrentTrackName = (trackIndex = currentTrackIndex, playlistIndex = selectedPlaylistIndex) => {
     const targetTracks = playlists[playlistIndex]?.tracks || [];
@@ -159,7 +160,7 @@ const BackgroundMusic = () => {
 
   // Đồng bộ trạng thái playing với Header (MusicContext)
   useEffect(() => {
-    try { setCtxIsPlaying(isPlaying); } catch {}
+    try { setCtxIsPlaying(isPlaying); } catch { }
   }, [isPlaying]);
 
   useEffect(() => {
@@ -179,7 +180,7 @@ const BackgroundMusic = () => {
         setShowPlayerBox(false);
         setIsPlayerAnimating(false);
         // Đồng bộ về context nếu đang mở từ header
-        try { setShowMusicPlayer(false); } catch {}
+        try { setShowMusicPlayer(false); } catch { }
       }, 500);
     }
   }, [showPlayerBox, setShowMusicPlayer]);
@@ -189,14 +190,14 @@ const BackgroundMusic = () => {
     const handleFirstInteraction = (e: Event) => {
       // Nếu click vào Music button hoặc player box, không xử lý ở đây
       const target = e.target as Node | null;
-      if ((target && musicButtonRef.current?.contains(target)) || 
-          (target && playerBoxRef.current?.contains(target))) {
+      if ((target && musicButtonRef.current?.contains(target)) ||
+        (target && playerBoxRef.current?.contains(target))) {
         return;
       }
 
       if (!hasUserInteracted.current) {
         hasUserInteracted.current = true;
-        
+
         // Kích hoạt autoplay sau khi có tương tác
         if (!hasPlayedOnce.current && audioRef.current && isStopped) {
           setTimeout(() => {
@@ -213,8 +214,8 @@ const BackgroundMusic = () => {
     ];
 
     interactionEvents.forEach(event => {
-      document.addEventListener(event, handleFirstInteraction, { 
-        passive: true 
+      document.addEventListener(event, handleFirstInteraction, {
+        passive: true
       });
     });
 
@@ -237,7 +238,7 @@ const BackgroundMusic = () => {
   // Effect để xử lý click outside và ESC
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      
+
       const target = e.target as Node | null;
       if (
         showPlayerBox &&
@@ -247,14 +248,14 @@ const BackgroundMusic = () => {
         !(musicButtonRef.current?.contains(target))
       ) {
         closePlayerWithAnimation();
-        try { setShowMusicPlayer(false); } catch {}
+        try { setShowMusicPlayer(false); } catch { }
       }
     };
 
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && showPlayerBox) {
         closePlayerWithAnimation();
-        try { setShowMusicPlayer(false); } catch {}
+        try { setShowMusicPlayer(false); } catch { }
       }
     };
 
@@ -267,22 +268,22 @@ const BackgroundMusic = () => {
     };
   }, [showPlayerBox, closePlayerWithAnimation]); // Thêm showPlayerBox và closePlayerWithAnimation vào dependency array
 
-// Effect riêng để xử lý ESC key
-useEffect(() => {
-  const handleEscKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && showPlayerBox) {
-      closePlayerWithAnimation();
-    }
-  };
+  // Effect riêng để xử lý ESC key
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showPlayerBox) {
+        closePlayerWithAnimation();
+      }
+    };
 
-  window.addEventListener('keydown', handleEscKey);
-  
-  return () => {
-    window.removeEventListener('keydown', handleEscKey);
-  };
-}, [showPlayerBox, closePlayerWithAnimation]);
+    window.addEventListener('keydown', handleEscKey);
 
-// Function để auto-play track đầu tiên
+    return () => {
+      window.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showPlayerBox, closePlayerWithAnimation]);
+
+  // Function để auto-play track đầu tiên
   const autoPlayFirstTrack = async () => {
     if (!hasPlayedOnce.current && audioRef.current && isStopped) {
       const audioEl = audioRef.current;
@@ -299,7 +300,7 @@ useEffect(() => {
         setCurrentTrackIndex(randomIndex);
         audioEl.src = selectedTrack.src;
         audioEl.load();
-        
+
         // Wait for audio to be ready
         await new Promise<void>((resolve) => {
           audioEl.addEventListener('canplaythrough', () => resolve(), { once: true });
@@ -307,17 +308,17 @@ useEffect(() => {
 
         // Attempt to play
         await audioEl.play();
-        
+
         setIsPlaying(true);
         setIsStopped(false);
         hasPlayedOnce.current = true;
-        
+
         // Sử dụng trực tiếp selectedTrack.name thay vì selectedTracks[randomIndex].name
         showToast(`Playing: ${selectedTrack.name}`, <FaPlay style={{ color: '#27ae60' }} />);
-        
+
       } catch (error) {
         console.error("Autoplay failed:", error);
-        
+
         // Fallback: Show toast để user biết có thể click để phát nhạc
         showToast('Click Music button to start playing', <FaMusic style={{ color: '#3498db' }} />);
       }
@@ -328,7 +329,7 @@ useEffect(() => {
     toast(msg, {
       icon,
       duration: 4000,
-      style: isMobile 
+      style: isMobile
         ? (isDarkMode ? toastDarkStyleMobile : toastLightStyleMobile)
         : (isDarkMode ? toastDarkStyle : toastLightStyle)
     });
@@ -350,19 +351,19 @@ useEffect(() => {
 
   const handleMusicClick = async () => {
     if (!audioRef.current) return;
-    
+
     // Đánh dấu user đã tương tác
     if (!hasUserInteracted.current) {
       hasUserInteracted.current = true;
     }
-    
+
     if (showPlayerBox) {
       closePlayerWithAnimation();
-      try { setShowMusicPlayer(false); } catch {}
+      try { setShowMusicPlayer(false); } catch { }
     } else {
       setShowPlayerBox(true);
-      try { setShowMusicPlayer(true); } catch {}
-      
+      try { setShowMusicPlayer(true); } catch { }
+
       // FIX: Nếu chưa có nhạc nào được phát và đây là lần đầu tương tác
       // thì tự động phát nhạc
       if (isStopped && !hasPlayedOnce.current) {
@@ -379,7 +380,7 @@ useEffect(() => {
           setCurrentTrackIndex(randomIndex);
           audioEl.src = selectedTrack.src;
           audioEl.load();
-          
+
           // Wait for audio to be ready
           await new Promise<void>((resolve) => {
             audioEl.addEventListener('canplaythrough', () => resolve(), { once: true });
@@ -387,17 +388,17 @@ useEffect(() => {
 
           // Attempt to play
           await audioEl.play();
-          
+
           setIsPlaying(true);
           setIsStopped(false);
           hasPlayedOnce.current = true;
-          
+
           // Sử dụng trực tiếp selectedTrack.name thay vì selectedTracks[randomIndex].name
           showToast(`Playing: ${selectedTrack.name}`, <FaPlay style={{ color: '#27ae60' }} />);
-          
+
         } catch (error) {
           console.error("Autoplay via Music button failed:", error);
-          
+
           // Nếu autoplay thất bại, chỉ load nhạc sẵn sàng để user có thể play manual
           const randomPlaylistIndex = Math.floor(Math.random() * playlists.length);
           setSelectedPlaylistIndex(randomPlaylistIndex);
@@ -411,7 +412,7 @@ useEffect(() => {
             audioEl2.load();
           }
           hasPlayedOnce.current = true;
-          
+
           showToast('Music loaded, click Play to start', <FaMusic style={{ color: '#3498db' }} />);
         }
       }
@@ -449,7 +450,7 @@ useEffect(() => {
   ) => {
     const currentTracks = playlists[selectedPlaylistIndex]?.tracks || [];
     let targetIndex = index;
-    
+
     const audioEl = audioRef.current;
     if (!audioEl) return;
     try {
@@ -486,40 +487,40 @@ useEffect(() => {
         targetIndex = currentTrackIndex;
       }
 
-      
+
       // Dừng audio hiện tại
       if (audioEl) {
         audioEl.pause();
         audioEl.currentTime = 0;
       }
-      
+
       // Đợi một chút
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Cập nhật track index trước
       setCurrentTrackIndex(targetIndex);
-      
+
       // Thiết lập source mới
       audioEl.src = currentTracks[targetIndex].src;
-      
+
       // Tải và phát nhạc
       audioEl.load();
-      
+
       // Đảm bảo autoplay
       const playPromise = audioEl.play();
-      
+
       if (playPromise !== undefined) {
         await playPromise;
-        
+
         setIsPlaying(true);
         setIsStopped(false);
         // Sử dụng trực tiếp tên track từ currentTracks[targetIndex] thay vì getCurrentTrackName
         showToast(`Playing: ${currentTracks[targetIndex]?.name || 'Unknown Track'}`, <FaPlay style={{ color: '#27ae60' }} />);
       }
-      
+
     } catch (error) {
       console.error("Failed to change track:", error);
-      
+
       // Retry mechanism - sử dụng trực tiếp targetIndex và currentTracks đã có sẵn
       setTimeout(async () => {
         try {

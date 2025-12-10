@@ -236,9 +236,17 @@ router.post('/import', authRequired, async (req, res) => {
       [newQuizId, q.title, q.description, 0, targetClassId, ownerId, now, now]
     );
     
-    // Clone questions
+    // Clone questions with proper ID mapping for composite questions
+    const questionIdMap = new Map(); // oldId -> newId
+    
     for (const qq of questionRows) {
+      const oldQuestionId = qq.id;
       const newQuestionId = generateCuid();
+      questionIdMap.set(oldQuestionId, newQuestionId);
+      
+      // Map parentId to new ID if exists
+      const newParentId = qq.parentId ? questionIdMap.get(qq.parentId) : null;
+      
       await conn.execute(
         'INSERT INTO Question (id, question, type, options, correctAnswers, explanation, questionImage, optionImages, quizId, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
@@ -251,7 +259,7 @@ router.post('/import', authRequired, async (req, res) => {
           qq.questionImage,
           qq.optionImages,
           newQuizId,
-          qq.parentId
+          newParentId  // ✅ Use mapped parent ID
         ]
       );
     }
