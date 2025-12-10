@@ -57,95 +57,121 @@ const ImageUpload: React.FC<{
   placeholder = "Thêm ảnh",
   className = "",
 }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleFile(file);
-    }
-  };
-
-  const handleFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Vui lòng chọn file ảnh");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      // 5MB limit
-      toast.error("Kích thước ảnh không được vượt quá 5MB");
-      return;
-    }
-
-    try {
-      // Upload ảnh lên server và nhận URL
-      toast.loading("Đang upload ảnh...");
-      const { ImagesAPI } = await import("../utils/api");
-      const { getToken } = await import("../utils/auth");
-      const token = getToken();
-      if (!token) {
-        throw new Error("Vui lòng đăng nhập để upload ảnh");
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        handleFile(file);
       }
-      const imageUrl = await ImagesAPI.upload(file, token);
-      toast.dismiss();
-      toast.success("Upload ảnh thành công!");
-      onImageUpload(imageUrl);
-    } catch (error) {
-      toast.dismiss();
-      console.error("Upload error:", error);
-      toast.error("Lỗi khi upload ảnh: " + (error as Error).message);
-    }
-  };
+    };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const file = event.dataTransfer.files[0];
-    if (file) {
-      handleFile(file);
-    }
-  };
+    const handleFile = async (file: File) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Vui lòng chọn file ảnh");
+        return;
+      }
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
+        toast.error("Kích thước ảnh không được vượt quá 5MB");
+        return;
+      }
 
-  const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
-    const items = event.clipboardData?.items;
-    if (items) {
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf("image") !== -1) {
-          const file = items[i].getAsFile();
-          if (file) {
-            handleFile(file);
+      try {
+        // Upload ảnh lên server và nhận URL
+        toast.loading("Đang upload ảnh...");
+        const { ImagesAPI } = await import("../utils/api");
+        const { getToken } = await import("../utils/auth");
+        const token = getToken();
+        if (!token) {
+          throw new Error("Vui lòng đăng nhập để upload ảnh");
+        }
+        const imageUrl = await ImagesAPI.upload(file, token);
+        toast.dismiss();
+        toast.success("Upload ảnh thành công!");
+        onImageUpload(imageUrl);
+      } catch (error) {
+        toast.dismiss();
+        console.error("Upload error:", error);
+        toast.error("Lỗi khi upload ảnh: " + (error as Error).message);
+      }
+    };
+
+    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const file = event.dataTransfer.files[0];
+      if (file) {
+        handleFile(file);
+      }
+    };
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+    };
+
+    const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+      const items = event.clipboardData?.items;
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf("image") !== -1) {
+            const file = items[i].getAsFile();
+            if (file) {
+              handleFile(file);
+            }
+            break;
           }
-          break;
         }
       }
-    }
-  };
+    };
 
-  const removeImage = () => {
-    onImageUpload("");
-  };
+    const removeImage = () => {
+      onImageUpload("");
+    };
 
-  return (
-    <div className={className}>
-      {currentImage ? (
-        <div className="relative group">
-          <img
-            src={currentImage}
-            alt="Uploaded"
-            className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
-          />
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              type="button"
-              onClick={removeImage}
-              className="bg-red-600 text-white p-1 rounded-full hover:bg-red-700 shadow-lg"
-            >
+    return (
+      <div className={className}>
+        {currentImage ? (
+          <div className="relative group">
+            <img
+              src={currentImage}
+              alt="Uploaded"
+              className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+            />
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                onClick={removeImage}
+                className="bg-red-600 text-white p-1 rounded-full hover:bg-red-700 shadow-lg"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onPaste={handlePaste}
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-primary-500 dark:hover:border-primary-400 transition-colors group"
+            tabIndex={0}
+          >
+            <div className="flex flex-col items-center space-y-2">
               <svg
-                className="w-4 h-4"
+                className="w-8 h-8 text-gray-400 group-hover:text-primary-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -154,56 +180,30 @@ const ImageUpload: React.FC<{
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onPaste={handlePaste}
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-primary-500 dark:hover:border-primary-400 transition-colors group"
-          tabIndex={0}
-        >
-          <div className="flex flex-col items-center space-y-2">
-            <svg
-              className="w-8 h-8 text-gray-400 group-hover:text-primary-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              <span className="font-medium text-primary-600 dark:text-primary-400">
-                {placeholder}
-              </span>
-            </div>
-            <div className="text-xs text-gray-500">
-              Click, kéo thả hoặc Ctrl+V để thêm ảnh
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-primary-600 dark:text-primary-400">
+                  {placeholder}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500">
+                Click, kéo thả hoặc Ctrl+V để thêm ảnh
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
-    </div>
-  );
-};
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+      </div>
+    );
+  };
 
 const EditQuizPage: React.FC = () => {
   const location = useLocation();
@@ -777,14 +777,14 @@ const EditQuizPage: React.FC = () => {
       setQuizTitle(state.classInfo.name);
       setQuizDescription(
         state.classInfo.description ||
-          `Bài trắc nghiệm từ tài liệu ${state.fileName}`
+        `Bài trắc nghiệm từ tài liệu ${state.fileName}`
       );
     } else if (state.classInfo && state.classInfo.name) {
       // Từ DocumentsPage với classInfo.name - SỬ DỤNG THÔNG TIN TỪ DOCUMENTSPAGE
       setQuizTitle(state.classInfo.name);
       setQuizDescription(
         state.classInfo.description ||
-          `Bài trắc nghiệm từ tài liệu ${state.fileName}`
+        `Bài trắc nghiệm từ tài liệu ${state.fileName}`
       );
     } else {
       // Mặc định - sử dụng tên file
@@ -866,9 +866,8 @@ const EditQuizPage: React.FC = () => {
       if (q.type === "text") {
         content += `(Câu hỏi không có đáp án thì website sẽ tự hiểu đó là câu hỏi "Điền đáp án đúng". Lúc này đáp án đúng cần được giáo viên nhập thủ công trong giao diện tạo / chỉnh sửa quiz trước khi xuất bản.)\n`;
       } else if (q.type === "composite") {
-        content += `(Câu hỏi mẹ chứa ${
-          q.subQuestions?.length || 0
-        } câu hỏi con)\n`;
+        content += `(Câu hỏi mẹ chứa ${q.subQuestions?.length || 0
+          } câu hỏi con)\n`;
         if (q.subQuestions && q.subQuestions.length > 0) {
           q.subQuestions.forEach((subQ, subIdx) => {
             content += `  Câu con ${subIdx + 1}: ${subQ.question}\n`;
@@ -1067,7 +1066,7 @@ const EditQuizPage: React.FC = () => {
       if (savedState) {
         return savedState;
       }
-      
+
       // Khởi tạo state mới từ question prop
       if (
         question.type === "text" &&
@@ -1086,7 +1085,7 @@ const EditQuizPage: React.FC = () => {
       updater: React.SetStateAction<QuestionWithImages>
     ) => {
       // LUÔN GỌI SET ANCHOR TRƯỚC KHI CẬP NHẬT STATE TỪ TƯƠNG TÁC
-      setScrollAnchor(question.id); 
+      setScrollAnchor(question.id);
       _setEditedQuestion(updater);
     };
 
@@ -1232,8 +1231,8 @@ const EditQuizPage: React.FC = () => {
             }
             const validCorrect = Array.isArray(subQ.correctAnswers)
               ? (subQ.correctAnswers as string[]).filter((ans) =>
-                  validOpts.includes(ans)
-                )
+                validOpts.includes(ans)
+              )
               : [];
             if (validCorrect.length === 0) {
               alert(
@@ -1545,11 +1544,11 @@ const EditQuizPage: React.FC = () => {
               onChange={(e) =>
                 handleTypeChange(
                   e.target.value as
-                    | "single"
-                    | "multiple"
-                    | "text"
-                    | "drag"
-                    | "composite"
+                  | "single"
+                  | "multiple"
+                  | "text"
+                  | "drag"
+                  | "composite"
                 )
               }
               className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
@@ -1628,16 +1627,17 @@ const EditQuizPage: React.FC = () => {
                           disabled={!option.trim()}
                           className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <input
-                          type="text"
+                        <textarea
                           value={option}
                           onChange={(e) =>
                             handleOptionChange(index, e.target.value)
                           }
-                          className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                          className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white min-h-[42px]"
                           placeholder={`Đáp án ${String.fromCharCode(
                             65 + index
                           )}`}
+                          rows={1}
+                          style={{ resize: "vertical" }}
                         />
                         {(editedQuestion.options || []).length > 2 && (
                           <button
@@ -1815,10 +1815,12 @@ const EditQuizPage: React.FC = () => {
                           key={t.id || i}
                           className="flex items-center gap-2"
                         >
-                          <input
-                            className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                          <textarea
+                            className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 min-h-[42px]"
                             value={t.label || ""}
                             placeholder={`Nhóm ${i + 1}`}
+                            rows={1}
+                            style={{ resize: "vertical" }}
                             onChange={(e) => {
                               const next = {
                                 ...(editedQuestion.options as any),
@@ -1906,10 +1908,12 @@ const EditQuizPage: React.FC = () => {
                           key={it.id || i}
                           className="flex items-center gap-2"
                         >
-                          <input
-                            className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                          <textarea
+                            className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 min-h-[42px]"
                             value={it.label || ""}
                             placeholder={`Đáp án ${i + 1}`}
+                            rows={1}
+                            style={{ resize: "vertical" }}
                             onChange={(e) => {
                               const next = {
                                 ...(editedQuestion.options as any),
@@ -2053,8 +2057,7 @@ const EditQuizPage: React.FC = () => {
                 {(editedQuestion.correctAnswers as string[]).map(
                   (answer: string, index: number) => (
                     <div key={index} className="flex items-center space-x-2">
-                      <input
-                        type="text"
+                      <textarea
                         value={answer}
                         onChange={(e) => {
                           const newAnswers = [
@@ -2066,12 +2069,14 @@ const EditQuizPage: React.FC = () => {
                             correctAnswers: newAnswers,
                           }));
                         }}
-                        className="flex-1 p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                        className="flex-1 p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white min-h-[50px]"
                         placeholder={`Đáp án đúng ${index + 1}`}
+                        rows={1}
+                        style={{ resize: "vertical" }}
                       />
                       {Array.isArray(editedQuestion.correctAnswers) &&
                         (editedQuestion.correctAnswers as string[]).length >
-                          1 && (
+                        1 && (
                           <button
                             type="button"
                             onClick={() => {
@@ -2206,8 +2211,7 @@ const EditQuizPage: React.FC = () => {
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                       Nội dung câu hỏi
                     </label>
-                    <input
-                      type="text"
+                    <textarea
                       value={subQ.question}
                       onChange={(e) => {
                         const updated = [
@@ -2222,8 +2226,10 @@ const EditQuizPage: React.FC = () => {
                           subQuestions: updated,
                         }));
                       }}
-                      className="w-full p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white min-h-[42px]"
                       placeholder="Nhập câu hỏi con..."
+                      rows={2}
+                      style={{ resize: "vertical" }}
                     />
                   </div>
 
@@ -2314,8 +2320,8 @@ const EditQuizPage: React.FC = () => {
                               checked={
                                 Array.isArray(subQ.correctAnswers)
                                   ? (subQ.correctAnswers as string[]).includes(
-                                      opt
-                                    )
+                                    opt
+                                  )
                                   : false
                               }
                               onChange={() => {
@@ -2337,8 +2343,8 @@ const EditQuizPage: React.FC = () => {
                                     opt
                                   )
                                     ? currentCorrect.filter(
-                                        (a: string) => a !== opt
-                                      )
+                                      (a: string) => a !== opt
+                                    )
                                     : [...currentCorrect, opt];
                                   updated[subIndex] = {
                                     ...subQ,
@@ -2353,8 +2359,7 @@ const EditQuizPage: React.FC = () => {
                               disabled={!opt.trim()}
                               className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                             />
-                            <input
-                              type="text"
+                            <textarea
                               value={opt}
                               onChange={(e) => {
                                 const updated = [
@@ -2374,64 +2379,66 @@ const EditQuizPage: React.FC = () => {
                                   subQuestions: updated,
                                 }));
                               }}
-                              className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                              className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm min-h-[42px]"
                               placeholder={`Đáp án ${String.fromCharCode(
                                 65 + optIdx
                               )}`}
+                              rows={1}
+                              style={{ resize: "vertical" }}
                             />
                             {(Array.isArray(subQ.options)
                               ? (subQ.options as string[])
                               : []
                             ).length > 2 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = [
-                                    ...(editedQuestion.subQuestions || []),
-                                  ];
-                                  const currentOpts = Array.isArray(
-                                    subQ.options
-                                  )
-                                    ? (subQ.options as string[])
-                                    : [];
-                                  const newOptions = currentOpts.filter(
-                                    (_: string, i: number) => i !== optIdx
-                                  );
-                                  const currentCorrect = Array.isArray(
-                                    subQ.correctAnswers
-                                  )
-                                    ? (subQ.correctAnswers as string[])
-                                    : [];
-                                  const newCorrect = currentCorrect.filter(
-                                    (a: string) => newOptions.includes(a)
-                                  );
-                                  updated[subIndex] = {
-                                    ...subQ,
-                                    options: newOptions,
-                                    correctAnswers: newCorrect,
-                                  };
-                                  setEditedQuestion((prev) => ({
-                                    ...prev,
-                                    subQuestions: updated,
-                                  }));
-                                }}
-                                className="p-2 text-red-600 hover:text-red-700 dark:text-red-400"
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [
+                                      ...(editedQuestion.subQuestions || []),
+                                    ];
+                                    const currentOpts = Array.isArray(
+                                      subQ.options
+                                    )
+                                      ? (subQ.options as string[])
+                                      : [];
+                                    const newOptions = currentOpts.filter(
+                                      (_: string, i: number) => i !== optIdx
+                                    );
+                                    const currentCorrect = Array.isArray(
+                                      subQ.correctAnswers
+                                    )
+                                      ? (subQ.correctAnswers as string[])
+                                      : [];
+                                    const newCorrect = currentCorrect.filter(
+                                      (a: string) => newOptions.includes(a)
+                                    );
+                                    updated[subIndex] = {
+                                      ...subQ,
+                                      options: newOptions,
+                                      correctAnswers: newCorrect,
+                                    };
+                                    setEditedQuestion((prev) => ({
+                                      ...prev,
+                                      subQuestions: updated,
+                                    }));
+                                  }}
+                                  className="p-2 text-red-600 hover:text-red-700 dark:text-red-400"
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                  />
-                                </svg>
-                              </button>
-                            )}
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
                           </div>
                         ))}
                       </div>
@@ -2452,8 +2459,7 @@ const EditQuizPage: React.FC = () => {
                           key={ansIdx}
                           className="flex items-center gap-2 mb-2"
                         >
-                          <input
-                            type="text"
+                          <textarea
                             value={ans}
                             onChange={(e) => {
                               const updated = [
@@ -2475,8 +2481,10 @@ const EditQuizPage: React.FC = () => {
                                 subQuestions: updated,
                               }));
                             }}
-                            className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            className="flex-1 p-2 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm min-h-[42px]"
                             placeholder="Đáp án đúng"
+                            rows={1}
+                            style={{ resize: "vertical" }}
                           />
                         </div>
                       ))}
@@ -2585,42 +2593,41 @@ const EditQuizPage: React.FC = () => {
                 {question.type === "single"
                   ? "Chọn 1"
                   : question.type === "multiple"
-                  ? "Chọn nhiều"
-                  : "Điền đáp án"}
+                    ? "Chọn nhiều"
+                    : "Điền đáp án"}
               </span>
               <span>
                 {question.type === "text"
                   ? "Điền đáp án"
                   : question.type === "drag"
-                  ? "Kéo thả"
-                  : question.type === "composite"
-                  ? "Câu hỏi mẹ"
-                  : `${
-                      Array.isArray(question.options)
+                    ? "Kéo thả"
+                    : question.type === "composite"
+                      ? "Câu hỏi mẹ"
+                      : `${Array.isArray(question.options)
                         ? question.options?.length || 0
                         : 0
-                    } đáp án`}
+                      } đáp án`}
               </span>
               {(question.questionImage ||
                 (question.optionImages &&
                   Object.keys(question.optionImages).length > 0)) && (
-                <span className="flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  Có ảnh
-                </span>
-              )}
+                  <span className="flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Có ảnh
+                  </span>
+                )}
             </div>
           </div>
           <div className="flex space-x-2">
@@ -2676,14 +2683,13 @@ const EditQuizPage: React.FC = () => {
                 question.options.map((option: string, index: number) => (
                   <div
                     key={index}
-                    className={`p-3 rounded-lg border ${
-                      (Array.isArray(question.correctAnswers)
+                    className={`p-3 rounded-lg border ${(Array.isArray(question.correctAnswers)
                         ? (question.correctAnswers as string[])
                         : []
                       ).includes(option)
                         ? "border-green-500 bg-green-50 dark:bg-green-900/20"
                         : "border-gray-200 dark:border-gray-600"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0">
@@ -2694,10 +2700,10 @@ const EditQuizPage: React.FC = () => {
                           ? (question.correctAnswers as string[])
                           : []
                         ).includes(option) && (
-                          <span className="ml-2 text-green-600 dark:text-green-400">
-                            ✓
-                          </span>
-                        )}
+                            <span className="ml-2 text-green-600 dark:text-green-400">
+                              ✓
+                            </span>
+                          )}
                       </div>
                       <div className="flex-1">
                         <span className="text-gray-900 dark:text-gray-100">
@@ -2745,12 +2751,11 @@ const EditQuizPage: React.FC = () => {
                       (opt: string, optIdx: number) => (
                         <div
                           key={optIdx}
-                          className={`p-2 rounded-lg border text-sm ${
-                            Array.isArray(subQ.correctAnswers) &&
-                            (subQ.correctAnswers as string[]).includes(opt)
+                          className={`p-2 rounded-lg border text-sm ${Array.isArray(subQ.correctAnswers) &&
+                              (subQ.correctAnswers as string[]).includes(opt)
                               ? "border-green-500 bg-green-50 dark:bg-green-900/20"
                               : "border-gray-200 dark:border-gray-600"
-                          }`}
+                            }`}
                         >
                           <span className="font-medium text-gray-600 dark:text-gray-300">
                             {String.fromCharCode(65 + optIdx)}.
@@ -2776,9 +2781,9 @@ const EditQuizPage: React.FC = () => {
                       Đáp án đúng:{" "}
                     </span>
                     {Array.isArray(subQ.correctAnswers) &&
-                    (subQ.correctAnswers as string[]).filter((ans: string) =>
-                      ans?.trim()
-                    ).length > 0 ? (
+                      (subQ.correctAnswers as string[]).filter((ans: string) =>
+                        ans?.trim()
+                      ).length > 0 ? (
                       <span className="text-green-800 dark:text-green-300 font-medium">
                         {(subQ.correctAnswers as string[])
                           .filter((ans: string) => ans?.trim())
@@ -2816,8 +2821,8 @@ const EditQuizPage: React.FC = () => {
               {(
                 Array.isArray(question.correctAnswers)
                   ? (question.correctAnswers as string[]).filter(
-                      (ans: string) => ans?.trim()
-                    ).length > 0
+                    (ans: string) => ans?.trim()
+                  ).length > 0
                   : false
               ) ? (
                 <div className="mt-1">
