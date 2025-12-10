@@ -989,6 +989,19 @@ const QuizPage: React.FC = () => {
                         }
                       }
 
+                      // Tính toán icon background classes
+                      let iconBgClasses = "";
+                      if (shouldReveal && isCorrect) {
+                        iconBgClasses = "bg-green-500 text-white dark:bg-green-600/20 dark:text-green-100";
+                      } else if (shouldReveal && isChosen && !isCorrect) {
+                        iconBgClasses = "bg-red-600 text-white dark:bg-red-600/20 dark:text-red-100";
+                      } else if (isChosen && !shouldReveal) {
+                        iconBgClasses = "bg-primary-300/30 text-primary-900 dark:bg-primary-600/20 dark:text-primary-100";
+                      } else {
+                        // Chỉ có hover khi ở trạng thái default
+                        iconBgClasses = "bg-gray-100 group-hover/answer:bg-gray-200 text-gray-800 dark:bg-gray-700/20 dark:group-hover/answer:bg-gray-700/20 dark:text-gray-100";
+                      }
+
                       return (
                         <button
                           key={index}
@@ -996,59 +1009,66 @@ const QuizPage: React.FC = () => {
                           onClick={() =>
                             handleAnswerSelect(currentQuestion.id, option)
                           }
-                          className={`${base} ${computedClassName}`}
+                          className={`group/answer ${base} ${computedClassName}`}
                         >
-                          <div className="flex flex-col items-start gap-2 w-full">
-                            <span className="flex items-center gap-2">
-                              {shouldReveal && isCorrect && (
-                                <svg
-                                  className="w-4 h-4 text-current dark:text-emerald-400"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
+                          <div className="flex items-center gap-3 w-full">
+                            {/* Icon chữ cái bên trái */}
+                            <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg transition-colors ${iconBgClasses}`}>
+                              {String.fromCharCode(65 + index)}
+                            </div>
+                            {/* Nội dung bên phải */}
+                            <div className="flex-1 min-w-0 flex flex-col gap-2">
+                              <div className="flex items-start gap-2">
+                                {shouldReveal && isCorrect && (
+                                  <svg
+                                    className="w-5 h-5 text-current dark:text-emerald-400 flex-shrink-0 mt-0.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                )}
+                                {shouldReveal && isChosen && !isCorrect && (
+                                  <svg
+                                    className="w-5 h-5 text-current dark:text-red-400 flex-shrink-0 mt-0.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M6 18L18 6M6 6l12 12"
+                                    />
+                                  </svg>
+                                )}
+                                <span className="text-selectable flex-1">
+                                  {option}
+                                </span>
+                              </div>
+                              {optionImage && (
+                                <img
+                                  src={optionImage}
+                                  alt={`Option ${String.fromCharCode(
+                                    65 + index
+                                  )}`}
+                                  className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 object-contain"
+                                  style={{
+                                    display: "block",
+                                    width: "100%",
+                                    objectFit: "contain",
+                                    margin: "0.25rem 0 0 0",
+                                  }}
+                                />
                               )}
-                              {shouldReveal && isChosen && !isCorrect && (
-                                <svg
-                                  className="w-4 h-4 text-current dark:text-red-400"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              )}
-                              <span className="text-selectable">
-                                {String.fromCharCode(65 + index)}. {option}
-                              </span>
-                            </span>
-                            {optionImage && (
-                              <img
-                                src={optionImage}
-                                alt={`Option ${String.fromCharCode(
-                                  65 + index
-                                )}`}
-                                className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 object-contain"
-                                style={{
-                                  display: "block",
-                                  width: "100%",
-                                  objectFit: "contain",
-                                  margin: "0.25rem 0 0 0",
-                                }}
-                              />
-                            )}
+                            </div>
                           </div>
                         </button>
                       );
@@ -1263,6 +1283,19 @@ const QuizPage: React.FC = () => {
                                       }
                                     }
 
+                                    // Tính toán icon background classes
+                                    let iconBgClasses = "";
+                                    if (shouldReveal && isCorrect) {
+                                      iconBgClasses = "bg-green-500 text-white dark:bg-green-700/70 dark:text-green-100";
+                                    } else if (shouldReveal && isChosen && !isCorrect) {
+                                      iconBgClasses = "bg-red-600 text-white dark:bg-red-700/70 dark:text-red-100";
+                                    } else if (isChosen && !shouldReveal) {
+                                      iconBgClasses = "bg-primary-200/40 text-primary-900 dark:bg-primary-300/30 dark:text-primary-100";
+                                    } else {
+                                      // Chỉ có hover khi ở trạng thái default
+                                      iconBgClasses = "bg-gray-100 group-hover/answer:bg-gray-200 text-gray-900 dark:bg-gray-700/50 dark:group-hover/answer:bg-gray-700/50 dark:text-gray-100";
+                                    }
+
                                     return (
                                       <button
                                         key={oidx}
@@ -1274,30 +1307,19 @@ const QuizPage: React.FC = () => {
                                             sub.type as "single" | "multiple"
                                           )
                                         }
-                                        className={`${base} ${computedClassName}`}
+                                        className={`group/answer ${base} ${computedClassName}`}
                                       >
                                         {/* === KẾT THÚC SỬA MỤC 4 === */}
-                                        <div className="text-left w-full flex items-center gap-2">
-                                          {shouldReveal && isCorrect && (
-                                            <svg
-                                              className="w-4 h-4 text-current dark:text-emerald-400"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              viewBox="0 0 24 24"
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M5 13l4 4L19 7"
-                                              />
-                                            </svg>
-                                          )}
-                                          {shouldReveal &&
-                                            isChosen &&
-                                            !isCorrect && (
+                                        <div className="flex items-center gap-3 w-full">
+                                          {/* Icon chữ cái bên trái */}
+                                          <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center font-bold text-base transition-colors ${iconBgClasses}`}>
+                                            {String.fromCharCode(65 + oidx)}
+                                          </div>
+                                          {/* Nội dung bên phải */}
+                                          <div className="flex-1 min-w-0 flex items-start gap-2">
+                                            {shouldReveal && isCorrect && (
                                               <svg
-                                                className="w-4 h-4 text-current dark:text-red-400"
+                                                className="w-5 h-5 text-current dark:text-emerald-400 flex-shrink-0 mt-0.5"
                                                 fill="none"
                                                 stroke="currentColor"
                                                 viewBox="0 0 24 24"
@@ -1306,14 +1328,29 @@ const QuizPage: React.FC = () => {
                                                   strokeLinecap="round"
                                                   strokeLinejoin="round"
                                                   strokeWidth={2}
-                                                  d="M6 18L18 6M6 6l12 12"
+                                                  d="M5 13l4 4L19 7"
                                                 />
                                               </svg>
                                             )}
-                                          <span className="font-medium text-selectable">
-                                            {String.fromCharCode(65 + oidx)}.
-                                          </span>{" "}
-                                          <span className="text-selectable">{opt}</span>
+                                            {shouldReveal &&
+                                              isChosen &&
+                                              !isCorrect && (
+                                                <svg
+                                                  className="w-5 h-5 text-current dark:text-red-400 flex-shrink-0 mt-0.5"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  viewBox="0 0 24 24"
+                                                >
+                                                  <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M6 18L18 6M6 6l12 12"
+                                                  />
+                                                </svg>
+                                              )}
+                                            <span className="text-selectable flex-1">{opt}</span>
+                                          </div>
                                         </div>
                                       </button>
                                     );
