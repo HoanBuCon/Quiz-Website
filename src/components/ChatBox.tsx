@@ -18,25 +18,25 @@ interface ChatMessage {
 }
 
 function formatDateSeparator(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
+  const date = new Date(dateString);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
 
-    const isSameDay = (d1: Date, d2: Date) => 
-        d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate();
+  const isSameDay = (d1: Date, d2: Date) =>
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate();
 
-    if (isSameDay(date, now)) return "Hôm nay";
-    if (isSameDay(date, yesterday)) return "Hôm qua";
+  if (isSameDay(date, now)) return "Hôm nay";
+  if (isSameDay(date, yesterday)) return "Hôm qua";
 
-    return date.toLocaleDateString('vi-VN', {
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric'
-    });
+  return date.toLocaleDateString('vi-VN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 }
 
 const ChatBox: React.FC = () => {
@@ -45,10 +45,10 @@ const ChatBox: React.FC = () => {
   const openRef = useRef<boolean>(false);
   useEffect(() => { openRef.current = open; }, [open]);
   const [unread, setUnread] = useState<number>(0);
-  
+
   // Auth Token
   const token = useMemo(() => getToken(), []);
-  
+
   // Decode Token to get UserID (Logic from Old ChatBox)
   const currentUserId = useMemo(() => {
     if (!token) return null;
@@ -61,29 +61,29 @@ const ChatBox: React.FC = () => {
   }, [token]);
 
   // Open/Close Handlers
-  const openChat = () => { 
-    if (!openRef.current) { 
-      setOpen(true); 
+  const openChat = () => {
+    if (!openRef.current) {
+      setOpen(true);
       setUnread(0);
-      if (token) ChatAPI.markAsRead(token).catch(() => {});
-    } 
+      if (token) ChatAPI.markAsRead(token).catch(() => { });
+    }
   };
 
   const closeChat = () => { if (openRef.current) setOpen(false); };
-  
-  const toggleChat = () => setOpen((v) => { 
-    const nv = !v; 
+
+  const toggleChat = () => setOpen((v) => {
+    const nv = !v;
     if (nv) {
       setUnread(0);
-      if (token) ChatAPI.markAsRead(token).catch(() => {});
+      if (token) ChatAPI.markAsRead(token).catch(() => { });
     }
-    return nv; 
+    return nv;
   });
 
   // Sync Unread to LocalStorage/Window
   useEffect(() => {
-    try { localStorage.setItem('chat_unread_count', String(unread)); } catch {}
-    try { window.dispatchEvent(new CustomEvent('chat:unread', { detail: { count: unread } })); } catch {}
+    try { localStorage.setItem('chat_unread_count', String(unread)); } catch { }
+    try { window.dispatchEvent(new CustomEvent('chat:unread', { detail: { count: unread } })); } catch { }
   }, [unread]);
 
   // Header event integration
@@ -109,7 +109,7 @@ const ChatBox: React.FC = () => {
   const PAGE_SIZE = 10;
   const [hasMore, setHasMore] = useState(true);
   const loadingOlderRef = useRef(false);
-  
+
   // UI Refs
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -132,11 +132,11 @@ const ChatBox: React.FC = () => {
     try {
       const stored = localStorage.getItem('chat_hidden_messages');
       if (stored) return new Set(JSON.parse(stored));
-    } catch {}
+    } catch { }
     return new Set();
   });
   useEffect(() => {
-    try { localStorage.setItem('chat_hidden_messages', JSON.stringify(Array.from(hiddenMessages))); } catch {}
+    try { localStorage.setItem('chat_hidden_messages', JSON.stringify(Array.from(hiddenMessages))); } catch { }
   }, [hiddenMessages]);
 
   // Click Outside Menu
@@ -168,7 +168,7 @@ const ChatBox: React.FC = () => {
         const res = await ChatAPI.getOnlineCount(token);
         setOnlineCount(res.count);
         setOnlineWindow(res.windowMinutes);
-      } catch {}
+      } catch { }
     };
     fetchOnline();
     const timer = setInterval(fetchOnline, 10000);
@@ -179,9 +179,9 @@ const ChatBox: React.FC = () => {
   useEffect(() => {
     if (open || !token) return;
     const fetchUnread = () => {
-        ChatAPI.getUnreadCount(token)
-          .then(data => setUnread(data.count))
-          .catch(() => {});
+      ChatAPI.getUnreadCount(token)
+        .then(data => setUnread(data.count))
+        .catch(() => { });
     };
     fetchUnread();
     const timer = setInterval(fetchUnread, 10000);
@@ -195,40 +195,40 @@ const ChatBox: React.FC = () => {
 
     let isCancelled = false;
     const fetchNewMessages = async () => {
-        if (document.hidden) return; // Tiết kiệm tài nguyên khi tab ẩn
+      if (document.hidden) return; // Tiết kiệm tài nguyên khi tab ẩn
 
-        try {
-            // Lấy thời gian tin nhắn cuối cùng để chỉ tải tin mới hơn
-            const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
-            const afterParam = lastMsg ? lastMsg.createdAt : undefined;
+      try {
+        // Lấy thời gian tin nhắn cuối cùng để chỉ tải tin mới hơn
+        const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
+        const afterParam = lastMsg ? lastMsg.createdAt : undefined;
 
-            const newMsgs = await ChatAPI.list({ limit: 20, after: afterParam }, token);
+        const newMsgs = await ChatAPI.list({ limit: 20, after: afterParam }, token);
 
-            if (!isCancelled && newMsgs && newMsgs.length > 0) {
-                setMessages(prev => {
-                    const merged = mergeMessages(prev, newMsgs);
-                    // Nếu có tin mới, scroll xuống dưới
-                    if (merged.length > prev.length) {
-                         setTimeout(() => {
-                            if (listRef.current) {
-                                const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-                                const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-                                if (isNearBottom) listRef.current.scrollTo({ top: scrollHeight, behavior: 'smooth' });
-                            }
-                        }, 100);
-                    }
-                    return merged;
-                });
+        if (!isCancelled && newMsgs && newMsgs.length > 0) {
+          setMessages(prev => {
+            const merged = mergeMessages(prev, newMsgs);
+            // Nếu có tin mới, scroll xuống dưới
+            if (merged.length > prev.length) {
+              setTimeout(() => {
+                if (listRef.current) {
+                  const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+                  const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+                  if (isNearBottom) listRef.current.scrollTo({ top: scrollHeight, behavior: 'smooth' });
+                }
+              }, 100);
             }
-        } catch {}
+            return merged;
+          });
+        }
+      } catch { }
     };
 
     fetchNewMessages(); // Gọi ngay lần đầu
     const intervalId = setInterval(fetchNewMessages, 3000);
 
     return () => {
-        isCancelled = true;
-        clearInterval(intervalId);
+      isCancelled = true;
+      clearInterval(intervalId);
     };
   }, [open, token, messages]); // messages dependency quan trọng để lấy lastMsg
 
@@ -242,7 +242,7 @@ const ChatBox: React.FC = () => {
       requestAnimationFrame(() => {
         listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "auto" });
       });
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => {
@@ -251,7 +251,7 @@ const ChatBox: React.FC = () => {
     setHasMore(true);
     loadInitial();
     requestAnimationFrame(() => { if (inputRef.current) autoResizeTextarea(inputRef.current); });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // 3.5. Load Older Messages (Khi cuộn lên trên)
@@ -259,11 +259,11 @@ const ChatBox: React.FC = () => {
     if (!token || loadingOlderRef.current || !hasMore) return;
     const earliest = messages.length ? messages[0].createdAt : null;
     if (!earliest) return;
-    
+
     loadingOlderRef.current = true;
     const el = listRef.current;
     const prevH = el?.scrollHeight || 0;
-    
+
     try {
       const data = await ChatAPI.list({ limit: PAGE_SIZE, before: earliest }, token);
       setHasMore((data?.length || 0) === PAGE_SIZE);
@@ -274,7 +274,7 @@ const ChatBox: React.FC = () => {
           if (el) el.scrollTop = newH - prevH;
         });
       }
-    } catch {}
+    } catch { }
     finally {
       loadingOlderRef.current = false;
     }
@@ -292,7 +292,7 @@ const ChatBox: React.FC = () => {
     try {
       // Gửi và nhận lại tin nhắn vừa tạo từ server
       const sentMsg = await ChatAPI.send({ content: text || undefined, file: file || undefined }, token);
-      
+
       // Reset input ngay lập tức
       setInput("");
       setFile(null);
@@ -306,20 +306,20 @@ const ChatBox: React.FC = () => {
 
       // INSTANT UPDATE: Thêm ngay vào state
       if (sentMsg) {
-          setMessages(prev => {
-              const exists = prev.some(m => m.id === sentMsg.id);
-              if (exists) return prev;
-              return [...prev, sentMsg];
-          });
-          // Scroll xuống đáy
-          setTimeout(() => {
-             listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
-          }, 100);
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === sentMsg.id);
+          if (exists) return prev;
+          return [...prev, sentMsg];
+        });
+        // Scroll xuống đáy
+        setTimeout(() => {
+          listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+        }, 100);
       }
     } catch (e) {
-        console.error("Gửi lỗi:", e);
-    } finally { 
-        setLoading(false); 
+      console.error("Gửi lỗi:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -333,11 +333,11 @@ const ChatBox: React.FC = () => {
   const [vw, setVw] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 1200));
   const [vh, setVh] = useState(() => (typeof window !== 'undefined' ? window.innerHeight : 800));
   const isMobile = vw < 1024;
-  
+
   useEffect(() => {
-    const onResize = () => { 
-      setVw(window.innerWidth); 
-      setVh(window.innerHeight); 
+    const onResize = () => {
+      setVw(window.innerWidth);
+      setVh(window.innerHeight);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -348,7 +348,7 @@ const ChatBox: React.FC = () => {
   const panelWidth = isMobile ? Math.min(vw - 16, 500) : 500;
   const panelHeight = isMobile ? vh - 80 : Math.min(750, vh - 100);
   const gap = 16;
-  
+
   const getDefaultBtnPos = (viewportWidth: number, viewportHeight: number) => ({
     x: viewportWidth - btnSize - 24,
     y: viewportHeight - btnSize - 24
@@ -359,12 +359,12 @@ const ChatBox: React.FC = () => {
       const raw = localStorage.getItem('chat_btn_pos');
       if (raw) {
         const p = JSON.parse(raw);
-        return { 
-          x: clamp(p.x, 8, viewportWidth - btnSize - 8), 
-          y: clamp(p.y, 8, viewportHeight - btnSize - 8) 
+        return {
+          x: clamp(p.x, 8, viewportWidth - btnSize - 8),
+          y: clamp(p.y, 8, viewportHeight - btnSize - 8)
         };
       }
-    } catch {}
+    } catch { }
     return getDefaultBtnPos(viewportWidth, viewportHeight);
   };
 
@@ -374,14 +374,14 @@ const ChatBox: React.FC = () => {
   const pendingPanelPosRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    setBtnPos(p => ({ 
-      x: clamp(p.x, 8, vw - btnSize - 8), 
-      y: clamp(p.y, 8, vh - btnSize - 8) 
+    setBtnPos(p => ({
+      x: clamp(p.x, 8, vw - btnSize - 8),
+      y: clamp(p.y, 8, vh - btnSize - 8)
     }));
   }, [vw, vh, btnSize]);
 
   const persistBtnPos = (p: { x: number; y: number }) => {
-    try { localStorage.setItem('chat_btn_pos', JSON.stringify(p)); } catch {}
+    try { localStorage.setItem('chat_btn_pos', JSON.stringify(p)); } catch { }
   };
 
   const getPanelPos = () => {
@@ -478,7 +478,7 @@ const ChatBox: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     const el = e.currentTarget as Element | null;
-    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch {}
+    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch { }
     const { onMove, onEnd } = startDragBubble(e.clientX, e.clientY);
     const moveHandler = (ev: PointerEvent) => onMove(ev.clientX, ev.clientY);
     const upHandler = (ev: PointerEvent) => {
@@ -486,7 +486,7 @@ const ChatBox: React.FC = () => {
       window.removeEventListener('pointermove', moveHandler);
       window.removeEventListener('pointerup', upHandler);
       window.removeEventListener('pointercancel', upHandler);
-      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch {}
+      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch { }
     };
     window.addEventListener('pointermove', moveHandler, { passive: true });
     window.addEventListener('pointerup', upHandler, { passive: true });
@@ -500,7 +500,7 @@ const ChatBox: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     const el = e.currentTarget as Element | null;
-    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch {}
+    try { el && (el as any).setPointerCapture?.(e.pointerId); } catch { }
     const { onMove, onEnd } = startDragPanel(e.clientX, e.clientY);
     const moveHandler = (ev: PointerEvent) => onMove(ev.clientX, ev.clientY);
     const upHandler = (ev: PointerEvent) => {
@@ -508,7 +508,7 @@ const ChatBox: React.FC = () => {
       window.removeEventListener('pointermove', moveHandler);
       window.removeEventListener('pointerup', upHandler);
       window.removeEventListener('pointercancel', upHandler);
-      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch {}
+      try { el && (el as any).releasePointerCapture?.(e.pointerId); } catch { }
     };
     window.addEventListener('pointermove', moveHandler, { passive: true });
     window.addEventListener('pointerup', upHandler, { passive: true });
@@ -529,16 +529,16 @@ const ChatBox: React.FC = () => {
       el.style.height = `${newH}px`;
       el.style.overflowY = el.scrollHeight > maxH ? 'auto' : 'hidden';
       setIsMultiline(newH > lineHeight * 1.6);
-    } catch {}
+    } catch { }
   };
 
   const handleDelete = async (id: string) => {
     if (!token) return;
-    try { 
-      await ChatAPI.remove(id, token); 
-      setMessages((prev) => prev.filter((m) => m.id !== id)); 
+    try {
+      await ChatAPI.remove(id, token);
+      setMessages((prev) => prev.filter((m) => m.id !== id));
       setActiveMenu(null);
-    } catch {}
+    } catch { }
   };
 
   const handleHide = (id: string) => {
@@ -638,30 +638,59 @@ const ChatBox: React.FC = () => {
     };
   }, [open]);
 
-  // Messages Render Logic
-  const messagesToRender = messages.filter(m => !hiddenMessages.has(m.id));
-  const messagesWithDateSeparator = messagesToRender.map((m, index) => {
+  // Messages Render Logic with Grouping
+  const messagesToRender = messages; // Show all messages, blur hidden ones instead of filtering
+
+  const messagesWithGrouping = messagesToRender.map((m, index) => {
     const prevMessage = index > 0 ? messagesToRender[index - 1] : null;
+    const nextMessage = index < messagesToRender.length - 1 ? messagesToRender[index + 1] : null;
+
+    // Date separator logic
     let showDateSeparator = false;
     if (!prevMessage) {
-        showDateSeparator = true;
+      showDateSeparator = true;
     } else {
-        const currentDate = new Date(m.createdAt);
-        const prevDate = new Date(prevMessage.createdAt);
-        const isSameDay = 
-            currentDate.getFullYear() === prevDate.getFullYear() &&
-            currentDate.getMonth() === prevDate.getMonth() &&
-            currentDate.getDate() === prevDate.getDate();
-        if (!isSameDay) showDateSeparator = true;
+      const currentDate = new Date(m.createdAt);
+      const prevDate = new Date(prevMessage.createdAt);
+      const isSameDay =
+        currentDate.getFullYear() === prevDate.getFullYear() &&
+        currentDate.getMonth() === prevDate.getMonth() &&
+        currentDate.getDate() === prevDate.getDate();
+      if (!isSameDay) showDateSeparator = true;
     }
-    return { ...m, showDateSeparator };
+
+    // Grouping logic for messenger-style
+    const isGroupStart = !prevMessage || prevMessage.userId !== m.userId || showDateSeparator;
+    const isGroupEnd = !nextMessage || nextMessage.userId !== m.userId;
+
+    // Check time gap for grouping (2 minutes)
+    let showAvatar = isGroupEnd;
+    if (nextMessage && nextMessage.userId === m.userId) {
+      const currentTime = new Date(m.createdAt).getTime();
+      const nextTime = new Date(nextMessage.createdAt).getTime();
+      const timeDiff = (nextTime - currentTime) / 1000 / 60; // minutes
+      if (timeDiff > 2) showAvatar = true;
+    }
+
+    return { ...m, showDateSeparator, isGroupStart, isGroupEnd, showAvatar };
   });
+
+  // Avatar component
+  const Avatar = ({ user }: { user?: { id: string; name?: string | null; email: string } }) => {
+    if (!user) return null;
+    const initial = (user.name?.[0] || user.email[0] || '?').toUpperCase();
+    return (
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
+        {initial}
+      </div>
+    );
+  };
 
   const panel = (
     <>
       {/* Backdrop for mobile */}
       {isMobile && open && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9997]"
           onClick={closeChat}
         />
@@ -672,11 +701,10 @@ const ChatBox: React.FC = () => {
         <button
           ref={bubbleRef}
           onPointerDown={handlePointerDown}
-          className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white hover:from-primary-600 hover:to-primary-800 focus:outline-none ${
-            isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110 transition-all'
-          } ${isMobile ? 'w-14 h-14' : 'w-[60px] h-[60px]'}`}
+          className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white hover:from-primary-600 hover:to-primary-800 focus:outline-none ${isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110 transition-all'
+            } ${isMobile ? 'w-14 h-14' : 'w-[60px] h-[60px]'}`}
           aria-label="Mở chat"
-          style={{ 
+          style={{
             position: 'fixed',
             left: 0,
             top: 0,
@@ -687,27 +715,26 @@ const ChatBox: React.FC = () => {
             willChange: 'transform'
           }}
         >
-        <svg className={isMobile ? 'w-6 h-6' : 'w-7 h-7'} viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-        </svg>
-        {unread > 0 && (
-          <span 
-            className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-lg ring-2 ring-white"
-            style={{ position: 'absolute', top: '-6px', right: '-6px' }}
-          >
-            {unread > 99 ? '99+' : unread}
-          </span>
-        )}
-      </button>
+          <svg className={isMobile ? 'w-6 h-6' : 'w-7 h-7'} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+          </svg>
+          {unread > 0 && (
+            <span
+              className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-lg ring-2 ring-white"
+              style={{ position: 'absolute', top: '-6px', right: '-6px' }}
+            >
+              {unread > 99 ? '99+' : unread}
+            </span>
+          )}
+        </button>
       )}
 
       {/* Chat Panel */}
       <div
         ref={panelRef}
         onPointerDown={handlePanelPointerDown}
-        className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col ${
-          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        } ${isMobile ? 'border-0' : 'border border-slate-200 dark:border-slate-700'}`}
+        className={`bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          } ${isMobile ? 'border-0' : 'border border-slate-200 dark:border-slate-700'}`}
         style={{
           position: 'fixed',
           transition: isDragging ? 'none' : 'opacity 200ms ease-in-out, transform 200ms ease-in-out',
@@ -720,9 +747,8 @@ const ChatBox: React.FC = () => {
         }}
       >
         {/* Header */}
-        <div className={`chat-panel-header flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md select-none ${
-          !isMobile && 'cursor-grab active:cursor-grabbing'
-        }`} style={{ touchAction: 'none' }}>
+        <div className={`chat-panel-header flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md select-none ${!isMobile && 'cursor-grab active:cursor-grabbing'
+          }`} style={{ touchAction: 'none' }}>
           <div className="flex items-center gap-3 pointer-events-none">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -736,8 +762,8 @@ const ChatBox: React.FC = () => {
               </div>
             </div>
           </div>
-          <button 
-            onClick={closeChat} 
+          <button
+            onClick={closeChat}
             aria-label="Đóng"
             className="w-9 h-9 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors pointer-events-auto no-drag leading-none"
             onMouseDown={(e) => e.stopPropagation()}
@@ -751,9 +777,9 @@ const ChatBox: React.FC = () => {
         </div>
 
         {/* Messages */}
-        <div 
-          ref={listRef} 
-          className="chat-scroll flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50 dark:bg-slate-800"
+        <div
+          ref={listRef}
+          className="chat-scroll flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-800"
           style={{ userSelect: 'text' }}
           onScroll={(e) => {
             const el = e.currentTarget;
@@ -761,150 +787,167 @@ const ChatBox: React.FC = () => {
           }}
         >
 
-        {messagesWithDateSeparator.map((m) => {
-          const mine = currentUserId === m.userId;
+          {messagesWithGrouping.map((m) => {
+            const mine = currentUserId === m.userId;
 
-          return (
-            <React.Fragment key={m.id}>
-            {m.showDateSeparator && (
-            <div className="text-center py-2">
-              <span className="inline-block px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full shadow-sm">
-                {formatDateSeparator(m.createdAt)}
-              </span>
-            </div>
-            )}
-              <div className={`flex ${mine ? 'justify-end' : 'justify-start'} group`}> 
-                <div className="relative max-w-[75%]">
-                  {!isMobile && (
-                    <div 
-                      className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 ${
-                        mine ? '-left-10' : '-right-10'
-                      }`}
-                    >
-                      <div className="relative">
-                        <button
-                          onClick={() => setActiveMenu(activeMenu === m.id ? null : m.id)}
-                          className="p-1.5 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
-                        >
-                          <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="5" r="2"/>
-                            <circle cx="12" cy="12" r="2"/>
-                            <circle cx="12" cy="19" r="2"/>
-                          </svg>
-                        </button>
-                        
-                        {activeMenu === m.id && (
-                          <div 
-                            ref={menuRef}
-                            className={`absolute top-1/2 -translate-y-1/2 ${
-                              mine ? 'right-full mr-2' : 'left-full ml-2'
-                            } bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
-                          >
-                            {mine ? (
-                              <button
-                                onClick={() => handleDelete(m.id)}
-                                className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
-                                title="Xóa"
-                              >
-                                <FiTrash2 className="w-4 h-4" />
-                                <span>Xóa</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
-                                className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
-                                title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
-                              >
-                                <FiEyeOff className="w-4 h-4" />
-                                <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+            return (
+              <React.Fragment key={m.id}>
+                {m.showDateSeparator && (
+                  <div className="text-center py-2">
+                    <span className="inline-block px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full shadow-sm">
+                      {formatDateSeparator(m.createdAt)}
+                    </span>
+                  </div>
+                )}
+
+                <div
+                  className={`flex ${mine ? 'justify-end' : 'justify-start'} group ${m.isGroupStart ? 'mt-4' : 'mt-1'}`}
+                >
+                  {/* Avatar - only for others and only on last message in group */}
+                  {!mine && (
+                    <div className="w-8 mr-2 flex flex-col justify-end">
+                      {m.showAvatar ? <Avatar user={m.user} /> : <div className="w-8 h-8"></div>}
                     </div>
                   )}
 
                   <div
-                    onTouchStart={() => handleLongPressStart(m.id)}
-                    onTouchEnd={handleLongPressEnd}
-                    onTouchMove={handleLongPressEnd}
-                    className={`rounded-2xl shadow-sm ${
-                      mine 
-                        ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-br-md' 
-                        : 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-bl-md'
-                    } px-3 py-3 cursor-text ${hiddenMessages.has(m.id) ? 'relative' : ''}`}
+                    className="relative max-w-[75%]"
                   >
-                    {hiddenMessages.has(m.id) && (
-                      <div
-                        onClick={() => handleUnhide(m.id)}
-                        className={`absolute inset-0 ${mine ? 'rounded-2xl rounded-br-md' : 'rounded-2xl rounded-bl-md'} bg-white/30 dark:bg-slate-900/30 backdrop-blur-md border border-white/40 dark:border-white/10 flex items-center justify-center cursor-pointer select-none`}
-                        title="Nhấn để hiện lại"
-                        role="button"
-                      >
-                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 text-xs font-medium">
-                          <FiEyeOff className="w-4 h-4" />
-                          <span>Tin nhắn đã ẩn — Nhấn để hiện lại</span>
+                    {!isMobile && (
+                      <>
+                        {/* 3-dot menu button - close to bubble */}
+                        <div
+                          className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity ${mine ? '-left-10' : '-right-10'
+                            }`}
+                          style={{ zIndex: 10000 }}
+                        >
+                          <div className="relative">
+                            <button
+                              onClick={() => setActiveMenu(activeMenu === m.id ? null : m.id)}
+                              className="p-1.5 rounded-full bg-white dark:bg-slate-700 shadow-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
+                            >
+                              <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="5" r="2" />
+                                <circle cx="12" cy="12" r="2" />
+                                <circle cx="12" cy="19" r="2" />
+                              </svg>
+                            </button>
+
+                            {activeMenu === m.id && (
+                              <div
+                                ref={menuRef}
+                                className={`absolute top-1/2 -translate-y-1/2 ${mine ? 'right-full mr-2' : 'left-full ml-2'
+                                  } bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
+                              >
+                                {mine ? (
+                                  <button
+                                    onClick={() => handleDelete(m.id)}
+                                    className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
+                                    title="Xóa"
+                                  >
+                                    <FiTrash2 className="w-4 h-4" />
+                                    <span>Xóa</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
+                                    className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
+                                    title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
+                                  >
+                                    <FiEyeOff className="w-4 h-4" />
+                                    <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
 
-                    {!mine && (
-                      <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-3">
-                        {m.user?.name || m.user?.email?.split("@")[0] || 'Người dùng'}
-                      </div>
-                    )}
-
-                    {m.content && (
-                      <div className="text-sm whitespace-pre-wrap break-words select-text">{m.content}</div>
-                    )}
-                    
-                    {renderAttachment(m)}
-
-                    <div className={`text-[10px] mt-1 ${mine ? 'text-white/70' : 'text-slate-400'}`}>
-                      {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-
-                  {isMobile && activeMenu === m.id && (
-                    <div 
-                      ref={menuRef}
-                      className={`absolute ${mine ? 'right-0' : 'left-0'} mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
+                    <div
+                      onTouchStart={() => handleLongPressStart(m.id)}
+                      onTouchEnd={handleLongPressEnd}
+                      onTouchMove={handleLongPressEnd}
+                      className={`shadow-sm ${mine
+                        ? `bg-gradient-to-br from-primary-500 to-primary-600 text-white ${m.isGroupStart && m.isGroupEnd
+                          ? 'rounded-2xl rounded-br-md' // Standalone message
+                          : m.isGroupStart
+                            ? 'rounded-2xl rounded-br-md' // First in group
+                            : m.isGroupEnd
+                              ? 'rounded-2xl rounded-tr-md rounded-br-md' // Last in group
+                              : 'rounded-2xl rounded-tr-md rounded-br-md' // Middle in group
+                        }`
+                        : `bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 ${m.isGroupStart && m.isGroupEnd
+                          ? 'rounded-2xl rounded-bl-md' // Standalone message
+                          : m.isGroupStart
+                            ? 'rounded-2xl rounded-bl-md' // First in group
+                            : m.isGroupEnd
+                              ? 'rounded-2xl rounded-tl-md rounded-bl-md' // Last in group
+                              : 'rounded-2xl rounded-tl-md rounded-bl-md' // Middle in group
+                        }`
+                        } px-3 py-2 cursor-text ${hiddenMessages.has(m.id) ? 'relative blur-sm opacity-50 cursor-pointer' : ''}`}
+                      onClick={hiddenMessages.has(m.id) ? () => handleUnhide(m.id) : undefined}
+                      title={hiddenMessages.has(m.id) ? "Nhấn để hiện lại" : undefined}
                     >
-                      {mine ? (
-                        <button
-                          onClick={() => handleDelete(m.id)}
-                          className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
-                          title="Xóa"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                          <span>Xóa</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
-                          className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
-                          title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
-                        >
-                          <FiEyeOff className="w-4 h-4" />
-                          <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
-                        </button>
+                      {!mine && m.isGroupStart && (
+                        <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 mb-2">
+                          {m.user?.name || m.user?.email?.split("@")[0] || 'Người dùng'}
+                        </div>
+                      )}
+
+                      {m.content && (
+                        <div className="text-sm whitespace-pre-wrap break-words select-text">{m.content}</div>
+                      )}
+
+                      {renderAttachment(m)}
+
+                      {m.isGroupEnd && (
+                        <div className={`text-[10px] mt-1 ${mine ? 'text-white/70' : 'text-slate-400'}`}>
+                          {new Date(m.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                       )}
                     </div>
-                  )}
+
+                    {isMobile && activeMenu === m.id && (
+                      <div
+                        ref={menuRef}
+                        className={`absolute ${mine ? 'right-0' : 'left-0'} mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 z-20 flex whitespace-nowrap`}
+                      >
+                        {mine ? (
+                          <button
+                            onClick={() => handleDelete(m.id)}
+                            className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400 rounded-lg"
+                            title="Xóa"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                            <span>Xóa</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => hiddenMessages.has(m.id) ? handleUnhide(m.id) : handleHide(m.id)}
+                            className="px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-600 flex items-center gap-2 text-slate-700 dark:text-slate-200 rounded-lg"
+                            title={hiddenMessages.has(m.id) ? "Hiện tin nhắn" : "Ẩn tin nhắn"}
+                          >
+                            <FiEyeOff className="w-4 h-4" />
+                            <span>{hiddenMessages.has(m.id) ? 'Hiện' : 'Ẩn'}</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </React.Fragment>
-          );
-        })}
-        {messagesWithDateSeparator.length === 0 && (
-          <div className="text-center text-sm text-slate-400 py-8">
-            <svg className="w-12 h-12 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-            </svg>
-            Chưa có tin nhắn
-          </div>
-        )}
+              </React.Fragment>
+            );
+          })}
+          {messagesWithGrouping.length === 0 && (
+            <div className="text-center text-sm text-slate-400 py-8">
+              <svg className="w-12 h-12 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+              </svg>
+              Chưa có tin nhắn
+            </div>
+          )}
 
         </div>
 
@@ -938,8 +981,8 @@ const ChatBox: React.FC = () => {
           {file && (
             <div className="mb-2 flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-600">
               <span className="text-xs text-slate-600 dark:text-slate-300 truncate flex-1">{file.name}</span>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setFile(null)}
                 className="ml-2 text-red-600 hover:text-red-700 text-xs font-medium"
               >
