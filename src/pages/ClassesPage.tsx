@@ -186,7 +186,7 @@ const ClassesPage: React.FC = () => {
           token
         );
       }
-    } catch {}
+    } catch { }
     setShareData({ type: "class", id: classId });
     setShareOpen(true);
   };
@@ -202,7 +202,7 @@ const ClassesPage: React.FC = () => {
           token
         );
       }
-    } catch {}
+    } catch { }
     setShareData({ type: "quiz", id: quizId });
     setShareOpen(true);
   };
@@ -351,8 +351,9 @@ const ClassesPage: React.FC = () => {
           const sessions = await SessionsAPI.byQuiz(q.id, token);
           totalDone += sessions.length || 0;
           for (const s of sessions) {
-            const questionCount =
-              (q as any).questionCount ?? (q as any).questions?.length ?? 0;
+            // Use session's totalQuestions (actual count when quiz was taken)
+            // instead of quiz.questionCount (current metadata which may have changed)
+            const questionCount = s.totalQuestions || 0;
             if (typeof s.score === "number" && questionCount > 0) {
               totalPercentage += (s.score / questionCount) * 100;
             }
@@ -392,25 +393,25 @@ const ClassesPage: React.FC = () => {
 
       setClasses(classesWithQuizzes);
       await loadStats(classesWithQuizzes);
-      
+
       // === [PHẦN SỬA LỖI] ===
       // Cập nhật trạng thái chia sẻ cho cả Class và Quiz với key đúng format
       const statusMap: Record<string, boolean> = {};
       classesWithQuizzes.forEach((c: any) => {
-          // 1. Check Class (dùng key 'class_ID')
-          // Kiểm tra nếu lớp ĐANG ĐƯỢC MÌNH CHIA SẺ (isShared) hoặc MÌNH ĐƯỢC CHIA SẺ (accessType='shared')
-          if (c.isShared || c.accessType === 'shared') {
-             statusMap[`class_${c.id}`] = true;
-          }
+        // 1. Check Class (dùng key 'class_ID')
+        // Kiểm tra nếu lớp ĐANG ĐƯỢC MÌNH CHIA SẺ (isShared) hoặc MÌNH ĐƯỢC CHIA SẺ (accessType='shared')
+        if (c.isShared || c.accessType === 'shared') {
+          statusMap[`class_${c.id}`] = true;
+        }
 
-          // 2. Check Quiz (dùng key 'quiz_ID')
-          if (Array.isArray(c.quizzes)) {
-             c.quizzes.forEach((q: any) => {
-                if (q.isShared) {
-                   statusMap[`quiz_${q.id}`] = true;
-                }
-             });
-          }
+        // 2. Check Quiz (dùng key 'quiz_ID')
+        if (Array.isArray(c.quizzes)) {
+          c.quizzes.forEach((q: any) => {
+            if (q.isShared) {
+              statusMap[`quiz_${q.id}`] = true;
+            }
+          });
+        }
       });
       setShareStatus(statusMap);
       // =======================
@@ -449,7 +450,7 @@ const ClassesPage: React.FC = () => {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard?.writeText(text);
-    } catch {}
+    } catch { }
   };
 
   const handleImport = async () => {
@@ -1039,9 +1040,8 @@ const ClassesPage: React.FC = () => {
                 return (
                   <div
                     key={classRoom.id}
-                    className={`group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 relative ${
-                      openDropdown === classRoom.id ? "z-50" : "z-0"
-                    }`}
+                    className={`group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 relative ${openDropdown === classRoom.id ? "z-50" : "z-0"
+                      }`}
                   >
                     {/* Desktop Layout - flex ngang */}
                     <div className="hidden sm:flex justify-between items-start mb-4">
@@ -1128,11 +1128,10 @@ const ClassesPage: React.FC = () => {
                                   </svg>
                                   Tham gia ({quizCount})
                                   <svg
-                                    className={`w-4 h-4 ml-1 transition-transform duration-200 ${
-                                      openDropdown === classRoom.id
-                                        ? "rotate-180"
-                                        : ""
-                                    }`}
+                                    className={`w-4 h-4 ml-1 transition-transform duration-200 ${openDropdown === classRoom.id
+                                      ? "rotate-180"
+                                      : ""
+                                      }`}
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -1238,11 +1237,10 @@ const ClassesPage: React.FC = () => {
                                     </svg>
                                     Tham gia ({quizCount})
                                     <svg
-                                      className={`w-4 h-4 ml-1 transition-transform duration-200 ${
-                                        openDropdown === classRoom.id
-                                          ? "rotate-180"
-                                          : ""
-                                      }`}
+                                      className={`w-4 h-4 ml-1 transition-transform duration-200 ${openDropdown === classRoom.id
+                                        ? "rotate-180"
+                                        : ""
+                                        }`}
                                       fill="none"
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
@@ -1317,22 +1315,18 @@ const ClassesPage: React.FC = () => {
                             )
                           }
                           disabled={(classRoom as any).accessType === "shared"}
-                          className={`btn-secondary ${
-                            shareStatus[`class_${classRoom.id}`]
-                              ? "!bg-purple-500 !text-white hover:!bg-purple-600 dark:!bg-purple-600 dark:hover:!bg-purple-700"
-                              : "!bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
-                          } ${
-                            (classRoom as any).accessType === "shared"
+                          className={`btn-secondary ${shareStatus[`class_${classRoom.id}`]
+                            ? "!bg-purple-500 !text-white hover:!bg-purple-600 dark:!bg-purple-600 dark:hover:!bg-purple-700"
+                            : "!bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
+                            } ${(classRoom as any).accessType === "shared"
                               ? "opacity-50 cursor-not-allowed"
                               : ""
-                          }`}
-                          title={`Trạng thái: ${
-                            shareStatus[`class_${classRoom.id}`]
-                              ? "Có thể chia sẻ"
-                              : "Không thể chia sẻ"
-                          }\n\nNhấn để ${
-                            shareStatus[`class_${classRoom.id}`] ? "tắt" : "bật"
-                          } chia sẻ lớp học`}
+                            }`}
+                          title={`Trạng thái: ${shareStatus[`class_${classRoom.id}`]
+                            ? "Có thể chia sẻ"
+                            : "Không thể chia sẻ"
+                            }\n\nNhấn để ${shareStatus[`class_${classRoom.id}`] ? "tắt" : "bật"
+                            } chia sẻ lớp học`}
                         >
                           {/* Share Toggle Icon */}
                           {shareStatus[`class_${classRoom.id}`] ? (
@@ -1372,12 +1366,11 @@ const ClassesPage: React.FC = () => {
                             (classRoom as any).accessType === "shared" ||
                             !shareStatus[`class_${classRoom.id}`]
                           }
-                          className={`btn-secondary !bg-indigo-100 !text-indigo-700 hover:!bg-indigo-200 dark:!bg-indigo-900/20 dark:!text-indigo-300 dark:hover:!bg-indigo-900/40 ${
-                            (classRoom as any).accessType === "shared" ||
+                          className={`btn-secondary !bg-indigo-100 !text-indigo-700 hover:!bg-indigo-200 dark:!bg-indigo-900/20 dark:!text-indigo-300 dark:hover:!bg-indigo-900/40 ${(classRoom as any).accessType === "shared" ||
                             !shareStatus[`class_${classRoom.id}`]
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                            }`}
                           title={
                             shareStatus[`class_${classRoom.id}`]
                               ? "Sao chép ID/Link chia sẻ"
@@ -1408,16 +1401,13 @@ const ClassesPage: React.FC = () => {
                             )
                           }
                           disabled={(classRoom as any).accessType === "shared"}
-                          className={`btn-secondary !bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40 ${
-                            (classRoom as any).accessType === "shared"
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
-                          title={`Trạng thái: ${
-                            classRoom.isPublic ? "Công khai" : "Riêng tư"
-                          }\n\nNhấn để ${
-                            classRoom.isPublic ? "đặt riêng tư" : "công khai"
-                          } lớp học và tất cả quiz`}
+                          className={`btn-secondary !bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40 ${(classRoom as any).accessType === "shared"
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                            }`}
+                          title={`Trạng thái: ${classRoom.isPublic ? "Công khai" : "Riêng tư"
+                            }\n\nNhấn để ${classRoom.isPublic ? "đặt riêng tư" : "công khai"
+                            } lớp học và tất cả quiz`}
                         >
                           {/* Public vs Private Icon */}
                           {classRoom.isPublic ? (
@@ -1469,11 +1459,10 @@ const ClassesPage: React.FC = () => {
                             })
                           }
                           disabled={(classRoom as any).accessType === "shared"}
-                          className={`btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40 ${
-                            (classRoom as any).accessType === "shared"
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
+                          className={`btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40 ${(classRoom as any).accessType === "shared"
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                            }`}
                           title="Chỉnh sửa lớp học"
                         >
                           <svg
@@ -1596,11 +1585,10 @@ const ClassesPage: React.FC = () => {
                                   </svg>
                                   Tham gia ({quizCount})
                                   <svg
-                                    className={`w-4 h-4 ml-1 transition-transform duration-200 ${
-                                      openDropdown === classRoom.id
-                                        ? "rotate-180"
-                                        : ""
-                                    }`}
+                                    className={`w-4 h-4 ml-1 transition-transform duration-200 ${openDropdown === classRoom.id
+                                      ? "rotate-180"
+                                      : ""
+                                      }`}
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -1706,11 +1694,10 @@ const ClassesPage: React.FC = () => {
                                     </svg>
                                     Tham gia ({quizCount})
                                     <svg
-                                      className={`w-4 h-4 ml-1 transition-transform duration-200 ${
-                                        openDropdown === classRoom.id
-                                          ? "rotate-180"
-                                          : ""
-                                      }`}
+                                      className={`w-4 h-4 ml-1 transition-transform duration-200 ${openDropdown === classRoom.id
+                                        ? "rotate-180"
+                                        : ""
+                                        }`}
                                       fill="none"
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
@@ -1783,18 +1770,15 @@ const ClassesPage: React.FC = () => {
                             )
                           }
                           disabled={(classRoom as any).accessType === "shared"}
-                          className={`w-9 h-9 rounded ${
-                            shareStatus[`class_${classRoom.id}`]
-                              ? "bg-purple-500 hover:bg-purple-600 text-white dark:bg-purple-600 dark:hover:bg-purple-700"
-                              : "bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 dark:text-purple-300"
-                          } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${
-                            (classRoom as any).accessType === "shared"
+                          className={`w-9 h-9 rounded ${shareStatus[`class_${classRoom.id}`]
+                            ? "bg-purple-500 hover:bg-purple-600 text-white dark:bg-purple-600 dark:hover:bg-purple-700"
+                            : "bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 dark:text-purple-300"
+                            } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
                               ? "opacity-50 cursor-not-allowed"
                               : ""
-                          }`}
-                          title={`${
-                            shareStatus[`class_${classRoom.id}`] ? "Tắt" : "Bật"
-                          } chia sẻ lớp học`}
+                            }`}
+                          title={`${shareStatus[`class_${classRoom.id}`] ? "Tắt" : "Bật"
+                            } chia sẻ lớp học`}
                         >
                           {shareStatus[`class_${classRoom.id}`] ? (
                             <svg
@@ -1832,12 +1816,11 @@ const ClassesPage: React.FC = () => {
                             (classRoom as any).accessType === "shared" ||
                             !shareStatus[`class_${classRoom.id}`]
                           }
-                          className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${
-                            (classRoom as any).accessType === "shared" ||
+                          className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared" ||
                             !shareStatus[`class_${classRoom.id}`]
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                            }`}
                           title={
                             shareStatus[`class_${classRoom.id}`]
                               ? "Copy ID/Link"
@@ -1872,14 +1855,12 @@ const ClassesPage: React.FC = () => {
                             )
                           }
                           disabled={(classRoom as any).accessType === "shared"}
-                          className={`w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${
-                            (classRoom as any).accessType === "shared"
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
-                          title={`${
-                            classRoom.isPublic ? "Công khai" : "Riêng tư"
-                          }`}
+                          className={`w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                            }`}
+                          title={`${classRoom.isPublic ? "Công khai" : "Riêng tư"
+                            }`}
                         >
                           {classRoom.isPublic ? (
                             <svg
@@ -1931,11 +1912,10 @@ const ClassesPage: React.FC = () => {
                             })
                           }
                           disabled={(classRoom as any).accessType === "shared"}
-                          className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${
-                            (classRoom as any).accessType === "shared"
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
+                          className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                            }`}
                           title="Chỉnh sửa lớp học"
                         >
                           <svg
@@ -2047,24 +2027,20 @@ const ClassesPage: React.FC = () => {
                                     disabled={
                                       (classRoom as any).accessType === "shared"
                                     }
-                                    className={`${
-                                      shareStatus[`quiz_${quiz.id}`]
-                                        ? "text-purple-600 dark:text-purple-400"
-                                        : "text-purple-400 dark:text-purple-600"
-                                    } hover:text-purple-700 dark:hover:text-purple-300 p-1 ${
-                                      (classRoom as any).accessType === "shared"
+                                    className={`${shareStatus[`quiz_${quiz.id}`]
+                                      ? "text-purple-600 dark:text-purple-400"
+                                      : "text-purple-400 dark:text-purple-600"
+                                      } hover:text-purple-700 dark:hover:text-purple-300 p-1 ${(classRoom as any).accessType === "shared"
                                         ? "opacity-50 cursor-not-allowed"
                                         : ""
-                                    }`}
-                                    title={`Trạng thái: ${
-                                      shareStatus[`quiz_${quiz.id}`]
-                                        ? "Có thể chia sẻ"
-                                        : "Không thể chia sẻ"
-                                    }\n\nNhấn để ${
-                                      shareStatus[`quiz_${quiz.id}`]
+                                      }`}
+                                    title={`Trạng thái: ${shareStatus[`quiz_${quiz.id}`]
+                                      ? "Có thể chia sẻ"
+                                      : "Không thể chia sẻ"
+                                      }\n\nNhấn để ${shareStatus[`quiz_${quiz.id}`]
                                         ? "tắt"
                                         : "bật"
-                                    } chia sẻ quiz`}
+                                      } chia sẻ quiz`}
                                   >
                                     {/* Share Toggle Icon */}
                                     <svg
@@ -2085,16 +2061,15 @@ const ClassesPage: React.FC = () => {
                                     onClick={() => handleShareQuiz(quiz.id)}
                                     disabled={
                                       (classRoom as any).accessType ===
-                                        "shared" ||
+                                      "shared" ||
                                       !shareStatus[`quiz_${quiz.id}`]
                                     }
-                                    className={`text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 p-1 ${
-                                      (classRoom as any).accessType ===
-                                        "shared" ||
+                                    className={`text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 p-1 ${(classRoom as any).accessType ===
+                                      "shared" ||
                                       !shareStatus[`quiz_${quiz.id}`]
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : ""
-                                    }`}
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
+                                      }`}
                                     title={
                                       shareStatus[`quiz_${quiz.id}`]
                                         ? "Sao chép ID/Link chia sẻ"
@@ -2132,20 +2107,17 @@ const ClassesPage: React.FC = () => {
                                     disabled={
                                       (classRoom as any).accessType === "shared"
                                     }
-                                    className={`text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1 ${
-                                      (classRoom as any).accessType === "shared"
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : ""
-                                    }`}
-                                    title={`Trạng thái: ${
-                                      (quiz as any).published
-                                        ? "Công khai"
-                                        : "Nháp (Riêng tư)"
-                                    }\n\nNhấn để ${
-                                      (quiz as any).published
+                                    className={`text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1 ${(classRoom as any).accessType === "shared"
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
+                                      }`}
+                                    title={`Trạng thái: ${(quiz as any).published
+                                      ? "Công khai"
+                                      : "Nháp (Riêng tư)"
+                                      }\n\nNhấn để ${(quiz as any).published
                                         ? "đặt nháp"
                                         : "công khai quiz"
-                                    }`}
+                                      }`}
                                   >
                                     {/* Public vs Private Icon */}
                                     {(quiz as any).published ? (
@@ -2227,11 +2199,10 @@ const ClassesPage: React.FC = () => {
                                     disabled={
                                       (classRoom as any).accessType === "shared"
                                     }
-                                    className={`text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 ${
-                                      (classRoom as any).accessType === "shared"
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : ""
-                                    }`}
+                                    className={`text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 ${(classRoom as any).accessType === "shared"
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
+                                      }`}
                                     title="Chỉnh sửa bài kiểm tra"
                                   >
                                     <svg
@@ -2314,20 +2285,17 @@ const ClassesPage: React.FC = () => {
                                     disabled={
                                       (classRoom as any).accessType === "shared"
                                     }
-                                    className={`w-9 h-9 rounded ${
-                                      shareStatus[`quiz_${quiz.id}`]
-                                        ? "bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-                                        : "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-900/40"
-                                    } flex items-center justify-center transition-all duration-200 hover:scale-110 ${
-                                      (classRoom as any).accessType === "shared"
+                                    className={`w-9 h-9 rounded ${shareStatus[`quiz_${quiz.id}`]
+                                      ? "bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+                                      : "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-900/40"
+                                      } flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === "shared"
                                         ? "opacity-50 cursor-not-allowed"
                                         : ""
-                                    }`}
-                                    title={`${
-                                      shareStatus[`quiz_${quiz.id}`]
-                                        ? "Đang chia sẻ"
-                                        : "Chưa chia sẻ"
-                                    }`}
+                                      }`}
+                                    title={`${shareStatus[`quiz_${quiz.id}`]
+                                      ? "Đang chia sẻ"
+                                      : "Chưa chia sẻ"
+                                      }`}
                                   >
                                     <svg
                                       className="w-5 h-5"
@@ -2347,16 +2315,15 @@ const ClassesPage: React.FC = () => {
                                     onClick={() => handleShareQuiz(quiz.id)}
                                     disabled={
                                       (classRoom as any).accessType ===
-                                        "shared" ||
+                                      "shared" ||
                                       !shareStatus[`quiz_${quiz.id}`]
                                     }
-                                    className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${
-                                      (classRoom as any).accessType ===
-                                        "shared" ||
+                                    className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType ===
+                                      "shared" ||
                                       !shareStatus[`quiz_${quiz.id}`]
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : ""
-                                    }`}
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
+                                      }`}
                                     title={
                                       shareStatus[`quiz_${quiz.id}`]
                                         ? "Sao chép ID/Link"
@@ -2393,16 +2360,14 @@ const ClassesPage: React.FC = () => {
                                     disabled={
                                       (classRoom as any).accessType === "shared"
                                     }
-                                    className={`w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${
-                                      (classRoom as any).accessType === "shared"
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : ""
-                                    }`}
-                                    title={`${
-                                      (quiz as any).published
-                                        ? "Công khai"
-                                        : "Nháp"
-                                    }`}
+                                    className={`w-9 h-9 rounded bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === "shared"
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
+                                      }`}
+                                    title={`${(quiz as any).published
+                                      ? "Công khai"
+                                      : "Nháp"
+                                      }`}
                                   >
                                     {(quiz as any).published ? (
                                       <svg
@@ -2483,11 +2448,10 @@ const ClassesPage: React.FC = () => {
                                     disabled={
                                       (classRoom as any).accessType === "shared"
                                     }
-                                    className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${
-                                      (classRoom as any).accessType === "shared"
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : ""
-                                    }`}
+                                    className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
+                                      }`}
                                     title="Chỉnh sửa bài kiểm tra"
                                   >
                                     <svg
@@ -2900,7 +2864,7 @@ const ClassesPage: React.FC = () => {
                       placeholder="abc123 hoặc https://..."
                       autoComplete="off"
                       className="w-full px-4 py-3 pr-10 rounded-xl border-2 border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 font-mono text-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
-                      style={{ 
+                      style={{
                         WebkitAppearance: 'none',
                         appearance: 'none',
                         minHeight: '48px'
@@ -2956,7 +2920,7 @@ const ClassesPage: React.FC = () => {
               >
                 Hủy
               </button>
-              <button 
+              <button
                 className="flex-1 px-4 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 onClick={handleImport}
                 disabled={!importInput.trim()}

@@ -172,9 +172,9 @@ router.get('/stats', authRequired, async (req, res) => {
     );
     const quizzesOwned = quizzesOwnedResult?.count || 0;
     
-    // Get quizzes taken count (distinct quizzes from sessions)
+    // Get quizzes taken count (total number of quiz attempts/sessions)
     const quizzesTakenResult = await queryOne(
-      'SELECT COUNT(DISTINCT quizId) as count FROM QuizSession WHERE userId = ?',
+      'SELECT COUNT(*) as count FROM QuizSession WHERE userId = ?',
       [req.user.id]
     );
     const quizzesTaken = quizzesTakenResult?.count || 0;
@@ -196,7 +196,7 @@ router.get('/stats', authRequired, async (req, res) => {
     );
     const averageScore = avgScoreResult?.avgScore ? Math.round(avgScoreResult.avgScore) : 0;
     
-    // Get recent sessions (last 10)
+    // Get recent sessions (all sessions, ordered by most recent)
     const recentSessions = await query(
       `SELECT 
         s.id, s.quizId, s.score, s.totalQuestions, s.timeSpent, s.completedAt,
@@ -206,8 +206,7 @@ router.get('/stats', authRequired, async (req, res) => {
        JOIN Quiz q ON s.quizId = q.id
        JOIN Class c ON q.classId = c.id
        WHERE s.userId = ?
-       ORDER BY s.completedAt DESC
-       LIMIT 10`,
+       ORDER BY s.completedAt DESC`,
       [req.user.id]
     );
     

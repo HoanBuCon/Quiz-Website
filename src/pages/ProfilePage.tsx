@@ -513,9 +513,9 @@ const ProfilePage: React.FC = () => {
                     ) : (
                         <>
                             {/* Desktop Table */}
-                            <div className="hidden md:block overflow-x-auto">
+                            <div className="hidden md:block overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
                                 <table className="w-full">
-                                    <thead>
+                                    <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10">
                                         <tr className="border-b border-gray-200 dark:border-gray-700">
                                             <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Quiz</th>
                                             <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Điểm</th>
@@ -555,7 +555,7 @@ const ProfilePage: React.FC = () => {
                             </div>
 
                             {/* Mobile Cards */}
-                            <div className="md:hidden space-y-4">
+                            <div className="md:hidden space-y-4 max-h-[500px] overflow-y-auto">
                                 {stats.recentSessions.map((session) => (
                                     <div key={session.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-2">
                                         <div className="flex flex-col">
