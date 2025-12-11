@@ -1024,7 +1024,7 @@ const QuizPage: React.FC = () => {
                                 <div className="flex items-center justify-center w-6">
                                   {isCorrect ? (
                                     <svg
-                                      className="w-6 h-6 text-green-600 dark:text-green-400"
+                                      className="w-6 h-6 text-green-100 dark:text-green-400"
                                       fill="none"
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
@@ -1038,7 +1038,7 @@ const QuizPage: React.FC = () => {
                                     </svg>
                                   ) : isChosen && !isCorrect ? (
                                     <svg
-                                      className="w-6 h-6 text-red-600 dark:text-red-400"
+                                      className="w-6 h-6 text-red-100 dark:text-red-400"
                                       fill="none"
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
@@ -1326,7 +1326,7 @@ const QuizPage: React.FC = () => {
                                               <div className="flex items-center justify-center w-5">
                                                 {isCorrect ? (
                                                   <svg
-                                                    className="w-5 h-5 text-green-600 dark:text-green-400"
+                                                    className="w-5 h-5 text-green-100 dark:text-green-400"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     viewBox="0 0 24 24"
@@ -1340,7 +1340,7 @@ const QuizPage: React.FC = () => {
                                                   </svg>
                                                 ) : isChosen && !isCorrect ? (
                                                   <svg
-                                                    className="w-5 h-5 text-red-600 dark:text-red-400"
+                                                    className="w-5 h-5 text-red-100 dark:text-red-400"
                                                     fill="none"
                                                     stroke="currentColor"
                                                     viewBox="0 0 24 24"
