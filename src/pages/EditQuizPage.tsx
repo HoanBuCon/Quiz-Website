@@ -648,6 +648,7 @@ const EditQuizPage: React.FC = () => {
           },
           token
         );
+        localStorage.removeItem("quiz_edit_progress");
         toast.success("Cập nhật quiz thành công!");
         navigate("/classes");
         return;
@@ -706,6 +707,7 @@ const EditQuizPage: React.FC = () => {
           },
           token
         );
+        localStorage.removeItem("quiz_edit_progress");
         toast.success("Xuất bản thành công!");
         navigate("/classes");
         return;
@@ -792,6 +794,51 @@ const EditQuizPage: React.FC = () => {
       setQuizDescription(`Bài trắc nghiệm từ tài liệu ${state.fileName}`);
     }
   }, [state, navigate]);
+
+  // Auto-save edit progress
+  useEffect(() => {
+    if (!state) return;
+
+    const saveProgress = () => {
+      // Don't save if we don't have questions or title yet (initial render)
+      if (questions.length === 0 && !quizTitle) return;
+
+      const dataToSave = {
+        type: 'edit',
+        timestamp: Date.now(),
+        // Save component state
+        questions,
+        quizTitle,
+        quizDescription,
+        // Save original location state to restore context (fileId, classInfo, etc.)
+        state: {
+          ...state,
+          quizTitle, // Update with current values
+          quizDescription,
+          questions: questions.map(q => ({
+            // Convert back to ParsedQuestion format if needed, but keeping extra fields is fine
+            id: q.id,
+            question: q.question,
+            type: q.type,
+            options: q.options,
+            correctAnswers: q.correctAnswers,
+            explanation: q.explanation,
+            subQuestions: q.subQuestions,
+            questionImage: q.questionImage,
+            optionImages: q.optionImages
+          }))
+        },
+        className: state.classInfo?.name || "",
+        quizId: state.fileId, // Using fileId as identifier
+        originalTitle: state.quizTitle || quizTitle // Save original title for display in Resumer
+      };
+
+      localStorage.setItem("quiz_edit_progress", JSON.stringify(dataToSave));
+    };
+
+    const timer = setTimeout(saveProgress, 1000); // Debounce save
+    return () => clearTimeout(timer);
+  }, [questions, quizTitle, quizDescription, state]);
 
   const handleQuestionEdit = (questionId: string) => {
     setScrollAnchor(questionId);
@@ -2684,11 +2731,11 @@ const EditQuizPage: React.FC = () => {
                   <div
                     key={index}
                     className={`p-3 rounded-lg border ${(Array.isArray(question.correctAnswers)
-                        ? (question.correctAnswers as string[])
-                        : []
-                      ).includes(option)
-                        ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                        : "border-gray-200 dark:border-gray-600"
+                      ? (question.correctAnswers as string[])
+                      : []
+                    ).includes(option)
+                      ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                      : "border-gray-200 dark:border-gray-600"
                       }`}
                   >
                     <div className="flex items-start space-x-3">
@@ -2752,9 +2799,9 @@ const EditQuizPage: React.FC = () => {
                         <div
                           key={optIdx}
                           className={`p-2 rounded-lg border text-sm ${Array.isArray(subQ.correctAnswers) &&
-                              (subQ.correctAnswers as string[]).includes(opt)
-                              ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                              : "border-gray-200 dark:border-gray-600"
+                            (subQ.correctAnswers as string[]).includes(opt)
+                            ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                            : "border-gray-200 dark:border-gray-600"
                             }`}
                         >
                           <span className="font-medium text-gray-600 dark:text-gray-300">

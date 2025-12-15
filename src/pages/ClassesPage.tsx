@@ -2188,6 +2188,12 @@ const ClassesPage: React.FC = () => {
                                             quizTitle: full.title,
                                             quizDescription: full.description,
                                             isEdit: true,
+                                            classInfo: {
+                                              isNew: false,
+                                              name: classRoom.name,
+                                              description: classRoom.description,
+                                              classId: classRoom.id,
+                                            },
                                           },
                                         });
                                       } catch (e) {
@@ -2437,6 +2443,12 @@ const ClassesPage: React.FC = () => {
                                             quizTitle: full.title,
                                             quizDescription: full.description,
                                             isEdit: true,
+                                            classInfo: {
+                                              isNew: false,
+                                              name: classRoom.name,
+                                              description: classRoom.description,
+                                              classId: classRoom.id,
+                                            },
                                           },
                                         });
                                       } catch (e) {
