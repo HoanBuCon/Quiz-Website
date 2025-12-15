@@ -512,14 +512,6 @@ const Header: React.FC = () => {
               {isLoggedIn ? (
                 <div className="space-y-2">
                   <Link
-                    to="/classes"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
-                  >
-                    <FaGraduationCap className="w-4 h-4 mr-2" />
-                    <span>Lớp học của tôi</span>
-                  </Link>
-                  <Link
                     to="/profile"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
