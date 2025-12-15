@@ -1,10 +1,19 @@
 // getUserInfo.js
-import { PrismaClient } from "@prisma/client";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import readline from "readline";
 import fs from "fs";
-import path from "path";
 
-const prisma = new PrismaClient();
+// Load .env before importing db
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, "../.env") });
+
+// Import DB dynamically to pick up env vars
+const { default: db } = await import("../utils/db.js");
+
+const { query, queryOne, close } = db;
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -39,14 +48,10 @@ rl.question("Nhập lựa chọn (1/2/3/4/5): ", async (choice) => {
       }
 
       case "3": {
-        const users = await prisma.user.findMany({
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            createdAt: true,
-          },
-        });
+        const users = await query(`
+          SELECT id, email, name, createdAt
+          FROM User
+        `);
         if (users.length === 0) {
           console.log("⚠️ Không có người dùng nào trong hệ thống.");
         } else {
@@ -54,74 +59,35 @@ rl.question("Nhập lựa chọn (1/2/3/4/5): ", async (choice) => {
           console.table(users);
         }
         rl.close();
-        await prisma.$disconnect();
+        await close();
         break;
       }
 
       case "4": {
-        const allUsers = await prisma.user.findMany({
-          include: {
-            classes: true,
-            quizzes: true,
-            sessions: {
-              include: {
-                quiz: { select: { id: true, title: true } },
-              },
-            },
-            // === BỔ SUNG TRUY VẤN MỚI ===
-            quizAttempts: {
-              include: {
-                quiz: { select: { id: true, title: true } },
-              },
-              orderBy: {
-                startedAt: "desc", // Lấy các lần thử mới nhất lên đầu
-              },
-            },
-            // === KẾT THÚC BỔ SUNG ===
-          },
-        });
+        const users = await query("SELECT * FROM User");
 
-        if (allUsers.length === 0) {
+        if (users.length === 0) {
           console.log("⚠️ Không có người dùng nào trong hệ thống.");
         } else {
           console.log(
-            `✅ Hiển thị toàn bộ ${allUsers.length} người dùng (full):`
+            `✅ Hiển thị toàn bộ ${users.length} người dùng (full):`
           );
-          for (const user of allUsers) {
-            await printFullUserInfo(user);
-            console.log("\n───────────────────────────────\n");
+          for (const baseUser of users) {
+             const fullUser = await fetchFullUser(baseUser);
+             await printFullUserInfo(fullUser);
+             console.log("\n───────────────────────────────\n");
           }
         }
 
         rl.close();
-        await prisma.$disconnect();
+        await close();
         break;
       }
 
       case "5": {
-        const allUsers = await prisma.user.findMany({
-          include: {
-            classes: true,
-            quizzes: true,
-            sessions: {
-              include: {
-                quiz: { select: { id: true, title: true } },
-              },
-            },
-            // === BỔ SUNG TRUY VẤN MỚI ===
-            quizAttempts: {
-              include: {
-                quiz: { select: { id: true, title: true } },
-              },
-              orderBy: {
-                startedAt: "desc", // Lấy các lần thử mới nhất lên đầu
-              },
-            },
-            // === KẾT THÚC BỔ SUNG ===
-          },
-        });
+        const users = await query("SELECT * FROM User");
 
-        if (allUsers.length === 0) {
+        if (users.length === 0) {
           console.log("⚠️ Không có người dùng nào trong hệ thống.");
         } else {
           const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -141,8 +107,9 @@ rl.question("Nhập lựa chọn (1/2/3/4/5): ", async (choice) => {
             "=====================================================\n"
           );
 
-          for (const user of allUsers) {
-            output.push(formatFullUserText(user));
+          for (const baseUser of users) {
+            const fullUser = await fetchFullUser(baseUser);
+            output.push(formatFullUserText(fullUser));
             output.push(
               "\n-----------------------------------------------------\n"
             );
@@ -155,67 +122,125 @@ rl.question("Nhập lựa chọn (1/2/3/4/5): ", async (choice) => {
         }
 
         rl.close();
-        await prisma.$disconnect();
+        await close();
         break;
       }
 
       default:
         console.log("❌ Lựa chọn không hợp lệ. Vui lòng chọn 1–5.");
         rl.close();
-        await prisma.$disconnect();
+        await close();
         break;
     }
   } catch (error) {
     console.error("🚨 Lỗi khi truy vấn người dùng:", error);
     rl.close();
-    await prisma.$disconnect();
+    await close();
   }
 });
 
 // =============================
 // HÀM TRUY VẤN NGƯỜI DÙNG CHI TIẾT
 // =============================
+
 async function getUserDetail(whereClause) {
   try {
-    const user = await prisma.user.findFirst({
-      where: whereClause,
-      include: {
-        classes: true,
-        quizzes: true,
-        sessions: {
-          include: {
-            quiz: { select: { id: true, title: true } },
-          },
-        },
-        // === BỔ SUNG TRUY VẤN MỚI ===
-        quizAttempts: {
-          include: {
-            quiz: { select: { id: true, title: true } },
-          },
-          orderBy: {
-            startedAt: "desc", // Lấy các lần thử mới nhất lên đầu
-          },
-        },
-        // === KẾT THÚC BỔ SUNG ===
-      },
-    });
+    // 1. Tìm user trước
+    let sql = "SELECT * FROM User WHERE ";
+    const params = [];
+    if (whereClause.name) {
+        sql += "name = ?";
+        params.push(whereClause.name);
+    } else if (whereClause.email) {
+        sql += "email = ?";
+        params.push(whereClause.email);
+    }
+    
+    const user = await queryOne(sql, params);
 
     if (!user) {
       console.log("❌ Không tìm thấy người dùng nào.");
       rl.close();
-      await prisma.$disconnect();
+      await close();
       return;
     }
 
-    await printFullUserInfo(user);
+    // 2. Lấy thông tin liên quan (populate)
+    const fullUser = await fetchFullUser(user);
+
+    // 3. In thông tin
+    await printFullUserInfo(fullUser);
 
     rl.close();
-    await prisma.$disconnect();
+    await close();
   } catch (error) {
     console.error("🚨 Lỗi khi lấy thông tin người dùng:", error);
     rl.close();
-    await prisma.$disconnect();
+    await close();
   }
+}
+
+// ===================================
+// HELPER: Fetch Relations Manually
+// ===================================
+async function fetchFullUser(user) {
+  if (!user) return null;
+  const userId = user.id;
+
+  // 1. Classes
+  const classes = await query("SELECT * FROM Class WHERE ownerId = ?", [userId]);
+  // Fix tinyint boolean
+  classes.forEach(c => c.isPublic = !!c.isPublic);
+
+  // 2. Quizzes
+  const quizzes = await query("SELECT * FROM Quiz WHERE ownerId = ?", [userId]);
+  quizzes.forEach(q => q.published = !!q.published);
+
+  // 3. Sessions (kèm tên quiz và tên lớp)
+  // Prisma: include quiz { select id, title, class: { name } }
+  const sessions = await query(`
+    SELECT s.*, q.title as quizTitle, q.id as qId, c.name as classTitle
+    FROM QuizSession s
+    LEFT JOIN Quiz q ON s.quizId = q.id
+    LEFT JOIN Class c ON q.classId = c.id
+    WHERE s.userId = ?
+  `, [userId]);
+  
+  // Format lại cấu trúc cho giống Prisma
+  const formattedSessions = sessions.map(s => {
+    // Tách quiz info ra
+    const { quizTitle, qId, classTitle, ...rest } = s;
+    return {
+      ...rest,
+      quiz: { id: qId, title: quizTitle, classTitle }
+    };
+  });
+
+  // 4. QuizAttempts (kèm tên quiz và tên lớp, order desc)
+  const attempts = await query(`
+    SELECT a.*, q.title as quizTitle, q.id as qId, c.name as classTitle
+    FROM QuizAttempt a
+    LEFT JOIN Quiz q ON a.quizId = q.id
+    LEFT JOIN Class c ON q.classId = c.id
+    WHERE a.userId = ?
+    ORDER BY a.startedAt DESC
+  `, [userId]);
+
+  const formattedAttempts = attempts.map(a => {
+    const { quizTitle, qId, classTitle, ...rest } = a;
+    return {
+      ...rest,
+      quiz: { id: qId, title: quizTitle, classTitle }
+    };
+  });
+
+  return {
+    ...user,
+    classes,
+    quizzes,
+    sessions: formattedSessions,
+    quizAttempts: formattedAttempts,
+  };
 }
 
 // =============================
@@ -283,6 +308,7 @@ async function printFullUserInfo(user) {
 
     const stats = Object.entries(grouped).map(([quizId, sessions]) => {
       const quizName = sessions[0].quiz.title;
+      const className = sessions[0].quiz.classTitle || "---"; // Lấy tên lớp
       const count = sessions.length;
 
       const avgPercent = (
@@ -309,6 +335,7 @@ async function printFullUserInfo(user) {
       return {
         Quiz_ID: quizId,
         Tiêu_đề: quizName,
+        Tên_Lớp: className, // Thêm tên lớp vào bảng
         Số_lần_làm: count,
         "Điểm_tb(%)": `${avgPercent}%`,
         Tổng_thời_gian: `${totalTime}s`,
@@ -329,6 +356,7 @@ async function printFullUserInfo(user) {
       user.quizAttempts.map((attempt) => ({
         Quiz_ID: attempt.quizId,
         Tiêu_đề: attempt.quiz.title,
+        Tên_Lớp: attempt.quiz.classTitle || "---", // Thêm tên lớp vào bảng
         Vào_lúc: attempt.startedAt?.toLocaleString(),
         Thoát_lúc:
           attempt.endedAt?.toLocaleString() || "(chưa thoát/đang xem)",
@@ -389,6 +417,7 @@ function formatFullUserText(user) {
 
     for (const [quizId, sessions] of Object.entries(grouped)) {
       const quizName = sessions[0].quiz.title;
+      const className = sessions[0].quiz.classTitle || "---"; // Get class name
       const avgPercent = (
         sessions.reduce(
           (sum, s) => sum + (s.score / s.totalQuestions) * 100,
@@ -396,7 +425,8 @@ function formatFullUserText(user) {
         ) / sessions.length
       ).toFixed(2);
       const totalTime = sessions.reduce((sum, s) => sum + s.timeSpent, 0);
-      text += `  • ${quizName} [${quizId}]\n`;
+      
+      text += `  • ${quizName} (Lớp: ${className}) [${quizId}]\n`; // Add class name to header
       text += `    → Số lần làm: ${sessions.length}, Trung bình: ${avgPercent}%, Tổng thời gian: ${totalTime}s\n`;
       sessions
         .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
@@ -420,7 +450,8 @@ function formatFullUserText(user) {
     const sortedAttempts = user.quizAttempts; // Đã sort bằng query
 
     for (const attempt of sortedAttempts) {
-      text += `  • ${attempt.quiz.title} [${attempt.quizId}]\n`;
+      const className = attempt.quiz.classTitle || "---";
+      text += `  • ${attempt.quiz.title} (Lớp: ${className}) [${attempt.quizId}]\n`; // Add class name
       text += `    → Vào lúc: ${attempt.startedAt?.toLocaleString()}\n`;
       text += `    → Thoát lúc: ${
         attempt.endedAt?.toLocaleString() || "(chưa thoát/đang xem)"

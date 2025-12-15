@@ -1,8 +1,17 @@
-// adminActions.js
-import { PrismaClient } from "@prisma/client";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import readline from "readline";
 
-const prisma = new PrismaClient();
+// Load .env before importing db
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, "../.env") });
+
+// Import DB dynamically to pick up env vars
+const { default: db } = await import("../utils/db.js");
+
+const { query, queryOne, close } = db;
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -26,27 +35,29 @@ rl.question("Nhập lựa chọn (1/2/3/4): ", async (choice) => {
       // ==================================================
       case "1": {
         rl.question("Nhập email hoặc username cần xóa: ", async (input) => {
-          const user = await prisma.user.findFirst({
-            where: { OR: [{ email: input.trim() }, { name: input.trim() }] },
-          });
+          const user = await queryOne(
+            "SELECT * FROM User WHERE email = ? OR name = ? LIMIT 1",
+            [input.trim(), input.trim()]
+          );
 
           if (!user) {
             console.log("❌ Không tìm thấy người dùng cần xóa.");
             rl.close();
-            await prisma.$disconnect();
+            await close();
             return;
           }
 
           console.log(`⚠️ Bạn sắp xóa tài khoản: ${user.email || user.name}`);
           rl.question("Bạn có chắc muốn xóa? (yes/no): ", async (confirm) => {
             if (confirm.toLowerCase() === "yes") {
-              await prisma.user.delete({ where: { id: user.id } });
+              // DB handles cascade normally
+              await query("DELETE FROM User WHERE id = ?", [user.id]);
               console.log("✅ Đã xóa tài khoản và toàn bộ dữ liệu liên quan (theo cascade).");
             } else {
               console.log("❎ Đã hủy thao tác.");
             }
             rl.close();
-            await prisma.$disconnect();
+            await close();
           });
         });
         break;
@@ -57,14 +68,15 @@ rl.question("Nhập lựa chọn (1/2/3/4): ", async (choice) => {
       // ==================================================
       case "2": {
         rl.question("Nhập email hoặc username của người dùng cần xóa tin nhắn: ", async (input) => {
-          const user = await prisma.user.findFirst({
-            where: { OR: [{ email: input.trim() }, { name: input.trim() }] },
-          });
+          const user = await queryOne(
+            "SELECT * FROM User WHERE email = ? OR name = ? LIMIT 1",
+            [input.trim(), input.trim()]
+          );
 
           if (!user) {
             console.log("❌ Không tìm thấy người dùng này.");
             rl.close();
-            await prisma.$disconnect();
+            await close();
             return;
           }
 
@@ -81,16 +93,15 @@ c. Xóa toàn bộ tin nhắn
           rl.question("Nhập lựa chọn (a/b/c): ", async (subChoice) => {
             switch (subChoice.trim().toLowerCase()) {
               case "a": {
-                const messages = await prisma.chatMessage.findMany({
-                  where: { userId: user.id },
-                  orderBy: { createdAt: "desc" },
-                  take: 20,
-                });
+                const messages = await query(
+                  "SELECT * FROM ChatMessage WHERE userId = ? ORDER BY createdAt DESC LIMIT 20",
+                  [user.id]
+                );
 
                 if (messages.length === 0) {
                   console.log("⚠️ Người dùng này chưa có tin nhắn nào.");
                   rl.close();
-                  await prisma.$disconnect();
+                  await close();
                   return;
                 }
 
@@ -102,15 +113,18 @@ c. Xóa toàn bộ tin nhắn
                 });
 
                 rl.question("\nNhập ID tin nhắn cần xóa: ", async (msgId) => {
-                  const msg = await prisma.chatMessage.findUnique({ where: { id: msgId.trim() } });
+                  const msg = await queryOne(
+                    "SELECT * FROM ChatMessage WHERE id = ?", 
+                    [msgId.trim()]
+                  );
                   if (!msg) {
                     console.log("❌ Không tìm thấy tin nhắn với ID này.");
                   } else {
-                    await prisma.chatMessage.delete({ where: { id: msg.id } });
+                    await query("DELETE FROM ChatMessage WHERE id = ?", [msg.id]);
                     console.log("✅ Đã xóa tin nhắn.");
                   }
                   rl.close();
-                  await prisma.$disconnect();
+                  await close();
                 });
                 break;
               }
@@ -121,24 +135,33 @@ c. Xóa toàn bộ tin nhắn
                   if (isNaN(num) || num <= 0) {
                     console.log("❌ Số lượng không hợp lệ.");
                     rl.close();
-                    await prisma.$disconnect();
+                    await close();
                     return;
                   }
 
-                  const recentMessages = await prisma.chatMessage.findMany({
-                    where: { userId: user.id },
-                    orderBy: { createdAt: "desc" },
-                    take: num,
-                  });
+                  const recentMessages = await query(
+                    "SELECT id FROM ChatMessage WHERE userId = ? ORDER BY createdAt DESC LIMIT ?",
+                    [user.id, num] // mysql2 usually handles number param for LIMIT
+                  );
+                  // Note: if mysql2/promise errs on string 'limit', make sure num is int (it is).
 
+                  if (recentMessages.length === 0) {
+                      console.log("⚠️ Không có tin nhắn nào để xóa."); // Should not happen if count > 0 logic ok, but safe
+                      rl.close(); await close(); return;
+                  }
+                  
                   const ids = recentMessages.map((m) => m.id);
-                  const deleted = await prisma.chatMessage.deleteMany({
-                    where: { id: { in: ids } },
-                  });
+                  if (ids.length > 0) {
+                      const placeholders = ids.map(() => '?').join(',');
+                      const deleted = await query(
+                          `DELETE FROM ChatMessage WHERE id IN (${placeholders})`,
+                          ids
+                      );
+                      console.log(`✅ Đã xóa ${deleted.affectedRows} tin nhắn gần nhất của ${user.email || user.name}.`);
+                  }
 
-                  console.log(`✅ Đã xóa ${deleted.count} tin nhắn gần nhất của ${user.email || user.name}.`);
                   rl.close();
-                  await prisma.$disconnect();
+                  await close();
                 });
                 break;
               }
@@ -147,15 +170,16 @@ c. Xóa toàn bộ tin nhắn
                 console.log("⚠️ Bạn sắp xóa toàn bộ tin nhắn của người dùng này.");
                 rl.question("Bạn có chắc chắn không? (yes/no): ", async (confirm) => {
                   if (confirm.toLowerCase() === "yes") {
-                    const deleted = await prisma.chatMessage.deleteMany({
-                      where: { userId: user.id },
-                    });
-                    console.log(`✅ Đã xóa toàn bộ ${deleted.count} tin nhắn.`);
+                    const deleted = await query(
+                      "DELETE FROM ChatMessage WHERE userId = ?",
+                      [user.id]
+                    );
+                    console.log(`✅ Đã xóa toàn bộ ${deleted.affectedRows} tin nhắn.`);
                   } else {
                     console.log("❎ Đã hủy thao tác.");
                   }
                   rl.close();
-                  await prisma.$disconnect();
+                  await close();
                 });
                 break;
               }
@@ -163,7 +187,7 @@ c. Xóa toàn bộ tin nhắn
               default:
                 console.log("❌ Lựa chọn không hợp lệ.");
                 rl.close();
-                await prisma.$disconnect();
+                await close();
                 break;
             }
           });
@@ -190,13 +214,13 @@ c. Xóa toàn bộ tin nhắn
       default:
         console.log("❌ Lựa chọn không hợp lệ. Vui lòng chọn 1, 2, 3 hoặc 4.");
         rl.close();
-        await prisma.$disconnect();
+        await close();
         break;
     }
   } catch (error) {
     console.error("🚨 Lỗi trong quá trình xử lý:", error);
     rl.close();
-    await prisma.$disconnect();
+    await close();
   }
 });
 
@@ -205,20 +229,27 @@ c. Xóa toàn bộ tin nhắn
 // ==================================================
 async function handleUserQuizClass() {
   rl.question("Nhập email hoặc username của người dùng: ", async (input) => {
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [{ email: input.trim() }, { name: input.trim() }],
-      },
-      include: {
-        classes: true,
-        quizzes: true,
-      },
-    });
+    // Fetch user
+    const user = await queryOne(
+        "SELECT * FROM User WHERE email = ? OR name = ? LIMIT 1",
+        [input.trim(), input.trim()]
+    );
 
     if (!user) {
       console.log("❌ Không tìm thấy người dùng này. Vui lòng nhập lại.\n");
       return handleUserQuizClass();
     }
+
+    // Fetch Classes
+    const classes = await query("SELECT * FROM Class WHERE ownerId = ?", [user.id]);
+    classes.forEach(c => c.isPublic = !!c.isPublic); // fix bool
+
+    // Fetch Quizzes
+    const quizzes = await query("SELECT * FROM Quiz WHERE ownerId = ?", [user.id]);
+    quizzes.forEach(q => q.published = !!q.published); // fix bool
+
+    user.classes = classes;
+    user.quizzes = quizzes;
 
     console.log(`\n👤 Người dùng: ${user.name || "(không có tên)"} (${user.email})`);
     console.log("=============================================");
@@ -271,28 +302,28 @@ c. Xóa toàn bộ lớp học và quiz của người dùng này
       switch (subChoice.trim().toLowerCase()) {
         case "a": {
           rl.question("Nhập ID lớp học cần xóa: ", async (classId) => {
-            const cls = await prisma.class.findUnique({ where: { id: classId.trim() } });
+            const cls = await queryOne("SELECT * FROM Class WHERE id = ?", [classId.trim()]);
             if (!cls) console.log("❌ Không tìm thấy lớp học với ID đó.");
             else {
-              await prisma.class.delete({ where: { id: cls.id } });
+              await query("DELETE FROM Class WHERE id = ?", [cls.id]);
               console.log(`✅ Đã xóa lớp học "${cls.name}".`);
             }
             rl.close();
-            await prisma.$disconnect();
+            await close();
           });
           break;
         }
 
         case "b": {
           rl.question("Nhập ID quiz cần xóa: ", async (quizId) => {
-            const quiz = await prisma.quiz.findUnique({ where: { id: quizId.trim() } });
+            const quiz = await queryOne("SELECT * FROM Quiz WHERE id = ?", [quizId.trim()]);
             if (!quiz) console.log("❌ Không tìm thấy quiz với ID đó.");
             else {
-              await prisma.quiz.delete({ where: { id: quiz.id } });
+              await query("DELETE FROM Quiz WHERE id = ?", [quiz.id]);
               console.log(`✅ Đã xóa quiz "${quiz.title}".`);
             }
             rl.close();
-            await prisma.$disconnect();
+            await close();
           });
           break;
         }
@@ -301,14 +332,14 @@ c. Xóa toàn bộ lớp học và quiz của người dùng này
           console.log("⚠️ Bạn sắp xóa toàn bộ lớp học và quiz của người dùng này.");
           rl.question("Bạn có chắc chắn không? (yes/no): ", async (confirm) => {
             if (confirm.toLowerCase() === "yes") {
-              const deletedClasses = await prisma.class.deleteMany({ where: { ownerId: user.id } });
-              const deletedQuizzes = await prisma.quiz.deleteMany({ where: { ownerId: user.id } });
-              console.log(`✅ Đã xóa ${deletedClasses.count} lớp học và ${deletedQuizzes.count} quiz.`);
+              const deletedClasses = await query("DELETE FROM Class WHERE ownerId = ?", [user.id]);
+              const deletedQuizzes = await query("DELETE FROM Quiz WHERE ownerId = ?", [user.id]);
+              console.log(`✅ Đã xóa ${deletedClasses.affectedRows} lớp học và ${deletedQuizzes.affectedRows} quiz.`);
             } else {
               console.log("❎ Đã hủy thao tác.");
             }
             rl.close();
-            await prisma.$disconnect();
+            await close();
           });
           break;
         }
@@ -316,7 +347,7 @@ c. Xóa toàn bộ lớp học và quiz của người dùng này
         default:
           console.log("❌ Lựa chọn không hợp lệ.");
           rl.close();
-          await prisma.$disconnect();
+          await close();
           break;
       }
     });
@@ -330,18 +361,23 @@ async function handlePublicContent() {
   console.log("\n🔄 Đang tải danh sách các Class và Quiz đang công khai...");
 
   // 1. Lấy danh sách Class public
-  const publicClasses = await prisma.class.findMany({
-    where: { isPublic: true },
-    include: { owner: true },
-    orderBy: { createdAt: 'desc' }
-  });
-
+  // Need owner info
+  const publicClasses = await query(`
+    SELECT c.*, u.email as owner_email 
+    FROM Class c 
+    LEFT JOIN User u ON c.ownerId = u.id
+    WHERE c.isPublic = 1 
+    ORDER BY c.createdAt DESC
+  `); 
+  
   // 2. Lấy danh sách Quiz published
-  const publicQuizzes = await prisma.quiz.findMany({
-    where: { published: true },
-    include: { owner: true },
-    orderBy: { createdAt: 'desc' }
-  });
+  const publicQuizzes = await query(`
+    SELECT q.*, u.email as owner_email
+    FROM Quiz q
+    LEFT JOIN User u ON q.ownerId = u.id
+    WHERE q.published = 1
+    ORDER BY q.createdAt DESC
+  `);
 
   const hasClasses = publicClasses.length > 0;
   const hasQuizzes = publicQuizzes.length > 0;
@@ -349,7 +385,7 @@ async function handlePublicContent() {
   if (!hasClasses && !hasQuizzes) {
     console.log("✅ Hiện tại không có Class hay Quiz nào đang công khai.");
     rl.close();
-    await prisma.$disconnect();
+    await close();
     return;
   }
 
@@ -360,7 +396,7 @@ async function handlePublicContent() {
       publicClasses.map((c) => ({
         ID: c.id,
         Tên_Lớp: c.name.substring(0, 30) + (c.name.length > 30 ? "..." : ""),
-        Người_tạo: c.owner.email,
+        Người_tạo: c.owner_email,
         Ngày_tạo: new Date(c.createdAt).toLocaleDateString(),
       }))
     );
@@ -373,7 +409,7 @@ async function handlePublicContent() {
       publicQuizzes.map((q) => ({
         ID: q.id,
         Tiêu_đề: q.title.substring(0, 30) + (q.title.length > 30 ? "..." : ""),
-        Người_tạo: q.owner.email,
+        Người_tạo: q.owner_email,
         Ngày_tạo: new Date(q.createdAt).toLocaleDateString(),
       }))
     );
@@ -393,10 +429,10 @@ c. Thoát
       case "a": {
         if (!hasClasses) {
           console.log("❌ Không có Class nào để xử lý.");
-          rl.close(); await prisma.$disconnect(); return;
+          rl.close(); await close(); return;
         }
         rl.question("Nhập ID của Class cần ẩn (Private): ", async (classId) => {
-          const cls = await prisma.class.findUnique({ where: { id: classId.trim() } });
+          const cls = await queryOne("SELECT * FROM Class WHERE id = ?", [classId.trim()]);
           
           if (!cls) {
             console.log("❌ Không tìm thấy Class với ID này.");
@@ -404,48 +440,32 @@ c. Thoát
             console.log(`⏳ Đang xử lý class "${cls.name}" và các quiz bên trong...`);
 
             // 1. Cập nhật bảng Class (Set Private)
-            await prisma.class.update({
-              where: { id: cls.id },
-              data: { isPublic: false },
-            });
+            await query("UPDATE Class SET isPublic = 0 WHERE id = ?", [cls.id]);
 
             // 2. Xóa Class khỏi bảng PublicItem
-            await prisma.publicItem.deleteMany({
-              where: {
-                targetType: 'class',
-                targetId: cls.id
-              }
-            });
+            await query("DELETE FROM PublicItem WHERE targetType = 'class' AND targetId = ?", [cls.id]);
 
             // =========================================================
             // XỬ LÝ CASCADE: ẨN TOÀN BỘ QUIZ TRONG CLASS
             // =========================================================
             
             // Lấy danh sách ID các quiz trong class này
-            const quizzesInClass = await prisma.quiz.findMany({
-              where: { classId: cls.id },
-              select: { id: true }
-            });
-
+            const quizzesInClass = await query("SELECT id FROM Quiz WHERE classId = ?", [cls.id]);
             const quizIds = quizzesInClass.map(q => q.id);
 
             if (quizIds.length > 0) {
               // 3. Set published = false cho tất cả quiz trong class
-              const updateResult = await prisma.quiz.updateMany({
-                where: { classId: cls.id },
-                data: { published: false }
-              });
+              const updateResult = await query("UPDATE Quiz SET published = 0 WHERE classId = ?", [cls.id]);
 
               // 4. Xóa các quiz này khỏi bảng PublicItem (nếu có)
-              const deletePublicItemsResult = await prisma.publicItem.deleteMany({
-                where: {
-                  targetType: 'quiz',
-                  targetId: { in: quizIds }
-                }
-              });
+              const placeholders = quizIds.map(() => '?').join(',');
+              const deletePublicItemsResult = await query(
+                  `DELETE FROM PublicItem WHERE targetType = 'quiz' AND targetId IN (${placeholders})`,
+                  quizIds
+              );
 
-              console.log(`   ↳ Đã ẩn thêm ${updateResult.count} quiz thuộc class này.`);
-              console.log(`   ↳ Đã gỡ ${deletePublicItemsResult.count} quiz khỏi trang Public.`);
+              console.log(`   ↳ Đã ẩn thêm ${updateResult.affectedRows} quiz thuộc class này.`);
+              console.log(`   ↳ Đã gỡ ${deletePublicItemsResult.affectedRows} quiz khỏi trang Public.`);
             } else {
               console.log("   ↳ Class này không chứa quiz nào.");
             }
@@ -453,7 +473,7 @@ c. Thoát
             console.log(`✅ Hoàn tất! Class "${cls.name}" và toàn bộ nội dung bên trong đã chuyển sang Private.`);
           }
           rl.close();
-          await prisma.$disconnect();
+          await close();
         });
         break;
       }
@@ -461,32 +481,24 @@ c. Thoát
       case "b": {
         if (!hasQuizzes) {
           console.log("❌ Không có Quiz nào để xử lý.");
-          rl.close(); await prisma.$disconnect(); return;
+          rl.close(); await close(); return;
         }
         rl.question("Nhập ID của Quiz cần ẩn (Unpublish): ", async (quizId) => {
-          const quiz = await prisma.quiz.findUnique({ where: { id: quizId.trim() } });
+          const quiz = await queryOne("SELECT * FROM Quiz WHERE id = ?", [quizId.trim()]);
 
           if (!quiz) {
             console.log("❌ Không tìm thấy Quiz với ID này.");
           } else {
             // 1. Cập nhật bảng Quiz
-            await prisma.quiz.update({
-              where: { id: quiz.id },
-              data: { published: false },
-            });
+            await query("UPDATE Quiz SET published = 0 WHERE id = ?", [quiz.id]);
 
             // 2. Xóa khỏi bảng PublicItem (Quan trọng để ẩn trên web)
-            await prisma.publicItem.deleteMany({
-              where: {
-                targetType: 'quiz',
-                targetId: quiz.id
-              }
-            });
+            await query("DELETE FROM PublicItem WHERE targetType = 'quiz' AND targetId = ?", [quiz.id]);
 
             console.log(`✅ Đã chuyển Quiz "${quiz.title}" sang trạng thái Private và xóa khỏi PublicItem.`);
           }
           rl.close();
-          await prisma.$disconnect();
+          await close();
         });
         break;
       }
@@ -495,7 +507,7 @@ c. Thoát
       default:
         console.log("👋 Kết thúc thao tác.");
         rl.close();
-        await prisma.$disconnect();
+        await close();
         break;
     }
   });
