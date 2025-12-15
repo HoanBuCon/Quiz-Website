@@ -722,6 +722,13 @@ const EditQuizPage: React.FC = () => {
     }
   };
 
+  const handleCancel = () => {
+    if (window.confirm("Bạn có chắc chắn muốn hủy bỏ mọi thay đổi?\n\nTất cả các chỉnh sửa chưa lưu sẽ bị mất và trạng thái sẽ quay về như cũ.")) {
+      localStorage.removeItem("quiz_edit_progress");
+      navigate("/classes"); // Or navigate(-1) but explicit path is safer for "cancel" action
+    }
+  };
+
   useEffect(() => {
     console.log("EditQuizPage: received state", state);
 
@@ -2987,6 +2994,25 @@ const EditQuizPage: React.FC = () => {
                 </>
               )}
             </button>
+            <button
+              onClick={handleCancel}
+              className="btn-secondary flex items-center !bg-gray-100 !text-gray-600 hover:!bg-gray-200 dark:!bg-gray-700 dark:!text-gray-300 dark:hover:!bg-gray-600"
+            >
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              Hủy
+            </button>
           </div>
         </div>
 
@@ -3205,6 +3231,25 @@ const EditQuizPage: React.FC = () => {
                     Xuất bản Quiz
                   </>
                 )}
+              </button>
+              <button
+                onClick={handleCancel}
+                className="btn-secondary flex items-center !bg-gray-100 !text-gray-600 hover:!bg-gray-200 dark:!bg-gray-700 dark:!text-gray-300 dark:hover:!bg-gray-600"
+              >
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                Hủy
               </button>
             </div>
           </div>
