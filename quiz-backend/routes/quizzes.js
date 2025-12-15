@@ -377,8 +377,8 @@ router.get('/:id', authRequired, async (req, res) => {
       [req.user.id, 'class', quiz.classId]
     );
     
-    // Get class info for legacy isPublic check
-    const cls = await queryOne('SELECT isPublic FROM Class WHERE id = ?', [quiz.classId]);
+    // Get class info for legacy isPublic check and name
+    const cls = await queryOne('SELECT isPublic, name FROM Class WHERE id = ?', [quiz.classId]);
     const isClassPublicLegacy = cls ? intToBool(cls.isPublic) : false;
 
     // Access rules
@@ -418,6 +418,7 @@ router.get('/:id', authRequired, async (req, res) => {
 
     quiz.published = intToBool(quiz.published);
     quiz.questions = roots;
+    quiz.className = cls ? cls.name : null;
     
     res.json(quiz);
   } catch (e) {

@@ -11,6 +11,8 @@ import { Question, UserAnswer, DragTarget, DragItem } from "../types";
 import { buildShortId } from "../utils/share";
 
 // Component trang làm bài trắc nghiệm
+const QUIZ_PROGRESS_KEY = "quiz_progress";
+
 const QuizPage: React.FC = () => {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
@@ -21,7 +23,8 @@ const QuizPage: React.FC = () => {
   const [markedQuestions, setMarkedQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [quizTitle, setQuizTitle] = useState("");
-  const [startTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
+  const [className, setClassName] = useState("");
+  const [startTime, setStartTime] = useState(Date.now()); // Thời gian bắt đầu làm bài
   const [effectiveQuizId, setEffectiveQuizId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState<number>(0);
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -115,12 +118,53 @@ const QuizPage: React.FC = () => {
         const found = await QuizzesAPI.getById(quizId, token);
 
         if (found) {
-          setQuizTitle(found.title);
-          // Lưu câu hỏi gốc
-          const loadedQuestions = found.questions || [];
-          setOriginalQuestions(loadedQuestions);
-          setQuestions(loadedQuestions);
-          setEffectiveQuizId(found.id);
+          // Check for saved progress (priority)
+          const savedRaw = localStorage.getItem(QUIZ_PROGRESS_KEY);
+          let restored = false;
+          if (savedRaw) {
+            try {
+              const saved = JSON.parse(savedRaw);
+              if (saved && saved.quizId === quizId) {
+                // Restore state
+                setQuizTitle(saved.quizTitle || found.title);
+                setClassName(saved.className || found.className || "");
+                setQuestions(saved.questions);
+                setOriginalQuestions(found.questions || []); // Keep original for reference
+                setEffectiveQuizId(saved.effectiveQuizId || found.id);
+                setUserAnswers(saved.userAnswers || []);
+                setCurrentQuestionIndex(saved.currentQuestionIndex || 0);
+                setAttemptId(saved.attemptId);
+                setUiMode(saved.uiMode || "default");
+                setShuffleMode(saved.shuffleMode || null);
+                setSelectedUiMode(saved.selectedUiMode || null);
+                if (saved.revealed) {
+                  setRevealed(new Set(saved.revealed));
+                }
+
+                // Timer restoration
+                if (typeof saved.elapsed === 'number') {
+                  setElapsed(saved.elapsed);
+                  setStartTime(Date.now() - saved.elapsed * 1000);
+                }
+
+                restored = true;
+                setLoading(false);
+                return;
+              }
+            } catch (e) {
+              console.error("Error restoring progress:", e);
+            }
+          }
+
+          if (!restored) {
+            setQuizTitle(found.title);
+            setClassName(found.className || "");
+            // Lưu câu hỏi gốc
+            const loadedQuestions = found.questions || [];
+            setOriginalQuestions(loadedQuestions);
+            setQuestions(loadedQuestions);
+            setEffectiveQuizId(found.id);
+          }
         } else {
           throw new Error("Quiz không tìm thấy");
         }
@@ -150,6 +194,7 @@ const QuizPage: React.FC = () => {
   // Tạo QuizAttempt khi đã biết quizId hiệu lực
   useEffect(() => {
     if (!effectiveQuizId) return;
+    if (attemptRef.current) return; // Prevent restart if restored
     let cancelled = false;
     (async () => {
       try {
@@ -200,6 +245,29 @@ const QuizPage: React.FC = () => {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  // Save progress effect
+  useEffect(() => {
+    if (!loading && questions.length > 0 && quizId) {
+      const dataToSave = {
+        quizId,
+        quizTitle,
+        className,
+        questions,
+        userAnswers,
+        currentQuestionIndex,
+        attemptId,
+        uiMode,
+        shuffleMode,
+        selectedUiMode,
+        revealed: Array.from(revealed),
+        elapsed, // Save current elapsed
+        effectiveQuizId,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(QUIZ_PROGRESS_KEY, JSON.stringify(dataToSave));
+    }
+  }, [quizId, quizTitle, className, questions, userAnswers, currentQuestionIndex, attemptId, uiMode, shuffleMode, selectedUiMode, revealed, elapsed, effectiveQuizId, loading]);
 
   // Reset focus khi chuyển câu hỏi
   useEffect(() => {
@@ -693,6 +761,10 @@ const QuizPage: React.FC = () => {
             Array.isArray(v) && typeof v[0] === "object" ? v[0] : v;
           return acc;
         }, {} as Record<string, any>);
+
+        // Clear saved progress before submitting
+        localStorage.removeItem(QUIZ_PROGRESS_KEY);
+
         const { SessionsAPI } = await import("../utils/api");
         const qid = effectiveQuizId || quizId!;
         const created = await SessionsAPI.submit(
@@ -792,8 +864,8 @@ const QuizPage: React.FC = () => {
             <div className="flex flex-row justify-between items-start mb-4 gap-3 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                  Câu {currentQuestionIndex + 1}/{questions.length} (ID:{" "}
-                  {currentQuestion.id})
+                  Câu {currentQuestionIndex + 1}/{questions.length} {/*(ID:{" "}
+                  {currentQuestion.id})*/}
                 </span>
                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   {currentQuestion.type === "single"

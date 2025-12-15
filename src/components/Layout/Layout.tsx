@@ -3,6 +3,7 @@ import Header from "./Header";
 import Footer from "./Footer";
 import BackgroundMusic from "../BackgroundMusic";
 import ChatBox from "../ChatBox";
+import QuizResumer from "../QuizResumer";
 
 // Interface cho Layout component
 interface LayoutProps {
@@ -24,6 +25,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Global ChatBox */}
       <ChatBox />
+
+      {/* Quiz Resumer Modal */}
+      <QuizResumer />
     </div>
   );
 };

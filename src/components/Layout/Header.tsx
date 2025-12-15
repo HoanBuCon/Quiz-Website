@@ -125,6 +125,7 @@ const Header: React.FC = () => {
     setIsLoggedIn(false);
     setUserName(null);
     clearData(); // Clear pre-fetched data
+    try { localStorage.removeItem("quiz_progress"); } catch { }
     toast.success("Đã đăng xuất thành công!");
     // Trigger Header update
     window.dispatchEvent(new Event("authChange"));
