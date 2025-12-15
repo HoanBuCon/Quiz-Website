@@ -341,7 +341,7 @@ const ProfilePage: React.FC = () => {
                                         onClick={() => setEditingName(true)}
                                         className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center gap-1"
                                     >
-                                        <FaEdit /> Sửa
+                                        <FaEdit /> Đổi tên
                                     </button>
                                 )}
                             </div>
@@ -391,7 +391,7 @@ const ProfilePage: React.FC = () => {
                                         onClick={() => setEditingEmail(true)}
                                         className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center gap-1"
                                     >
-                                        <FaEdit /> Sửa
+                                        <FaEdit /> Đổi Email
                                     </button>
                                 )}
                             </div>
