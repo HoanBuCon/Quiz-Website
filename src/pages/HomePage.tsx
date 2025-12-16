@@ -38,29 +38,29 @@ const HomePage: React.FC = () => {
         setLoading(true);
         const { getToken } = await import("../utils/auth");
         const token = getToken();
-        
+
         if (!token) {
           setIsLoggedIn(false);
           setLoading(false);
           return;
         }
-        
+
         setIsLoggedIn(true);
         const { ClassesAPI, QuizzesAPI } = await import("../utils/api");
-        
+
         // Fetch public classes
         const publicClassesData = await ClassesAPI.listPublic(token);
-        
+
         // Process public classes with quizzes
         const processedClasses: ClassRoom[] = [];
         let totalQuizzesCount = 0;
-        
+
         for (const cls of publicClassesData) {
           const quizzes = await QuizzesAPI.byClass(cls.id, token);
           const publishedQuizzes = quizzes.filter((q: any) => q.published === true);
-          
+
           totalQuizzesCount += publishedQuizzes.length;
-          
+
           processedClasses.push({
             id: cls.id,
             name: cls.name,
@@ -70,7 +70,7 @@ const HomePage: React.FC = () => {
             updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
           } as unknown as ClassRoom);
         }
-        
+
         setPublicClasses(processedClasses);
         setTotalClasses(processedClasses.length);
         setTotalQuizzes(totalQuizzesCount);
@@ -81,7 +81,7 @@ const HomePage: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -371,7 +371,9 @@ const HomePage: React.FC = () => {
                             classRoom.quizzes.length === 1
                           ) {
                             const firstQuiz = (classRoom.quizzes as Quiz[])[0];
-                            navigate(`/quiz/${firstQuiz.id}`);
+                            navigate(`/quiz/${firstQuiz.id}`, {
+                              state: { className: classRoom.name },
+                            });
                           } else {
                             setOpenDropdown(
                               openDropdown === classRoom.id
@@ -397,9 +399,8 @@ const HomePage: React.FC = () => {
                         Tham gia
                         {classRoom.quizzes && classRoom.quizzes.length > 1 && (
                           <svg
-                            className={`w-4 h-4 transition-transform duration-200 ${
-                              openDropdown === classRoom.id ? "rotate-180" : ""
-                            }`}
+                            className={`w-4 h-4 transition-transform duration-200 ${openDropdown === classRoom.id ? "rotate-180" : ""
+                              }`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -430,7 +431,9 @@ const HomePage: React.FC = () => {
                                   <button
                                     key={quiz.id}
                                     onClick={() => {
-                                      navigate(`/quiz/${quiz.id}`);
+                                      navigate(`/quiz/${quiz.id}`, {
+                                        state: { className: classRoom.name },
+                                      });
                                       setOpenDropdown(null);
                                     }}
                                     className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group"
@@ -495,7 +498,11 @@ const HomePage: React.FC = () => {
                                 </p>
                               </div>
                               <button
-                                onClick={() => navigate(`/quiz/${quiz.id}`)}
+                                onClick={() =>
+                                  navigate(`/quiz/${quiz.id}`, {
+                                    state: { className: classRoom.name },
+                                  })
+                                }
                                 className="btn-secondary text-sm px-4 py-2 flex items-center justify-center gap-2 hover:bg-primary-500 hover:text-white transition-all"
                               >
                                 <svg
@@ -583,17 +590,14 @@ const HomePage: React.FC = () => {
                       className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
                       style={{
                         maxHeight: 280,
-                        transform: `perspective(1000px) rotateY(${
-                          mousePosition.x * 0.1
-                        }deg) rotateX(${
-                          -mousePosition.y * 0.1
-                        }deg) translateZ(${
-                          Math.abs(mousePosition.x) +
+                        transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1
+                          }deg) rotateX(${-mousePosition.y * 0.1
+                          }deg) translateZ(${Math.abs(mousePosition.x) +
                             Math.abs(mousePosition.y) >
-                          0
+                            0
                             ? "20px"
                             : "0px"
-                        })`,
+                          })`,
                         border: "2px solid transparent",
                         backgroundImage: isDarkMode
                           ? "linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)"
@@ -606,11 +610,10 @@ const HomePage: React.FC = () => {
                     />
                     {/* Tooltip */}
                     <div
-                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${
-                        isDarkMode
+                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
                           ? "bg-gray-800 text-white border border-gray-700"
                           : "bg-white text-gray-900 border border-gray-200"
-                      }`}
+                        }`}
                     >
                       Click để chuyển đến trang →
                     </div>

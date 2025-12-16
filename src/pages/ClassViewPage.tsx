@@ -83,7 +83,9 @@ const ClassViewPage: React.FC = () => {
                 )}
               </div>
               <button
-                onClick={() => navigate(`/quiz/${q.id}`)}
+                onClick={() =>
+                  navigate(`/quiz/${q.id}`, { state: { className: title } })
+                }
                 className="btn-secondary"
               >
                 Làm bài

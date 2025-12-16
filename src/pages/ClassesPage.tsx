@@ -2000,6 +2000,7 @@ const ClassesPage: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                   <Link
                                     to={`/quiz/${quiz.id}`}
+                                    state={{ className: classRoom.name }}
                                     className="btn-secondary text-sm hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2"
                                   >
                                     <svg
@@ -2264,6 +2265,7 @@ const ClassesPage: React.FC = () => {
                                 <div className="flex flex-row gap-2">
                                   <Link
                                     to={`/quiz/${quiz.id}`}
+                                    state={{ className: classRoom.name }}
                                     className="btn-secondary text-sm text-center w-full hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2"
                                   >
                                     <svg

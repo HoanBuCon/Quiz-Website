@@ -6,7 +6,7 @@ import {
   FaRegClock,
 } from "react-icons/fa";
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Question, UserAnswer, DragTarget, DragItem } from "../types";
 import { buildShortId } from "../utils/share";
 
@@ -16,6 +16,7 @@ const QUIZ_PROGRESS_KEY = "quiz_progress";
 const QuizPage: React.FC = () => {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [originalQuestions, setOriginalQuestions] = useState<Question[]>([]); // Lưu câu hỏi gốc
@@ -129,7 +130,7 @@ const QuizPage: React.FC = () => {
               if (saved && saved.quizId === quizId) {
                 // Restore state
                 setQuizTitle(saved.quizTitle || found.title);
-                setClassName(saved.className || found.className || "");
+                setClassName(saved.className || found.className || (location.state as any)?.className || "");
                 setQuestions(saved.questions);
                 setOriginalQuestions(found.questions || []); // Keep original for reference
                 setEffectiveQuizId(saved.effectiveQuizId || found.id);
@@ -160,7 +161,7 @@ const QuizPage: React.FC = () => {
 
           if (!restored) {
             setQuizTitle(found.title);
-            setClassName(found.className || "");
+            setClassName(found.className || (location.state as any)?.className || "");
             // Lưu câu hỏi gốc
             const loadedQuestions = found.questions || [];
             setOriginalQuestions(loadedQuestions);
