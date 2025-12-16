@@ -38,6 +38,8 @@ const QuizPage: React.FC = () => {
   const [shuffleMode, setShuffleMode] = useState<null | "none" | "random">(null);
   // Theo dõi xem người dùng đã chọn ui mode chưa
   const [selectedUiMode, setSelectedUiMode] = useState<"default" | "instant" | null>(null);
+  // State để chặn auto-save khi đang nộp bài
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // Lưu trạng thái đã xác nhận (reveal) cho các câu hỏi cần nút Xác nhận (text/drag)
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
   // Theo dõi viewport để render floating nút chuyển đổi chỉ khi >= 1024px (lg)
@@ -248,6 +250,7 @@ const QuizPage: React.FC = () => {
 
   // Save progress effect
   useEffect(() => {
+    if (isSubmitting) return; // Block saving if submitting
     if (!loading && questions.length > 0 && quizId) {
       const dataToSave = {
         quizId,
@@ -267,7 +270,7 @@ const QuizPage: React.FC = () => {
       };
       localStorage.setItem(QUIZ_PROGRESS_KEY, JSON.stringify(dataToSave));
     }
-  }, [quizId, quizTitle, className, questions, userAnswers, currentQuestionIndex, attemptId, uiMode, shuffleMode, selectedUiMode, revealed, elapsed, effectiveQuizId, loading]);
+  }, [quizId, quizTitle, className, questions, userAnswers, currentQuestionIndex, attemptId, uiMode, shuffleMode, selectedUiMode, revealed, elapsed, effectiveQuizId, loading, isSubmitting]);
 
   // Reset focus khi chuyển câu hỏi
   useEffect(() => {
@@ -747,6 +750,7 @@ const QuizPage: React.FC = () => {
   // Submit answers
   const handleSubmit = async () => {
     if (window.confirm("Bạn có chắc chắn muốn nộp bài?")) {
+      setIsSubmitting(true); // Stop auto-save
       try {
         const { getToken } = await import("../utils/auth");
         const token = getToken();
@@ -780,6 +784,7 @@ const QuizPage: React.FC = () => {
       } catch (e) {
         console.error("Submit failed:", e);
         alert("Có lỗi xảy ra khi nộp bài.");
+        setIsSubmitting(false); // Re-enable if error
       }
     }
   };
