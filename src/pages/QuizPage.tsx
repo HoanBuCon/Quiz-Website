@@ -731,7 +731,7 @@ const QuizPage: React.FC = () => {
     const ca = Array.isArray(q.correctAnswers)
       ? (q.correctAnswers as string[])
       : [];
-    const norm = (s: string) => (s || "").trim().toLowerCase();
+    const norm = (s: string) => (s || "").trim();
     return ca.some((ans) => norm(ans) === norm(value));
   };
 
