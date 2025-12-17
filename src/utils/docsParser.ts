@@ -1,14 +1,13 @@
-import { Question } from "../types";
-import { parseWordFile, validateWordFormat } from "./wordParser";
+import { parseWordFile } from "./wordParser";
 
 export interface ParsedQuestion {
   id: string;
   question: string;
   type: "single" | "multiple" | "text" | "drag" | "composite";
-  options?: string[] | { targets: any[]; items: any[] };
+  options?: string[] | { targets: any[]; items: any[]; [key: string]: any };
   correctAnswers: string[] | Record<string, string>;
   explanation?: string;
-  subQuestions?: ParsedQuestion[]; // Hỗ trợ câu hỏi mẹ
+  subQuestions?: ParsedQuestion[];
 }
 
 export interface ParseResult {
@@ -66,86 +65,267 @@ export async function parseFile(file: File): Promise<ParseResult> {
   }
 }
 
+// Generate unique ID
+function generateId(): string {
+  // Simple unique ID generator
+  return `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
 export function parseDocsContent(content: string): ParsedQuestion[] {
+  // Pre-process: Normalize smart quotes and newlines
+  let normalizedContent = content
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+    .replace(/[\u2018\u2019]/g, "'"); // Smart single quotes
+
+  // Heuristic: Inject newlines before potential headers/options to handle merged lines
+  // 1. Inject before "Câu <n>:" or "Câu : " if preceded by whitespace or non-newline
+  // 2. Inject before "*A." (starred) even if NO whitespace (aggressive split)
+  // 3. Inject before "A." (non-starred) ONLY if preceded by whitespace (avoid false positives)
+  // 4. Inject before "result:", "group:", "{", "}"
+  
+  normalizedContent = normalizedContent
+    // Inject newline trước "Câu n:"
+    .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
+
+    // Keywords đặc biệt
+    .replace(/([^\n])\s*(result:|group:|{ |^{|}$| }|}$)/gm, '$1\n$2');
+
   const questions: ParsedQuestion[] = [];
-  const lines = content
+  const lines = normalizedContent
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
   let currentQuestion: Partial<ParsedQuestion> = {};
   let currentOptions: string[] = [];
-  let currentCorrectAnswers: string[] = [];
+  let currentCorrectAnswers: string[] = []; // For Single/Multiple/Text
+  
+  // State for Composite (Parent/Child)
+  let isCollectingComposite = false;
+  let compositeBuffer: string[] = [];
+  let compositeBraceCount = 0;
+
+  const flushQuestion = () => {
+    // Only flush if we have a question text
+    if (currentQuestion.question) {
+      // Default ID if missing
+      if (!currentQuestion.id) {
+        currentQuestion.id = generateId();
+      }
+
+      // Determine type if not explicitly set (e.g. by group/result parsing)
+      if (!currentQuestion.type) {
+        currentQuestion.type = determineQuestionType(currentCorrectAnswers);
+      }
+
+      // Construct final object
+      const q: ParsedQuestion = {
+        id: currentQuestion.id!,
+        question: currentQuestion.question,
+        type: currentQuestion.type as any,
+        correctAnswers: currentCorrectAnswers.length > 0 ? currentCorrectAnswers : [],
+        explanation: currentQuestion.explanation,
+        subQuestions: currentQuestion.subQuestions
+      };
+
+      // Assign options based on type
+      if (q.type === 'drag' && currentQuestion.options) {
+        q.options = currentQuestion.options;
+        // Correct answers for drag should be map, usually handled in group parsing.
+        if (currentQuestion.correctAnswers) {
+            q.correctAnswers = currentQuestion.correctAnswers;
+        }
+      } else if (q.type !== 'text' && q.type !== 'composite') {
+        q.options = currentOptions;
+      }
+
+      questions.push(q);
+    }
+    
+    // Reset state
+    currentQuestion = {};
+    currentOptions = [];
+    currentCorrectAnswers = [];
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Tìm ID của câu hỏi
+    // --- COMPOSITE BLOCK HANDLING ---
+    if (isCollectingComposite) {
+      // Check for braces to handle nesting (simple counter)
+      const openCount = (line.match(/{/g) || []).length;
+      const closeCount = (line.match(/}/g) || []).length;
+      
+      compositeBraceCount += openCount - closeCount;
+
+      if (compositeBraceCount <= 0) {
+        // End of composite block
+        isCollectingComposite = false;
+        
+        // Recursively parse buffer
+        if (compositeBuffer.length > 0) {
+           const subQs = parseDocsContent(compositeBuffer.join("\n"));
+           currentQuestion.subQuestions = subQs;
+           currentQuestion.type = "composite";
+           flushQuestion();
+        }
+        compositeBuffer = [];
+      } else {
+        compositeBuffer.push(line);
+      }
+      continue;
+    }
+
+    // Check start of Composite Block
+    if (line === "{" && currentQuestion.question) {
+        isCollectingComposite = true;
+        compositeBraceCount = 1;
+        continue;
+    }
+
+    // --- STANDARD PARSING ---
+
+    // 1. Explicit ID (Optional)
     if (line.startsWith("ID:")) {
-      // Lưu câu hỏi trước đó nếu có
-      if (currentQuestion.question && currentQuestion.question.length > 0) {
-        const questionType = determineQuestionType(currentCorrectAnswers);
-        questions.push({
-          id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
-          question: currentQuestion.question,
-          type: questionType,
-          options: questionType !== "text" ? currentOptions : undefined,
-          correctAnswers: currentCorrectAnswers,
-          explanation: currentQuestion.explanation,
-        });
-      }
-
-      // Bắt đầu câu hỏi mới
-      const idMatch = line.match(/ID:\s*(\d+)/);
+      if (currentQuestion.question) flushQuestion();
+      
+      const idMatch = line.match(/ID:\s*(\w+)/);
       currentQuestion = {
-        id: idMatch ? idMatch[1] : `q-${Date.now()}-${Math.random()}`,
+        id: idMatch ? idMatch[1] : generateId()
       };
-      currentOptions = [];
-      currentCorrectAnswers = [];
       continue;
     }
 
-    // Tìm câu hỏi
-    if (line.startsWith("Câu") && line.includes(":")) {
-      const questionMatch = line.match(/Câu\s+\d+:\s*(.+)/);
-      if (questionMatch) {
-        currentQuestion.question = questionMatch[1].trim();
-      }
+    // 2. Question Text (Câu n:)
+    if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) {
+      if (currentQuestion.question) flushQuestion();
+
+      // Extract text after colon
+      const colonIndex = line.indexOf(":");
+      const text = line.substring(colonIndex + 1).trim();
+      
+      // Inherit ID if set, otherwise gen
+      if (!currentQuestion.id) currentQuestion.id = generateId();
+      currentQuestion.question = text;
       continue;
     }
 
-    // Tìm các đáp án - cải thiện regex để xử lý tốt hơn
-    if (line.match(/^[*]?[A-E]\.\s+/)) {
-      const optionMatch = line.match(/^[*]?([A-E])\.\s*(.+)/);
-      if (optionMatch) {
-        const optionLetter = optionMatch[1];
-        const optionText = optionMatch[2].trim();
-        const isCorrect = line.startsWith("*");
+    // 3. Options (A. B. C. D.) — ROBUST PARSER (ES5 compatible)
+    const optionRegex = /([*]?)([A-E])\.\s*/g;
+    let match: RegExpExecArray | null;
 
-        // Kiểm tra xem có dấu * không
-        if (isCorrect) {
-          currentOptions.push(optionText);
-          currentCorrectAnswers.push(optionText);
-        } else {
-          currentOptions.push(optionText);
+    const optionMatches: {
+      isCorrect: boolean;
+      index: number;
+      length: number;
+    }[] = [];
+
+    while ((match = optionRegex.exec(line)) !== null) {
+      optionMatches.push({
+        isCorrect: match[1] === "*",
+        index: match.index,
+        length: match[0].length,
+      });
+    }
+
+    if (optionMatches.length > 0) {
+      for (let i = 0; i < optionMatches.length; i++) {
+        const start = optionMatches[i].index + optionMatches[i].length;
+        const end =
+          i + 1 < optionMatches.length
+            ? optionMatches[i + 1].index
+            : line.length;
+
+        const content = line.substring(start, end).trim();
+
+        if (content.length > 0) {
+          currentOptions.push(content);
+          if (optionMatches[i].isCorrect) {
+            currentCorrectAnswers.push(content);
+          }
         }
       }
+      continue;
+    }
+
+    // 4. Fill-in / Drag Result (result: ...)
+    if (line.startsWith("result:")) {
+      const content = line.substring(7).trim();
+      
+      // Check if array -> Drag Items
+      if (content.startsWith("[") && content.endsWith("]")) {
+        try {
+           // Normalize quotes is done at top, but ensure JSON valid format
+           const items = JSON.parse(content);
+           
+           // Init dragging options structure
+           const dragItems = items.map((t: string) => ({ id: t, label: t }));
+           
+           currentQuestion.type = 'drag';
+           currentQuestion.options = { 
+               items: dragItems,
+               targets: [] // will be filled by group:
+           };
+        } catch (e) {
+           console.warn("Failed to parse result array", e);
+           // Fallback to text
+           currentCorrectAnswers.push(content);
+           currentQuestion.type = 'text';
+        }
+      } else {
+        // Simple text result
+        currentCorrectAnswers.push(content);
+        currentQuestion.type = 'text';
+      }
+      continue;
+    }
+
+    // 5. Group Definition (group: ...)
+    if (line.startsWith("group:")) {
+      const content = line.substring(6).trim();
+      
+      const targets: any[] = [];
+      const mapping: Record<string, string> = {}; 
+
+      // Improved Regex: handles quotes inside keys/values better 
+      // \("([^"]+)"\s*:\s*(\[[^\]]+\])\)
+      const regex = /\("([^"]+)"\s*:\s*(\[[^\]]+\])\)/g;
+      let match;
+      
+      while ((match = regex.exec(content)) !== null) {
+         const targetLabel = match[1];
+         const itemsJson = match[2]; // quotes already normalized
+         
+         const targetId = targetLabel;
+         targets.push({ id: targetId, label: targetLabel });
+         
+         try {
+             const items = JSON.parse(itemsJson);
+             items.forEach((item: string) => {
+                 mapping[item] = targetId;
+             });
+         } catch (e) {
+             console.warn("Error parsing group items", e);
+         }
+      }
+
+      if (currentQuestion.options && typeof currentQuestion.options === 'object' && !Array.isArray(currentQuestion.options)) {
+          currentQuestion.options.targets = targets;
+      } else {
+           currentQuestion.options = { items: [], targets: targets };
+      }
+      
+      currentQuestion.correctAnswers = mapping;
+      currentQuestion.type = 'drag';
+      continue;
     }
   }
 
-  // Thêm câu hỏi cuối cùng
-  if (currentQuestion.question && currentQuestion.question.length > 0) {
-    const questionType = determineQuestionType(currentCorrectAnswers);
-
-    questions.push({
-      id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
-      question: currentQuestion.question,
-      type: questionType,
-      options: questionType !== "text" ? currentOptions : undefined,
-      correctAnswers: currentCorrectAnswers,
-      explanation: currentQuestion.explanation,
-    });
-  }
+  // Flush last question
+  flushQuestion();
 
   return questions;
 }
@@ -154,11 +334,11 @@ function determineQuestionType(
   correctAnswers: string[]
 ): "single" | "multiple" | "text" {
   if (correctAnswers.length === 0) {
-    return "text"; // Câu hỏi điền đáp án
+    return "text"; // Mặc định là text nếu không có đáp án đúng (hoặc điền khuyết)
   } else if (correctAnswers.length === 1) {
-    return "single"; // Câu hỏi chọn 1 đáp án
+    return "single";
   } else {
-    return "multiple"; // Câu hỏi chọn nhiều đáp án
+    return "multiple";
   }
 }
 
@@ -172,72 +352,26 @@ export function validateDocsFormat(content: string): {
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-  let hasQuestions = false;
-  let currentQuestionId = "";
   let hasValidQuestion = false;
-  let questionCount = 0;
   let totalLines = lines.length;
-  let hasIdFormat = false;
-  let hasQuestionFormat = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     if (line.startsWith("ID:")) {
-      hasIdFormat = true;
-      const idMatch = line.match(/ID:\s*(\d+)/);
-      if (!idMatch) {
-        errors.push(`Dòng ${i + 1}: Định dạng ID không hợp lệ - "${line}"`);
-      } else {
-        currentQuestionId = idMatch[1];
-        hasQuestions = true;
-      }
-    } else if (line.startsWith("Câu") && line.includes(":")) {
-      hasQuestionFormat = true;
-      if (!currentQuestionId) {
-        errors.push(`Dòng ${i + 1}: Thiếu ID cho câu hỏi - "${line}"`);
-      } else {
-        hasValidQuestion = true;
-        questionCount++;
-      }
-    } else if (line.match(/^[*]?[A-E]\.\s+/)) {
-      if (!currentQuestionId) {
-        errors.push(`Dòng ${i + 1}: Thiếu ID cho đáp án - "${line}"`);
-      }
+        // found ID
+    } else if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) {
+      hasValidQuestion = true;
     }
   }
 
-  // Thông báo lỗi chi tiết với hướng dẫn
-  if (!hasIdFormat && !hasQuestionFormat) {
-    errors.push(`File không có định dạng hợp lệ. Vui lòng sử dụng định dạng sau:
-
-ID: 1
-Câu 1: Câu hỏi của bạn ở đây?
-A. Đáp án A
-B. Đáp án B
-*C. Đáp án đúng (có dấu *)
-D. Đáp án D
-
-ID: 2
-Câu 2: Câu hỏi tiếp theo?
-*A. Đáp án đúng
-B. Đáp án sai
-C. Đáp án sai
-
-Lưu ý: 
-- File Word (.docx) hiện đã được hỗ trợ
-- Sử dụng font đơn giản (Times New Roman, Arial)
-- Không sử dụng bullet points, chỉ dùng A. B. C. D.
-- Không sử dụng màu sắc hoặc định dạng phức tạp
-- Đánh dấu đáp án đúng bằng dấu *`);
-  } else if (!hasQuestions) {
+  // Relaxed validation
+  if (!hasValidQuestion && totalLines > 0) {
     errors.push(
-      `Không tìm thấy câu hỏi nào trong file (thiếu định dạng ID:). File có ${totalLines} dòng.`
+      `Không tìm thấy câu hỏi hợp lệ (thiếu dòng bắt đầu bằng "Câu n:"). File có ${totalLines} dòng.`
     );
-  } else if (!hasValidQuestion) {
-    errors.push(
-      `Không tìm thấy câu hỏi hợp lệ trong file (thiếu định dạng Câu X:). File có ${totalLines} dòng.`
-    );
+  } else if (totalLines === 0) {
+      errors.push("File trống.");
   }
 
   return {

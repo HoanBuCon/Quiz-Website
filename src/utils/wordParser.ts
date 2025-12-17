@@ -43,8 +43,18 @@ function cleanWordText(text: string): string {
   // Loại bỏ các ký tự đặc biệt và định dạng không cần thiết
   return (
     text
-      // Loại bỏ các ký tự điều khiển
-      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+      // Normalize line endings to \n (handle Windows CRLF and Mac CR)
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      // Thay thế smart quotes (quotes cong) bằng quotes thẳng
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2018\u2019]/g, "'")
+      // Thay thế Vertical Tab (\x0B) bằng newline để tránh dính dòng
+      // eslint-disable-next-line no-control-regex
+      .replace(/\x0B/g, "\n")
+      // Loại bỏ các ký tự điều khiển khác (giữ lại \n, \t)
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\x00-\x08\x0C\x0E-\x1F\x7F]/g, "")
       // Thay thế các ký tự bullet points bằng A. B. C. D.
       .replace(/^[•·▪▫◦‣⁃]\s*/gm, "")
       .replace(/^[1-9]\.\s*/gm, "")
@@ -74,59 +84,43 @@ export function validateWordFormat(content: string): {
   let hasValidQuestion = false;
   let questionCount = 0;
   let totalLines = lines.length;
-  let hasIdFormat = false;
+  // let hasIdFormat = false; // Không bắt buộc nữa
   let hasQuestionFormat = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     if (line.startsWith("ID:")) {
-      hasIdFormat = true;
+      // hasIdFormat = true;
       const idMatch = line.match(/ID:\s*(\d+)/);
-      if (!idMatch) {
-        errors.push(`Dòng ${i + 1}: Định dạng ID không hợp lệ - "${line}"`);
-      } else {
+      if (idMatch) {
         currentQuestionId = idMatch[1];
         hasQuestions = true;
       }
     } else if (line.startsWith("Câu") && line.includes(":")) {
       hasQuestionFormat = true;
+      hasValidQuestion = true;
+      questionCount++;
+      // Reset current ID if we want to track per question, but mostly just checking existence here
       if (!currentQuestionId) {
-        errors.push(`Dòng ${i + 1}: Thiếu ID cho câu hỏi - "${line}"`);
-      } else {
-        hasValidQuestion = true;
-        questionCount++;
+         // Just a marker that we found questions without ID (acceptable now)
       }
-    } else if (line.match(/^[*]?[A-E]\.\s+/)) {
-      if (!currentQuestionId) {
-        errors.push(`Dòng ${i + 1}: Thiếu ID cho đáp án - "${line}"`);
-      }
+    } 
+    // Check for other types (just to ensure file isn't garbage)
+    else if (line.startsWith("result:")) {
+      // Fill-in or Group
+    }
+    else if (line.startsWith("{")) {
+       // Composite start
     }
   }
 
   // Thông báo lỗi chi tiết với hướng dẫn
-  if (!hasIdFormat && !hasQuestionFormat) {
-    errors.push(`File Word không có định dạng hợp lệ. Vui lòng sử dụng định dạng sau:
-
-ID: 1
-Câu 1: Câu hỏi của bạn ở đây?
-A. Đáp án A
-B. Đáp án B
-*C. Đáp án đúng (có dấu *)
-D. Đáp án D
-
-Lưu ý: 
-- Sử dụng font đơn giản (Times New Roman, Arial)
-- Không sử dụng bullet points, chỉ dùng A. B. C. D.
-- Không sử dụng màu sắc hoặc định dạng phức tạp
-- Đánh dấu đáp án đúng bằng dấu *`);
-  } else if (!hasQuestions) {
+  if (!hasQuestionFormat && !hasQuestions) {
+    errors.push(`Không tìm thấy câu hỏi hợp lệ trong file. Vui lòng sử dụng định dạng "Câu n: ..."`);
+  } else if (questionCount === 0 && !hasQuestions) {
     errors.push(
-      `Không tìm thấy câu hỏi nào trong file Word (thiếu định dạng ID:). File có ${totalLines} dòng.`
-    );
-  } else if (!hasValidQuestion) {
-    errors.push(
-      `Không tìm thấy câu hỏi hợp lệ trong file Word (thiếu định dạng Câu X:). File có ${totalLines} dòng.`
+      `Không tìm thấy câu hỏi nào trong file. File có ${totalLines} dòng.`
     );
   }
 
