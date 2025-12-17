@@ -133,6 +133,7 @@ const DocumentsPage: React.FC = () => {
         // Kiểm tra duplicate file name
         const duplicateCheck = checkDuplicateFileName(file.name, documents);
         let shouldOverwrite = false;
+        let customFileName: string | undefined = undefined;
 
         if (duplicateCheck.isDuplicate) {
           const action = await showDuplicateModal(
@@ -144,8 +145,10 @@ const DocumentsPage: React.FC = () => {
             continue;
           } else if (action.action === "overwrite") {
             shouldOverwrite = true;
+          } else if (action.action === "rename") {
+            // User chose to rename - use the new name
+            customFileName = action.newFileName!;
           }
-          // Rename được xử lý tự động bởi server (unique filename)
         }
 
         // Lấy token
@@ -165,8 +168,8 @@ const DocumentsPage: React.FC = () => {
           }
         }
 
-        // Upload file lên server
-        const uploaded = await DocumentsAPI.upload(file, token);
+        // Upload file lên server with custom name if renamed
+        const uploaded = await DocumentsAPI.upload(file, token, customFileName);
 
         setDocuments((prev) => {
           const filtered = shouldOverwrite
@@ -249,50 +252,52 @@ const DocumentsPage: React.FC = () => {
   };
 
   // Xử lý download file
-  const handleDownload = (file: UploadedFile) => {
+  const handleDownload = async (file: UploadedFile) => {
     const link = document.createElement("a");
 
-    if (file.type === "docs") {
-      try {
-        // Đối với file Word, chuyển base64 về binary một cách an toàn
-        const base64Content = file.content || "";
-
-        // Kiểm tra xem content có phải là base64 hợp lệ không
-        if (!base64Content) {
-          alert("File không có nội dung để tải về");
-          return;
+    try {
+      // Check if file has filePath (new system) or content (legacy)
+      if ((file as any).filePath) {
+        // NEW FILE: Download từ server
+        const { getApiBaseUrl } = await import("../utils/api");
+        const fileUrl = `${getApiBaseUrl()}/${(file as any).filePath}`;
+        link.href = fileUrl;
+        link.download = file.name;
+        link.click();
+      } else if (file.content) {
+        // LEGACY FILE: Download từ content
+        if (file.type === "docs") {
+          // Đối với file Word, chuyển base64 về binary
+          const byteCharacters = atob(file.content);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], {
+            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          });
+          link.href = URL.createObjectURL(blob);
+        } else {
+          // Đối với file text
+          const blob = new Blob([file.content], { type: "text/plain" });
+          link.href = URL.createObjectURL(blob);
         }
 
-        // Sử dụng fetch để tạo binary data từ base64
-        const byteCharacters = atob(base64Content);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
+        link.download = file.name;
+        link.click();
 
-        const blob = new Blob([byteArray], {
-          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        });
-        link.href = URL.createObjectURL(blob);
-      } catch (error) {
-        console.error("Lỗi khi xử lý file Word:", error);
-        alert("Có lỗi xảy ra khi tải file Word. File có thể bị hỏng.");
-        return;
+        // Cleanup URL sau khi download
+        setTimeout(() => {
+          URL.revokeObjectURL(link.href);
+        }, 1000);
+      } else {
+        alert("File không có nội dung để tải về");
       }
-    } else {
-      // Đối với file text
-      const blob = new Blob([file.content || ""], { type: "text/plain" });
-      link.href = URL.createObjectURL(blob);
+    } catch (error) {
+      console.error("Lỗi khi tải file:", error);
+      alert("Có lỗi xảy ra khi tải file");
     }
-
-    link.download = file.name;
-    link.click();
-
-    // Cleanup URL sau khi download
-    setTimeout(() => {
-      URL.revokeObjectURL(link.href);
-    }, 1000);
   };
 
   // Xử lý tạo lớp từ file

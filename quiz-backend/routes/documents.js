@@ -70,8 +70,11 @@ router.post('/upload', authRequired, upload.single('file'), async (req, res) => 
     const fileId = generateCuid();
     const now = formatDateForMySQL();
     
+    // Use custom name if provided, otherwise use original filename
+    const fileName = req.body.customName || req.file.originalname;
+    
     // Determine file type
-    const ext = path.extname(req.file.originalname).toLowerCase();
+    const ext = path.extname(fileName).toLowerCase();
     let fileType = 'txt';
     if (ext === '.doc' || ext === '.docx') fileType = 'docs';
     else if (ext === '.json') fileType = 'json';
@@ -80,7 +83,7 @@ router.post('/upload', authRequired, upload.single('file'), async (req, res) => 
     await query(
       `INSERT INTO UploadedFile (id, name, type, size, filePath, uploadedAt, userId) 
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [fileId, req.file.originalname, fileType, req.file.size, relativePath, now, req.user.id]
+      [fileId, fileName, fileType, req.file.size, relativePath, now, req.user.id]
     );
     
     const file = await queryOne(

@@ -263,11 +263,15 @@ export const DocumentsAPI = {
    * Upload document to server filesystem
    * @param file File to upload (.doc, .docx, .txt, .json)
    * @param token JWT token
+   * @param customName Optional custom name for the file (for renamed files)
    * @returns Uploaded file metadata with filePath
    */
-  upload: async (file: File, token: string) => {
+  upload: async (file: File, token: string, customName?: string) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (customName) {
+      formData.append('customName', customName);
+    }
     
     const response = await fetch(`${API_BASE_URL}/documents/upload`, {
       method: 'POST',

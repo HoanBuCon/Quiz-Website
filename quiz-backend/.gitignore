@@ -7,4 +7,5 @@ node_modules
 # Uploaded files (images, documents, etc.)
 public/uploads/
 public/chatbox/
+public/documents/
 scripts/user_info/
