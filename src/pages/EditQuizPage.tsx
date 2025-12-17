@@ -53,11 +53,15 @@ const ImageUpload: React.FC<{
   currentImage?: string;
   placeholder?: string;
   className?: string;
+  onAssignFromGallery?: (imageId: string) => void;
+  onImageRemoved?: (imageData: string) => void;
 }> = ({
   onImageUpload,
   currentImage,
   placeholder = "Thêm ảnh",
   className = "",
+  onAssignFromGallery,
+  onImageRemoved,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -103,17 +107,12 @@ const ImageUpload: React.FC<{
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      // Check if dropping from UnassignedImagesGallery
-      const imageData = event.dataTransfer.getData('image/unassigned');
-      if (imageData) {
-        try {
-          const image = JSON.parse(imageData) as import('../types').ExtractedImage;
-          // Directly use the image data
-          onImageUpload(image.data);
-          toast.success("Đã gán ảnh!");
+      // Check if dropping from UnassignedImagesGallery (ID based)
+      const unassignedId = event.dataTransfer.getData('image/unassigned-id');
+      if (unassignedId) {
+        if (onAssignFromGallery) {
+          onAssignFromGallery(unassignedId);
           return;
-        } catch (error) {
-          console.error("Error parsing dropped image data:", error);
         }
       }
 
@@ -144,6 +143,9 @@ const ImageUpload: React.FC<{
     };
 
     const removeImage = () => {
+      if (currentImage && onImageRemoved) {
+        onImageRemoved(currentImage);
+      }
       onImageUpload("");
     };
 
@@ -252,6 +254,36 @@ const EditQuizPage: React.FC = () => {
   // Handler to remove image from unassigned list when assigned
   const handleImageAssigned = (imageId: string) => {
     setUnassignedImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  const handleAssignImage = (imageId: string, callback: (data: string) => void) => {
+    const img = unassignedImages.find((i) => i.id === imageId);
+    if (img) {
+      callback(img.data);
+      // Delay removal slightly to ensure UI update finishes/prioritizes assignment visual
+      setTimeout(() => {
+        handleImageAssigned(imageId);
+      }, 100);
+      toast.success("Đã gán ảnh!");
+    } else {
+      toast.error("Không tìm thấy dữ liệu ảnh!");
+    }
+  };
+
+  const handleRestoreToGallery = (imageData: string) => {
+    if (!imageData) return;
+
+    // Check duplicates based on data content (optional, but good UX)
+    const exists = unassignedImages.some((img) => img.data === imageData);
+    if (!exists) {
+      const newImage: import("../types").ExtractedImage = {
+        id: `restored-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        data: imageData,
+        // position is undefined for restored images
+      };
+      setUnassignedImages((prev) => [...prev, newImage]);
+      toast.success("Ảnh đã được đưa về kho!");
+    }
   };
 
   const setScrollAnchor = (questionId: string) => {
@@ -1803,6 +1835,9 @@ const EditQuizPage: React.FC = () => {
                     currentImage={editedQuestion.questionImage}
                     placeholder="Thêm ảnh cho câu hỏi"
                     className="w-full"
+                    onAssignFromGallery={(id) =>
+                      handleAssignImage(id, handleQuestionImageUpload)
+                    }
                   />
                 </div>
                 {/* Nửa phải: Paste ảnh */}
@@ -2044,6 +2079,11 @@ const EditQuizPage: React.FC = () => {
                               }
                               placeholder="Thêm ảnh cho đáp án"
                               className="w-full"
+                              onAssignFromGallery={(id) =>
+                                handleAssignImage(id, (data) =>
+                                  handleOptionImageUpload(option, data)
+                                )
+                              }
                             />
                           </div>
                           {/* Nửa phải: Paste ảnh */}
