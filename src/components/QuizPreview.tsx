@@ -222,10 +222,10 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         <div className="flex items-center justify-between">
           <div className="text-center flex-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Xem trước định dạng
+              Trình chỉnh sửa
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {isEditable ? 'Chỉnh sửa trực tiếp định dạng File' : 'Định dạng xuất ra File'}
+              {isEditable ? 'Chỉnh sửa trực tiếp định dạng Quiz' : 'Định dạng xuất ra File'}
             </p>
           </div>
           {isContentChanged && (

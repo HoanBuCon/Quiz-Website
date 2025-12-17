@@ -28,9 +28,9 @@ function findQuestionBoundaries(content: string): QuestionBoundary[] {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Detect question start: "Câu 1:", "Câu 2:", etc.
-    const questionMatch = line.match(/^Câu\s+(\d+)\s*:/i);
-    if (questionMatch) {
+    // Detect question start: "Câu 1:", "Câu 1.1:", "Câu :", etc.
+    const isQuestionLine = line.match(/^Câu\s+[\d\.]+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"));
+    if (isQuestionLine) {
       // Save previous boundary
       if (currentBoundary) {
         currentBoundary.endLine = i - 1;
@@ -127,38 +127,34 @@ export function assignImagesToQuestions(
     // Find which boundary this line belongs to
     const boundary = boundaries.find(b => 
       lineNumber >= b.startLine && lineNumber <= b.endLine
-    ) || null;  // Fix: explicitly convert undefined to null
+    ) || null;
     
     imageMappings.push({ image, boundary, lineNumber });
   });
   
-  // Assign images to questions
-  const result: ParsedQuestion[] = questions.map((q, qIndex) => {
-    const boundary = boundaries[qIndex];
-    if (!boundary) return q;
-    
-    // Find images in this boundary
+  // Helper to assign images to a single question based on a specific boundary
+  const updateQuestionWithImages = (q: ParsedQuestion, boundary: QuestionBoundary): ParsedQuestion => {
+     // Find images in this boundary
     const boundaryImages = imageMappings.filter(m => 
-      m.boundary?.questionIndex === qIndex
+      m.boundary === boundary // Strict object reference check works because boundary objects are unique
     );
     
     if (boundaryImages.length === 0) return q;
     
     // First image → question image
-    const questionImage = boundaryImages[0];
-    
-    // Determine if image is before first option or after
+    // Find "Header" images (before options)
     const firstOptionLine = boundary.optionLines[0]?.line ?? boundary.endLine;
     
     let assignedQuestionImage: string | undefined;
     const assignedOptionImages: { [key: string]: string } = {};
     
     boundaryImages.forEach(({ image, lineNumber }) => {
+      // Determine if image is in Question area or Option area
       if (lineNumber < firstOptionLine) {
         // Image is in question area
         if (!assignedQuestionImage) {
           assignedQuestionImage = image.data;
-          image.questionIndex = qIndex;
+          image.questionIndex = boundary.questionIndex;
           image.location = 'question';
         }
       } else {
@@ -170,29 +166,53 @@ export function assignImagesToQuestions(
           if (lineNumber >= optionLine.line && lineNumber < nextOptionLine) {
             // Assign to this option
             const options = q.options;
+            // Handle both Array options and DragOptions object
             if (Array.isArray(options) && typeof options[optionLine.index] === 'string') {
-              const optionText = options[optionLine.index];
-              assignedOptionImages[optionText] = image.data;
-              image.questionIndex = qIndex;
-              image.location = 'option';
-              image.optionIndex = optionLine.index;
+               const optionText = options[optionLine.index];
+               assignedOptionImages[optionText] = image.data;
+               image.questionIndex = boundary.questionIndex;
+               image.location = 'option';
+               image.optionIndex = optionLine.index;
             }
             break;
           }
         }
       }
     });
-    
+
     return {
       ...q,
-      questionImage: assignedQuestionImage,
+      questionImage: assignedQuestionImage || q.questionImage,
       optionImages: Object.keys(assignedOptionImages).length > 0 
-        ? assignedOptionImages 
-        : undefined
+        ? { ...q.optionImages, ...assignedOptionImages }
+        : q.optionImages
     };
-  });
+  };
+
+  // State for sequential consumption of boundaries
+  let boundaryCursor = 0;
+
+  const processQuestions = (qs: ParsedQuestion[]): ParsedQuestion[] => {
+    return qs.map(q => {
+      // Consume boundary
+      const boundary = boundaries[boundaryCursor];
+      boundaryCursor++;
+
+      let updatedQ = q;
+      if (boundary) {
+         updatedQ = updateQuestionWithImages(q, boundary);
+      }
+
+      // Recurse for subQuestions (which also have their own boundaries in the text)
+      if (updatedQ.subQuestions && updatedQ.subQuestions.length > 0) {
+        updatedQ.subQuestions = processQuestions(updatedQ.subQuestions);
+      }
+      
+      return updatedQ;
+    });
+  };
   
-  return result;
+  return processQuestions(questions);
 }
 
 /**

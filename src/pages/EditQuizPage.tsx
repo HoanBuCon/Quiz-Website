@@ -1659,6 +1659,47 @@ const EditQuizPage: React.FC = () => {
     };
 
     const handleCancel = () => {
+      // 1. Restore NEW images to gallery (added/changed during this session but discarded)
+      const restoreIfNew = (imgData?: string, originalImgData?: string) => {
+        if (imgData && imgData !== originalImgData) {
+          handleRestoreToGallery(imgData);
+        }
+      };
+
+      // 2. Reclaim ORIGINAL images from gallery (removed/replaced during this session but reclaimed by revert)
+      const reclaimFromGallery = (currentData?: string, originalData?: string) => {
+        if (originalData && currentData !== originalData) {
+          // The original image was removed/replaced, so it's currently in the gallery.
+          // Since we are cancelling, we revert to the original state (taking the image back).
+          setUnassignedImages((prev) => {
+            const idx = prev.findIndex(img => img.data === originalData);
+            if (idx !== -1) {
+              const newArr = [...prev];
+              newArr.splice(idx, 1);
+              return newArr;
+            }
+            return prev;
+          });
+        }
+      };
+
+      // Apply logic to Question Image
+      restoreIfNew(editedQuestion.questionImage, question.questionImage);
+      reclaimFromGallery(editedQuestion.questionImage, question.questionImage);
+
+      // Apply logic to Option Images
+      const currentOpts = editedQuestion.optionImages || {};
+      const originalOpts = question.optionImages || {};
+
+      // Iterate over all relevant keys
+      const allKeys = Array.from(new Set([...Object.keys(currentOpts), ...Object.keys(originalOpts)]));
+      allKeys.forEach((key) => {
+        const currentVal = currentOpts[key];
+        const originalVal = originalOpts[key];
+        restoreIfNew(currentVal, originalVal);
+        reclaimFromGallery(currentVal, originalVal);
+      });
+
       setScrollAnchor(question.id);
       // Xóa state đã lưu khi cancel (khôi phục về state gốc)
       editedQuestionsMapRef.current.delete(question.id);

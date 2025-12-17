@@ -8,6 +8,8 @@ export interface ParsedQuestion {
   correctAnswers: string[] | Record<string, string>;
   explanation?: string;
   subQuestions?: ParsedQuestion[];
+  questionImage?: string;
+  optionImages?: Record<string, string>;
 }
 
 export interface ParseResult {
