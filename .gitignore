@@ -25,3 +25,7 @@ yarn-error.log*
 
 # background video
 /public/videos/bg_video.mp4
+*
+*.zip
+*.rar
+*.7z
