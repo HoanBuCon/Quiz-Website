@@ -1211,7 +1211,7 @@ const CreateClassPage: React.FC = () => {
                     <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
                     <div className="ml-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
                       {`{
-Câu 1: What is the main topic? // Câu hỏi con định dạng này không chứa ảnh
+Câu 1: What is the main topic? // Câu hỏi con sẽ không chứa được hình ảnh
 *A. Science
 B. Art
 
@@ -1479,7 +1479,7 @@ result: HoanBuCon
                 <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
                 <div className="ml-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
                   {`{
-Câu 1: What is the main topic? // Câu hỏi con định dạng này không chứa ảnh
+Câu 1: What is the main topic? // Câu hỏi con sẽ không chứa được hình ảnh
 *A. Science
 B. Art
 

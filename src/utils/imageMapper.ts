@@ -162,7 +162,7 @@ export function assignImagesToQuestions(
         // Image is in options area - find which option
         for (let i = 0; i < boundary.optionLines.length; i++) {
           const optionLine = boundary.optionLines[i];
-          const nextOptionLine = boundary.optionLines[i + 1]?.line ?? boundary.endLine;
+          const nextOptionLine = boundary.optionLines[i + 1]?.line ?? (boundary.endLine + 1);
           
           if (lineNumber >= optionLine.line && lineNumber < nextOptionLine) {
             // Assign to this option

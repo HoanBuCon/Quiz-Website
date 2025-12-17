@@ -659,18 +659,43 @@ const ChatBox: React.FC = () => {
       if (!isSameDay) showDateSeparator = true;
     }
 
-    // Grouping logic for messenger-style
-    const isGroupStart = !prevMessage || prevMessage.userId !== m.userId || showDateSeparator;
-    const isGroupEnd = !nextMessage || nextMessage.userId !== m.userId;
-
-    // Check time gap for grouping (2 minutes)
-    let showAvatar = isGroupEnd;
-    if (nextMessage && nextMessage.userId === m.userId) {
-      const currentTime = new Date(m.createdAt).getTime();
-      const nextTime = new Date(nextMessage.createdAt).getTime();
-      const timeDiff = (nextTime - currentTime) / 1000 / 60; // minutes
-      if (timeDiff > 2) showAvatar = true;
+    // Calculate time differences (in minutes)
+    let timeDiffPrev = 0;
+    if (prevMessage && prevMessage.userId === m.userId) {
+      const current = new Date(m.createdAt).getTime();
+      const prev = new Date(prevMessage.createdAt).getTime();
+      timeDiffPrev = (current - prev) / 1000 / 60;
     }
+
+    let timeDiffNext = 0;
+    if (nextMessage && nextMessage.userId === m.userId) {
+      const next = new Date(nextMessage.createdAt).getTime();
+      const current = new Date(m.createdAt).getTime();
+      timeDiffNext = (next - current) / 1000 / 60;
+    }
+
+    // Grouping logic with 5-minute threshold
+    // Start group if: no prev, different user, date separator, OR time gap > 5 mins
+    const isGroupStart = !prevMessage || prevMessage.userId !== m.userId || showDateSeparator || timeDiffPrev > 5;
+
+    // End group if: no next, different user, OR time gap > 5 mins
+    const isGroupEnd = !nextMessage || nextMessage.userId !== m.userId || timeDiffNext > 5;
+
+    // Avatar logic (keep existing behavior or adjust if needed)
+    // Original logic: timeDiff > 2 mins -> showAvatar. 
+    // Now we can align it with isGroupEnd or keep separate. 
+    // Let's keep it simple: show avatar at the end of the group.
+    // If we split groups > 5 mins, that 'end' becomes a visual break, so showing avatar there makes sense.
+    let showAvatar = isGroupEnd;
+
+    // Check strict time gap for avatar specifically if we want to keep the "2 minutes" rule from before alongside key grouping?
+    // The user requirement says "tách nhẹ ra... tách biệt thời gian 5 phút ra".
+    // So if isGroupEnd is true (either diff user or > 5 mins), we show avatar.
+    // The original code had: if (nextMessage && nextMessage.userId === m.userId) { ... if (timeDiff > 2) showAvatar = true; }
+    // My new isGroupEnd covers > 5 mins. 
+    // If the user wants to keep the "2 minute" avatar logic even if not fully separated, we could add:
+    // but usually "end of group" implies avatar. 
+    // I will stick to showAvatar = isGroupEnd to ensure consistency with the new visual Separation.
 
     return { ...m, showDateSeparator, isGroupStart, isGroupEnd, showAvatar };
   });
