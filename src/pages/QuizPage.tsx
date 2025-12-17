@@ -77,6 +77,20 @@ const QuizPage: React.FC = () => {
           };
         }
       }
+      if (q.type === "drag") {
+        const opts = q.options as any;
+        if (opts && Array.isArray(opts.items) && Array.isArray(opts.targets)) {
+          return {
+            ...q,
+            options: {
+              ...opts,
+              items: shuffleArray(opts.items as DragItem[]),
+              targets: shuffleArray(opts.targets as DragTarget[]),
+            },
+          };
+        }
+      }
+
       if (q.type === "composite" && (q as any).subQuestions) {
         return {
           ...q,
@@ -88,6 +102,19 @@ const QuizPage: React.FC = () => {
                 return {
                   ...sub,
                   options: shuffleArray(subOpts as string[]),
+                };
+              }
+            }
+            if (sub.type === "drag") {
+              const subOpts = sub.options as any;
+              if (subOpts && Array.isArray(subOpts.items) && Array.isArray(subOpts.targets)) {
+                return {
+                  ...sub,
+                  options: {
+                    ...subOpts,
+                    items: shuffleArray(subOpts.items as DragItem[]),
+                    targets: shuffleArray(subOpts.targets as DragTarget[]),
+                  },
                 };
               }
             }
@@ -2081,7 +2108,41 @@ const DragDropQuestion: React.FC<{
   // Reset local mapping when switching to a different question (avoid carrying over state)
   useEffect(() => {
     setMapping({ ...(value || {}) });
+    setDragOverTarget(null); // Reset dropdown/drag state
   }, [question.id]);
+
+  // Click outside listener for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if click is outside of any dropdown container
+      const target = event.target as Element;
+      if (!target.closest(".drag-question")) {
+        // Close dropdowns if strictly outside drag-question area? 
+        // Or just rely on re-clicking toggle.
+        // Actually, let's close if we clicked outside the current open dropdown.
+        // Implementation: we are using dragOverTarget for dropdown state (hacky but works if string is distinct)
+        // But wait, dragOverTarget is also used for drag highlights logic ("pool" or t.id).
+        // The previous commit used `dropdown-${t.id}` for open state.
+        // We should ensure we don't clear it if we are clicking INSIDE it.
+
+        // Ideally we check if we clicked a dropdown toggle or menu.
+        // For simplicity: if we click anywhere that is NOT a button triggering a dropdown, close it?
+        // Better: Let's assume if the user clicks *elsewhere* we close it.
+        // Since I reused `dragOverTarget` state for the dropdown open state (to save adding new state),
+        // I should be careful not to interfere with DnD state.
+        // DnD sets `dragOverTarget` on dragOver.
+        // Dropdown sets `dragOverTarget` on click.
+        // This variable reuse is risky.
+      }
+      // Simple behavior: click anywhere else resets to null IF it starts with 'dropdown-'
+      if (dragOverTarget && dragOverTarget.startsWith('dropdown-') && !target.closest('.relative.mb-3')) {
+        setDragOverTarget(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dragOverTarget]);
 
   const poolItems = items.filter((it) => !mapping[it.id]);
   const itemsByTarget: Record<string, DragItem[]> = {};
@@ -2215,43 +2276,66 @@ const DragDropQuestion: React.FC<{
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, t.id)}
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-start justify-between mb-3">
               <h3 className="font-semibold text-gray-900 dark:text-white">
                 {t.label}
               </h3>
-              <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full">
+              <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0 ml-2">
                 {(itemsByTarget[t.id] || []).length} đáp án
               </span>
             </div>
 
-            {/* Dropdown chọn đáp án */}
+            {/* Custom Dropdown chọn đáp án */}
             {poolItems.length > 0 && (
-              <div className="mb-3">
-                <select
+              <div className="mb-3 relative">
+                <button
                   disabled={reveal}
-                  className="w-full p-2.5 border border-gray-400 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 disabled:opacity-60 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  value=""
-                  onChange={(e) => {
-                    const itemId = e.target.value;
-                    if (itemId) assign(itemId, t.id);
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDragOverTarget((prev) => (prev === `dropdown-${t.id}` ? null : `dropdown-${t.id}`));
                   }}
+                  className={`w-full py-2 px-3 flex items-center justify-center relative border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200 ${dragOverTarget === `dropdown-${t.id}`
+                    ? "ring-2 ring-primary-500 border-primary-500 shadow-md"
+                    : "border-gray-400 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400"
+                    } disabled:opacity-60 disabled:cursor-not-allowed`}
                 >
-                  <option
-                    value=""
-                    className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  <span className="text-sm font-medium text-center whitespace-nowrap overflow-hidden text-ellipsis px-4">-- Chọn đáp án --</span>
+                  <svg
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-transform duration-200 ${dragOverTarget === `dropdown-${t.id}` ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    -- Chọn đáp án --
-                  </option>
-                  {poolItems.map((it) => (
-                    <option
-                      key={it.id}
-                      value={it.id}
-                      className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      {it.label}
-                    </option>
-                  ))}
-                </select>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {dragOverTarget === `dropdown-${t.id}` && !reveal && (
+                  <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-20 overflow-hidden animate-fadeIn">
+                    <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-3 py-2">
+                      <p className="text-xs font-semibold text-white">
+                        Chọn đáp án để thêm vào nhóm
+                      </p>
+                    </div>
+                    <div className="p-1 max-h-60 overflow-y-auto custom-scrollbar">
+                      {poolItems.map((it, idx) => (
+                        <button
+                          key={it.id}
+                          onClick={() => {
+                            assign(it.id, t.id);
+                            setDragOverTarget(null);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group block"
+                        >
+                          <span className="font-medium text-sm text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                            {it.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

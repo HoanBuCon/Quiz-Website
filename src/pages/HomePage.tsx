@@ -425,7 +425,7 @@ const HomePage: React.FC = () => {
                                 Chọn bài kiểm tra
                               </p>
                             </div>
-                            <div className="p-2 max-h-80 overflow-y-auto">
+                            <div className="p-2 max-h-80 overflow-y-auto custom-scrollbar">
                               {(classRoom.quizzes as Quiz[]).map(
                                 (quiz, idx) => (
                                   <button
@@ -611,8 +611,8 @@ const HomePage: React.FC = () => {
                     {/* Tooltip */}
                     <div
                       className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
-                          ? "bg-gray-800 text-white border border-gray-700"
-                          : "bg-white text-gray-900 border border-gray-200"
+                        ? "bg-gray-800 text-white border border-gray-700"
+                        : "bg-white text-gray-900 border border-gray-200"
                         }`}
                     >
                       Click để chuyển đến trang →

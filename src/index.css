@@ -464,6 +464,42 @@ code {
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
   
+  /* Global scrollbar style (matching html) */
+  .global-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 transparent;
+  }
+  .global-scrollbar::-webkit-scrollbar {
+    width: 6px; /* Decrease width to match design if needed, but user said "khít width div". Standard is usually thinner for component scrollbars. But let's stick to 12px if that's "global" or 8px. The previous global was 12px. Let's keep 12px or maybe reduce it? The user said "khít với width div", implying the thumb was smaller than the track. By removing border, it will fill the track. */
+    height: 12px;
+  }
+  .global-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 6px;
+  }
+  .global-scrollbar::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 6px;
+    border: none;
+  }
+  .global-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+  /* Dark mode global scrollbar */
+  .dark .global-scrollbar {
+    scrollbar-color: #64748b transparent;
+  }
+  .dark .global-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .dark .global-scrollbar::-webkit-scrollbar-thumb {
+    background: #64748b;
+    border: none;
+  }
+  .dark .global-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
   /* Custom scrollbar styles */
   .custom-scrollbar {
     scrollbar-width: thin;

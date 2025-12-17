@@ -24,6 +24,19 @@ const CreateClassPage: React.FC = () => {
   const [isCreateNewClass, setIsCreateNewClass] = useState(true);
   const [existingClasses, setExistingClasses] = useState<any[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(!!getToken());
+  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
+
+  // Click outside listener for dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest(".custom-class-dropdown")) {
+        setIsClassDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Kiểm tra xem form có hợp lệ không
   const isFormValid = () => {
@@ -547,7 +560,7 @@ const CreateClassPage: React.FC = () => {
           <div className="relative">
             {/* Class Selection/Creation Section */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="p-6 space-y-6">
@@ -614,18 +627,81 @@ const CreateClassPage: React.FC = () => {
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Chọn lớp học <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={selectedClassId}
-                      onChange={(e) => setSelectedClassId(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white transition-all"
-                    >
-                      <option value="">-- Chọn lớp học --</option>
-                      {existingClasses.map((cls) => (
-                        <option key={cls.id} value={cls.id}>
-                          {cls.name}
-                        </option>
-                      ))}
-                    </select>
+
+                    <div className="relative custom-class-dropdown mb-3">
+                      <button
+                        onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
+                        className={`w-full px-4 py-3 flex items-center justify-center lg:justify-between relative border-2 rounded-lg shadow-sm transition-all duration-200 ${isClassDropdownOpen
+                          ? "border-primary-500 ring-2 ring-primary-500"
+                          : "border-gray-300 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400"
+                          } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                      >
+                        <span className={`block truncate text-center lg:text-left ${!selectedClassId ? "text-gray-500 dark:text-gray-400" : "font-medium"}`}>
+                          {selectedClassId
+                            ? existingClasses.find((c) => c.id === selectedClassId)?.name
+                            : "-- Chọn lớp học --"}
+                        </span>
+                        <svg
+                          className={`w-5 h-5 text-gray-400 transition-transform duration-200 absolute right-3 lg:static ${isClassDropdownOpen ? "rotate-180" : ""}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {isClassDropdownOpen && (
+                        <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+                          <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                            <p className="text-xs font-semibold text-white uppercase tracking-wider">
+                              Danh sách lớp học của bạn
+                            </p>
+                          </div>
+                          <div className="p-1 max-h-60 overflow-y-auto custom-scrollbar">
+                            {existingClasses.map((cls, idx) => (
+                              <button
+                                key={cls.id}
+                                onClick={() => {
+                                  setSelectedClassId(cls.id);
+                                  setIsClassDropdownOpen(false);
+                                }}
+                                className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors duration-200 group flex items-start gap-3 ${selectedClassId === cls.id
+                                  ? "bg-primary-50 dark:bg-primary-900/20"
+                                  : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                                  }`}
+                              >
+                                <div className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold mt-0.5 ${selectedClassId === cls.id
+                                  ? "bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400"
+                                  : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600 dark:group-hover:text-primary-400"
+                                  }`}>
+                                  {idx + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <span className={`block font-medium text-sm truncate ${selectedClassId === cls.id
+                                    ? "text-primary-700 dark:text-primary-300"
+                                    : "text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400"
+                                    }`}>
+                                    {cls.name}
+                                  </span>
+                                  {cls.description && (
+                                    <span className="block text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                                      {cls.description}
+                                    </span>
+                                  )}
+                                </div>
+                                {selectedClassId === cls.id && (
+                                  <svg className="w-5 h-5 text-primary-600 dark:text-primary-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {existingClasses.length === 0 && (
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 flex items-center gap-2">
                         <svg
@@ -1138,7 +1214,7 @@ const CreateClassPage: React.FC = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
-                  Tải file mẫu
+                  Tải File mẫu
                 </a>
               </div>
 
@@ -1433,7 +1509,7 @@ result: HoanBuCon
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              Tải file mẫu
+              Tải File mẫu
             </a>
           </div>
 

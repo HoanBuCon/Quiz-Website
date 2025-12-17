@@ -533,9 +533,42 @@ const EditQuizPage: React.FC = () => {
         continue;
       }
 
+      // --- HELPER FOR MULTI-LINE ---
+      const isNewBlock = (line: string) => {
+        // 1. ID
+        if (line.startsWith("ID:")) return true;
+        // 2. Question (Câu n:)
+        if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) return true;
+        // 3. Keywords (result:, group:)
+        if (line.match(/^(result|group):/i)) return true;
+        // 4. Structural ({, })
+        if (line === "{" || line === "}") return true;
+        // 5. Options (*A., A.)
+        if (line.match(/^[*]?\s*[A-Z]\.\s*/)) return true;
+
+        return false;
+      };
+
+      const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
+        let content = lines[startIdx].replace(/^(result|group):/i, '').trim();
+        let nextIdx = startIdx + 1;
+
+        while (nextIdx < lines.length) {
+          const nextLine = lines[nextIdx];
+          if (isNewBlock(nextLine)) {
+            break;
+          }
+          content += " " + nextLine;
+          nextIdx++;
+        }
+
+        return { content: content.trim(), nextIdx: nextIdx - 1 };
+      };
+
       // 4. Fill-in / Drag Result (result: ...)
-      if (line.startsWith("result:")) {
-        const content = line.substring(7).trim();
+      if (line.match(/^result:/i)) {
+        const { content, nextIdx } = accumulateLines(i);
+        i = nextIdx; // Update loop index
 
         // Check if array -> Drag Items
         if (content.startsWith("[") && content.endsWith("]")) {
@@ -566,8 +599,9 @@ const EditQuizPage: React.FC = () => {
       }
 
       // 5. Group Definition (group: ...)
-      if (line.startsWith("group:")) {
-        const content = line.substring(6).trim();
+      if (line.match(/^group:/i)) {
+        const { content, nextIdx } = accumulateLines(i);
+        i = nextIdx; // Update loop index
 
         const targets: any[] = [];
         const mapping: Record<string, string> = {};
@@ -1829,10 +1863,9 @@ const EditQuizPage: React.FC = () => {
         <div className="mb-4">
           <div className="flex items-center mb-2">
             {dragHandleProps && (
-              <div
-                {...dragHandleProps}
-                className="cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                title="Kéo để sắp xếp"
+              <button
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-move"
+                {...(dragHandleProps || {})}
               >
                 <svg
                   className="w-5 h-5"
@@ -1847,7 +1880,7 @@ const EditQuizPage: React.FC = () => {
                     d="M4 6h16M4 12h16M4 18h16"
                   />
                 </svg>
-              </div>
+              </button>
             )}
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-3">
               Câu {index + 1}
@@ -3049,20 +3082,13 @@ const EditQuizPage: React.FC = () => {
                   ? "Chọn 1"
                   : question.type === "multiple"
                     ? "Chọn nhiều"
-                    : "Điền đáp án"}
+                    : question.type === "drag"
+                      ? "Kéo thả"
+                      : question.type === "composite"
+                        ? "Câu hỏi mẹ"
+                        : "Điền đáp án"}
               </span>
-              <span>
-                {question.type === "text"
-                  ? "Điền đáp án"
-                  : question.type === "drag"
-                    ? "Kéo thả"
-                    : question.type === "composite"
-                      ? "Câu hỏi mẹ"
-                      : `${Array.isArray(question.options)
-                        ? question.options?.length || 0
-                        : 0
-                      } đáp án`}
-              </span>
+
               {(question.questionImage ||
                 (question.optionImages &&
                   Object.keys(question.optionImages).length > 0)) && (
@@ -3299,8 +3325,7 @@ const EditQuizPage: React.FC = () => {
               )}
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Học sinh chỉ cần nhập một trong các đáp án trên (không phân biệt
-              hoa thường)
+              Học sinh chỉ cần nhập một trong các đáp án trên
             </p>
           </div>
         )}
