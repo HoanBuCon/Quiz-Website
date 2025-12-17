@@ -1131,65 +1131,106 @@ const CreateClassPage: React.FC = () => {
                 </h3>
               </div>
 
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <div className="text-xs font-mono text-gray-700 dark:text-gray-300 space-y-2">
-                  <div className="text-gray-500 dark:text-gray-400 font-semibold">
-                    ID: 101
-                  </div>
-                  <div className="font-medium">
-                    Câu 1: Thủ đô của Việt Nam là ?
-                  </div>
-                  <div className="ml-4 text-green-600 dark:text-green-400">
-                    *A. Hà Nội
-                  </div>
-                  <div className="ml-4">B. TP. Hồ Chí Minh</div>
-                  <div className="ml-4">C. Đà Nẵng</div>
-                  <div className="ml-4">D. Huế</div>
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 max-h-[500px] overflow-y-auto custom-scrollbar">
+                <div className="text-xs font-mono text-gray-700 dark:text-gray-300 space-y-4">
 
-                  <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+                  {/* Câu 1 */}
+                  <div>
+                    <div className="font-medium">
+                      Câu 1: Dữ liệu là gì? <span className="text-gray-400 italic">// Câu hỏi định dạng chọn 1 đáp án đúng</span>
+                    </div>
+                    <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*A. Thông tin chưa được xử lý</div>
+                    <div className="ml-10 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4">B. Thông tin đã qua xử lý</div>
+                    <div className="ml-10 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4">C. Dữ liệu không có cấu trúc</div>
+                    <div className="ml-10 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4">D. Thông tin được mã hóa</div>
+                    <div className="ml-10 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                  </div>
 
-                  <div className="text-gray-500 dark:text-gray-400 font-semibold">
-                    ID: 261
-                  </div>
-                  <div className="font-medium">
-                    Câu 2: Ngôn ngữ lập trình nào phổ biến nhất ?
-                  </div>
-                  <div className="ml-4">A. Python</div>
-                  <div className="ml-4 text-green-600 dark:text-green-400">
-                    *B. JavaScript
-                  </div>
-                  <div className="ml-4">C. Java</div>
-                  <div className="ml-4">D. C++</div>
+                  <div className="border-t border-gray-300 dark:border-gray-600"></div>
 
-                  <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+                  {/* Câu 2 */}
+                  <div>
+                    <div className="font-medium">
+                      Câu 2: Những công nghệ nào thường được sử dụng trong việc xử lý Big Data? <span className="text-gray-400 italic">// Câu hỏi định dạng chọn nhiều đáp án đúng</span>
+                    </div>
+                    <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*A. MapReduce</div>
+                    <div className="ml-4">B. SQL</div>
+                    <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*C. Spark</div>
+                    <div className="ml-4">D. MongoDB</div>
+                  </div>
 
-                  <div className="text-gray-500 dark:text-gray-400 font-semibold">
-                    ID: 168
-                  </div>
-                  <div className="font-medium">
-                    Câu 3: Ngôn ngữ nào phù hợp cho lập trình thi đấu ?
-                  </div>
-                  <div className="ml-4">A. Python</div>
-                  <div className="ml-4 text-green-600 dark:text-green-400">
-                    *B. C
-                  </div>
-                  <div className="ml-4 text-green-600 dark:text-green-400">
-                    *C. C++
-                  </div>
-                  <div className="ml-4">D. Java</div>
+                  <div className="border-t border-gray-300 dark:border-gray-600"></div>
 
-                  <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+                  {/* Câu 3 */}
+                  <div>
+                    <div className="font-medium">
+                      Câu 3: Những Frameworks nào sau đây sử dụng để xây dựng giao diện website? <span className="text-gray-400 italic">// Câu hỏi định dạng chọn nhiều đáp án đúng</span>
+                    </div>
+                    <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*A. ReactJS</div>
+                    <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*B. AngularJS</div>
+                  </div>
 
-                  <div className="text-gray-500 dark:text-gray-400 font-semibold">
-                    ID: 421
+                  <div className="border-t border-gray-300 dark:border-gray-600"></div>
+
+                  {/* Câu 4 */}
+                  <div>
+                    <div className="font-medium">
+                      Câu 4: ELT là viết tắt của 3 từ nào (viết 3 từ phân tách nhau bằng khoảng trắng)? <span className="text-gray-400 italic">// Câu hỏi định dạng điền đáp án</span>
+                    </div>
+                    <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4 text-purple-600 dark:text-purple-400 font-semibold">result: Extract Load Transform</div>
                   </div>
-                  <div className="font-medium">
-                    Câu 4: Generative AI - GenAI là gì ?
+
+                  <div className="border-t border-gray-300 dark:border-gray-600"></div>
+
+                  {/* Câu 5 */}
+                  <div>
+                    <div className="font-medium">
+                      Câu 5: Ghép loại dữ liệu với ví dụ tương ứng <span className="text-gray-400 italic">// Câu hỏi định dạng kéo thả đáp án</span>
+                    </div>
+                    <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400">
+                      result: [“File JSON”, “Bảng dữ liệu”, “Bản ghi nhớ”, “Chịu chết”]<br />
+                      group: (“Dữ liệu có cấu trúc”:[“Bảng dữ liệu”, “Chịu chết”]),(“Dữ liệu bán cấu trúc”:[“File JSON”])
+                    </div>
                   </div>
-                  <div className="ml-4 text-amber-600 dark:text-amber-400 italic">
-                    (Câu hỏi "Điền đáp án đúng" - Giáo viên nhập đáp án thủ
-                    công)
+
+                  <div className="border-t border-gray-300 dark:border-gray-600"></div>
+
+                  {/* Câu 6 */}
+                  <div>
+                    <div className="font-medium">
+                      Câu 6: Đọc và trả lời các câu hỏi sau <span className="text-gray-400 italic">// Câu hỏi định dạng câu hỏi mẹ chứa nhiều câu hỏi con</span>
+                    </div>
+                    <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                    <div className="ml-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                      {`{
+Câu 1: What is the main topic? // Câu hỏi con định dạng này không chứa ảnh
+*A. Science
+B. Art
+
+Câu 2: Who is HoanBuCon?
+*A. HoanBuLiem
+*B. HoanLigma
+
+Câu 3: HoanBuCon deepstrike?
+*A. Sure
+B. No
+*C. Factos
+D. WTF BRO
+
+Câu 4: Who is the author?
+result: HoanBuCon
+}`}
+                    </div>
                   </div>
+
                 </div>
               </div>
 
@@ -1357,62 +1398,107 @@ const CreateClassPage: React.FC = () => {
             </h3>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <div className="text-xs font-mono text-gray-700 dark:text-gray-300 space-y-2">
-              <div className="text-gray-500 dark:text-gray-400 font-semibold">
-                ID: 101
-              </div>
-              <div className="font-medium">Câu 1: Thủ đô của Việt Nam là ?</div>
-              <div className="ml-4 text-green-600 dark:text-green-400">
-                *A. Hà Nội
-              </div>
-              <div className="ml-4">B. TP. Hồ Chí Minh</div>
-              <div className="ml-4">C. Đà Nẵng</div>
-              <div className="ml-4">D. Huế</div>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 max-h-[500px] overflow-y-auto custom-scrollbar">
+            <div className="text-xs font-mono text-gray-700 dark:text-gray-300 space-y-4">
+              <div className="font-bold text-sm">Tuần 1</div>
 
-              <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+              {/* Câu 1 */}
+              <div>
+                <div className="font-medium">
+                  Câu 1: Dữ liệu là gì? <span className="text-gray-400 italic">// Câu hỏi định dạng chọn 1 đáp án đúng</span>
+                </div>
+                <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*A. Thông tin chưa được xử lý</div>
+                <div className="ml-10 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4">B. Thông tin đã qua xử lý</div>
+                <div className="ml-10 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4">C. Dữ liệu không có cấu trúc</div>
+                <div className="ml-10 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4">D. Thông tin được mã hóa</div>
+                <div className="ml-10 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+              </div>
 
-              <div className="text-gray-500 dark:text-gray-400 font-semibold">
-                ID: 261
-              </div>
-              <div className="font-medium">
-                Câu 2: Ngôn ngữ lập trình nào phổ biến nhất ?
-              </div>
-              <div className="ml-4">A. Python</div>
-              <div className="ml-4 text-green-600 dark:text-green-400">
-                *B. JavaScript
-              </div>
-              <div className="ml-4">C. Java</div>
-              <div className="ml-4">D. C++</div>
+              <div className="border-t border-gray-300 dark:border-gray-600"></div>
 
-              <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+              {/* Câu 2 */}
+              <div>
+                <div className="font-medium">
+                  Câu 2: Những công nghệ nào thường được sử dụng trong việc xử lý Big Data? <span className="text-gray-400 italic">// Câu hỏi định dạng chọn nhiều đáp án đúng</span>
+                </div>
+                <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*A. MapReduce</div>
+                <div className="ml-4">B. SQL</div>
+                <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*C. Spark</div>
+                <div className="ml-4">D. MongoDB</div>
+              </div>
 
-              <div className="text-gray-500 dark:text-gray-400 font-semibold">
-                ID: 168
-              </div>
-              <div className="font-medium">
-                Câu 3: Ngôn ngữ nào phù hợp cho lập trình thi đấu ?
-              </div>
-              <div className="ml-4">A. Python</div>
-              <div className="ml-4 text-green-600 dark:text-green-400">
-                *B. C
-              </div>
-              <div className="ml-4 text-green-600 dark:text-green-400">
-                *C. C++
-              </div>
-              <div className="ml-4">D. Java</div>
+              <div className="border-t border-gray-300 dark:border-gray-600"></div>
 
-              <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-600"></div>
+              {/* Câu 3 */}
+              <div>
+                <div className="font-medium">
+                  Câu 3: Những Frameworks nào sau đây sử dụng để xây dựng giao diện website? <span className="text-gray-400 italic">// Câu hỏi định dạng chọn nhiều đáp án đúng</span>
+                </div>
+                <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*A. ReactJS</div>
+                <div className="ml-4 text-green-600 dark:text-green-400 font-semibold">*B. AngularJS</div>
+              </div>
 
-              <div className="text-gray-500 dark:text-gray-400 font-semibold">
-                ID: 421
+              <div className="border-t border-gray-300 dark:border-gray-600"></div>
+
+              {/* Câu 4 */}
+              <div>
+                <div className="font-medium">
+                  Câu 4: ELT là viết tắt của 3 từ nào (viết 3 từ phân tách nhau bằng khoảng trắng)? <span className="text-gray-400 italic">// Câu hỏi định dạng điền đáp án</span>
+                </div>
+                <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4 text-purple-600 dark:text-purple-400 font-semibold">result: Extract Load Transform</div>
               </div>
-              <div className="font-medium">
-                Câu 4: Generative AI - GenAI là gì ?
+
+              <div className="border-t border-gray-300 dark:border-gray-600"></div>
+
+              {/* Câu 5 */}
+              <div>
+                <div className="font-medium">
+                  Câu 5: Ghép loại dữ liệu với ví dụ tương ứng <span className="text-gray-400 italic">// Câu hỏi định dạng kéo thả đáp án</span>
+                </div>
+                <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400">
+                  result: [“File JSON”, “Bảng dữ liệu”, “Bản ghi nhớ”, “Chịu chết”]<br />
+                  group: (“Dữ liệu có cấu trúc”:[“Bảng dữ liệu”, “Chịu chết”]), (“Dữ liệu bán cấu trúc”:[“File JSON”])
+                </div>
               </div>
-              <div className="ml-4 text-amber-600 dark:text-amber-400 italic">
-                (Câu hỏi "Điền đáp án đúng" - Giáo viên nhập đáp án thủ công)
+
+              <div className="border-t border-gray-300 dark:border-gray-600"></div>
+
+              {/* Câu 6 */}
+              <div>
+                <div className="font-medium">
+                  Câu 6: Đọc và trả lời các câu hỏi sau <span className="text-gray-400 italic">// Câu hỏi định dạng câu hỏi mẹ chứa nhiều câu hỏi con</span>
+                </div>
+                <div className="ml-4 text-blue-500 italic">&lt;Hình ảnh nếu có&gt;</div>
+                <div className="ml-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                  {`{
+Câu 1: What is the main topic? // Câu hỏi con định dạng này không chứa ảnh
+*A. Science
+B. Art
+
+Câu 2: Who is HoanBuCon?
+*A. HoanBuLiem
+*B. HoanLigma
+
+Câu 3: HoanBuCon deepstrike?
+*A. Sure
+B. No
+*C. Factos
+D. WTF BRO
+
+Câu 4: Who is the author?
+result: HoanBuCon
+}`}
+                </div>
               </div>
+
             </div>
           </div>
 

@@ -260,10 +260,45 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
       continue;
     }
 
-    // 4. Fill-in / Drag Result (result: ...)
-    if (line.startsWith("result:")) {
-      const content = line.substring(7).trim();
+// Helper to check if a line is a start of a new semantic block
+    const isNewBlock = (line: string) => {
+      // 1. ID
+      if (line.startsWith("ID:")) return true;
+      // 2. Question (Câu n:)
+      if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) return true;
+      // 3. Keywords (result:, group:)
+      if (line.match(/^(result|group):/i)) return true;
+      // 4. Structural ({, })
+      if (line === "{" || line === "}") return true;
+      // 5. Options (*A., A.)
+      if (line.match(/^[*]?\s*[A-E]\.\s*/)) return true;
       
+      return false;
+    };
+
+    // Helper to accumulate multi-line content
+    const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
+      let content = lines[startIdx].replace(/^(result|group):/i, '').trim();
+      let nextIdx = startIdx + 1;
+      
+      while (nextIdx < lines.length) {
+        const nextLine = lines[nextIdx];
+        if (isNewBlock(nextLine)) {
+          break;
+        }
+        content += " " + nextLine; // Join with space (or newline if needed, but space usually allows JSON parsing)
+        nextIdx++;
+      }
+      
+      // Return adjusted index (loop will increment, so return nextIdx - 1)
+      return { content: content.trim(), nextIdx: nextIdx - 1 };
+    };
+
+    // 4. Fill-in / Drag Result (case-insensitive & multi-line)
+    if (line.match(/^result:/i)) {
+      const { content, nextIdx } = accumulateLines(i);
+      i = nextIdx; // Update loop index
+
       // Check if array -> Drag Items
       if (content.startsWith("[") && content.endsWith("]")) {
         try {
@@ -292,9 +327,10 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
       continue;
     }
 
-    // 5. Group Definition (group: ...)
-    if (line.startsWith("group:")) {
-      const content = line.substring(6).trim();
+    // 5. Group Definition (case-insensitive & multi-line)
+    if (line.match(/^group:/i)) {
+      const { content, nextIdx } = accumulateLines(i);
+      i = nextIdx; // Update loop index
       
       const targets: any[] = [];
       const mapping: Record<string, string> = {}; 

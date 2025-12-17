@@ -143,7 +143,8 @@ export function assignImagesToQuestions(
     
     // First image → question image
     // Find "Header" images (before options)
-    const firstOptionLine = boundary.optionLines[0]?.line ?? boundary.endLine;
+    // Fix: If no options, treat entire boundary as question area (use endLine + 1)
+    const firstOptionLine = boundary.optionLines[0]?.line ?? (boundary.endLine + 1);
     
     let assignedQuestionImage: string | undefined;
     const assignedOptionImages: { [key: string]: string } = {};
