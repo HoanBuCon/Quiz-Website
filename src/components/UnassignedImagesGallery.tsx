@@ -51,11 +51,11 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
                         className="group relative bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500 transition-all cursor-move hover:shadow-md"
                     >
                         {/* Image Preview */}
-                        <div className="relative">
+                        <div className="relative w-full max-w-[227px] mx-auto bg-white dark:bg-gray-800 rounded overflow-hidden">
                             <img
                                 src={image.data}
                                 alt={`Unassigned ${index + 1}`}
-                                className="w-full h-32 object-contain rounded bg-white dark:bg-gray-800"
+                                className="w-full h-auto max-h-64 object-contain"
                             />
 
                             {/* Drag Indicator */}
