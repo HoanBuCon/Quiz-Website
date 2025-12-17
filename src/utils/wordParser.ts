@@ -4,6 +4,7 @@ import { parseDocsContent } from "./docsParser";
 export interface WordParseResult {
   success: boolean;
   content?: string;
+  images?: import('../types').ExtractedImage[];
   error?: string;
 }
 
@@ -12,22 +13,104 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
     // Đọc file Word
     const arrayBuffer = await file.arrayBuffer();
 
-    // Chuyển đổi Word sang HTML
-    const result = await mammoth.extractRawText({ arrayBuffer });
+    // Array để lưu extracted images
+    const extractedImages: import('../types').ExtractedImage[] = [];
+    let imageCounter = 0;
+
+    // Custom image converter: convert images to base64 and track position
+    const convertImage = mammoth.images.imgElement((image: any) => {
+      return image.read("base64").then((imageBuffer: string) => {
+        // Tạo data URL từ base64
+        const contentType = image.contentType || "image/png";
+        const dataUrl = `data:${contentType};base64,${imageBuffer}`;
+        
+        // Tạo unique ID cho image
+        const imageId = `img-${Date.now()}-${imageCounter++}`;
+        
+        // Lưu image vào array
+        extractedImages.push({
+          id: imageId,
+          data: dataUrl,
+          position: imageCounter - 1,
+          questionIndex: null,
+          location: 'unassigned'
+        });
+        
+        // Return marker để đánh dấu vị trí ảnh trong text
+        return {
+          src: `[IMAGE:${imageId}]` // Marker với ID để tracking
+        };
+      });
+    });
+
+    // Chuyển đổi Word sang HTML với image converter
+    const result = await mammoth.convertToHtml(
+      { arrayBuffer },
+      { convertImage }
+    );
 
     if (result.messages.length > 0) {
       console.warn("Word parsing warnings:", result.messages);
     }
 
-    // Lấy text thuần túy từ HTML
-    const plainText = result.value;
+    // Extract text từ HTML và thay thế image tags bằng markers
+    const htmlContent = result.value;
+    
+    // Parse HTML và extract text, giữ lại image markers và line breaks
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    
+    // Replace img tags with [IMAGE] markers
+    const imgTags = doc.querySelectorAll('img');
+    imgTags.forEach(img => {
+      const marker = doc.createTextNode('\n[IMAGE]\n');
+      img.parentNode?.replaceChild(marker, img);
+    });
+    
+    // Extract text with proper line breaks
+    // Process block elements (p, div, br, etc.) to preserve paragraph structure
+    let plainText = '';
+    const walk = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        plainText += node.textContent || '';
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as Element;
+        const tagName = element.tagName.toLowerCase();
+        
+        // Add newlines for block elements
+        if (['p', 'div', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+          if (tagName === 'br') {
+            plainText += '\n';
+          } else if (plainText && !plainText.endsWith('\n')) {
+            plainText += '\n';
+          }
+        }
+        
+        // Recursively process children
+        node.childNodes.forEach(child => walk(child));
+        
+        // Add trailing newline for block elements
+        if (['p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+          if (!plainText.endsWith('\n')) {
+            plainText += '\n';
+          }
+        }
+      }
+    };
+    
+    if (doc.body) {
+      walk(doc.body);
+    }
 
-    // Làm sach text để phù hợp với format của docsParser
+    // Làm sạch text để phù hợp với format của docsParser
     const cleanedText = cleanWordText(plainText);
+
+    console.log(`✓ Extracted ${extractedImages.length} images from Word document`);
 
     return {
       success: true,
       content: cleanedText,
+      images: extractedImages.length > 0 ? extractedImages : undefined,
     };
   } catch (error) {
     console.error("Error parsing Word file:", error);

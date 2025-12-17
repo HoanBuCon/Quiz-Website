@@ -263,6 +263,20 @@ const CreateClassPage: React.FC = () => {
           continue;
         }
 
+        // Map images to questions and get unassigned images
+        let unassignedImages: import('../types').ExtractedImage[] = [];
+        if (result.images && result.images.length > 0 && result.textContent) {
+          const { assignImagesToQuestions, getUnassignedImages } = await import("../utils/imageMapper");
+          const questionsWithImages = assignImagesToQuestions(
+            result.questions,
+            result.images,
+            result.textContent
+          );
+          result.questions = questionsWithImages;
+          unassignedImages = getUnassignedImages(result.images);
+          console.log(`✓ Mapped images to questions. ${unassignedImages.length} unassigned.`);
+        }
+
         // 3. Navigate đến EditQuizPage với file info
         const quizId = `quiz-${Date.now()}-${Math.random()}`;
 
@@ -274,6 +288,7 @@ const CreateClassPage: React.FC = () => {
             fileName: file.name,
             fileId: quizId,
             uploadedFileId: uploadedDoc.id, // LƯU ID CỦA FILE ĐÃ UPLOAD
+            unassignedImages, // Pass unassigned images
             classInfo: isCreateNewClass
               ? {
                 isNew: true,
@@ -670,8 +685,8 @@ const CreateClassPage: React.FC = () => {
 
                 <div
                   className={`border-2 border-solid rounded-xl p-8 text-center transition-all duration-300 ${!isFormValid()
-                      ? "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50"
-                      : "border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500"
+                    ? "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50"
+                    : "border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500"
                     }`}
                 >
                   <div className="space-y-4">
@@ -694,16 +709,16 @@ const CreateClassPage: React.FC = () => {
                     <div>
                       <h3
                         className={`text-lg font-medium mb-2 ${isFormValid()
-                            ? "text-gray-900 dark:text-white"
-                            : "text-gray-500 dark:text-gray-400"
+                          ? "text-gray-900 dark:text-white"
+                          : "text-gray-500 dark:text-gray-400"
                           }`}
                       >
                         Tạo bài kiểm tra thủ công
                       </h3>
                       <p
                         className={`mb-4 ${isFormValid()
-                            ? "text-gray-600 dark:text-gray-400"
-                            : "text-gray-500 dark:text-gray-500"
+                          ? "text-gray-600 dark:text-gray-400"
+                          : "text-gray-500 dark:text-gray-500"
                           }`}
                       >
                         Tạo bài kiểm tra bằng cách nhập câu hỏi và đáp án trực
@@ -714,8 +729,8 @@ const CreateClassPage: React.FC = () => {
                         onClick={handleCreateManualQuiz}
                         disabled={!isFormValid()}
                         className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${isFormValid()
-                            ? "bg-primary-500 hover:bg-primary-600 text-white shadow-lg"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
+                          ? "bg-primary-500 hover:bg-primary-600 text-white shadow-lg"
+                          : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
                           }`}
                       >
                         <svg
@@ -807,10 +822,10 @@ const CreateClassPage: React.FC = () => {
 
                 <div
                   className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${!isFormValid()
-                      ? "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50 cursor-not-allowed"
-                      : dragActive
-                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-105 shadow-lg"
-                        : "border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500"
+                    ? "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50 cursor-not-allowed"
+                    : dragActive
+                      ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-105 shadow-lg"
+                      : "border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500"
                     }`}
                   onDragEnter={isFormValid() ? handleDrag : undefined}
                   onDragLeave={isFormValid() ? handleDrag : undefined}
@@ -836,24 +851,24 @@ const CreateClassPage: React.FC = () => {
                     <div>
                       <h3
                         className={`text-lg font-medium mb-2 ${isFormValid()
-                            ? "text-gray-900 dark:text-white"
-                            : "text-gray-500 dark:text-gray-400"
+                          ? "text-gray-900 dark:text-white"
+                          : "text-gray-500 dark:text-gray-400"
                           }`}
                       >
                         Kéo thả File vào đây hoặc click để chọn File
                       </h3>
                       <p
                         className={`mb-4 ${isFormValid()
-                            ? "text-gray-600 dark:text-gray-400"
-                            : "text-gray-500 dark:text-gray-500"
+                          ? "text-gray-600 dark:text-gray-400"
+                          : "text-gray-500 dark:text-gray-500"
                           }`}
                       >
                         Hỗ trợ File .txt, .json, .doc, .docx
                       </p>
                       <label
                         className={`cursor-pointer inline-flex items-center gap-2 ${isFormValid()
-                            ? "btn-primary"
-                            : "px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
+                          ? "btn-primary"
+                          : "px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
                           }`}
                       >
                         <svg

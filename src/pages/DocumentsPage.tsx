@@ -406,6 +406,20 @@ const DocumentsPage: React.FC = () => {
         return;
       }
 
+      // Map images to questions and get unassigned images
+      let unassignedImages: import('../types').ExtractedImage[] = [];
+      if (result.images && result.images.length > 0 && result.textContent) {
+        const { assignImagesToQuestions, getUnassignedImages } = await import("../utils/imageMapper");
+        const questionsWithImages = assignImagesToQuestions(
+          result.questions,
+          result.images,
+          result.textContent
+        );
+        result.questions = questionsWithImages;
+        unassignedImages = getUnassignedImages(result.images);
+        console.log(`✓ Mapped images to questions. ${unassignedImages.length} unassigned.`);
+      }
+
       // Tạo quiz ID
       const quizId = `quiz-${Date.now()}-${Math.random()}`;
 
@@ -416,6 +430,7 @@ const DocumentsPage: React.FC = () => {
           fileName: selectedFile.name,
           fileId: quizId,
           uploadedFileId: selectedFile.id, // LƯU ID CỦA FILE
+          unassignedImages, // Pass unassigned images
           classInfo: isCreateNewClass
             ? {
               isNew: true,

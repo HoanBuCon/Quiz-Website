@@ -13,12 +13,15 @@ export interface ParsedQuestion {
 export interface ParseResult {
   success: boolean;
   questions?: ParsedQuestion[];
+  images?: import('../types').ExtractedImage[];
+  textContent?: string; // For image mapping
   error?: string;
 }
 
 export async function parseFile(file: File): Promise<ParseResult> {
   try {
     let content: string;
+    let images: import('../types').ExtractedImage[] | undefined;
 
     // Xử lý file Word
     if (
@@ -33,6 +36,7 @@ export async function parseFile(file: File): Promise<ParseResult> {
         };
       }
       content = wordResult.content!;
+      images = wordResult.images;
     } else {
       // Xử lý file text
       content = await file.text();
@@ -53,6 +57,8 @@ export async function parseFile(file: File): Promise<ParseResult> {
     return {
       success: true,
       questions,
+      images,
+      textContent: content, // For image mapping
     };
   } catch (error) {
     console.error("Error parsing file:", error);
@@ -96,7 +102,8 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
   const lines = normalizedContent
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+    .filter((line) => line.length > 0)
+    .filter((line) => line !== '[IMAGE]'); // Skip image markers
 
   let currentQuestion: Partial<ParsedQuestion> = {};
   let currentOptions: string[] = [];

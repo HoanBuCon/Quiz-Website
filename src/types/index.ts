@@ -75,3 +75,12 @@ export interface UploadedFile {
   content?: string;
   quizzes?: Quiz[];
 }
+
+export interface ExtractedImage {
+  id: string;                    // Unique ID for the image
+  data: string;                  // Base64 encoded image data or URL
+  position?: number;             // Position in original document
+  questionIndex?: number | null; // Index of question this image belongs to (null if unassigned)
+  location?: 'question' | 'option' | 'unassigned'; // Where the image should be placed
+  optionIndex?: number;          // If location is 'option', which option index
+}

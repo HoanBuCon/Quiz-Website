@@ -4,6 +4,7 @@ import { Question, Quiz } from "../types";
 import { ParsedQuestion } from "../utils/docsParser";
 import { toast } from "react-hot-toast";
 import QuizPreview from "../components/QuizPreview";
+import UnassignedImagesGallery from "../components/UnassignedImagesGallery";
 import { ImagesAPI } from "../utils/api";
 import {
   DndContext,
@@ -37,6 +38,7 @@ interface LocationState {
   quizTitle?: string;
   quizDescription?: string;
   isEdit?: boolean;
+  unassignedImages?: import('../types').ExtractedImage[]; // Images not yet assigned to questions
 }
 
 // Extended Question interface to support images
@@ -100,6 +102,22 @@ const ImageUpload: React.FC<{
 
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
+
+      // Check if dropping from UnassignedImagesGallery
+      const imageData = event.dataTransfer.getData('image/unassigned');
+      if (imageData) {
+        try {
+          const image = JSON.parse(imageData) as import('../types').ExtractedImage;
+          // Directly use the image data
+          onImageUpload(image.data);
+          toast.success("Đã gán ảnh!");
+          return;
+        } catch (error) {
+          console.error("Error parsing dropped image data:", error);
+        }
+      }
+
+      // Otherwise handle as file drop
       const file = event.dataTransfer.files[0];
       if (file) {
         handleFile(file);
@@ -218,6 +236,10 @@ const EditQuizPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
+  // Image gallery state
+  const [unassignedImages, setUnassignedImages] = useState<import('../types').ExtractedImage[]>(
+    state?.unassignedImages || []
+  );
   // Lưu trữ edited state của từng câu hỏi để tránh mất dữ liệu khi scroll/remount
   const editedQuestionsMapRef = useRef<Map<string, QuestionWithImages>>(new Map());
   // Lưu lại thông tin vị trí phần tử để giữ nguyên viewport sau các thao tác chỉnh sửa
@@ -226,6 +248,11 @@ const EditQuizPage: React.FC = () => {
     offsetTop: number;
     ts: number;
   } | null>(null);
+
+  // Handler to remove image from unassigned list when assigned
+  const handleImageAssigned = (imageId: string) => {
+    setUnassignedImages(prev => prev.filter(img => img.id !== imageId));
+  };
 
   const setScrollAnchor = (questionId: string) => {
     const element = document.querySelector<HTMLElement>(`[data-qid="${questionId}"]`);
@@ -3186,256 +3213,20 @@ const EditQuizPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Chỉnh sửa Quiz
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Kiểm tra và chỉnh sửa các câu hỏi từ file {state.fileName}
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handlePublish}
-              disabled={isPublishing}
-              className="btn-primary flex items-center"
-            >
-              {isPublishing ? (
-                <>
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Đang xuất bản...
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Xuất bản Quiz
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleCancel}
-              className="btn-secondary flex items-center !bg-gray-100 !text-gray-600 hover:!bg-gray-200 dark:!bg-gray-700 dark:!text-gray-300 dark:hover:!bg-gray-600"
-            >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-              Hủy
-            </button>
-          </div>
-        </div>
-
-        {/* Quiz Info */}
-        <div className="card p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 text-center">
-            Thông tin Quiz
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 gap-6">
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
-                Tiêu đề Quiz
-              </label>
-              <input
-                type="text"
-                value={quizTitle}
-                onChange={(e) => setQuizTitle(e.target.value)}
-                className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                placeholder="Nhập tiêu đề Quiz"
-              />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                Chỉnh sửa Quiz
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Kiểm tra và chỉnh sửa các câu hỏi từ file {state.fileName}
+              </p>
             </div>
-            <div>
-              <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
-                Mô tả (tùy chọn)
-              </label>
-              <input
-                type="text"
-                value={quizDescription}
-                onChange={(e) => setQuizDescription(e.target.value)}
-                className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                placeholder="Nhập mô tả Quiz"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Layout 2 cột: 2/3 - 1/3 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Cột trái - 2/3 - Editor */}
-          <div className="lg:col-span-2">
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Chỉnh sửa câu hỏi ({questions.length})
-                </h2>
-                <div className="flex items-center gap-3">
-                  {questions.length > 1 && (
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                      <svg
-                        className="w-4 h-4 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 6h16M4 12h16M4 18h16"
-                        />
-                      </svg>
-                      Kéo thả để sắp xếp
-                    </div>
-                  )}
-                  <button
-                    onClick={handleAddQuestion}
-                    className="btn-secondary flex items-center"
-                  >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
-                    Thêm câu hỏi
-                  </button>
-                </div>
-              </div>
-
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={questions.map((q) => q.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-6">
-                    {questions.map((question, index) => (
-                      <SortableQuestionItem
-                        key={question.id}
-                        question={question}
-                        index={index}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-
-              {questions.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                    <svg
-                      className="w-8 h-8 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Chưa có câu hỏi nào
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Thêm câu hỏi đầu tiên để bắt đầu tạo Quiz
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Cột phải - 1/3 - Preview */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-8">
-              <QuizPreview
-                questions={questions}
-                quizTitle={quizTitle}
-                onEdit={handlePreviewEdit}
-                isEditable={true}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Nút xuất bản ở cuối trang */}
-        {questions.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex justify-center items-center gap-4">
-              <button
-                onClick={handleAddQuestion}
-                className="btn-secondary flex items-center"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                Thêm câu hỏi
-              </button>
+            <div className="flex gap-3">
               <button
                 onClick={handlePublish}
                 disabled={isPublishing}
@@ -3505,72 +3296,324 @@ const EditQuizPage: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Quiz Info */}
+          <div className="card p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 text-center">
+              Thông tin Quiz
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
+                  Tiêu đề Quiz
+                </label>
+                <input
+                  type="text"
+                  value={quizTitle}
+                  onChange={(e) => setQuizTitle(e.target.value)}
+                  className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                  placeholder="Nhập tiêu đề Quiz"
+                />
+              </div>
+              <div>
+                <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
+                  Mô tả (tùy chọn)
+                </label>
+                <input
+                  type="text"
+                  value={quizDescription}
+                  onChange={(e) => setQuizDescription(e.target.value)}
+                  className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                  placeholder="Nhập mô tả Quiz"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Layout 2 cột: 2/3 - 1/3 */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Cột trái - 2/3 - Editor */}
+            <div className="lg:col-span-2">
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Chỉnh sửa câu hỏi ({questions.length})
+                  </h2>
+                  <div className="flex items-center gap-3">
+                    {questions.length > 1 && (
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                        <svg
+                          className="w-4 h-4 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 6h16M4 12h16M4 18h16"
+                          />
+                        </svg>
+                        Kéo thả để sắp xếp
+                      </div>
+                    )}
+                    <button
+                      onClick={handleAddQuestion}
+                      className="btn-secondary flex items-center"
+                    >
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                      Thêm câu hỏi
+                    </button>
+                  </div>
+                </div>
+
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={questions.map((q) => q.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-6">
+                      {questions.map((question, index) => (
+                        <SortableQuestionItem
+                          key={question.id}
+                          question={question}
+                          index={index}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+
+                {questions.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-8 h-8 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      Chưa có câu hỏi nào
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Thêm câu hỏi đầu tiên để bắt đầu tạo Quiz
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Cột phải - 1/3 - Preview */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-8">
+                <QuizPreview
+                  questions={questions}
+                  quizTitle={quizTitle}
+                  onEdit={handlePreviewEdit}
+                  isEditable={true}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Nút xuất bản ở cuối trang */}
+          {questions.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-center items-center gap-4">
+                <button
+                  onClick={handleAddQuestion}
+                  className="btn-secondary flex items-center"
+                >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Thêm câu hỏi
+                </button>
+                <button
+                  onClick={handlePublish}
+                  disabled={isPublishing}
+                  className="btn-primary flex items-center"
+                >
+                  {isPublishing ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Đang xuất bản...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Xuất bản Quiz
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="btn-secondary flex items-center !bg-gray-100 !text-gray-600 hover:!bg-gray-200 dark:!bg-gray-700 dark:!text-gray-300 dark:hover:!bg-gray-600"
+                >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  Hủy
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Floating scroll buttons */}
+        {canScroll && (
+          <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
+            {!atTop && !atBottom && (
+              <button
+                onClick={scrollToTop}
+                className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 15l7-7 7 7"
+                  />
+                </svg>
+              </button>
+            )}
+            {atTop && (
+              <button
+                onClick={scrollToBottom}
+                className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+            )}
+            {atBottom && (
+              <button
+                onClick={scrollToTop}
+                className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 15l7-7 7 7"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Floating scroll buttons */}
-      {canScroll && (
-        <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
-          {!atTop && !atBottom && (
-            <button
-              onClick={scrollToTop}
-              className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 15l7-7 7 7"
-                />
-              </svg>
-            </button>
-          )}
-          {atTop && (
-            <button
-              onClick={scrollToBottom}
-              className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-          )}
-          {atBottom && (
-            <button
-              onClick={scrollToTop}
-              className="w-11 h-11 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 flex items-center justify-center"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 15l7-7 7 7"
-                />
-              </svg>
-            </button>
-          )}
+      {/* Unassigned Images Gallery Sidebar */}
+      {unassignedImages.length > 0 && (
+        <div className="w-80 flex-shrink-0">
+          <div className="sticky top-4">
+            <UnassignedImagesGallery
+              images={unassignedImages}
+              onImageRemove={(imageId) => handleImageAssigned(imageId)}
+              className="max-h-[calc(100vh-2rem)] overflow-hidden"
+            />
+          </div>
         </div>
       )}
     </div>
