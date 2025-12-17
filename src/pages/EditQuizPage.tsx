@@ -3222,7 +3222,7 @@ const EditQuizPage: React.FC = () => {
     <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex-1 min-w-0">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 Chỉnh sửa Quiz
@@ -3304,9 +3304,6 @@ const EditQuizPage: React.FC = () => {
 
           {/* Quiz Info */}
           <div className="card p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 text-center">
-              Thông tin Quiz
-            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
@@ -3336,15 +3333,15 @@ const EditQuizPage: React.FC = () => {
           </div>
 
           {/* Layout: Kho ảnh - Editor - Preview */}
-          <div className="flex gap-6">
+          <div className="flex flex-col lg:flex-row gap-6">
             {/* Cột trái - Kho ảnh (chiều rộng cố định) */}
             {unassignedImages.length > 0 && (
-              <div className="w-64 flex-shrink-0">
-                <div className="sticky top-8">
+              <div className="w-full lg:w-64 flex-shrink-0">
+                <div className="lg:sticky lg:top-24">
                   <UnassignedImagesGallery
                     images={unassignedImages}
                     onImageRemove={(imageId) => handleImageAssigned(imageId)}
-                    className="card !p-0 shadow-xl max-h-[calc(100vh-2rem)] overflow-hidden"
+                    className="card !p-0 shadow-xl max-h-96 lg:max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden custom-thin-scrollbar"
                   />
                 </div>
               </div>
@@ -3356,7 +3353,7 @@ const EditQuizPage: React.FC = () => {
                 {/* Cột Editor - 2/3 */}
                 <div className="lg:col-span-2">
                   <div className="mb-6">
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                         Chỉnh sửa câu hỏi ({questions.length})
                       </h2>
@@ -3452,7 +3449,7 @@ const EditQuizPage: React.FC = () => {
 
                 {/* Cột phải - Preview */}
                 <div className="lg:col-span-1">
-                  <div className="sticky top-8">
+                  <div className="sticky top-24">
                     <QuizPreview
                       questions={questions}
                       quizTitle={quizTitle}

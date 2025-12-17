@@ -35,14 +35,14 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
                     <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Ảnh chưa gán ({images.length})
+                    Ảnh chưa gán: {images.length}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Kéo thả ảnh vào câu hỏi hoặc đáp án
+                    Kéo thả ảnh vào vùng chọn ảnh của câu hỏi hoặc đáp án để gắn ảnh
                 </p>
             </div>
 
-            <div className="p-4 space-y-3 max-h-[calc(100vh-200px)] overflow-y-auto">
+            <div className="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-3 h-full overflow-y-auto">
                 {images.map((image, index) => (
                     <div
                         key={image.id}
@@ -85,7 +85,7 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
                         <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                             <span className="font-medium">Ảnh #{index + 1}</span>
                             {image.position !== undefined && (
-                                <span className="ml-2">• Vị trí: {image.position}</span>
+                                <span className="ml-2">• Thứ tự trong File: {image.position + 1}</span>
                             )}
                         </div>
                     </div>
@@ -94,8 +94,8 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
 
             {/* Helper Text at Bottom */}
             <div className="sticky bottom-0 bg-gradient-to-t from-white dark:from-gray-800 to-transparent p-4 text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                    💡 Tip: Kéo ảnh vào vùng "Thêm ảnh" của câu hỏi hoặc đáp án
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    💡 Mẹo: Kéo ảnh vào vùng "Thêm ảnh" của câu hỏi hoặc đáp án
                 </p>
             </div>
         </div>
