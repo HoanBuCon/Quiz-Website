@@ -1,4 +1,5 @@
 import mammoth from "mammoth";
+import { parseDocsContent } from "./docsParser";
 
 export interface WordParseResult {
   success: boolean;
@@ -21,7 +22,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
     // Lấy text thuần túy từ HTML
     const plainText = result.value;
 
-    // Làm sạch text
+    // Làm sach text để phù hợp với format của docsParser
     const cleanedText = cleanWordText(plainText);
 
     return {
@@ -41,6 +42,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
 
 function cleanWordText(text: string): string {
   // Loại bỏ các ký tự đặc biệt và định dạng không cần thiết
+  // GIỐNG HỆT VỚI docsParser.ts để đảm bảo format nhất quán
   return (
     text
       // Normalize line endings to \n (handle Windows CRLF and Mac CR)
@@ -55,7 +57,8 @@ function cleanWordText(text: string): string {
       // Loại bỏ các ký tự điều khiển khác (giữ lại \n, \t)
       // eslint-disable-next-line no-control-regex
       .replace(/[\x00-\x08\x0C\x0E-\x1F\x7F]/g, "")
-      // Thay thế các ký tự bullet points bằng A. B. C. D.
+      // Thay thế các ký tự bullet points bằng format chuẩn (giữ nguyên * nếu có)
+      // Chỉ loại bỏ bullet points không phải *, giữ lại * để đánh dấu đáp án đúng
       .replace(/^[•·▪▫◦‣⁃]\s*/gm, "")
       .replace(/^[1-9]\.\s*/gm, "")
       // Chuẩn hóa khoảng trắng trong dòng (không loại bỏ dòng trống)
@@ -73,55 +76,34 @@ export function validateWordFormat(content: string): {
   isValid: boolean;
   errors: string[];
 } {
+  // SỬ DỤNG CÙNG LOGIC VALIDATION VỚI docsParser
+  // để đảm bảo format nhất quán
   const errors: string[] = [];
   const lines = content
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
-  let hasQuestions = false;
-  let currentQuestionId = "";
   let hasValidQuestion = false;
-  let questionCount = 0;
   let totalLines = lines.length;
-  // let hasIdFormat = false; // Không bắt buộc nữa
-  let hasQuestionFormat = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     if (line.startsWith("ID:")) {
-      // hasIdFormat = true;
-      const idMatch = line.match(/ID:\s*(\d+)/);
-      if (idMatch) {
-        currentQuestionId = idMatch[1];
-        hasQuestions = true;
-      }
-    } else if (line.startsWith("Câu") && line.includes(":")) {
-      hasQuestionFormat = true;
+      // found ID
+    } else if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) {
       hasValidQuestion = true;
-      questionCount++;
-      // Reset current ID if we want to track per question, but mostly just checking existence here
-      if (!currentQuestionId) {
-         // Just a marker that we found questions without ID (acceptable now)
-      }
-    } 
-    // Check for other types (just to ensure file isn't garbage)
-    else if (line.startsWith("result:")) {
-      // Fill-in or Group
-    }
-    else if (line.startsWith("{")) {
-       // Composite start
     }
   }
 
-  // Thông báo lỗi chi tiết với hướng dẫn
-  if (!hasQuestionFormat && !hasQuestions) {
-    errors.push(`Không tìm thấy câu hỏi hợp lệ trong file. Vui lòng sử dụng định dạng "Câu n: ..."`);
-  } else if (questionCount === 0 && !hasQuestions) {
+  // Relaxed validation - giống docsParser
+  if (!hasValidQuestion && totalLines > 0) {
     errors.push(
-      `Không tìm thấy câu hỏi nào trong file. File có ${totalLines} dòng.`
+      `Không tìm thấy câu hỏi hợp lệ (thiếu dòng bắt đầu bằng "Câu n:"). File có ${totalLines} dòng.`
     );
+  } else if (totalLines === 0) {
+    errors.push("File trống.");
   }
 
   return {

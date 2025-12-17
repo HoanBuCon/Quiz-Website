@@ -8,25 +8,102 @@ interface QuizPreviewProps {
   isEditable?: boolean;
 }
 
-const QuizPreview: React.FC<QuizPreviewProps> = ({ 
-  questions, 
+const QuizPreview: React.FC<QuizPreviewProps> = ({
+  questions,
   quizTitle = "Preview Quiz",
   onEdit,
   isEditable = false
 }) => {
   // Chuyển đổi questions thành format text để hiển thị
+  // SỬ DỤNG FORMAT MỚI CỦA docsParser
   const generatePreviewText = () => {
     let content = '';
-    
+
     questions.forEach((q, index) => {
       content += `ID: ${q.id}\n`;
       content += `Câu ${index + 1}: ${q.question}\n`;
-      
+
       if (q.type === 'text') {
-        // Câu hỏi điền đáp án - không có đáp án hiển thị
-        content += `(Câu hỏi không có đáp án thì website sẽ tự hiểu đó là câu hỏi "Điền đáp án đúng". Lúc này đáp án đúng cần được giáo viên nhập thủ công trong giao diện tạo / chỉnh sửa quiz trước khi xuất bản.)\n`;
+        // Format: result: <answer>
+        const answers = Array.isArray(q.correctAnswers)
+          ? (q.correctAnswers as string[]).filter((a) => a.trim())
+          : [];
+        if (answers.length > 0) {
+          content += `result: ${answers[0]}\n`;
+        }
+      } else if (q.type === 'composite') {
+        // Format: { ... sub-questions ... }
+        content += `{\n`;
+        if (q.subQuestions && q.subQuestions.length > 0) {
+          q.subQuestions.forEach((subQ, subIdx) => {
+            content += `Câu ${subIdx + 1}: ${subQ.question}\n`;
+            if (subQ.type === 'text') {
+              const answers = Array.isArray(subQ.correctAnswers)
+                ? (subQ.correctAnswers as string[]).filter((a) => a.trim())
+                : [];
+              if (answers.length > 0) {
+                content += `result: ${answers[0]}\n`;
+              }
+            } else if (Array.isArray(subQ.options)) {
+              (subQ.options as string[]).forEach((opt, optIdx) => {
+                const isCorrect =
+                  Array.isArray(subQ.correctAnswers) &&
+                  (subQ.correctAnswers as string[]).includes(opt);
+                const prefix = isCorrect ? '*' : '';
+                const letter = String.fromCharCode(65 + optIdx);
+                content += `${prefix}${letter}. ${opt}\n`;
+              });
+            }
+
+            // Add blank line between sub-questions
+            if (subIdx < q.subQuestions!.length - 1) {
+              content += '\n';
+            }
+          });
+        }
+        content += `}\n`;
+      } else if (q.type === 'drag') {
+        // Format: result: [...] \n group: (...)
+        const dragOptions = q.options as any;
+        if (dragOptions && dragOptions.items) {
+          const itemLabels = dragOptions.items.map((item: any) => item.label || item.id);
+          content += `result: ${JSON.stringify(itemLabels)}\n`;
+        }
+
+        if (dragOptions && dragOptions.targets && dragOptions.targets.length > 0) {
+          // Build group: line from correctAnswers mapping
+          const mapping = q.correctAnswers as Record<string, string>;
+          const groupsByTarget: Record<string, string[]> = {};
+
+          // Group items by their target
+          dragOptions.targets.forEach((target: any) => {
+            groupsByTarget[target.id] = [];
+          });
+
+          if (mapping) {
+            Object.entries(mapping).forEach(([itemId, targetId]) => {
+              if (groupsByTarget[targetId]) {
+                groupsByTarget[targetId].push(itemId);
+              } else {
+                groupsByTarget[targetId] = [itemId];
+              }
+            });
+          }
+
+          // Format: group: ("Target1":["item1","item2"]), ("Target2":["item3"])
+          const groupParts: string[] = [];
+          dragOptions.targets.forEach((target: any) => {
+            const targetLabel = target.label || target.id;
+            const items = groupsByTarget[target.id] || [];
+            groupParts.push(`("${targetLabel}":${JSON.stringify(items)})`);
+          });
+
+          if (groupParts.length > 0) {
+            content += `group: ${groupParts.join(', ')}\n`;
+          }
+        }
       } else {
-        // Câu hỏi trắc nghiệm
+        // Single/Multiple choice: *A. B. *C. D.
         if (Array.isArray(q.options)) {
           q.options.forEach((option, optIndex) => {
             const isCorrect = Array.isArray(q.correctAnswers) && q.correctAnswers.includes(option);
@@ -36,12 +113,12 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
           });
         }
       }
-      
+
       if (index < questions.length - 1) {
         content += '\n';
       }
     });
-    
+
     return content;
   };
 
@@ -63,7 +140,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     const newContent = e.target.value;
     setEditableContent(newContent);
     setIsContentChanged(true);
-    
+
     // Debounce việc gọi callback để tránh update quá nhiều
     const timeoutId = setTimeout(() => {
       if (onEdit) {
@@ -79,15 +156,15 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     // Parse nội dung đã chỉnh sửa thành questions
     const lines = content.split('\n').filter(line => line.trim());
     const parsedQuestions: Question[] = [];
-    
+
     let currentQuestion: Partial<Question> = {};
     let currentOptions: string[] = [];
     let currentCorrectAnswers: string[] = [];
     let isTextQuestion = false;
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       if (line.startsWith('ID:')) {
         // Lưu câu hỏi trước đó nếu có
         if (currentQuestion.question) {
@@ -100,7 +177,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             explanation: currentQuestion.explanation || ''
           } as Question);
         }
-        
+
         // Reset cho câu hỏi mới
         currentQuestion = { id: line.replace('ID:', '').trim() };
         currentOptions = [];
@@ -116,13 +193,13 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         const isCorrect = line.startsWith('*');
         const optionText = line.replace(/^\*?[A-Z]\.\s*/, '');
         currentOptions.push(optionText);
-        
+
         if (isCorrect) {
           currentCorrectAnswers.push(optionText);
         }
       }
     }
-    
+
     // Thêm câu hỏi cuối cùng
     if (currentQuestion.question) {
       parsedQuestions.push({
@@ -134,7 +211,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         explanation: currentQuestion.explanation || ''
       } as Question);
     }
-    
+
     return parsedQuestions;
   };
 
@@ -182,11 +259,11 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
       {/* Footer với hướng dẫn */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
-          <div><strong className="text-gray-800 dark:text-gray-200">Hướng dẫn chỉnh sửa trực tiếp:</strong></div>
-          <div>• Thay đổi <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*A</code> thành <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*B</code> để chuyển đáp án đúng từ A sang B</div>
-          <div>• Thêm <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*</code> trước đáp án để đánh dấu là đáp án đúng</div>
-          <div>• Nhiều <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*</code> = câu hỏi chọn nhiều đáp án</div>
-          <div>• Không có đáp án = câu hỏi điền đáp án</div>
+          <div><strong className="text-gray-800 dark:text-gray-200">Hướng dẫn định dạng:</strong></div>
+          <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*A.</code> = đáp án đúng, nhiều <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*</code> = chọn nhiều</div>
+          <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">result: text</code> = câu hỏi điền khuyết</div>
+          <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">result: [...]</code> + <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">group: (...)</code> = kéo thả phân loại</div>
+          <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">{'{ ... }'}</code> = câu hỏi mẹ chứa câu con</div>
           <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 rounded border-l-4 border-blue-400 dark:border-blue-500">
             <div className="text-blue-700 dark:text-blue-200">
               <strong>💡 Mẹo:</strong> Thay đổi ở đây sẽ tự động cập nhật cột bên trái!

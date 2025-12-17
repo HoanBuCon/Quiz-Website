@@ -266,86 +266,286 @@ const EditQuizPage: React.FC = () => {
   };
 
   // Hàm parse nội dung text thành questions
+  // SỬ DỤNG GIỐNG HỆT LOGIC CỦA docsParser.parseDocsContent
   const parseEditedContent = (content: string): QuestionWithImages[] => {
-    const lines = content.split("\n").filter((line) => line.trim());
+    // Pre-process: Normalize smart quotes and newlines (giống docsParser)
+    let normalizedContent = content
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+      .replace(/[\u2018\u2019]/g, "'"); // Smart single quotes
+
+    // Heuristic: Inject newlines trước một số patterns
+    normalizedContent = normalizedContent
+      // Inject newline trước "Câu n:"
+      .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
+      // Keywords đặc biệt
+      .replace(/([^\n])\s*(result:|group:|{ |^{|}$| }|}$)/gm, '$1\n$2');
+
+    const lines = normalizedContent
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
     const parsedQuestions: QuestionWithImages[] = [];
 
     let currentQuestion: Partial<QuestionWithImages> = {};
     let currentOptions: string[] = [];
-    let currentCorrectAnswers: string[] = [];
+    let currentCorrectAnswers: string[] | Record<string, string> = [];
+
+    // State for Composite (Parent/Child)
+    let isCollectingComposite = false;
+    let compositeBuffer: string[] = [];
+    let compositeBraceCount = 0;
+
+    // Generate unique ID helper
+    const generateId = (): string => {
+      return `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    };
+
+    // Determine question type helper
+    const determineQuestionType = (
+      correctAnswers: string[] | Record<string, string>
+    ): "single" | "multiple" | "text" => {
+      if (Array.isArray(correctAnswers)) {
+        if (correctAnswers.length === 0) {
+          return "text";
+        } else if (correctAnswers.length === 1) {
+          return "single";
+        } else {
+          return "multiple";
+        }
+      }
+      return "text";
+    };
+
+    const flushQuestion = () => {
+      // Only flush if we have a question text
+      if (currentQuestion.question) {
+        // TÌM ẢNH TỪ QUESTIONS CŨ DỰA VÀO ID
+        const existingQuestion = questions.find(
+          (q) => q.id === currentQuestion.id
+        );
+
+        // Default ID if missing
+        if (!currentQuestion.id) {
+          currentQuestion.id = generateId();
+        }
+
+        // Determine type if not explicitly set (e.g. by group/result parsing)
+        if (!currentQuestion.type) {
+          currentQuestion.type = determineQuestionType(currentCorrectAnswers);
+        }
+
+        // Construct final object
+        const q: QuestionWithImages = {
+          id: currentQuestion.id!,
+          question: currentQuestion.question,
+          type: currentQuestion.type as any,
+          correctAnswers: Array.isArray(currentCorrectAnswers) && currentCorrectAnswers.length > 0
+            ? currentCorrectAnswers
+            : (currentQuestion.correctAnswers || []),
+          explanation: currentQuestion.explanation,
+          subQuestions: currentQuestion.subQuestions,
+          questionImage: existingQuestion?.questionImage,
+          optionImages: existingQuestion?.optionImages,
+        } as QuestionWithImages;
+
+        // Assign options based on type
+        if (q.type === 'drag' && currentQuestion.options) {
+          q.options = currentQuestion.options;
+          // Correct answers for drag should be map, usually handled in group parsing.
+          if (currentQuestion.correctAnswers) {
+            q.correctAnswers = currentQuestion.correctAnswers;
+          }
+        } else if (q.type !== 'text' && q.type !== 'composite') {
+          q.options = currentOptions;
+        }
+
+        parsedQuestions.push(q);
+      }
+
+      // Reset state
+      currentQuestion = {};
+      currentOptions = [];
+      currentCorrectAnswers = [];
+    };
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+      const line = lines[i];
 
+      // --- COMPOSITE BLOCK HANDLING ---
+      if (isCollectingComposite) {
+        // Check for braces to handle nesting (simple counter)
+        const openCount = (line.match(/{/g) || []).length;
+        const closeCount = (line.match(/}/g) || []).length;
+
+        compositeBraceCount += openCount - closeCount;
+
+        if (compositeBraceCount <= 0) {
+          // End of composite block
+          isCollectingComposite = false;
+
+          // Recursively parse buffer
+          if (compositeBuffer.length > 0) {
+            const subQs = parseEditedContent(compositeBuffer.join("\n"));
+            currentQuestion.subQuestions = subQs;
+            currentQuestion.type = "composite";
+            flushQuestion();
+          }
+          compositeBuffer = [];
+        } else {
+          compositeBuffer.push(line);
+        }
+        continue;
+      }
+
+      // Check start of Composite Block
+      if (line === "{" && currentQuestion.question) {
+        isCollectingComposite = true;
+        compositeBraceCount = 1;
+        continue;
+      }
+
+      // --- STANDARD PARSING ---
+
+      // 1. Explicit ID (Optional)
       if (line.startsWith("ID:")) {
-        // Lưu câu hỏi trước đó nếu có
-        if (currentQuestion.question) {
-          // TÌM ẢNH TỪ QUESTIONS CŨ DỰA VÀO ID
-          const existingQuestion = questions.find(
-            (q) => q.id === currentQuestion.id
-          );
+        if (currentQuestion.question) flushQuestion();
 
-          parsedQuestions.push({
-            id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
-            question: currentQuestion.question,
-            type:
-              currentOptions.length > 0
-                ? currentCorrectAnswers.length > 1
-                  ? "multiple"
-                  : "single"
-                : "text",
-            options: currentOptions.length > 0 ? currentOptions : undefined,
-            correctAnswers: currentCorrectAnswers,
-            explanation: currentQuestion.explanation || "",
-            questionImage: existingQuestion?.questionImage, // GIỮ LẠI ẢNH CŨ
-            optionImages: existingQuestion?.optionImages, // GIỮ LẠI ẢNH ĐÁP ÁN CŨ
-          } as QuestionWithImages);
+        const idMatch = line.match(/ID:\s*(\w+)/);
+        currentQuestion = {
+          id: idMatch ? idMatch[1] : generateId()
+        };
+        continue;
+      }
+
+      // 2. Question Text (Câu n:)
+      if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) {
+        if (currentQuestion.question) flushQuestion();
+
+        // Extract text after colon
+        const colonIndex = line.indexOf(":");
+        const text = line.substring(colonIndex + 1).trim();
+
+        // Inherit ID if set, otherwise gen
+        if (!currentQuestion.id) currentQuestion.id = generateId();
+        currentQuestion.question = text;
+        continue;
+      }
+
+      // 3. Options (A. B. C. D.) — ROBUST PARSER
+      const optionRegex = /([*]?)([A-E])\.\s*/g;
+      let match: RegExpExecArray | null;
+
+      const optionMatches: {
+        isCorrect: boolean;
+        index: number;
+        length: number;
+      }[] = [];
+
+      while ((match = optionRegex.exec(line)) !== null) {
+        optionMatches.push({
+          isCorrect: match[1] === "*",
+          index: match.index,
+          length: match[0].length,
+        });
+      }
+
+      if (optionMatches.length > 0) {
+        for (let i = 0; i < optionMatches.length; i++) {
+          const start = optionMatches[i].index + optionMatches[i].length;
+          const end =
+            i + 1 < optionMatches.length
+              ? optionMatches[i + 1].index
+              : line.length;
+
+          const content = line.substring(start, end).trim();
+
+          if (content.length > 0) {
+            currentOptions.push(content);
+            if (optionMatches[i].isCorrect && Array.isArray(currentCorrectAnswers)) {
+              (currentCorrectAnswers as string[]).push(content);
+            }
+          }
+        }
+        continue;
+      }
+
+      // 4. Fill-in / Drag Result (result: ...)
+      if (line.startsWith("result:")) {
+        const content = line.substring(7).trim();
+
+        // Check if array -> Drag Items
+        if (content.startsWith("[") && content.endsWith("]")) {
+          try {
+            // Normalize quotes is done at top, but ensure JSON valid format
+            const items = JSON.parse(content);
+
+            // Init dragging options structure
+            const dragItems = items.map((t: string) => ({ id: t, label: t }));
+
+            currentQuestion.type = 'drag';
+            currentQuestion.options = {
+              items: dragItems,
+              targets: [] // will be filled by group:
+            };
+          } catch (e) {
+            console.warn("Failed to parse result array", e);
+            // Fallback to text
+            currentCorrectAnswers = [content];
+            currentQuestion.type = 'text';
+          }
+        } else {
+          // Simple text result
+          currentCorrectAnswers = [content];
+          currentQuestion.type = 'text';
+        }
+        continue;
+      }
+
+      // 5. Group Definition (group: ...)
+      if (line.startsWith("group:")) {
+        const content = line.substring(6).trim();
+
+        const targets: any[] = [];
+        const mapping: Record<string, string> = {};
+
+        // Improved Regex: handles quotes inside keys/values better
+        const regex = /\("([^"]+)"\s*:\s*(\[[^\]]+\])\)/g;
+        let match;
+
+        while ((match = regex.exec(content)) !== null) {
+          const targetLabel = match[1];
+          const itemsJson = match[2]; // quotes already normalized
+
+          const targetId = targetLabel;
+          targets.push({ id: targetId, label: targetLabel });
+
+          try {
+            const items = JSON.parse(itemsJson);
+            items.forEach((item: string) => {
+              mapping[item] = targetId;
+            });
+          } catch (e) {
+            console.warn("Error parsing group items", e);
+          }
         }
 
-        // Reset cho câu hỏi mới
-        currentQuestion = { id: line.replace("ID:", "").trim() };
-        currentOptions = [];
-        currentCorrectAnswers = [];
-      } else if (line.match(/^Câu \d+:/)) {
-        currentQuestion.question = line.replace(/^Câu \d+:\s*/, "");
-      } else if (line.match(/^\*?[A-Z]\./)) {
-        // Đây là đáp án
-        const isCorrect = line.startsWith("*");
-        const optionText = line.replace(/^\*?[A-Z]\.\s*/, "");
-        currentOptions.push(optionText);
-
-        if (isCorrect) {
-          currentCorrectAnswers.push(optionText);
+        if (currentQuestion.options && typeof currentQuestion.options === 'object' && !Array.isArray(currentQuestion.options)) {
+          currentQuestion.options.targets = targets;
+        } else {
+          currentQuestion.options = { items: [], targets: targets };
         }
-      } else if (line.includes("Câu hỏi không có đáp án")) {
-        // Đây là câu hỏi text - không cần xử lý thêm gì
-        currentQuestion.type = "text";
+
+        currentQuestion.correctAnswers = mapping;
+        currentQuestion.type = 'drag';
+        continue;
       }
     }
 
-    // Thêm câu hỏi cuối cùng
-    if (currentQuestion.question) {
-      // TÌM ẢNH TỪ QUESTIONS CŨ DỰA VÀO ID
-      const existingQuestion = questions.find(
-        (q) => q.id === currentQuestion.id
-      );
-
-      parsedQuestions.push({
-        id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
-        question: currentQuestion.question,
-        type:
-          currentOptions.length > 0
-            ? currentCorrectAnswers.length > 1
-              ? "multiple"
-              : "single"
-            : "text",
-        options: currentOptions.length > 0 ? currentOptions : undefined,
-        correctAnswers: currentCorrectAnswers,
-        explanation: currentQuestion.explanation || "",
-        questionImage: existingQuestion?.questionImage, // GIỮ LẠI ẢNH CŨ
-        optionImages: existingQuestion?.optionImages, // GIỮ LẠI ẢNH ĐÁP ÁN CŨ
-      } as QuestionWithImages);
-    }
+    // Flush last question
+    flushQuestion();
 
     return parsedQuestions;
   };
@@ -910,6 +1110,7 @@ const EditQuizPage: React.FC = () => {
   };
 
   // Hàm tạo nội dung preview từ questions
+  // TẠO CONTENT THEO ĐÚNG FORMAT CỦA docsParser
   const generatePreviewContent = (questionsArray: QuestionWithImages[]) => {
     let content = "";
 
@@ -918,19 +1119,25 @@ const EditQuizPage: React.FC = () => {
       content += `Câu ${index + 1}: ${q.question}\n`;
 
       if (q.type === "text") {
-        content += `(Câu hỏi không có đáp án thì website sẽ tự hiểu đó là câu hỏi "Điền đáp án đúng". Lúc này đáp án đúng cần được giáo viên nhập thủ công trong giao diện tạo / chỉnh sửa quiz trước khi xuất bản.)\n`;
+        // Format: result: <answer>
+        const answers = Array.isArray(q.correctAnswers)
+          ? (q.correctAnswers as string[]).filter((a) => a.trim())
+          : [];
+        if (answers.length > 0) {
+          content += `result: ${answers[0]}\n`;
+        }
       } else if (q.type === "composite") {
-        content += `(Câu hỏi mẹ chứa ${q.subQuestions?.length || 0
-          } câu hỏi con)\n`;
+        // Format: { ... sub-questions ... }
+        content += `{\n`;
         if (q.subQuestions && q.subQuestions.length > 0) {
           q.subQuestions.forEach((subQ, subIdx) => {
-            content += `  Câu con ${subIdx + 1}: ${subQ.question}\n`;
+            content += `Câu ${subIdx + 1}: ${subQ.question}\n`;
             if (subQ.type === "text") {
               const answers = Array.isArray(subQ.correctAnswers)
                 ? (subQ.correctAnswers as string[]).filter((a) => a.trim())
                 : [];
               if (answers.length > 0) {
-                content += `    Đáp án: ${answers.join(", ")}\n`;
+                content += `result: ${answers[0]}\n`;
               }
             } else if (Array.isArray(subQ.options)) {
               (subQ.options as string[]).forEach((opt, optIdx) => {
@@ -939,14 +1146,59 @@ const EditQuizPage: React.FC = () => {
                   (subQ.correctAnswers as string[]).includes(opt);
                 const prefix = isCorrect ? "*" : "";
                 const letter = String.fromCharCode(65 + optIdx);
-                content += `    ${prefix}${letter}. ${opt}\n`;
+                content += `${prefix}${letter}. ${opt}\n`;
               });
+            }
+
+            // Add blank line between sub-questions
+            if (subIdx < q.subQuestions!.length - 1) {
+              content += "\n";
             }
           });
         }
+        content += `}\n`;
       } else if (q.type === "drag") {
-        content += `(Câu hỏi kéo thả)\n`;
+        // Format: result: [...] \n group: (...)
+        const dragOptions = q.options as any;
+        if (dragOptions && dragOptions.items) {
+          const itemLabels = dragOptions.items.map((item: any) => item.label || item.id);
+          content += `result: ${JSON.stringify(itemLabels)}\n`;
+        }
+
+        if (dragOptions && dragOptions.targets && dragOptions.targets.length > 0) {
+          // Build group: line from correctAnswers mapping
+          const mapping = q.correctAnswers as Record<string, string>;
+          const groupsByTarget: Record<string, string[]> = {};
+
+          // Group items by their target
+          dragOptions.targets.forEach((target: any) => {
+            groupsByTarget[target.id] = [];
+          });
+
+          if (mapping) {
+            Object.entries(mapping).forEach(([itemId, targetId]) => {
+              if (groupsByTarget[targetId]) {
+                groupsByTarget[targetId].push(itemId);
+              } else {
+                groupsByTarget[targetId] = [itemId];
+              }
+            });
+          }
+
+          // Format: group: ("Target1":["item1","item2"]), ("Target2":["item3"])
+          const groupParts: string[] = [];
+          dragOptions.targets.forEach((target: any) => {
+            const targetLabel = target.label || target.id;
+            const items = groupsByTarget[target.id] || [];
+            groupParts.push(`("${targetLabel}":${JSON.stringify(items)})`);
+          });
+
+          if (groupParts.length > 0) {
+            content += `group: ${groupParts.join(", ")}\n`;
+          }
+        }
       } else {
+        // Single/Multiple choice: *A. B. *C. D.
         if (Array.isArray(q.options)) {
           q.options.forEach((option, optIndex) => {
             const isCorrect =
