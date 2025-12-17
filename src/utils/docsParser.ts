@@ -223,7 +223,7 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
     }
 
     // 3. Options (A. B. C. D.) — ROBUST PARSER (ES5 compatible)
-    const optionRegex = /([*]?)([A-E])\.\s*/g;
+    const optionRegex = /([*]?)([A-Z])\.\s*/g;
     let match: RegExpExecArray | null;
 
     const optionMatches: {
@@ -271,7 +271,7 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
       // 4. Structural ({, })
       if (line === "{" || line === "}") return true;
       // 5. Options (*A., A.)
-      if (line.match(/^[*]?\s*[A-E]\.\s*/)) return true;
+      if (line.match(/^[*]?\s*[A-Z]\.\s*/)) return true;
       
       return false;
     };
