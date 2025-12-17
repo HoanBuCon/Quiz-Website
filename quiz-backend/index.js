@@ -104,6 +104,10 @@ const chatUploadPath = isProd
   ? path.join(__dirname, '../chatbox/uploads')
   : path.join(__dirname, 'public/chatbox/uploads');
 
+const documentsPath = isProd
+  ? path.join(__dirname, '../documents')
+  : path.join(__dirname, 'public/documents');
+
 // Bọc trong try...catch để tránh crash-loop khi khởi động
 try {
   if (!fs.existsSync(uploadPath)) {
@@ -112,10 +116,13 @@ try {
   if (!fs.existsSync(chatUploadPath)) {
     fs.mkdirSync(chatUploadPath, { recursive: true });
   }
+  if (!fs.existsSync(documentsPath)) {
+    fs.mkdirSync(documentsPath, { recursive: true });
+  }
   console.log('[INFO] Upload directories ensured');
 } catch (e) {
   console.error(
-    `[FATAL STARTUP ERROR] Không thể tạo thư mục /uploads hoặc /chatbox/uploads.`
+    `[FATAL STARTUP ERROR] Không thể tạo thư mục /uploads, /chatbox/uploads hoặc /documents.`
   );
   console.error('Vui lòng tạo các thư mục này bằng tay qua CPanel File Manager.');
   console.error(e);
@@ -146,6 +153,15 @@ app.use(
   },
   express.static(chatUploadPath)
 );
+
+app.use(
+  `${BASE_PATH}/files/documents`,
+  (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(documentsPath)
+);
 // =======================================================
 
 // ====== Health Check (GIỮ NGUYÊN) ======
@@ -174,6 +190,7 @@ const visibilityRouter = require('./routes/visibility');
 const imagesRouter = require('./routes/images');
 const chatRouter = require('./routes/chat');
 const profileRouter = require('./routes/profile');
+const documentsRouter = require('./routes/documents');
 
 // ====== Mount routers (GIỮ NGUYÊN) ======
 console.log(`Mounting routers at: ${BASE_PATH || '(root)'}`);
@@ -186,6 +203,7 @@ app.use(`${BASE_PATH}/visibility`, visibilityRouter);
 app.use(`${BASE_PATH}/images`, imagesRouter);
 app.use(`${BASE_PATH}/chat`, chatRouter);
 app.use(`${BASE_PATH}/profile`, profileRouter);
+app.use(`${BASE_PATH}/documents`, documentsRouter);
 
 // ====== 404 handler (GIỮ NGUYÊN) ======
 app.use((req, res) => {
@@ -203,8 +221,10 @@ app.use((req, res) => {
       `${BASE_PATH}/visibility/*`,
       `${BASE_PATH}/images/*`,
       `${BASE_PATH}/chat/*`,
+      `${BASE_PATH}/documents/*`,
       `${BASE_PATH}/uploads/*`,
       `${BASE_PATH}/chatbox/uploads/*`,
+      `${BASE_PATH}/files/documents/*`,
     ],
   });
 });

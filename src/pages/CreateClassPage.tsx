@@ -168,14 +168,14 @@ const CreateClassPage: React.FC = () => {
       fileId: quizId,
       classInfo: isCreateNewClass
         ? {
-            isNew: true,
-            name: className.trim(),
-            description: classDescription.trim(),
-          }
+          isNew: true,
+          name: className.trim(),
+          description: classDescription.trim(),
+        }
         : {
-            isNew: false,
-            classId: selectedClassId,
-          },
+          isNew: false,
+          classId: selectedClassId,
+        },
     });
 
     navigate("/edit-quiz", {
@@ -185,14 +185,14 @@ const CreateClassPage: React.FC = () => {
         fileId: quizId,
         classInfo: isCreateNewClass
           ? {
-              isNew: true,
-              name: className.trim(),
-              description: classDescription.trim(),
-            }
+            isNew: true,
+            name: className.trim(),
+            description: classDescription.trim(),
+          }
           : {
-              isNew: false,
-              classId: selectedClassId,
-            },
+            isNew: false,
+            classId: selectedClassId,
+          },
       },
     });
 
@@ -227,163 +227,71 @@ const CreateClassPage: React.FC = () => {
       setProcessingFile(file.name);
 
       try {
-        // Lấy danh sách tài liệu đã có từ localStorage và uploadedFiles
-        const savedDocs = localStorage.getItem("documents") || "[]";
-        const existingDocuments = JSON.parse(savedDocs).map((doc: any) => ({
-          ...doc,
-          uploadedAt: new Date(doc.uploadedAt),
-        }));
-
-        // Kết hợp với files đã upload trong session hiện tại
-        const allExistingFiles = [...existingDocuments, ...uploadedFiles];
-
-        // Kiểm tra duplicate file name
-        const duplicateCheck = checkDuplicateFileName(
-          file.name,
-          allExistingFiles
-        );
-        let finalFileName = file.name;
-        let shouldOverwrite = false;
-
-        if (duplicateCheck.isDuplicate) {
-          const action = await showDuplicateModal(
-            file.name,
-            duplicateCheck.suggestedName!
-          );
-
-          if (action.action === "cancel") {
-            continue; // Bỏ qua file này
-          } else if (action.action === "overwrite") {
-            shouldOverwrite = true;
-            finalFileName = file.name;
-          } else if (action.action === "rename") {
-            finalFileName = action.newFileName!;
-          }
+        const fileExtension = file.name.split(".").pop()?.toLowerCase();
+        if (!["doc", "docx", "txt", "json"].includes(fileExtension || "")) {
+          alert(`File ${file.name} không được hỗ trợ. Chỉ chấp nhận .doc, .docx, .txt, .json`);
+          continue;
         }
 
-        const fileType = getFileType(finalFileName);
-        console.log("File type:", fileType);
+        // 1. UPLOAD FILE LÊN SERVER
+        const token = getToken();
 
-        if (fileType === "docs" || fileType === "txt") {
-          console.log("Processing as docs/txt file");
-          // Sử dụng function mới để parse file
-          const result = await parseFile(file);
-          console.log("Parse result:", result);
-
-          if (!result.success) {
-            const errorMessage = `File ${finalFileName} có lỗi định dạng:\n\n${result.error}\n\nHướng dẫn sử dụng file:\n1. Sử dụng font đơn giản (Times New Roman, Arial)\n2. Không sử dụng bullet points, chỉ dùng A. B. C. D.\n3. Không sử dụng màu sắc hoặc định dạng phức tạp\n4. Đánh dấu đáp án đúng bằng dấu *\n5. Xem template-docs.txt để biết định dạng chuẩn`;
-            alert(errorMessage);
-            continue;
-          }
-
-          const quizId = `file-${Date.now()}-${Math.random()}`;
-
-          // KHÔNG tự động lưu quiz - chỉ chuẩn bị dữ liệu
-          // Quiz sẽ được tạo khi user bấm "Xuất bản" trong EditQuizPage
-
-          // Lưu file vào documents (để backup) với ID riêng biệt
-          const documentId = `doc-${Date.now()}-${Math.random()}`; // ID riêng cho document
-          let docs = JSON.parse(savedDocs);
-
-          // Tạo document mới
-          const newDocument = {
-            id: documentId, // Sử dụng documentId thay vì quizId
-            name: finalFileName,
-            type: fileType,
-            size: file.size,
-            uploadedAt: new Date(),
-            content: await readFileContent(file),
-          };
-
-          if (shouldOverwrite) {
-            // Xóa document cũ và thêm document mới
-            docs = docs.filter((doc: any) => doc.name !== file.name);
-            docs.push(newDocument);
-
-            // Cập nhật state - xóa file cũ và thêm file mới
-            setUploadedFiles((prev) => {
-              const filtered = prev.filter((f) => f.name !== file.name);
-              return [...filtered, newDocument];
-            });
-          } else {
-            // Thêm document mới
-            docs.push(newDocument);
-
-            // Cập nhật state
-            setUploadedFiles((prev) => [...prev, newDocument]);
-          }
-
-          localStorage.setItem("documents", JSON.stringify(docs));
-
-          // Kiểm tra xem có câu hỏi được parse không
-          if (!result.questions || result.questions.length === 0) {
-            alert(
-              `Không tìm thấy câu hỏi nào trong file ${finalFileName}. Vui lòng kiểm tra lại định dạng file.`
-            );
-            continue;
-          }
-
-          // KHÔNG tự động tạo lớp học - chỉ chuẩn bị thông tin để tạo sau khi xuất bản
-
-          // Chuyển đến trang chỉnh sửa với câu hỏi đã parse
-          navigate("/edit-quiz", {
-            state: {
-              questions: result.questions,
-              fileName: finalFileName,
-              fileId: quizId,
-              classInfo: isCreateNewClass
-                ? {
-                    isNew: true,
-                    name: className.trim(),
-                    description: classDescription.trim(),
-                  }
-                : {
-                    isNew: false,
-                    classId: selectedClassId,
-                  },
-            },
-          });
-          return; // Dừng xử lý các file khác
+        if (!token) {
+          alert("Vui lòng đăng nhập để tải file lên");
+          continue;
         }
 
-        // Xử lý các loại file khác (JSON và các file khác)
-        // Lưu file vào documents và uploadedFiles
-        let docs = JSON.parse(savedDocs);
-        const content = await readFileContent(file);
-        const newFile: UploadedFile = {
-          id: `file-${Date.now()}-${Math.random()}`,
-          name: finalFileName,
-          type: fileType,
-          size: file.size,
-          uploadedAt: new Date(),
-          content: content,
-        };
+        const { DocumentsAPI } = await import("../utils/api");
+        console.log("Uploading file to server...");
+        const uploadedDoc = await DocumentsAPI.upload(file, token);
 
-        if (shouldOverwrite) {
-          // Xóa file cũ và thêm file mới
-          docs = docs.filter((doc: any) => doc.name !== file.name);
-          docs.push(newFile);
+        console.log("File uploaded to server:", uploadedDoc);
 
-          // Cập nhật state - xóa file cũ và thêm file mới
-          setUploadedFiles((prev) => {
-            const filtered = prev.filter((f) => f.name !== file.name);
-            return [...filtered, newFile];
-          });
-        } else {
-          // Thêm file mới
-          docs.push(newFile);
+        // 2. PARSE FILE locally để lấy questions
+        console.log("Parsing file locally...");
+        const result = await parseFile(file);
+        console.log("Parse result:", result);
 
-          // Cập nhật state
-          setUploadedFiles((prev) => [...prev, newFile]);
+        if (!result.success) {
+          const errorMessage = `File ${file.name} có lỗi định dạng:\n\n${result.error}\n\nHướng dẫn sử dụng file:\n1. Sử dụng font đơn giản (Times New Roman, Arial)\n2. Không sử dụng bullet points, chỉ dùng A. B. C. D.\n3. Không sử dụng màu sắc hoặc định dạng phức tạp\n4. Đánh dấu đáp án đúng bằng dấu *\n5. Xem template-docs.txt để biết định dạng chuẩn`;
+          alert(errorMessage);
+          continue;
         }
 
-        localStorage.setItem("documents", JSON.stringify(docs));
+        if (!result.questions || result.questions.length === 0) {
+          alert(`Không tìm thấy câu hỏi nào trong file ${file.name}`);
+          continue;
+        }
+
+        // 3. Navigate đến EditQuizPage với file info
+        const quizId = `quiz-${Date.now()}-${Math.random()}`;
+
+        console.log("Navigating to edit-quiz with uploadedFileId:", uploadedDoc.id);
+
+        navigate("/edit-quiz", {
+          state: {
+            questions: result.questions,
+            fileName: file.name,
+            fileId: quizId,
+            uploadedFileId: uploadedDoc.id, // LƯU ID CỦA FILE ĐÃ UPLOAD
+            classInfo: isCreateNewClass
+              ? {
+                isNew: true,
+                name: className.trim(),
+                description: classDescription.trim(),
+              }
+              : {
+                isNew: false,
+                classId: selectedClassId,
+              },
+          },
+        });
+
+        // Chỉ xử lý file đầu tiên, sau đó navigate
+        break;
       } catch (error) {
-        console.error("Lỗi khi xử lý file:", error);
+        console.error("Error processing file:", error);
         alert(`Lỗi khi xử lý file ${file.name}: ${error}`);
-        setIsUploading(false);
-        setProcessingFile(null);
-        return; // Dừng xử lý khi có lỗi
       }
     }
 
@@ -604,9 +512,8 @@ const CreateClassPage: React.FC = () => {
           <div className="relative">
             {/* Class Selection/Creation Section */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 ${
-                !isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
-              }`}
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+                }`}
             >
               <div className="p-6 space-y-6">
                 {/* Toggle giữa tạo mới và chọn có sẵn */}
@@ -709,9 +616,8 @@ const CreateClassPage: React.FC = () => {
 
             {/* Manual Quiz Creation */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${
-                !isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
-              }`}
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+                }`}
             >
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -763,11 +669,10 @@ const CreateClassPage: React.FC = () => {
                 )}
 
                 <div
-                  className={`border-2 border-solid rounded-xl p-8 text-center transition-all duration-300 ${
-                    !isFormValid()
+                  className={`border-2 border-solid rounded-xl p-8 text-center transition-all duration-300 ${!isFormValid()
                       ? "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50"
                       : "border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500"
-                  }`}
+                    }`}
                 >
                   <div className="space-y-4">
                     <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
@@ -788,20 +693,18 @@ const CreateClassPage: React.FC = () => {
 
                     <div>
                       <h3
-                        className={`text-lg font-medium mb-2 ${
-                          isFormValid()
+                        className={`text-lg font-medium mb-2 ${isFormValid()
                             ? "text-gray-900 dark:text-white"
                             : "text-gray-500 dark:text-gray-400"
-                        }`}
+                          }`}
                       >
                         Tạo bài kiểm tra thủ công
                       </h3>
                       <p
-                        className={`mb-4 ${
-                          isFormValid()
+                        className={`mb-4 ${isFormValid()
                             ? "text-gray-600 dark:text-gray-400"
                             : "text-gray-500 dark:text-gray-500"
-                        }`}
+                          }`}
                       >
                         Tạo bài kiểm tra bằng cách nhập câu hỏi và đáp án trực
                         tiếp vào hệ thống
@@ -810,11 +713,10 @@ const CreateClassPage: React.FC = () => {
                       <button
                         onClick={handleCreateManualQuiz}
                         disabled={!isFormValid()}
-                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${
-                          isFormValid()
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${isFormValid()
                             ? "bg-primary-500 hover:bg-primary-600 text-white shadow-lg"
                             : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
-                        }`}
+                          }`}
                       >
                         <svg
                           className="w-5 h-5"
@@ -839,9 +741,8 @@ const CreateClassPage: React.FC = () => {
 
             {/* Divider */}
             <div
-              className={`flex items-center my-8 ${
-                !isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
-              }`}
+              className={`flex items-center my-8 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+                }`}
             >
               <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-600"></div>
               <span className="px-6 text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full py-1">
@@ -852,9 +753,8 @@ const CreateClassPage: React.FC = () => {
 
             {/* Upload Area */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${
-                !isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
-              }`}
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+                }`}
             >
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -906,13 +806,12 @@ const CreateClassPage: React.FC = () => {
                 )}
 
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-                    !isFormValid()
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${!isFormValid()
                       ? "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50 cursor-not-allowed"
                       : dragActive
-                      ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-105 shadow-lg"
-                      : "border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500"
-                  }`}
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-105 shadow-lg"
+                        : "border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500"
+                    }`}
                   onDragEnter={isFormValid() ? handleDrag : undefined}
                   onDragLeave={isFormValid() ? handleDrag : undefined}
                   onDragOver={isFormValid() ? handleDrag : undefined}
@@ -936,29 +835,26 @@ const CreateClassPage: React.FC = () => {
                     </div>
                     <div>
                       <h3
-                        className={`text-lg font-medium mb-2 ${
-                          isFormValid()
+                        className={`text-lg font-medium mb-2 ${isFormValid()
                             ? "text-gray-900 dark:text-white"
                             : "text-gray-500 dark:text-gray-400"
-                        }`}
+                          }`}
                       >
                         Kéo thả File vào đây hoặc click để chọn File
                       </h3>
                       <p
-                        className={`mb-4 ${
-                          isFormValid()
+                        className={`mb-4 ${isFormValid()
                             ? "text-gray-600 dark:text-gray-400"
                             : "text-gray-500 dark:text-gray-500"
-                        }`}
+                          }`}
                       >
                         Hỗ trợ File .txt, .json, .doc, .docx
                       </p>
                       <label
-                        className={`cursor-pointer inline-flex items-center gap-2 ${
-                          isFormValid()
+                        className={`cursor-pointer inline-flex items-center gap-2 ${isFormValid()
                             ? "btn-primary"
                             : "px-4 py-2 bg-gray-300 text-gray-500 rounded-md cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
-                        }`}
+                          }`}
                       >
                         <svg
                           className="w-5 h-5"

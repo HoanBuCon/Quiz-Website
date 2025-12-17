@@ -257,6 +257,84 @@ export const FilesAPI = {
     apiRequest<void>(`/files/${id}`, { method: "DELETE", token }),
 };
 
+// Documents API - New file storage system (stores files on filesystem)
+export const DocumentsAPI = {
+  /**
+   * Upload document to server filesystem
+   * @param file File to upload (.doc, .docx, .txt, .json)
+   * @param token JWT token
+   * @returns Uploaded file metadata with filePath
+   */
+  upload: async (file: File, token: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || 'Upload failed');
+    }
+    
+    return response.json();
+  },
+  
+  /**
+   * List user's documents
+   * @param token JWT token
+   * @returns Array of document metadata
+   */
+  listMine: async (token: string) => {
+    const response = await fetch(`${API_BASE_URL}/documents`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) throw new Error('Failed to fetch documents');
+    return response.json();
+  },
+  
+  /**
+   * Get document by ID
+   * @param id Document ID
+   * @param token JWT token
+   * @returns Document metadata with optional content
+   */
+  getById: async (id: string, token: string) => {
+    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) throw new Error('Failed to fetch document');
+    return response.json();
+  },
+  
+  /**
+   * Delete document
+   * @param id Document ID
+   * @param token JWT token
+   */
+  remove: async (id: string, token: string) => {
+    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) throw new Error('Failed to delete document');
+  },
+};
+
 // Chat API
 export const ChatAPI = {
   list: (params: { limit?: number; before?: string; after?: string }, token: string) => {

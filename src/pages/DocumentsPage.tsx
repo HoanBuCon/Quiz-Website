@@ -51,45 +51,45 @@ const DocumentsPage: React.FC = () => {
   }, []);
 
   const loadData = async () => {
-      try {
-        const { getToken } = await import("../utils/auth");
-        const token = getToken();
+    try {
+      const { getToken } = await import("../utils/auth");
+      const token = getToken();
 
-        if (!token) {
-          setDocuments([]);
-          setTotalClasses(0);
-          setTotalQuizzes(0);
-          setExistingClasses([]);
-          setLoading(false);
-          return;
-        }
-
-        const { FilesAPI, ClassesAPI, QuizzesAPI } = await import(
-          "../utils/api"
-        );
-
-        // Load documents
-        const files = await FilesAPI.listMine(token);
-        setDocuments(
-          files.map((f: any) => ({ ...f, uploadedAt: new Date(f.uploadedAt) }))
-        );
-
-        // Load classes and quizzes stats
-        const mine = await ClassesAPI.listMine(token);
-        setExistingClasses(mine);
-        setTotalClasses(mine.length);
-
-        let quizCount = 0;
-        for (const cls of mine) {
-          const qzs = await QuizzesAPI.byClass(cls.id, token);
-          quizCount += qzs.length;
-        }
-        setTotalQuizzes(quizCount);
-      } catch (e) {
-        console.error("Failed to load data:", e);
-      } finally {
+      if (!token) {
+        setDocuments([]);
+        setTotalClasses(0);
+        setTotalQuizzes(0);
+        setExistingClasses([]);
         setLoading(false);
+        return;
       }
+
+      const { DocumentsAPI, ClassesAPI, QuizzesAPI } = await import(
+        "../utils/api"
+      );
+
+      // Load documents
+      const files = await DocumentsAPI.listMine(token);
+      setDocuments(
+        files.map((f: any) => ({ ...f, uploadedAt: new Date(f.uploadedAt) }))
+      );
+
+      // Load classes and quizzes stats
+      const mine = await ClassesAPI.listMine(token);
+      setExistingClasses(mine);
+      setTotalClasses(mine.length);
+
+      let quizCount = 0;
+      for (const cls of mine) {
+        const qzs = await QuizzesAPI.byClass(cls.id, token);
+        quizCount += qzs.length;
+      }
+      setTotalQuizzes(quizCount);
+    } catch (e) {
+      console.error("Failed to load data:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Xử lý khi file được chọn
@@ -132,7 +132,6 @@ const DocumentsPage: React.FC = () => {
       try {
         // Kiểm tra duplicate file name
         const duplicateCheck = checkDuplicateFileName(file.name, documents);
-        let finalFileName = file.name;
         let shouldOverwrite = false;
 
         if (duplicateCheck.isDuplicate) {
@@ -142,50 +141,34 @@ const DocumentsPage: React.FC = () => {
           );
 
           if (action.action === "cancel") {
-            continue; // Bỏ qua file này
+            continue;
           } else if (action.action === "overwrite") {
             shouldOverwrite = true;
-            finalFileName = file.name;
-          } else if (action.action === "rename") {
-            finalFileName = action.newFileName!;
           }
+          // Rename được xử lý tự động bởi server (unique filename)
         }
 
-        const fileType = getFileType(finalFileName);
-
-        // Đọc nội dung file
-        const content = await readFileContent(file);
-
-        // Tạo document mới
-        const newDocument: UploadedFile = {
-          id: `file-${Date.now()}-${Math.random()}`,
-          name: finalFileName,
-          type: fileType,
-          size: file.size,
-          uploadedAt: new Date(),
-          content: content,
-        };
-
-        // Lưu lên backend
+        // Lấy token
         const { getToken } = await import("../utils/auth");
         const token = getToken();
         if (!token) {
           alert("Vui lòng đăng nhập để tải tài liệu.");
           continue;
         }
-        const { FilesAPI } = await import("../utils/api");
-        const uploaded = await FilesAPI.upload(
-          {
-            name: finalFileName,
-            type: fileType,
-            size: file.size,
-            content: content,
-          },
-          token
-        );
+
+        // Nếu overwrite, xóa file cũ trước
+        const { DocumentsAPI } = await import("../utils/api");
+        if (shouldOverwrite) {
+          const oldFile = documents.find(d => d.name === file.name);
+          if (oldFile) {
+            await DocumentsAPI.remove(oldFile.id, token);
+          }
+        }
+
+        // Upload file lên server
+        const uploaded = await DocumentsAPI.upload(file, token);
 
         setDocuments((prev) => {
-          // Nếu overwrite theo tên, thay bằng file mới
           const filtered = shouldOverwrite
             ? prev.filter((doc) => doc.name !== file.name)
             : prev;
@@ -355,100 +338,89 @@ const DocumentsPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // Parse file để lấy câu hỏi
-      const fileType = getFileType(selectedFile.name);
-      let questions = [];
+      const { getToken } = await import("../utils/auth");
+      const { DocumentsAPI, getApiBaseUrl } = await import("../utils/api");
+      const token = getToken();
 
-      if (fileType === "docs" || fileType === "txt") {
-        if (fileType === "docs") {
-          try {
-            // Đối với file Word, chuyển base64 về ArrayBuffer một cách an toàn
-            const base64Content = selectedFile.content || "";
-            if (!base64Content) {
-              alert("File Word không có nội dung");
-              return;
-            }
-
-            const binaryString = atob(base64Content);
-            const uint8Array = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-              uint8Array[i] = binaryString.charCodeAt(i);
-            }
-
-            const fileBlob = new Blob([uint8Array], {
-              type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            });
-            const file = new File([fileBlob], selectedFile.name, {
-              type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            });
-
-            const result = await parseFile(file);
-            if (result.success && result.questions) {
-              questions = result.questions;
-            } else {
-              alert(
-                `Không thể phân tích file, hãy tạo lớp học thủ công và Copy-Patse nội dung trong file. Lỗi: ${
-                  result.error || "Lỗi không xác định"
-                }`
-              );
-              return;
-            }
-          } catch (error) {
-            console.error("Lỗi khi xử lý file Word:", error);
-            alert("Có lỗi xảy ra khi xử lý file Word. File có thể bị hỏng.");
-            return;
-          }
-        } else {
-          // Đối với file text
-          const fileBlob = new Blob([selectedFile.content || ""], {
-            type: "text/plain",
-          });
-          const file = new File([fileBlob], selectedFile.name, {
-            type: "text/plain",
-          });
-
-          const result = await parseFile(file);
-          if (result.success && result.questions) {
-            questions = result.questions;
-          } else {
-            alert(
-              `Không thể phân tích file, hãy tạo lớp học thủ công và Copy-Patse nội dung trong file. Lỗi: ${
-                result.error || "Lỗi không xác định"
-              }`
-            );
-            return;
-          }
-        }
-      } else {
-        alert("Hiện tại chỉ hỗ trợ file .doc, .docx, .txt");
+      if (!token) {
+        alert("Vui lòng đăng nhập");
         return;
       }
 
-      if (questions.length === 0) {
+      // Lấy file data từ server
+      const fileData = await DocumentsAPI.getById(selectedFile.id, token);
+
+      let file: File;
+
+      // Kiểm tra xem file có filePath không (file mới) hay content (file cũ)
+      if (fileData.filePath) {
+        // FILE MỚI: Download từ server
+        const fileUrl = `${getApiBaseUrl()}/${fileData.filePath}`;
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        file = new File([blob], fileData.name, { type: blob.type });
+      } else if (fileData.content) {
+        // FILE CŨ: Tạo từ content
+        const fileType = getFileType(fileData.name);
+
+        if (fileType === "docs") {
+          // Word file từ base64
+          const binaryString = atob(fileData.content);
+          const uint8Array = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            uint8Array[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([uint8Array], {
+            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          });
+          file = new File([blob], fileData.name, {
+            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          });
+        } else {
+          // Text file
+          const blob = new Blob([fileData.content], { type: "text/plain" });
+          file = new File([blob], fileData.name, { type: "text/plain" });
+        }
+      } else {
+        alert("File data not found");
+        return;
+      }
+
+      // Parse file
+      const result = await parseFile(file);
+
+      if (!result.success) {
+        alert(
+          `Không thể phân tích file. Lỗi: ${result.error || "Lỗi không xác định"}`
+        );
+        return;
+      }
+
+      if (!result.questions || result.questions.length === 0) {
         alert("Không tìm thấy câu hỏi nào trong file");
         return;
       }
 
       // Tạo quiz ID
-      const quizId = `file-${Date.now()}-${Math.random()}`;
+      const quizId = `quiz-${Date.now()}-${Math.random()}`;
 
       // Chuyển đến EditQuizPage với dữ liệu
       navigate("/edit-quiz", {
         state: {
-          questions: questions,
+          questions: result.questions,
           fileName: selectedFile.name,
           fileId: quizId,
-          // Thông tin lớp học
+          uploadedFileId: selectedFile.id, // LƯU ID CỦA FILE
           classInfo: isCreateNewClass
             ? {
-                isNew: true,
-                name: className,
-                description: classDescription,
-              }
+              isNew: true,
+              name: className,
+              description: classDescription,
+            }
             : {
-                isNew: false,
-                classId: selectedClassId,
-              },
+              isNew: false,
+              classId: selectedClassId,
+            },
         },
       });
 
@@ -471,8 +443,8 @@ const DocumentsPage: React.FC = () => {
           alert("Vui lòng đăng nhập.");
           return;
         }
-        const { FilesAPI } = await import("../utils/api");
-        await FilesAPI.remove(fileId, token);
+        const { DocumentsAPI } = await import("../utils/api");
+        await DocumentsAPI.remove(fileId, token);
         setDocuments((prev) => prev.filter((doc) => doc.id !== fileId));
         alert(`Đã xóa tài liệu "${fileName}" thành công!`);
       } catch (e) {
@@ -645,13 +617,11 @@ const DocumentsPage: React.FC = () => {
                   className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
                   style={{
                     maxHeight: 280,
-                    transform: `perspective(1000px) rotateY(${
-                      mousePosition.x * 0.1
-                    }deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${
-                      Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0
+                    transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1
+                      }deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0
                         ? "20px"
                         : "0px"
-                    })`,
+                      })`,
                     border: "2px solid transparent",
                     backgroundImage: isDarkMode
                       ? "linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)"
@@ -664,11 +634,10 @@ const DocumentsPage: React.FC = () => {
                 />
                 {/* Tooltip */}
                 <div
-                  className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${
-                    isDarkMode
-                      ? "bg-gray-800 text-white border border-gray-700"
-                      : "bg-white text-gray-900 border border-gray-200"
-                  }`}
+                  className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
+                    ? "bg-gray-800 text-white border border-gray-700"
+                    : "bg-white text-gray-900 border border-gray-200"
+                    }`}
                 >
                   Click để chuyển đến trang →
                 </div>
@@ -736,11 +705,10 @@ const DocumentsPage: React.FC = () => {
               </h3>
             </div>
             <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
-                dragActive
-                  ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 scale-[1.02]"
-                  : "border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500"
-              }`}
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${dragActive
+                ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 scale-[1.02]"
+                : "border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500"
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -1126,17 +1094,14 @@ const DocumentsPage: React.FC = () => {
                       className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
                       style={{
                         maxHeight: 280,
-                        transform: `perspective(1000px) rotateY(${
-                          mousePosition.x * 0.1
-                        }deg) rotateX(${
-                          -mousePosition.y * 0.1
-                        }deg) translateZ(${
-                          Math.abs(mousePosition.x) +
+                        transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1
+                          }deg) rotateX(${-mousePosition.y * 0.1
+                          }deg) translateZ(${Math.abs(mousePosition.x) +
                             Math.abs(mousePosition.y) >
-                          0
+                            0
                             ? "20px"
                             : "0px"
-                        })`,
+                          })`,
                         border: "2px solid transparent",
                         backgroundImage: isDarkMode
                           ? "linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)"
@@ -1149,11 +1114,10 @@ const DocumentsPage: React.FC = () => {
                     />
                     {/* Tooltip */}
                     <div
-                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${
-                        isDarkMode
-                          ? "bg-gray-800 text-white border border-gray-700"
-                          : "bg-white text-gray-900 border border-gray-200"
-                      }`}
+                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
+                        ? "bg-gray-800 text-white border border-gray-700"
+                        : "bg-white text-gray-900 border border-gray-200"
+                        }`}
                     >
                       Click để chuyển đến trang →
                     </div>
