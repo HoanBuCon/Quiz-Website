@@ -31,15 +31,17 @@ const storage = multer.diskStorage({
     cb(null, path.join(baseChatUploadDir, sub));
   },
   filename: (_req, file, cb) => {
+    // Fix UTF-8 encoding
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    const ext = path.extname(originalName);
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+    
+    // Keep original characters, just replace potentially problematic chars
     const nameWithoutExt = path
-      .basename(file.originalname, ext)
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9-_]/g, '-')
-      .replace(/-+/g, '-')
-      .substring(0, 50);
+      .basename(originalName, ext)
+      .replace(/[<>:"/\\|?*]/g, '-') // Replace file system reserved chars
+      .substring(0, 100); // Allow longer names
+      
     cb(null, `${nameWithoutExt}-${uniqueSuffix}${ext}`);
   },
 });

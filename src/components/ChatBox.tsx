@@ -603,9 +603,22 @@ const ChatBox: React.FC = () => {
       );
     }
     const fileUrl = primaryUrl;
-    const fileName = (m.attachmentUrl.split("/").pop() || "Tệp").split("?")[0];
+    let fileName = (m.attachmentUrl.split("/").pop() || "Tệp").split("?")[0];
+    try {
+      fileName = decodeURIComponent(fileName);
+    } catch (e) {
+      // Ignore error if already decoded or invalid
+    }
+
+    const isMine = m.userId === currentUserId;
+
     return (
-      <a href={fileUrl} className="inline-flex items-center gap-2 text-blue-600 hover:underline break-all" target="_blank" rel="noreferrer">
+      <a
+        href={fileUrl}
+        className={`inline-flex items-center gap-2 hover:underline break-all ${isMine ? 'text-white' : 'text-blue-600 dark:text-blue-400'}`}
+        target="_blank"
+        rel="noreferrer"
+      >
         <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M8 2a2 2 0 00-2 2v9a2 2 0 002 2h4a2 2 0 002-2V8l-4-4H8z" /></svg>
         <span className="truncate max-w-[14rem]" title={fileName}>{fileName}</span>
       </a>

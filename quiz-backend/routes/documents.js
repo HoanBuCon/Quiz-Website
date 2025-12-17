@@ -9,7 +9,7 @@ const router = express.Router();
 
 const isProd = process.env.NODE_ENV === 'production';
 const documentsBasePath = isProd
-  ? path.join(__dirname, '../documents')
+  ? path.join(__dirname, '../../documents')
   : path.join(__dirname, '../public/documents');
 
 // Configure multer for file upload
