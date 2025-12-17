@@ -171,7 +171,12 @@ router.delete('/:id', authRequired, async (req, res) => {
     
     // Delete physical file
     if (file.filePath) {
-      const fullPath = path.join(__dirname, '..', file.filePath);
+      // file.filePath is like "files/documents/2024/05/abc.docx"
+      // We need to resolve it to the physical path
+      // Replace forward slashes with platform specific separator if needed, 
+      // but here we just strip the prefix.
+      const relativePath = file.filePath.replace(/^files\/documents\//, '');
+      const fullPath = path.join(documentsBasePath, relativePath);
       try {
         await fs.unlink(fullPath);
         console.log(`Deleted file: ${fullPath}`);
