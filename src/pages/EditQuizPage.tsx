@@ -1390,33 +1390,20 @@ const EditQuizPage: React.FC = () => {
         data-qid={question.id}
         style={{ ...style, scrollMarginTop: 96 }}
       >
-        {/* Drag handle - hiển thị khi hover */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing z-10 p-2 rounded-lg bg-gray-100 dark:bg-gray-700 shadow-sm transition-opacity"
-        >
-          <svg
-            className="w-4 h-4 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </div>
-
         {/* Question content */}
         <div className="hover:shadow-md transition-shadow duration-200">
           {isEditing === question.id ? (
-            <QuestionEditor question={question} index={index} />
+            <QuestionEditor
+              question={question}
+              index={index}
+              dragHandleProps={{ ...attributes, ...listeners }}
+            />
           ) : (
-            <QuestionDisplay question={question} index={index} />
+            <QuestionDisplay
+              question={question}
+              index={index}
+              dragHandleProps={{ ...attributes, ...listeners }}
+            />
           )}
         </div>
       </div>
@@ -1426,7 +1413,8 @@ const EditQuizPage: React.FC = () => {
   const QuestionEditor: React.FC<{
     question: QuestionWithImages;
     index: number;
-  }> = ({ question, index }) => {
+    dragHandleProps?: any;
+  }> = ({ question, index, dragHandleProps }) => {
     const savedOptionsRef = useRef<string[]>(
       Array.isArray(question.options)
         ? (question.options as string[])
@@ -1840,6 +1828,27 @@ const EditQuizPage: React.FC = () => {
       <div className="card p-6 mb-4 relative">
         <div className="mb-4">
           <div className="flex items-center mb-2">
+            {dragHandleProps && (
+              <div
+                {...dragHandleProps}
+                className="cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                title="Kéo để sắp xếp"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </div>
+            )}
             <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-3">
               Câu {index + 1}
             </span>
@@ -2984,12 +2993,34 @@ const EditQuizPage: React.FC = () => {
   const QuestionDisplay: React.FC<{
     question: QuestionWithImages;
     index: number;
-  }> = ({ question, index }) => {
+    dragHandleProps?: any;
+  }> = ({ question, index, dragHandleProps }) => {
     return (
       <div className="card p-6 mb-4 relative">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <div className="flex items-center mb-2">
+              {dragHandleProps && (
+                <div
+                  {...dragHandleProps}
+                  className="cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  title="Kéo để sắp xếp"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                </div>
+              )}
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-3">
                 Câu {index + 1}
               </span>
