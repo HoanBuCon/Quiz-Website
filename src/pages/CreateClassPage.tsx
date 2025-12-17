@@ -242,8 +242,27 @@ const CreateClassPage: React.FC = () => {
         }
 
         const { DocumentsAPI } = await import("../utils/api");
+
+        // Fetch existing documents to check for duplicates
+        // Note: This adds an extra network call but ensures we don't accidentally overwrite files
+        // and enables the auto-rename functionality requested.
+        let uploadName = file.name;
+        try {
+          const existingDocs = await DocumentsAPI.listMine(token);
+          const duplicateCheck = checkDuplicateFileName(file.name, existingDocs);
+
+          if (duplicateCheck.isDuplicate) {
+            // Auto-rename logic as requested: default to (n) style without prompting
+            uploadName = generateUniqueFileName(file.name, existingDocs);
+            console.log(`Auto-renaming duplicate file: ${file.name} -> ${uploadName}`);
+          }
+        } catch (error) {
+          console.warn("Failed to check for duplicates, proceeding with original name", error);
+        }
+
         console.log("Uploading file to server...");
-        const uploadedDoc = await DocumentsAPI.upload(file, token);
+        // Use the potentially new name
+        const uploadedDoc = await DocumentsAPI.upload(file, token, uploadName);
 
         console.log("File uploaded to server:", uploadedDoc);
 

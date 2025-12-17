@@ -71,7 +71,15 @@ router.post('/upload', authRequired, upload.single('file'), async (req, res) => 
     const now = formatDateForMySQL();
     
     // Use custom name if provided, otherwise use original filename
-    const fileName = req.body.customName || req.file.originalname;
+    let fileName;
+    if (req.body.customName) {
+      fileName = req.body.customName;
+      // req.body.customName is usually correctly encoded (UTF-8) by FormData, so NO fix needed.
+    } else {
+      fileName = req.file.originalname;
+      // Fix UTF-8 encoding issue for filename from header (Multer/Busboy interprets UTF-8 as Latin-1)
+      fileName = Buffer.from(fileName, 'latin1').toString('utf8');
+    }
     
     // Determine file type
     const ext = path.extname(fileName).toLowerCase();
