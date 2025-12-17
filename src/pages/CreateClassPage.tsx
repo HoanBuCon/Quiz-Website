@@ -9,6 +9,7 @@ import {
   formatDate,
 } from "../utils/fileUtils";
 import { getToken } from "../utils/auth";
+import formatGuideUrl from "../assets/HUONG_DAN_DINH_DANG_WORD.docx";
 
 // Component trang tạo lớp
 const CreateClassPage: React.FC = () => {
@@ -1129,6 +1130,16 @@ const CreateClassPage: React.FC = () => {
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                   Preview định dạng
                 </h3>
+                <a
+                  href={formatGuideUrl}
+                  download="HUONG_DAN_DINH_DANG_WORD.docx"
+                  className="mt-2 text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center justify-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Tải file mẫu
+                </a>
               </div>
 
               <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 max-h-[500px] overflow-y-auto custom-scrollbar">
@@ -1239,19 +1250,37 @@ result: HoanBuCon
                   <span className="text-green-600 dark:text-green-400 font-bold">
                     Dấu *
                   </span>
-                  đánh dấu đáp án đúng
+                  chỉ định đáp án đúng
                 </p>
                 <p className="flex items-start gap-2">
                   <span className="text-blue-600 dark:text-blue-400 font-bold">
-                    ID:
+                    Câu N:
                   </span>
-                  Mã câu hỏi trong LMS hoặc tự đặt
+                  Nội dung câu hỏi phải viết cùng dòng với "Câu N"
                 </p>
                 <p className="flex items-start gap-2">
                   <span className="text-purple-600 dark:text-purple-400 font-bold">
                     A B C D:
                   </span>
-                  Các đáp án (để trống nếu câu hỏi điền đáp án)
+                  Các đáp án câu hỏi chọn 1 hoặc nhiều đáp án đúng
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-purple-600 dark:text-purple-400 font-bold">
+                    result:
+                  </span>
+                  Ghi đáp án đúng mà người làm quiz cần điền
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-purple-600 dark:text-purple-400 font-bold">
+                    result & group:
+                  </span>
+                  Câu hỏi kéo thả, xem hướng dẫn trong File
+                </p>
+                <p className="flex items-start gap-2">
+                  <span className="text-purple-600 dark:text-purple-400 font-bold">
+                    Câu N: {`{ Câu hỏi con }`}
+                  </span>
+                  Câu hỏi mẹ chứa các câu hỏi con
                 </p>
               </div>
             </div>
@@ -1396,6 +1425,16 @@ result: HoanBuCon
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">
               Preview định dạng
             </h3>
+            <a
+              href={formatGuideUrl}
+              download="HUONG_DAN_DINH_DANG_WORD.docx"
+              className="mt-2 text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center justify-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Tải file mẫu
+            </a>
           </div>
 
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 max-h-[500px] overflow-y-auto custom-scrollbar">
@@ -1507,19 +1546,37 @@ result: HoanBuCon
               <span className="text-green-600 dark:text-green-400 font-bold">
                 Dấu *
               </span>
-              đánh dấu đáp án đúng
+              chỉ định đáp án đúng
             </p>
             <p className="flex items-start gap-2">
               <span className="text-blue-600 dark:text-blue-400 font-bold">
-                ID:
+                Câu N:
               </span>
-              Mã câu hỏi trong LMS hoặc tự đặt
+              Nội dung câu hỏi phải viết cùng dòng với "Câu N"
             </p>
             <p className="flex items-start gap-2">
               <span className="text-purple-600 dark:text-purple-400 font-bold">
                 A B C D:
               </span>
-              Các đáp án (để trống nếu câu hỏi điền đáp án)
+              Các đáp án câu hỏi chọn 1 hoặc nhiều đáp án đúng
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-purple-600 dark:text-purple-400 font-bold">
+                result:
+              </span>
+              Ghi đáp án đúng mà người làm quiz cần điền
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-purple-600 dark:text-purple-400 font-bold">
+                result & group:
+              </span>
+              Câu hỏi kéo thả, xem hướng dẫn trong File
+            </p>
+            <p className="flex items-start gap-2">
+              <span className="text-purple-600 dark:text-purple-400 font-bold">
+                Câu N: {`{ Câu hỏi con }`}
+              </span>
+              Câu hỏi mẹ chứa các câu hỏi con
             </p>
           </div>
         </div>
