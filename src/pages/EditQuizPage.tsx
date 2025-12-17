@@ -143,10 +143,15 @@ const ImageUpload: React.FC<{
     };
 
     const removeImage = () => {
-      if (currentImage && onImageRemoved) {
-        onImageRemoved(currentImage);
+      const imgToRestore = currentImage; // Capture current image before clearing
+      onImageUpload(""); // Clear UI immediately
+
+      if (imgToRestore && onImageRemoved) {
+        // Use timeout to separate the restore action from the delete action
+        setTimeout(() => {
+          onImageRemoved(imgToRestore);
+        }, 50);
       }
-      onImageUpload("");
     };
 
     return (
@@ -273,17 +278,14 @@ const EditQuizPage: React.FC = () => {
   const handleRestoreToGallery = (imageData: string) => {
     if (!imageData) return;
 
-    // Check duplicates based on data content (optional, but good UX)
-    const exists = unassignedImages.some((img) => img.data === imageData);
-    if (!exists) {
-      const newImage: import("../types").ExtractedImage = {
-        id: `restored-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        data: imageData,
-        // position is undefined for restored images
-      };
-      setUnassignedImages((prev) => [...prev, newImage]);
-      toast.success("Ảnh đã được đưa về kho!");
-    }
+    // Always restore the image, generating a new ID
+    const newImage: import("../types").ExtractedImage = {
+      id: `restored-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      data: imageData,
+      // position is undefined for restored images
+    };
+    setUnassignedImages((prev) => [...prev, newImage]);
+    toast.success("Ảnh đã được đưa về kho!");
   };
 
   const setScrollAnchor = (questionId: string) => {
@@ -1838,6 +1840,7 @@ const EditQuizPage: React.FC = () => {
                     onAssignFromGallery={(id) =>
                       handleAssignImage(id, handleQuestionImageUpload)
                     }
+                    onImageRemoved={handleRestoreToGallery}
                   />
                 </div>
                 {/* Nửa phải: Paste ảnh */}
@@ -2084,6 +2087,7 @@ const EditQuizPage: React.FC = () => {
                                   handleOptionImageUpload(option, data)
                                 )
                               }
+                              onImageRemoved={handleRestoreToGallery}
                             />
                           </div>
                           {/* Nửa phải: Paste ảnh */}
