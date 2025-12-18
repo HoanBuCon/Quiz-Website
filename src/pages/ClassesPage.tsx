@@ -2982,13 +2982,13 @@ const ClassesPage: React.FC = () => {
                       : "border-gray-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400"
                       }`}
                   >
-                    <span className="font-medium">
+                    <span className="font-medium flex-1 text-left">
                       {importType === "auto" && "Tự động (dựa theo link)"}
                       {importType === "class" && "Lớp học"}
                       {importType === "quiz" && "Quiz"}
                     </span>
                     <svg
-                      className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isImportDropdownOpen ? "rotate-180" : ""
+                      className={`w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isImportDropdownOpen ? "rotate-180" : ""
                         }`}
                       fill="none"
                       stroke="currentColor"
@@ -3023,7 +3023,7 @@ const ClassesPage: React.FC = () => {
                               : "hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300"
                               }`}
                           >
-                            <div>
+                            <div className="flex-1">
                               <div className="font-medium">{option.label}</div>
                               <div className={`text-xs mt-0.5 ${importType === option.value
                                 ? "text-blue-500 dark:text-blue-400"
@@ -3033,7 +3033,7 @@ const ClassesPage: React.FC = () => {
                               </div>
                             </div>
                             {importType === option.value && (
-                              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
