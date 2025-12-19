@@ -41,6 +41,7 @@ interface LocationState {
   quizDescription?: string;
   isEdit?: boolean;
   unassignedImages?: import('../types').ExtractedImage[]; // Images not yet assigned to questions
+  pastedImagesMap?: Record<string, string>; // Restore image map
 }
 
 // Extended Question interface to support images
@@ -477,13 +478,12 @@ const EditQuizPage: React.FC = () => {
 
   // Hàm xử lý khi nội dung preview được chỉnh sửa
   const handlePreviewEdit = (content: string) => {
-    setPreviewContent(content);
-    // Parse nội dung và cập nhật questions
+    // 1. Parse nội dung và cập nhật questions
+    // Note: setQuestions sets local state, does not affect Undo History (managed by useUndoRedo)
     const parsedQuestions = parseEditedContent(content);
+    setQuestions(parsedQuestions);
 
-    // FIX: Extract all [IMAGE:id] tags directly from content text using regex
-    // This is more reliable than relying on parsed questions, as it directly reflects
-    // what's actually in the editor content
+    // 2. Identify all [IMAGE:id] tags currently in content
     const imageTagRegex = /\[IMAGE:([^\]]+)\]/g;
     const imageIdsInContent = new Set<string>();
     let match;
@@ -491,11 +491,16 @@ const EditQuizPage: React.FC = () => {
       imageIdsInContent.add(match[1]);
     }
 
-    // Recalculate Unassigned Images ROBUSTLY:
-    // Group by DATA content. If *any* ID associated with a data string is used in content, 
-    // trying to show another ID with same data in gallery is redundant/buggy.
+    // 3. ATOMIC STATE UPDATE: Update Content AND Unassigned Images together
     setEditorState(prev => {
       const allImages = prev.pastedImagesMap;
+
+      // log debug to investigate why images aren't returning
+      console.log("DEBUG: handlePreviewEdit Check", {
+        totalImagesInMap: Object.keys(allImages).length,
+        idsInContent: Array.from(imageIdsInContent),
+        sampleMapKeys: Object.keys(allImages).slice(0, 5)
+      });
 
       // 1. Identify all "Used Data"
       // Find data for every ID that is currently present in the text content
@@ -508,7 +513,6 @@ const EditQuizPage: React.FC = () => {
 
       // 2. Filter unassigned images
       // An image is unassigned ONLY if its DATA is not used anywhere in the content
-      // We also deduplicate by data to avoid showing multiple same images in gallery
       const uniqueUnassignedData = new Set<string>();
       const newUnassigned: import('../types').ExtractedImage[] = [];
 
@@ -523,14 +527,17 @@ const EditQuizPage: React.FC = () => {
         }
       });
 
+      console.log("DEBUG: Auto-Restore Result", {
+        usedDataCount: usedData.size,
+        newUnassignedCount: newUnassigned.length
+      });
+
       return {
         ...prev,
-        content, // Sync content here as well to be safe
+        content: content, // Update content here instead of separate call
         unassignedImages: newUnassigned
       };
     });
-
-    setQuestions(parsedQuestions);
 
     // Auto-save logic handles the rest
   };
@@ -542,12 +549,14 @@ const EditQuizPage: React.FC = () => {
   // Let's use useEffect to re-parse when pastedImagesMap changes? 
   // Ideally `previewContent` is the source of truth.
   // Re-parse when pastedImagesMap changes to ensure visual consistency
+  // Re-parse when pastedImagesMap OR content changes (critical for Undo/Redo sync)
   useEffect(() => {
-    if (previewContent) {
+    // Always sync questions with content when content changes (including Undo/Redo)
+    if (previewContent !== undefined) {
       const parsed = parseEditedContent(previewContent);
       setQuestions(parsed);
     }
-  }, [pastedImagesMap]);
+  }, [pastedImagesMap, previewContent]);
 
   // Hàm parse nội dung text thành questions
   // SỬ DỤNG GIỐNG HỆT LOGIC CỦA docsParser.parseDocsContent
@@ -1454,6 +1463,17 @@ const EditQuizPage: React.FC = () => {
       unassignedImages: initialUnassignedImages // Set correct initial unassigned images
     }));
 
+    // RESTORE PASTED IMAGES MAP FROM SAVED STATE IF AVAILABLE
+    if (state.pastedImagesMap) {
+      setEditorState(prev => ({
+        ...prev,
+        pastedImagesMap: {
+          ...prev.pastedImagesMap,
+          ...state.pastedImagesMap
+        }
+      }));
+    }
+
     // REDUNDANT: setPreviewContent calls setEditorState, but we need atomic update with MAP.
     // So we skip setPreviewContent(initialPreviewContent) and use setEditorState above.
     // However, the original code had setPreviewContent(initialPreviewContent).
@@ -1511,10 +1531,14 @@ const EditQuizPage: React.FC = () => {
             correctAnswers: q.correctAnswers,
             explanation: q.explanation,
             subQuestions: q.subQuestions,
-            // IMPORTANT: Exclude images to avoid localStorage quota exceeded
-            // questionImage: q.questionImage,
-            // optionImages: q.optionImages
-          }))
+            // Include images for persistence (handled in try/catch for quota)
+            questionImage: q.questionImage,
+            optionImages: q.optionImages,
+            questionImageId: q.questionImageId,
+            optionImageIds: q.optionImageIds,
+          })),
+          // IMPORTANT: Save image map to restore unassigned/pasted images
+          pastedImagesMap: pastedImagesMap
         },
         className: state.classInfo?.name || "",
         quizId: state.fileId, // Using fileId as identifier
@@ -1525,7 +1549,10 @@ const EditQuizPage: React.FC = () => {
         localStorage.setItem("quiz_edit_progress", JSON.stringify(dataToSave));
       } catch (error) {
         console.warn("Failed to save progress to localStorage:", error);
-        // Silently fail - don't interrupt user experience
+        if (error instanceof DOMException && error.name === "QuotaExceededError") {
+          // Provide feedback but don't spam toasts on every keystroke save
+          // Maybe set internal flag that "saving failed"
+        }
       }
     };
 
@@ -1752,9 +1779,9 @@ const EditQuizPage: React.FC = () => {
       // If I am "viewing" or "drag dropping", I want Page Undo.
 
       const target = e.target as HTMLElement;
-      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
-
-      if (isInput) return; // Let native behavior handle inputs
+      // const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
+      // We process undo even in inputs to ensure Global State consistency
+      // if (isInput) return; 
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
