@@ -217,7 +217,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
   const parseEditedContent = (content: string) => {
     // Parse nội dung đã chỉnh sửa thành questions
-    const lines = content.split('\n').filter(line => line.trim());
+    const lines = content.split('\n');
     const parsedQuestions: Question[] = [];
 
     let currentQuestion: Partial<Question> = {};
@@ -225,15 +225,19 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     let currentCorrectAnswers: string[] = [];
     let isTextQuestion = false;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+    // State để theo dõi đang parse ở phần nào: 'none' | 'question' | 'option' | 'explanation'
+    let currentSection: 'none' | 'question' | 'option' | 'explanation' = 'none';
 
-      if (line.startsWith('ID:')) {
-        // Lưu câu hỏi trước đó nếu có
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]; // Giữ nguyên khoảng trắng đầu dòng nếu cần, hoặc trim nếu muốn thống nhất
+      const trimmedLine = line.trim();
+
+      if (trimmedLine.startsWith('ID:')) {
+        // 1. Lưu câu hỏi cũ nếu có
         if (currentQuestion.question) {
           parsedQuestions.push({
             id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
-            question: currentQuestion.question,
+            question: currentQuestion.question.trim(), // Trim final result
             type: isTextQuestion ? 'text' : (currentCorrectAnswers.length > 1 ? 'multiple' : 'single'),
             options: isTextQuestion ? undefined : currentOptions,
             correctAnswers: currentCorrectAnswers,
@@ -241,33 +245,129 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
           } as Question);
         }
 
-        // Reset cho câu hỏi mới
-        currentQuestion = { id: line.replace('ID:', '').trim() };
+        // 2. Reset cho câu mới
+        currentQuestion = { id: trimmedLine.replace('ID:', '').trim() };
         currentOptions = [];
         currentCorrectAnswers = [];
         isTextQuestion = false;
-      } else if (line.match(/^Câu \d+:/)) {
-        currentQuestion.question = line.replace(/^Câu \d+:\s*/, '');
-      } else if (line.includes('Câu hỏi không có đáp án') || line.includes('Điền đáp án đúng')) {
-        // Đây là câu hỏi text
-        isTextQuestion = true;
-      } else if (line.match(/^\*?[A-Z]\./)) {
-        // Đây là đáp án
-        const isCorrect = line.startsWith('*');
-        const optionText = line.replace(/^\*?[A-Z]\.\s*/, '');
-        currentOptions.push(optionText);
+        currentSection = 'none';
 
+      } else if (trimmedLine.match(/^Câu \d+:/)) {
+        // Bắt đầu câu hỏi
+        currentQuestion.question = trimmedLine.replace(/^Câu \d+:\s*/, '');
+        currentSection = 'question';
+
+      } else if (trimmedLine.includes('Câu hỏi không có đáp án') || trimmedLine.includes('Điền đáp án đúng') || trimmedLine.startsWith('result:')) {
+        // Marker cho text question
+        isTextQuestion = true;
+        // Nếu dòng này có chứa nội dung (ví dụ result: answer), ta có thể parse luôn nếu cần,
+        // nhưng logic cũ có vẻ chỉ dùng để đánh dấu type.
+        // Tạm thời giữ logic cũ hoặc điều chỉnh nếu cần. 
+        // Logic generatePreviewText dùng "result: ...", nên ở đây nếu gặp "result:" thì cũng là marker.
+        if (trimmedLine.startsWith('result:')) {
+          const ans = trimmedLine.replace('result:', '').trim();
+          if (ans) {
+            currentCorrectAnswers.push(ans);
+          }
+        }
+        currentSection = 'none'; // Stop appending to question
+
+      } else if (trimmedLine.match(/^\*?[A-Z]\./)) {
+        // Bắt đầu một option mới
+        const isCorrect = trimmedLine.startsWith('*');
+        const optionText = trimmedLine.replace(/^\*?[A-Z]\.\s*/, '');
+
+        currentOptions.push(optionText);
         if (isCorrect) {
           currentCorrectAnswers.push(optionText);
+        }
+        currentSection = 'option';
+
+      } else if (trimmedLine === '{') {
+        // Composite start - logic hiện tại chưa support composite multiline deep editing phức tạp ở đây 
+        //(logic cũ cũng chưa thấy handle sâu composite trong parseEditedContent ngoài việc hiển thị).
+        // Tạm thời nếu gặp composite block thì ta reset section
+        currentSection = 'none';
+      } else {
+        // Dòng bình thường (không phải marker) -> Append vào section đang active
+        if (trimmedLine === '') {
+          // Dòng trống: Nếu đang ở question, có thể muốn giữ hoặc không.
+          // Nếu user gõ xuống dòng 2 lần, muốn hiển thị 2 dòng?
+          // HTML thường không hiển thị nhiều dòng trống trừ khi dùng <br> hoặc pre-wrap.
+          // Với pre-wrap, \n là đủ.
+          if (currentSection !== 'none') {
+            if (currentSection === 'question' && currentQuestion.question) {
+              currentQuestion.question += '\n';
+            } else if (currentSection === 'option' && currentOptions.length > 0) {
+              currentOptions[currentOptions.length - 1] += '\n';
+            }
+          }
+        } else {
+          // Có nội dung
+          if (currentSection === 'question') {
+            if (currentQuestion.question) {
+              currentQuestion.question += '\n' + trimmedLine;
+            } else {
+              currentQuestion.question = trimmedLine;
+            }
+          } else if (currentSection === 'option') {
+            if (currentOptions.length > 0) {
+              // Append vào option cuối cùng
+              // Update cả trong currentCorrectAnswers nếu nó là đáp án đúng?
+              // Rất KHÓ vì currentCorrectAnswers lưu string value.
+              // Cách tốt nhất: Sửa trực tiếp trong currentOptions, sau đó CẬP NHẬT lại currentCorrectAnswers
+              // bằng cách check lại logic (nhưng ta đã push vào correctAnswers lúc tạo option rồi).
+
+              // Fix: Ta cần track index của option đang edit.
+              const lastOptIdx = currentOptions.length - 1;
+              const oldVal = currentOptions[lastOptIdx];
+              const newVal = oldVal + '\n' + trimmedLine;
+              currentOptions[lastOptIdx] = newVal;
+
+              // Nếu option này là correct, ta cũng phải update trong correctAnswers
+              // Vì correctAnswers là mảng string values (không phải index), nên ta phải tìm và update.
+              // Tuy nhiên, nếu có 2 option nội dung giống hệt nhau (ít gặp), sẽ bug.
+              // Nhưng text editor flow thường tuyến tính.
+
+              // Check xem lúc nãy ta có push vào correctAnswers không?
+              // Logic: "Nếu dòng bắt đầu bằng *, push vào correctAnswers".
+              // Vậy nếu ta đang append vào option vừa tạo, và option đó là correct,
+              // thì cái entry CUỐI CÙNG trong correctAnswers chính là nó (nếu flow tuần tự).
+              // Rủi ro: Nếu user definition A, B, C... thì A là options[0].
+              // Nếu A đúng, correctAnswers[0] = A.
+              // Sau đó parse B. options[1] = B.
+              // Sau đó parse Line tiếp theo (thuộc B). B += line.
+              // Nếu B đúng, correctAnswers có B. Ta update B trong options, cũng phải update B trong correctAnswers.
+
+              // Cách đơn giản: Re-sync correct answers ở bước cuối (Save câu hỏi) 
+              // hoặc dùng cơ chế đánh dấu index nào là correct thay vì push value ngay lập tức.
+              // NHƯNG để an toàn và ít sửa đổi struct: 
+              // Ta sẽ kiểm tra: Nếu dòng gốc (line bắt đầu bằng *) có *, thì option này là correct.
+              // Ta update value trong currentOptions.
+              // Cuối cùng, khi push câu hỏi, ta sẽ rebuild correctAnswers dựa trên marking?
+              // Không, text input không giữ state "option index 0 is correct". Nó chỉ có text "*A. Content".
+
+              // GIẢI PHÁP: 
+              // Khi append vào option, ta update array currentOptions.
+              // Đồng thời check xem option này (currentOptions[length-1]) CÓ ĐANG nằm trong currentCorrectAnswers không?
+              // Vấn đề: `oldVal` có thể trùng với option khác.
+              // Tạm chấp nhận: Update entry tương ứng trong correctAnswers.
+
+              const foundIdx = currentCorrectAnswers.indexOf(oldVal);
+              if (foundIdx !== -1) {
+                currentCorrectAnswers[foundIdx] = newVal;
+              }
+            }
+          }
         }
       }
     }
 
-    // Thêm câu hỏi cuối cùng
+    // Lưu câu cuối
     if (currentQuestion.question) {
       parsedQuestions.push({
         id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
-        question: currentQuestion.question,
+        question: currentQuestion.question.trim(),
         type: isTextQuestion ? 'text' : (currentCorrectAnswers.length > 1 ? 'multiple' : 'single'),
         options: isTextQuestion ? undefined : currentOptions,
         correctAnswers: currentCorrectAnswers,

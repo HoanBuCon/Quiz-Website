@@ -410,7 +410,7 @@ const ResultsPage: React.FC = () => {
                     {/* Câu hỏi mẹ */}
                     <div className="mb-6">
                       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                        <h4 className="text-lg font-bold text-primary-700 dark:text-primary-300">
+                        <h4 className="text-lg font-bold text-primary-700 dark:text-primary-300 whitespace-pre-wrap">
                           <MathText text={`Câu ${qIndex + 1}: ${q.question}`} />
                         </h4>
                         <span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 whitespace-nowrap">
@@ -441,7 +441,7 @@ const ResultsPage: React.FC = () => {
                           >
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-2">
-                                <h5 className="text-base font-semibold text-gray-900 dark:text-white">
+                                <h5 className="text-base font-semibold text-gray-900 dark:text-white whitespace-pre-wrap">
                                   <span>Câu {qIndex + 1}.{subIndex + 1}: </span><MathText text={subQ.question} />
                                 </h5>
                                 {isCorrect ? (
@@ -535,7 +535,7 @@ const ResultsPage: React.FC = () => {
                                       return (
                                         <div key={optIndex} className={optionClass}>
                                           <div className="flex items-center justify-between">
-                                            <span>
+                                            <span className="whitespace-pre-wrap">
                                               {String.fromCharCode(65 + optIndex)}.{" "}
                                               <MathText text={option} />
                                             </span>
@@ -619,7 +619,7 @@ const ResultsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <p className="text-gray-900 dark:text-white mb-4 text-lg">
+                  <p className="text-gray-900 dark:text-white mb-4 text-lg whitespace-pre-wrap">
                     <MathText text={q.question} />
                   </p>
 
@@ -742,7 +742,7 @@ const ResultsPage: React.FC = () => {
                                       : "bg-red-300 border-red-500 dark:bg-red-900/20 dark:border-red-700"
                                       }`}
                                   >
-                                    <div className="font-medium text-gray-900 dark:text-white mb-2">
+                                    <div className="font-medium text-gray-900 dark:text-white mb-2 whitespace-pre-wrap">
                                       📝 <MathText text={item.label} />
                                     </div>
                                     {/* Hiển thị ảnh đáp án kéo thả nếu có */}

@@ -3858,7 +3858,7 @@ const EditQuizPage: React.FC = () => {
                 ID: {question.id}
               </span>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2 whitespace-pre-wrap">
               <MathText text={question.question} />
             </h3>
 

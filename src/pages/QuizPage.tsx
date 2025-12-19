@@ -2347,7 +2347,7 @@ const DragDropQuestion: React.FC<{
               onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
               disabled={reveal}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 whitespace-pre-wrap text-left">
                 <svg
                   className="w-4 h-4 flex-shrink-0"
                   fill="none"
@@ -2387,7 +2387,7 @@ const DragDropQuestion: React.FC<{
             onDrop={(e) => handleDrop(e, t.id)}
           >
             <div className="flex items-start justify-between mb-3">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+              <h3 className="font-semibold text-gray-900 dark:text-white whitespace-pre-wrap">
                 {t.label}
               </h3>
               <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0 ml-2">
@@ -2440,7 +2440,7 @@ const DragDropQuestion: React.FC<{
                           onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                           className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group block"
                         >
-                          <span className="font-medium text-sm text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">
+                          <span className="font-medium text-sm text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 whitespace-pre-wrap">
                             {it.label}
                           </span>
                         </button>
@@ -2475,7 +2475,7 @@ const DragDropQuestion: React.FC<{
                     onClick={() => assign(it.id, undefined)}
                     disabled={reveal}
                   >
-                    <span className="flex items-center gap-2">
+                    <span className="flex items-center gap-2 whitespace-pre-wrap text-left">
                       <svg
                         className="w-4 h-4 flex-shrink-0"
                         fill="none"
