@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import { Question } from '../types';
 import MathText from './MathText';
 import { processMathInput } from '../utils/mathConverter';
@@ -327,17 +328,38 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
                 // If no file items found, try to extract base64 from HTML (Word Mixed Content)
                 if (!foundItems && html) {
-                  const imgRegex = /<img[^>]+src="([^">]+)"/g;
-                  let match;
-                  while ((match = imgRegex.exec(html)) !== null) {
-                    const src = match[1];
-                    if (src && src.startsWith('data:image/')) {
-                      hasImages = true;
-                      // Validate base64 structure slightly?
-                      const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-                      images[id] = src;
-                      imageCodes.push(`[IMAGE:${id}]`);
+                  // Regex to detect ANY img tag
+                  const imgTagRegex = /<img\s+/i;
+                  // Regex to capture src
+                  const srcRegex = /src\s*=\s*['"]?([^'"]+)['"]?/i;
+
+                  // Detect Word-specific HTML signatures
+                  const isWordContent = html.indexOf('urn:schemas-microsoft-com-com:office:word') !== -1 || html.indexOf('xmlns:w=') !== -1;
+
+                  let hasLocalFiles = false;
+
+                  // Match global img tags manually to handle diverse attributes
+                  const matches = html.match(/<img\s+[^>]*>/gi);
+                  if (matches) {
+                    for (const imgTag of matches) {
+                      const srcMatch = srcRegex.exec(imgTag);
+                      const src = srcMatch ? srcMatch[1] : '';
+
+                      if (src.startsWith('data:image/')) {
+                        hasImages = true;
+                        const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+                        images[id] = src;
+                        imageCodes.push(`[IMAGE:${id}]`);
+                      } else if (src.startsWith('file://') || src.indexOf('/') === -1 || src.indexOf('word/media') !== -1) {
+                        // Local file or relative word path
+                        hasLocalFiles = true;
+                      }
                     }
+                  }
+
+                  // If we found NO usable images, but we detected local files OR it's Word content with images...
+                  if (!hasImages && (hasLocalFiles || (isWordContent && matches && matches.length > 0))) {
+                    toast.error("Không thể nhận ảnh trực tiếp từ file Word (bảo mật trình duyệt chặn 'file://'). Vui lòng dùng chức năng 'Tải file Word' hoặc copy từng ảnh (Screenshot).");
                   }
                 }
 

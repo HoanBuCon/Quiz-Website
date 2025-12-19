@@ -460,8 +460,11 @@ const EditQuizPage: React.FC = () => {
             : (currentQuestion.correctAnswers || []),
           explanation: currentQuestion.explanation,
           subQuestions: currentQuestion.subQuestions,
-          questionImage: existingQuestion?.questionImage,
-          optionImages: existingQuestion?.optionImages,
+          questionImage: currentQuestion.questionImage || existingQuestion?.questionImage,
+          optionImages: {
+            ...(existingQuestion?.optionImages || {}),
+            ...(currentQuestion.optionImages || {})
+          },
         } as QuestionWithImages;
 
         // Assign options based on type
@@ -485,7 +488,7 @@ const EditQuizPage: React.FC = () => {
     };
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+      let line = lines[i];
 
       // CHECK FOR IMAGE MARKER [IMAGE:id]
       const imgMatch = line.match(/\[IMAGE:([^\]]+)\]/);
@@ -504,9 +507,10 @@ const EditQuizPage: React.FC = () => {
             currentQuestion.questionImage = imgData;
           }
         }
-        // Continue to next line or consume? 
-        // If the line is JUST the image marker, we might want to skip other processing?
-        // But continue works if we don't want to break flow.
+
+        // Remove marker from line to prevent it appearing in text
+        line = line.replace(imgMatch[0], "").trim();
+        if (!line) continue; // Skip line if it only contained the image marker
       }
 
       // --- COMPOSITE BLOCK HANDLING ---
