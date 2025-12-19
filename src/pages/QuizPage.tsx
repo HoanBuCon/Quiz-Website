@@ -51,6 +51,11 @@ const QuizPage: React.FC = () => {
   // focusedOption: index của đáp án đang focus (-1: không focus, >= 0: index đáp án, 9999: nút Xác nhận)
   const [focusedOption, setFocusedOption] = useState<number>(-1);
 
+  // State chiều animation slide (left/right)
+  const [slideDirection, setSlideDirection] = useState<"left" | "right" | "none">("none");
+  // State đang exit (để render animation out)
+  const [isExiting, setIsExiting] = useState(false);
+
   // Hàm trộn mảng (Fisher-Yates shuffle)
   const shuffleArray = <T,>(array: T[]): T[] => {
     const result = [...array];
@@ -346,12 +351,12 @@ const QuizPage: React.FC = () => {
       switch (e.key) {
         case "ArrowLeft":
           e.preventDefault();
-          handlePrevQuestion();
+          if (!isExiting) handlePrevQuestion();
           break;
 
         case "ArrowRight":
           e.preventDefault();
-          handleNextQuestion();
+          if (!isExiting) handleNextQuestion();
           break;
 
         case "ArrowUp":
@@ -468,15 +473,46 @@ const QuizPage: React.FC = () => {
           break;
 
         case "Enter":
+          e.preventDefault();
+          if (hasConfirmButton && !isLocked) {
+            markRevealed(currentQuestion.id);
+          } else if (focusedOption >= 0 && focusedOption < totalOptions && !isLocked) {
+            // Nếu không có nút confirm (ví dụ single choice), Enter vẫn chọn đáp án
+            // Hoặc fallback logic cũ
+            if (currentQuestion.type === "composite") {
+              // Logic cũ cho composite (nhưng composite có nút confirm, nên sẽ vào nhánh if trên)
+              // Tuy nhiên, nếu user muốn Enter chọn đáp án trong SINGLE choice sub-question của composite?
+              // User yêu cầu: "Câu hỏi mẹ chứa nhiều câu hỏi con... Nút Enter... kích hoạt nút Xác nhận".
+              // Vậy nên logic composite sẽ vào nhánh if trên.
+            }
+            else if (currentQuestion.type === "text") {
+              // Text có nút confirm -> vào nhánh if trên.
+            }
+            else {
+              // Single / Multiple (nếu multiple không có nút confirm - mode default)
+              // Nhưng logic hasConfirmButton = uiMode === 'instant' && ...
+              // Nếu uiMode === 'default', hasConfirmButton = false.
+              // Khi đó Enter GIỮ NGUYÊN behavior chọn đáp án (select).
+
+              // Logic cũ handleAnswerSelect:
+              const opts = Array.isArray(currentQuestion.options) ? currentQuestion.options : [];
+              const option = opts[focusedOption] as string | undefined;
+              if (option) handleAnswerSelect(currentQuestion.id, option);
+            }
+          } else if (focusedOption === -1 && totalOptions > 0) {
+            setFocusedOption(0);
+          }
+          break;
+
         case " ":
         case "Spacebar":
           e.preventDefault();
 
           if (focusedOption === 9999 && hasConfirmButton && !isLocked) {
-            // Bấm Enter trên nút Xác nhận
+            // Space trên nút Xác nhận -> Click
             markRevealed(currentQuestion.id);
           } else if (focusedOption >= 0 && focusedOption < totalOptions && !isLocked) {
-            // Xử lý cho composite
+            // Space để chọn đáp án (Check checkboxes etc)
             if (currentQuestion.type === "composite") {
               const subs = (currentQuestion as any).subQuestions || [];
               let cumulativeIndex = 0;
@@ -488,7 +524,6 @@ const QuizPage: React.FC = () => {
                   const localIndex = focusedOption - cumulativeIndex;
 
                   if (sub.type === "text") {
-                    // Focus vào input box
                     const inputElement = document.querySelector(`input[data-question-id="${sub.id}"]`) as HTMLInputElement;
                     if (inputElement) {
                       inputElement.focus();
@@ -517,9 +552,6 @@ const QuizPage: React.FC = () => {
               const option = opts[focusedOption] as string | undefined;
               if (option) handleAnswerSelect(currentQuestion.id, option);
             }
-          } else if (focusedOption === -1 && totalOptions > 0) {
-            // Chưa chọn gì -> focus đáp án đầu tiên
-            setFocusedOption(0);
           }
           break;
 
@@ -764,14 +796,30 @@ const QuizPage: React.FC = () => {
 
   // Navigate to next/previous question
   const handlePrevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((prev) => prev - 1);
+    if (currentQuestionIndex > 0 && !isExiting) {
+      setSlideDirection("left"); // Hướng đi về (Prev) -> Slide In Left (sau đó). Out sẽ là Right.
+      // Logic:
+      // Prev: Old slides out to Right -> New slides in from Left
+
+      setIsExiting(true);
+      setTimeout(() => {
+        setCurrentQuestionIndex((prev) => prev - 1);
+        setIsExiting(false);
+      }, 200); // 200ms khớp với animation duration
     }
   };
 
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
+    if (currentQuestionIndex < questions.length - 1 && !isExiting) {
+      setSlideDirection("right"); // Hướng đi tới (Next) -> Slide In Right. Out sẽ là Left.
+      // Logic:
+      // Next: Old slides out to Left -> New slides in from Right
+
+      setIsExiting(true);
+      setTimeout(() => {
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setIsExiting(false);
+      }, 200);
     }
   };
 
@@ -892,13 +940,29 @@ const QuizPage: React.FC = () => {
         {/* Left Section - Main Content */}
         <div className="flex-1 min-w-0 order-2 lg:order-1">
           {/* Question */}
-          <div className="group card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500">
+          {/* Question */}
+          <div
+            key={currentQuestionIndex}
+            className={`group card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 
+              ${isExiting
+                ? slideDirection === "right"
+                  ? "animate-slideOutLeft"
+                  : slideDirection === "left"
+                    ? "animate-slideOutRight"
+                    : ""
+                : slideDirection === "right"
+                  ? "animate-slideInRight"
+                  : slideDirection === "left"
+                    ? "animate-slideInLeft"
+                    : ""
+              }`}
+          >
             {/* Question number */}
             <div className="flex flex-row justify-between items-start mb-4 gap-3 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   Câu {currentQuestionIndex + 1}/{questions.length} {/*(ID:{" "}
-                  {currentQuestion.id})*/}
+          {currentQuestion.id})*/}
                 </span>
                 <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   {currentQuestion.type === "single"
@@ -936,21 +1000,23 @@ const QuizPage: React.FC = () => {
               {currentQuestion.question}
             </h2>
             {/* Question image nếu có */}
-            {currentQuestion.questionImage && (
-              <div className="mb-4 sm:mb-6">
-                <img
-                  src={currentQuestion.questionImage}
-                  alt="Question"
-                  className="w-full h-auto rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain"
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    objectFit: "contain",
-                    margin: "0 auto",
-                  }}
-                />
-              </div>
-            )}
+            {
+              currentQuestion.questionImage && (
+                <div className="mb-4 sm:mb-6">
+                  <img
+                    src={currentQuestion.questionImage}
+                    alt="Question"
+                    className="w-full h-auto rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain"
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      objectFit: "contain",
+                      margin: "0 auto",
+                    }}
+                  />
+                </div>
+              )
+            }
 
             {/* Divider */}
             <div className="w-full flex items-center my-4 sm:my-6">
@@ -1018,6 +1084,14 @@ const QuizPage: React.FC = () => {
                         onChange={(e) =>
                           handleAnswerSelect(currentQuestion.id, e.target.value)
                         }
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (uiMode === 'instant' && !revealed) {
+                              markRevealed(currentQuestion.id);
+                            }
+                          }
+                        }}
                       />
                     );
                   })()}
@@ -1114,6 +1188,11 @@ const QuizPage: React.FC = () => {
                           onClick={() =>
                             handleAnswerSelect(currentQuestion.id, option)
                           }
+                          onKeyDown={(e) => {
+                            // Ngăn Enter trigger click (chọn đáp án)
+                            // Space vẫn trigger click (mặc định của button)
+                            if (e.key === 'Enter') e.preventDefault();
+                          }}
                           className={`group/answer ${base} ${computedClassName} flex flex-col items-start gap-3`}
                         >
                           {/* Row 1: Icon, Tick, Content */}
@@ -1303,6 +1382,14 @@ const QuizPage: React.FC = () => {
                                           "text"
                                         )
                                       }
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          if (uiMode === 'instant' && !parentRevealed) {
+                                            markRevealed(currentQuestion.id);
+                                          }
+                                        }
+                                      }}
                                     />
                                   );
                                 })()}
@@ -1417,6 +1504,9 @@ const QuizPage: React.FC = () => {
                                             sub.type as "single" | "multiple"
                                           )
                                         }
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') e.preventDefault();
+                                        }}
                                         className={`group/answer ${base} ${computedClassName} flex flex-col items-start gap-3`}
                                       >
                                         <div className="flex w-full items-center gap-3">
@@ -1516,12 +1606,13 @@ const QuizPage: React.FC = () => {
                   </div>
                 )}
             </div>
-          </div>
+          </div >
 
           {/* Navigation buttons */}
-          <div className="mt-4 sm:mt-6 w-full grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-stretch">
+          < div className="mt-4 sm:mt-6 w-full grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-stretch" >
             {/* Confirm (instant mode) - first row full width on mobile */}
-            {uiMode === "instant" &&
+            {
+              uiMode === "instant" &&
               (currentQuestion.type === "multiple" ||
                 currentQuestion.type === "text" ||
                 currentQuestion.type === "drag" ||
@@ -1549,7 +1640,8 @@ const QuizPage: React.FC = () => {
                 >
                   Xác nhận
                 </button>
-              )}
+              )
+            }
 
             {/* Prev - second row, left on mobile; first on desktop */}
             <button
@@ -1594,11 +1686,11 @@ const QuizPage: React.FC = () => {
                 />
               </svg>
             </button>
-          </div>
-        </div>
+          </div >
+        </div >
 
         {/* Right Section - Sidebar */}
-        <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2">
+        < div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2" >
           <div className="card p-4 sm:p-6">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -1650,7 +1742,19 @@ const QuizPage: React.FC = () => {
               {questions.map((question, index) => (
                 <button
                   key={question.id}
-                  onClick={() => setCurrentQuestionIndex(index)}
+                  onClick={() => {
+                    if (isExiting) return;
+                    if (index === currentQuestionIndex) return;
+
+                    if (index > currentQuestionIndex) setSlideDirection("right");
+                    else if (index < currentQuestionIndex) setSlideDirection("left");
+
+                    setIsExiting(true);
+                    setTimeout(() => {
+                      setCurrentQuestionIndex(index);
+                      setIsExiting(false);
+                    }, 200);
+                  }}
                   className={`p-1 sm:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm
                     ${index === currentQuestionIndex
                       ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
@@ -1668,11 +1772,11 @@ const QuizPage: React.FC = () => {
               ))}
             </div>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
 
       {/* Progress bar */}
-      <div className="mt-6 sm:mt-8">
+      < div className="mt-6 sm:mt-8" >
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Tiến độ làm bài:{" "}
@@ -1699,351 +1803,355 @@ const QuizPage: React.FC = () => {
             }}
           ></div>
         </div>
-      </div>
+      </div >
       {/* Floating switch mode button for >=1024px - chỉ render khi viewport >= 1024px */}
-      {isLarge && (
-        <button
-          onClick={() =>
-            setUiMode((prev) => (prev === "default" ? "instant" : "default"))
-          }
-          className="hidden lg:flex fixed bottom-24 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
-          title="Chuyển đổi định dạng"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
+      {
+        isLarge && (
+          <button
+            onClick={() =>
+              setUiMode((prev) => (prev === "default" ? "instant" : "default"))
+            }
+            className="hidden lg:flex fixed bottom-24 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
+            title="Chuyển đổi định dạng"
           >
-            <polyline
-              points="23 4 23 10 17 10"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <polyline
-              points="1 20 1 14 7 14"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span className="font-medium text-sm">
-            {uiMode === "instant"
-              ? "Định dạng: Xem ngay"
-              : "Định dạng: Mặc định"}
-          </span>
-        </button>
-      )}
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+            >
+              <polyline
+                points="23 4 23 10 17 10"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <polyline
+                points="1 20 1 14 7 14"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span className="font-medium text-sm">
+              {uiMode === "instant"
+                ? "Định dạng: Xem ngay"
+                : "Định dạng: Mặc định"}
+            </span>
+          </button>
+        )
+      }
 
       {/* Mode chooser dialog */}
-      {showModeChooser && (
-        <div className="fixed inset-0 z-50 p-4 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-lg sm:max-w-lg md:max-w-2xl overflow-hidden overflow-y-auto max-h-[90vh] rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideUp overscroll-contain">
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-            {/* Overlay pattern - pattern chấm */}
-            <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
+      {
+        showModeChooser && (
+          <div className="fixed inset-0 z-50 p-4 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
+            <div className="relative w-full max-w-lg sm:max-w-lg md:max-w-2xl overflow-hidden overflow-y-auto max-h-[90vh] rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideUp overscroll-contain">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+              {/* Overlay pattern - pattern chấm */}
+              <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
 
-            {/* Header - Chọn định dạng */}
-            <div className="relative px-4 pt-4 pb-3 sm:px-4 sm:pt-4 sm:pb-3 md:px-6 md:pt-6 md:pb-4">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur mb-3 shadow-lg">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
+              {/* Header - Chọn định dạng */}
+              <div className="relative px-4 pt-4 pb-3 sm:px-4 sm:pt-4 sm:pb-3 md:px-6 md:pt-6 md:pb-4">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur mb-3 shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <h4 className="text-xl md:text-2xl font-bold text-white mb-2">
+                    Chọn định dạng làm bài
+                  </h4>
+                  <p className="text-xs md:text-sm text-blue-100 dark:text-blue-200">
+                    Bạn có thể thay đổi lại bất cứ lúc nào trong quá trình làm bài
+                  </p>
                 </div>
-                <h4 className="text-xl md:text-2xl font-bold text-white mb-2">
-                  Chọn định dạng làm bài
-                </h4>
-                <p className="text-xs md:text-sm text-blue-100 dark:text-blue-200">
-                  Bạn có thể thay đổi lại bất cứ lúc nào trong quá trình làm bài
-                </p>
               </div>
-            </div>
 
-            {/* Options - Định dạng */}
-            <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
-              <button
-                onClick={() => setSelectedUiMode("default")}
-                className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${selectedUiMode === "default"
-                  ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
-                  : "hover:border-white/30 dark:hover:border-white/30"
-                  }`}
-              >
-                {/* Background overlay khi được chọn - Dark mode */}
-                <div className={`absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-200 ${selectedUiMode === "default" ? "opacity-100" : "opacity-0"
-                  } hidden dark:block bg-gradient-to-br from-slate-700 to-gray-800`}></div>
-                {/* Pattern overlay khi được chọn */}
-                {selectedUiMode === "default" && (
-                  <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none"></div>
-                )}
-                {/* Selected indicator */}
-                {selectedUiMode === "default" && (
-                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center shadow-md">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-                <div className="relative flex flex-col justify-start md:h-full md:justify-between">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40">
-                      <svg
-                        className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="9" />
-                        <circle cx="12" cy="12" r="3" />
+              {/* Options - Định dạng */}
+              <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
+                <button
+                  onClick={() => setSelectedUiMode("default")}
+                  className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${selectedUiMode === "default"
+                    ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
+                    : "hover:border-white/30 dark:hover:border-white/30"
+                    }`}
+                >
+                  {/* Background overlay khi được chọn - Dark mode */}
+                  <div className={`absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-200 ${selectedUiMode === "default" ? "opacity-100" : "opacity-0"
+                    } hidden dark:block bg-gradient-to-br from-slate-700 to-gray-800`}></div>
+                  {/* Pattern overlay khi được chọn */}
+                  {selectedUiMode === "default" && (
+                    <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none"></div>
+                  )}
+                  {/* Selected indicator */}
+                  {selectedUiMode === "default" && (
+                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center shadow-md">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
-                        Định dạng mặc định
+                  )}
+                  <div className="relative flex flex-col justify-start md:h-full md:justify-between">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40">
+                        <svg
+                          className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="9" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
+                          Định dạng mặc định
+                        </div>
                       </div>
                     </div>
+                    <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                      Làm bài bình thường và xem kết quả sau khi nộp
+                    </p>
                   </div>
-                  <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
-                    Làm bài bình thường và xem kết quả sau khi nộp
-                  </p>
-                </div>
-              </button>
+                </button>
 
-              <button
-                onClick={() => setSelectedUiMode("instant")}
-                className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${selectedUiMode === "instant"
-                  ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
-                  : "hover:border-white/30 dark:hover:border-white/30"
-                  }`}
-              >
-                {/* Background overlay khi được chọn - Dark mode */}
-                <div className={`absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-200 ${selectedUiMode === "instant" ? "opacity-100" : "opacity-0"
-                  } hidden dark:block bg-gradient-to-br from-slate-700 to-gray-800`}></div>
-                {/* Pattern overlay khi được chọn */}
-                {selectedUiMode === "instant" && (
-                  <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none"></div>
-                )}
-                {/* Selected indicator */}
-                {selectedUiMode === "instant" && (
-                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-purple-600 dark:bg-purple-500 flex items-center justify-center shadow-md">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-                <div className="relative flex flex-col justify-start md:h-full md:justify-between">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/40">
-                      <svg
-                        className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
-                        />
+                <button
+                  onClick={() => setSelectedUiMode("instant")}
+                  className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${selectedUiMode === "instant"
+                    ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
+                    : "hover:border-white/30 dark:hover:border-white/30"
+                    }`}
+                >
+                  {/* Background overlay khi được chọn - Dark mode */}
+                  <div className={`absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-200 ${selectedUiMode === "instant" ? "opacity-100" : "opacity-0"
+                    } hidden dark:block bg-gradient-to-br from-slate-700 to-gray-800`}></div>
+                  {/* Pattern overlay khi được chọn */}
+                  {selectedUiMode === "instant" && (
+                    <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none"></div>
+                  )}
+                  {/* Selected indicator */}
+                  {selectedUiMode === "instant" && (
+                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-purple-600 dark:bg-purple-500 flex items-center justify-center shadow-md">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
-                        Xem đáp án ngay
+                  )}
+                  <div className="relative flex flex-col justify-start md:h-full md:justify-between">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-900/40">
+                        <svg
+                          className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
+                          Xem đáp án ngay
+                        </div>
                       </div>
                     </div>
+                    <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                      Chọn là biết đúng/sai ngay; điền/kéo thả có nút Xác nhận
+                    </p>
                   </div>
-                  <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
-                    Chọn là biết đúng/sai ngay; điền/kéo thả có nút Xác nhận
-                  </p>
-                </div>
-              </button>
-            </div>
-
-            {/* Separator */}
-            <div className="relative py-4 px-4 md:py-6 md:px-6">
-              <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-            </div>
-
-            {/* Header - Trộn câu hỏi */}
-            <div className="relative px-4 pb-3 md:px-6 md:pb-4">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur mb-3 shadow-lg">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                </div>
-                <h4 className="text-xl md:text-2xl font-bold text-white mb-2">
-                  Trộn câu hỏi
-                </h4>
-                <p className="text-xs md:text-sm text-blue-100 dark:text-blue-200">
-                  Chọn cách hiển thị câu hỏi và đáp án trong bài thi
-                </p>
+                </button>
               </div>
-            </div>
 
-            {/* Options - Trộn */}
-            <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
-              <button
-                onClick={() => setShuffleMode("none")}
-                className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${shuffleMode === "none"
-                  ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
-                  : "hover:border-white/30 dark:hover:border-white/30"
-                  }`}
-              >
-                {/* Background overlay khi được chọn - Dark mode */}
-                <div className={`absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-200 ${shuffleMode === "none" ? "opacity-100" : "opacity-0"
-                  } hidden dark:block bg-gradient-to-br from-slate-700 to-gray-800`}></div>
-                {/* Pattern overlay khi được chọn */}
-                {shuffleMode === "none" && (
-                  <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none"></div>
-                )}
-                {/* Selected indicator */}
-                {shuffleMode === "none" && (
-                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-green-600 dark:bg-green-500 flex items-center justify-center shadow-md">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              {/* Separator */}
+              <div className="relative py-4 px-4 md:py-6 md:px-6">
+                <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+              </div>
+
+              {/* Header - Trộn câu hỏi */}
+              <div className="relative px-4 pb-3 md:px-6 md:pb-4">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur mb-3 shadow-lg">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                     </svg>
                   </div>
-                )}
-                <div className="relative flex flex-col justify-start md:h-full md:justify-between">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40">
-                      <svg
-                        className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
-                        Không trộn
-                      </div>
-                    </div>
-                  </div>
-                  <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
-                    Giữ nguyên thứ tự câu hỏi hiển thị trên web
+                  <h4 className="text-xl md:text-2xl font-bold text-white mb-2">
+                    Trộn câu hỏi
+                  </h4>
+                  <p className="text-xs md:text-sm text-blue-100 dark:text-blue-200">
+                    Chọn cách hiển thị câu hỏi và đáp án trong bài thi
                   </p>
                 </div>
-              </button>
+              </div>
 
-              <button
-                onClick={() => setShuffleMode("random")}
-                className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${shuffleMode === "random"
-                  ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
-                  : "hover:border-white/30 dark:hover:border-white/30"
-                  }`}
-              >
-                {/* Background overlay khi được chọn - Dark mode */}
-                <div className={`absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-200 ${shuffleMode === "random" ? "opacity-100" : "opacity-0"
-                  } hidden dark:block bg-gradient-to-br from-slate-700 to-gray-800`}></div>
-                {/* Pattern overlay khi được chọn */}
-                {shuffleMode === "random" && (
-                  <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none"></div>
-                )}
-                {/* Selected indicator */}
-                {shuffleMode === "random" && (
-                  <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-orange-600 dark:bg-orange-500 flex items-center justify-center shadow-md">
-                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                )}
-                <div className="relative flex flex-col justify-start md:h-full md:justify-between">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/40">
-                      <svg
-                        className="w-5 h-5 md:w-6 md:h-6 text-orange-600 dark:text-orange-400"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                        />
+              {/* Options - Trộn */}
+              <div className="relative px-4 pb-4 sm:px-4 sm:pb-4 md:px-6 md:pb-6 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-4">
+                <button
+                  onClick={() => setShuffleMode("none")}
+                  className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${shuffleMode === "none"
+                    ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
+                    : "hover:border-white/30 dark:hover:border-white/30"
+                    }`}
+                >
+                  {/* Background overlay khi được chọn - Dark mode */}
+                  <div className={`absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-200 ${shuffleMode === "none" ? "opacity-100" : "opacity-0"
+                    } hidden dark:block bg-gradient-to-br from-slate-700 to-gray-800`}></div>
+                  {/* Pattern overlay khi được chọn */}
+                  {shuffleMode === "none" && (
+                    <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none"></div>
+                  )}
+                  {/* Selected indicator */}
+                  {shuffleMode === "none" && (
+                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-green-600 dark:bg-green-500 flex items-center justify-center shadow-md">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
-                        Trộn ngẫu nhiên
+                  )}
+                  <div className="relative flex flex-col justify-start md:h-full md:justify-between">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/40">
+                        <svg
+                          className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
+                          Không trộn
+                        </div>
                       </div>
                     </div>
+                    <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                      Giữ nguyên thứ tự câu hỏi hiển thị trên web
+                    </p>
                   </div>
-                  <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
-                    Trộn thứ tự câu hỏi và đáp án trong từng câu
-                  </p>
-                </div>
-              </button>
-            </div>
+                </button>
 
-            {/* Separator */}
-            <div className="relative py-4 px-4 md:py-6 md:px-6">
-              <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-            </div>
+                <button
+                  onClick={() => setShuffleMode("random")}
+                  className={`group relative overflow-hidden md:min-h-[144px] w-full rounded-xl px-3 py-2 md:p-5 text-left bg-white dark:bg-white/5 border border-white/20 transition-all duration-200 ease-in-out ${shuffleMode === "random"
+                    ? "ring-2 ring-gray-300 dark:ring-white/30 shadow-xl shadow-gray-400/30 dark:shadow-lg dark:shadow-white/10"
+                    : "hover:border-white/30 dark:hover:border-white/30"
+                    }`}
+                >
+                  {/* Background overlay khi được chọn - Dark mode */}
+                  <div className={`absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-200 ${shuffleMode === "random" ? "opacity-100" : "opacity-0"
+                    } hidden dark:block bg-gradient-to-br from-slate-700 to-gray-800`}></div>
+                  {/* Pattern overlay khi được chọn */}
+                  {shuffleMode === "random" && (
+                    <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none"></div>
+                  )}
+                  {/* Selected indicator */}
+                  {shuffleMode === "random" && (
+                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-orange-600 dark:bg-orange-500 flex items-center justify-center shadow-md">
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="relative flex flex-col justify-start md:h-full md:justify-between">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="flex h-8 w-8 md:h-12 md:w-12 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/40">
+                        <svg
+                          className="w-5 h-5 md:w-6 md:h-6 text-orange-600 dark:text-orange-400"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm md:text-base mb-0 md:mb-1 text-gray-900 dark:text-gray-50">
+                          Trộn ngẫu nhiên
+                        </div>
+                      </div>
+                    </div>
+                    <p className="hidden md:block text-xs md:text-sm leading-relaxed text-gray-600 dark:text-gray-200">
+                      Trộn thứ tự câu hỏi và đáp án trong từng câu
+                    </p>
+                  </div>
+                </button>
+              </div>
 
-            {/* Button bắt đầu */}
-            <div className="relative px-4 pb-4 md:px-6 md:pb-6">
-              <button
-                onClick={() => {
-                  if (selectedUiMode !== null && shuffleMode !== null) {
-                    setUiMode(selectedUiMode);
-                    // Áp dụng shuffle nếu người dùng chọn "Trộn ngẫu nhiên"
-                    if (shuffleMode === "random") {
-                      setQuestions(shuffleQuestions(originalQuestions));
-                    } else {
-                      // Giữ nguyên thứ tự gốc
-                      setQuestions(originalQuestions);
+              {/* Separator */}
+              <div className="relative py-4 px-4 md:py-6 md:px-6">
+                <div className="h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+              </div>
+
+              {/* Button bắt đầu */}
+              <div className="relative px-4 pb-4 md:px-6 md:pb-6">
+                <button
+                  onClick={() => {
+                    if (selectedUiMode !== null && shuffleMode !== null) {
+                      setUiMode(selectedUiMode);
+                      // Áp dụng shuffle nếu người dùng chọn "Trộn ngẫu nhiên"
+                      if (shuffleMode === "random") {
+                        setQuestions(shuffleQuestions(originalQuestions));
+                      } else {
+                        // Giữ nguyên thứ tự gốc
+                        setQuestions(originalQuestions);
+                      }
+                      setShowModeChooser(false);
                     }
-                    setShowModeChooser(false);
-                  }
-                }}
-                disabled={selectedUiMode === null || shuffleMode === null}
-                className={`w-full py-3 px-4 md:py-4 md:px-6 rounded-xl font-semibold text-base transition-all duration-300 ${selectedUiMode !== null && shuffleMode !== null
-                  ? "bg-white text-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl dark:bg-gradient-to-r dark:from-blue-600 dark:to-blue-700 dark:text-white dark:hover:from-blue-700 dark:hover:to-blue-800"
-                  : "bg-white/20 text-white/40 cursor-not-allowed dark:bg-white/10"
-                  }`}
-              >
-                {selectedUiMode === null || shuffleMode === null ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    Vui lòng chọn cả 2 tùy chọn
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    Bắt đầu làm bài
-                  </span>
-                )}
-              </button>
+                  }}
+                  disabled={selectedUiMode === null || shuffleMode === null}
+                  className={`w-full py-3 px-4 md:py-4 md:px-6 rounded-xl font-semibold text-base transition-all duration-300 ${selectedUiMode !== null && shuffleMode !== null
+                    ? "bg-white text-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl dark:bg-gradient-to-r dark:from-blue-600 dark:to-blue-700 dark:text-white dark:hover:from-blue-700 dark:hover:to-blue-800"
+                    : "bg-white/20 text-white/40 cursor-not-allowed dark:bg-white/10"
+                    }`}
+                >
+                  {selectedUiMode === null || shuffleMode === null ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Vui lòng chọn cả 2 tùy chọn
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Bắt đầu làm bài
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 
@@ -2235,6 +2343,7 @@ const DragDropQuestion: React.FC<{
                   : "bg-yellow-500 text-white border-yellow-500 shadow-md shadow-yellow-500/20 hover:bg-yellow-600 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border dark:border-yellow-500 dark:shadow-md dark:shadow-yellow-500/20 dark:hover:bg-yellow-900/30"
                 }`}
               onClick={() => assign(it.id, undefined)}
+              onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
               disabled={reveal}
             >
               <span className="flex items-center gap-2">
@@ -2294,6 +2403,7 @@ const DragDropQuestion: React.FC<{
                     e.stopPropagation();
                     setDragOverTarget((prev) => (prev === `dropdown-${t.id}` ? null : `dropdown-${t.id}`));
                   }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                   className={`w-full py-2 px-3 flex items-center justify-center relative border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200 ${dragOverTarget === `dropdown-${t.id}`
                     ? "ring-2 ring-primary-500 border-primary-500 shadow-md"
                     : "border-gray-400 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400"
@@ -2326,6 +2436,7 @@ const DragDropQuestion: React.FC<{
                             assign(it.id, t.id);
                             setDragOverTarget(null);
                           }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                           className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group block"
                         >
                           <span className="font-medium text-sm text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">

@@ -800,10 +800,84 @@ code {
       }
     }
     
+    @keyframes slideDownFadeOutSmall {
+      from {
+        opacity: 1;
+        transform: translateY(0px) scale(0.8);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(40px) scale(0.4);
+      }
+    }
+    
     .react-hot-toast:hover {
       transform: scale(0.82) !important;
     }
   }
+}
+
+/* Slide animations for QuizPage */
+/* Entry animations */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Exit animations */
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-slideOutLeft {
+  animation: slideOutLeft 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.animate-slideOutRight {
+  animation: slideOutRight 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 /* Music button responsive */

@@ -943,7 +943,15 @@ const ResultsPage: React.FC = () => {
                     key={q.id}
                     onClick={() => {
                       const el = document.getElementById(`q-${q.id}`);
-                      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                      if (el) {
+                        const offset = 100; // Adjust for header
+                        const elementPosition = el.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - offset;
+                        window.scrollTo({
+                          top: offsetPosition,
+                          behavior: "smooth"
+                        });
+                      }
                     }}
                     className={`p-1 sm:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm ${wrong
                       ? "bg-red-600 text-white font-medium border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
