@@ -410,8 +410,9 @@ const ResultsPage: React.FC = () => {
                     {/* Câu hỏi mẹ */}
                     <div className="mb-6">
                       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                        <h4 className="text-lg font-bold text-primary-700 dark:text-primary-300 whitespace-pre-wrap">
-                          <MathText text={`Câu ${qIndex + 1}: ${q.question}`} />
+                        <h4 className="text-lg font-bold text-primary-700 dark:text-primary-300 whitespace-pre-wrap flex items-start">
+                          <span className="shrink-0 mr-2">Câu {qIndex + 1}:</span>
+                          <MathText text={q.question} />
                         </h4>
                         <span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 whitespace-nowrap">
                           {q.subQuestions.length} câu hỏi
@@ -440,14 +441,15 @@ const ResultsPage: React.FC = () => {
                             className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4"
                           >
                             <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <h5 className="text-base font-semibold text-gray-900 dark:text-white whitespace-pre-wrap">
-                                  <span>Câu {qIndex + 1}.{subIndex + 1}: </span><MathText text={subQ.question} />
+                              <div className="flex items-start gap-2 flex-1">
+                                <h5 className="text-base font-semibold text-gray-900 dark:text-white whitespace-pre-wrap flex items-start">
+                                  <span className="shrink-0 mr-1">Câu {qIndex + 1}.{subIndex + 1}: </span>
+                                  <MathText text={subQ.question} />
                                 </h5>
                                 {isCorrect ? (
-                                  <span className="text-green-600">✓</span>
+                                  <span className="text-green-600 shrink-0 mt-1">✓</span>
                                 ) : (
-                                  <span className="text-red-600">✗</span>
+                                  <span className="text-red-600 shrink-0 mt-1">✗</span>
                                 )}
                               </div>
                               <span
@@ -534,12 +536,12 @@ const ResultsPage: React.FC = () => {
                                       }
                                       return (
                                         <div key={optIndex} className={optionClass}>
-                                          <div className="flex items-center justify-between">
-                                            <span className="whitespace-pre-wrap">
-                                              {String.fromCharCode(65 + optIndex)}.{" "}
+                                          <div className="flex items-start justify-between">
+                                            <span className="whitespace-pre-wrap flex items-start">
+                                              <span className="shrink-0 mr-1">{String.fromCharCode(65 + optIndex)}. </span>
                                               <MathText text={option} />
                                             </span>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 shrink-0 ml-2">
                                               {isUserChoice && (
                                                 <span
                                                   className={`text-xs font-semibold ${isCorrectOption
@@ -601,8 +603,8 @@ const ResultsPage: React.FC = () => {
               return (
                 <div key={q.id} id={`q-${q.id}`} className="card p-6">
                   <div className="flex items-start justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                      <span className="mr-3 whitespace-nowrap">Câu {qIndex + 1}:</span>
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-start">
+                      <span className="mr-3 whitespace-nowrap shrink-0">Câu {qIndex + 1}:</span>
                       {isCorrect ? (
                         <span className="text-green-600">✓</span>
                       ) : (

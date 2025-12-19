@@ -4032,11 +4032,11 @@ const EditQuizPage: React.FC = () => {
                 key={subQ.id}
                 className="pl-4 border-l-4 border-primary-500 dark:border-primary-400"
               >
-                <div className="mb-2">
-                  <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
+                <div className="mb-2 flex items-start">
+                  <span className="text-sm font-medium text-primary-600 dark:text-primary-400 shrink-0 mr-2">
                     Câu {subIdx + 1}:
                   </span>
-                  <span className="ml-2 text-gray-900 dark:text-white whitespace-pre-wrap">
+                  <span className="text-gray-900 dark:text-white whitespace-pre-wrap">
                     <MathText text={subQ.question} />
                   </span>
                 </div>
@@ -4053,18 +4053,22 @@ const EditQuizPage: React.FC = () => {
                             : "border-gray-200 dark:border-gray-600"
                             }`}
                         >
-                          <span className="font-medium text-gray-600 dark:text-gray-300">
-                            {String.fromCharCode(65 + optIdx)}.
-                          </span>
-                          {Array.isArray(subQ.correctAnswers) &&
-                            (subQ.correctAnswers as string[]).includes(opt) && (
-                              <span className="ml-2 text-green-600 dark:text-green-400">
-                                ✓
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 mr-2">
+                              <span className="font-medium text-gray-600 dark:text-gray-300">
+                                {String.fromCharCode(65 + optIdx)}.
                               </span>
-                            )}
-                          <span className="ml-2 text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                            <MathText text={opt} />
-                          </span>
+                              {Array.isArray(subQ.correctAnswers) &&
+                                (subQ.correctAnswers as string[]).includes(opt) && (
+                                  <span className="ml-1 text-green-600 dark:text-green-400">
+                                    ✓
+                                  </span>
+                                )}
+                            </div>
+                            <span className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                              <MathText text={opt} />
+                            </span>
+                          </div>
                         </div>
                       )
                     )}

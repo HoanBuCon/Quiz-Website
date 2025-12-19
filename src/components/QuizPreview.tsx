@@ -156,15 +156,47 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   const [isContentChanged, setIsContentChanged] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  // Sync internal state with prop content if provided
+  // Ref to store cursor position for restoration
+  const cursorRef = React.useRef<{ start: number; end: number } | null>(null);
+
+  // Ref to track last content submitted to parent to avoid "stale echo" updates
+  // Initialize with content so we don't ignore initial props if they match
+  const lastSubmittedContentRef = React.useRef<string | undefined>(content);
+
   // Sync internal state with prop content if provided
   useEffect(() => {
     if (isContentControlled && content !== undefined && content !== editableContent) {
+
+      // STALE ECHO CHECK:
+      // If the content coming from parent matches what we just sent, 
+      // AND we are currently editing (implied by content !== editableContent, meaning we moved ahead),
+      // then this is a "Stale Echo" (Parent confirming 'A', but we are at 'AB').
+      // We should IGNORE it to preserve our local changes.
+      if (content === lastSubmittedContentRef.current) {
+        return;
+      }
+
+      // Save cursor position if user is typing (focused)
+      if (textareaRef.current && document.activeElement === textareaRef.current) {
+        cursorRef.current = {
+          start: textareaRef.current.selectionStart,
+          end: textareaRef.current.selectionEnd,
+        };
+      }
+
       setEditableContent(content);
       // Stop "Updating..." indicator when content arrives from parent (e.g. after Undo)
       setIsContentChanged(false);
     }
   }, [content, isContentControlled]);
+
+  // Restore cursor position after update
+  React.useLayoutEffect(() => {
+    if (cursorRef.current && textareaRef.current) {
+      textareaRef.current.setSelectionRange(cursorRef.current.start, cursorRef.current.end);
+      cursorRef.current = null;
+    }
+  }, [editableContent]);
   // Removed editableContent from dependency to avoid loop, though logic suggests we need it for comparison. 
   // Actually, 'editableContent' as dependency could trigger effect on local change, overriding it back to old content? 
   // No, if local change -> editableContent updates. if content prop hasn't changed, content != editableContent is TRUE.
@@ -232,6 +264,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     // Debounce việc gọi callback để tránh update quá nhiều
     const timeoutId = setTimeout(() => {
       if (onEdit) {
+        lastSubmittedContentRef.current = newContent; // Mark as submitted
         onEdit(newContent);
       }
       setIsContentChanged(false);
