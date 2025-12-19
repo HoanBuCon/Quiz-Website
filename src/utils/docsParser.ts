@@ -322,8 +322,34 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
            currentCorrectAnswers.push(content);
            currentQuestion.type = 'text';
         }
+      } 
+      // Check for quoted multiple answers: "A", "B" (Comma separated quoted strings)
+      else if (content.includes('"')) {
+        // Regex to find all "quoted parts"
+        // This handles "A", "B" and "A" cleanly.
+        const matches = content.match(/"([^"]+)"/g);
+        
+        if (matches && matches.length > 0) {
+           const answers = matches.map(m => m.replace(/^"|"$/g, ''));
+           // Allow accumulating if multiple result lines exist (support legacy multi-line too?)
+           // But spec says "result: "A", "B"" is one line.
+           // However, let's just append to be safe or overwrite?
+           // Logic: If we found quotes, these ARE the answers for this line.
+           
+           // If we already have answers, push?
+           // Let's stick to: push all found.
+           answers.forEach(a => currentCorrectAnswers.push(a));
+           currentQuestion.type = 'text';
+        } else {
+           // Quotes exist but maybe empty ""? or bad format
+           // Fallback to raw content
+           currentCorrectAnswers.push(content);
+           currentQuestion.type = 'text';
+        }
       } else {
-        // Simple text result
+        // Simple text result (Unquoted, legacy)
+        // Check for CSV without quotes? No, user specified quotes.
+        // Treat whole line as one answer if no quotes found.
         currentCorrectAnswers.push(content);
         currentQuestion.type = 'text';
       }

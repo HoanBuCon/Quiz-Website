@@ -39,12 +39,17 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
       }
 
       if (q.type === 'text') {
-        // Format: result: <answer>
+        // Format: result: "answer1", "answer2"
         const answers = Array.isArray(q.correctAnswers)
           ? (q.correctAnswers as string[]).filter((a) => a.trim())
           : [];
         if (answers.length > 0) {
-          content += `result: ${answers[0]}\n`;
+          // Check if multiple or if content contains comma/quotes, then safe quote it
+          // Or always quote it for consistency?
+          // User asked for: result: "A", "B"
+          // Let's quote everything for text answers to be safe and consistent
+          const formattedAnswers = answers.map(a => `"${a}"`).join(", ");
+          content += `result: ${formattedAnswers}\n`;
         }
       } else if (q.type === 'composite') {
         // Format: { ... sub-questions ... }
@@ -60,7 +65,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                 ? (subQ.correctAnswers as string[]).filter((a) => a.trim())
                 : [];
               if (answers.length > 0) {
-                content += `result: ${answers[0]}\n`;
+                const formattedAnswers = answers.map(a => `"${a}"`).join(", ");
+                content += `result: ${formattedAnswers}\n`;
               }
             } else if (Array.isArray(subQ.options)) {
               (subQ.options as string[]).forEach((opt, optIdx) => {
