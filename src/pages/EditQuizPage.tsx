@@ -4,6 +4,7 @@ import { Question, Quiz } from "../types";
 import { ParsedQuestion } from "../utils/docsParser";
 import { toast } from "react-hot-toast";
 import QuizPreview from "../components/QuizPreview";
+import MathText from "../components/MathText";
 import UnassignedImagesGallery from "../components/UnassignedImagesGallery";
 import { ImagesAPI } from "../utils/api";
 import {
@@ -3062,7 +3063,7 @@ const EditQuizPage: React.FC = () => {
               </span>
             </div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              {question.question}
+              <MathText text={question.question} />
             </h3>
 
             {/* Question Image Display */}
@@ -3188,7 +3189,7 @@ const EditQuizPage: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <span className="text-gray-900 dark:text-gray-100">
-                          {option}
+                          <MathText text={option} />
                         </span>
                         {/* Option Image Display */}
                         {question.optionImages?.[option] && (
@@ -3222,7 +3223,7 @@ const EditQuizPage: React.FC = () => {
                     Câu {subIdx + 1}:
                   </span>
                   <span className="ml-2 text-gray-900 dark:text-white">
-                    {subQ.question}
+                    <MathText text={subQ.question} />
                   </span>
                 </div>
 
@@ -3248,7 +3249,7 @@ const EditQuizPage: React.FC = () => {
                               </span>
                             )}
                           <span className="ml-2 text-gray-900 dark:text-gray-100">
-                            {opt}
+                            <MathText text={opt} />
                           </span>
                         </div>
                       )
@@ -3268,7 +3269,7 @@ const EditQuizPage: React.FC = () => {
                       <span className="text-green-800 dark:text-green-300 font-medium">
                         {(subQ.correctAnswers as string[])
                           .filter((ans: string) => ans?.trim())
-                          .join(", ")}
+                          .map((ans, i) => <MathText key={i} text={ans} className="inline-block mr-1" />)}
                       </span>
                     ) : (
                       <span className="text-red-600 dark:text-red-400 font-medium">
@@ -3284,7 +3285,7 @@ const EditQuizPage: React.FC = () => {
                       Giải thích:{" "}
                     </span>
                     <span className="text-blue-700 dark:text-blue-300">
-                      {subQ.explanation}
+                      <MathText text={subQ.explanation} />
                     </span>
                   </div>
                 )}
@@ -3336,7 +3337,7 @@ const EditQuizPage: React.FC = () => {
               Giải thích:{" "}
             </span>
             <span className="text-sm text-blue-700 dark:text-blue-300">
-              {question.explanation}
+              <MathText text={question.explanation} />
             </span>
           </div>
         )}

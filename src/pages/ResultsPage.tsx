@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { Quiz, Question } from "../types";
+import MathText from "../components/MathText";
 
 interface QuizResult {
   quizId: string;
@@ -410,7 +411,7 @@ const ResultsPage: React.FC = () => {
                     <div className="mb-6">
                       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
                         <h4 className="text-lg font-bold text-primary-700 dark:text-primary-300">
-                          Câu {qIndex + 1}: {q.question}
+                          <MathText text={`Câu ${qIndex + 1}: ${q.question}`} />
                         </h4>
                         <span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 whitespace-nowrap">
                           {q.subQuestions.length} câu hỏi
@@ -441,7 +442,7 @@ const ResultsPage: React.FC = () => {
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-2">
                                 <h5 className="text-base font-semibold text-gray-900 dark:text-white">
-                                  Câu {qIndex + 1}.{subIndex + 1}: {subQ.question}
+                                  <span>Câu {qIndex + 1}.{subIndex + 1}: </span><MathText text={subQ.question} />
                                 </h5>
                                 {isCorrect ? (
                                   <span className="text-green-600">✓</span>
@@ -497,7 +498,7 @@ const ResultsPage: React.FC = () => {
                                         ).length > 0
                                         ? (correctAnswers as string[])
                                           .filter((ans: string) => ans?.trim())
-                                          .join(", ")
+                                          .map((ans, i) => <MathText key={i} text={ans} className="inline-block mr-1" />)
                                         : "Chưa có đáp án"}
                                     </div>
                                   )}
@@ -536,7 +537,7 @@ const ResultsPage: React.FC = () => {
                                           <div className="flex items-center justify-between">
                                             <span>
                                               {String.fromCharCode(65 + optIndex)}.{" "}
-                                              {option}
+                                              <MathText text={option} />
                                             </span>
                                             <div className="flex items-center gap-2">
                                               {isUserChoice && (
@@ -582,7 +583,7 @@ const ResultsPage: React.FC = () => {
                                   💡 Giải thích:
                                 </h6>
                                 <p className="text-blue-800 dark:text-blue-200">
-                                  {subQ.explanation}
+                                  <MathText text={subQ.explanation} className="text-blue-800 dark:text-blue-200" />
                                 </p>
                               </div>
                             )}
@@ -619,7 +620,7 @@ const ResultsPage: React.FC = () => {
                   </div>
 
                   <p className="text-gray-900 dark:text-white mb-4 text-lg">
-                    {q.question}
+                    <MathText text={q.question} />
                   </p>
 
                   {/* Hiển thị ảnh câu hỏi nếu có */}
@@ -668,7 +669,7 @@ const ResultsPage: React.FC = () => {
                                   ).length > 0
                                   ? (correctAnswers as string[])
                                     .filter((ans: string) => ans?.trim())
-                                    .join(", ")
+                                    .map((ans, i) => <MathText key={i} text={ans} className="inline-block mr-1" />)
                                   : "Chưa có đáp án được thiết lập"}
                               </span>
                               <span className="text-sm font-semibold text-green-800 dark:text-green-400">
@@ -742,7 +743,7 @@ const ResultsPage: React.FC = () => {
                                       }`}
                                   >
                                     <div className="font-medium text-gray-900 dark:text-white mb-2">
-                                      📝 {item.label}
+                                      📝 <MathText text={item.label} />
                                     </div>
                                     {/* Hiển thị ảnh đáp án kéo thả nếu có */}
                                     {(q as any).optionImages && (q as any).optionImages[item.label] && (
@@ -838,7 +839,7 @@ const ResultsPage: React.FC = () => {
                             return (
                               <div key={optionIndex} className={optionClass}>
                                 <div className="flex items-center justify-between">
-                                  <span>{option}</span>
+                                  <span><MathText text={option} /></span>
                                   <div className="flex items-center gap-2">
                                     {isUserChoice && (
                                       <span
@@ -883,7 +884,7 @@ const ResultsPage: React.FC = () => {
                         💡 Giải thích:
                       </h5>
                       <p className="text-blue-800 dark:text-blue-200">
-                        {q.explanation}
+                        <MathText text={q.explanation} className="text-sm text-blue-700 dark:text-blue-300" />
                       </p>
                     </div>
                   )}

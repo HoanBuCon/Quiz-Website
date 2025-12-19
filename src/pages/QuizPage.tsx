@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import MathText from "../components/MathText";
 import { Question, UserAnswer, DragTarget, DragItem } from "../types";
 import { buildShortId } from "../utils/share";
 
@@ -997,7 +998,7 @@ const QuizPage: React.FC = () => {
 
             {/* Question text */}
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 text-selectable whitespace-pre-wrap">
-              {currentQuestion.question}
+              <MathText text={currentQuestion.question} />
             </h2>
             {/* Question image nếu có */}
             {
@@ -1242,7 +1243,7 @@ const QuizPage: React.FC = () => {
                             {/* Text Content */}
                             <div className="flex-1 min-w-0">
                               <span className="text-selectable whitespace-pre-wrap block">
-                                {option}
+                                <MathText text={option} />
                               </span>
                             </div>
                           </div>
@@ -1321,7 +1322,7 @@ const QuizPage: React.FC = () => {
                               </span>
                             </div>
                             <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 text-selectable whitespace-pre-wrap">
-                              {sub.question}
+                              <MathText text={sub.question} />
                             </div>
                             {sub.type === "text" && (
                               <div className="space-y-2">
@@ -1554,7 +1555,7 @@ const QuizPage: React.FC = () => {
 
                                           {/* Nội dung bên phải */}
                                           <div className="flex-1 min-w-0">
-                                            <span className="text-selectable whitespace-pre-wrap block">{opt}</span>
+                                            <span className="text-selectable whitespace-pre-wrap block"><MathText text={opt} /></span>
                                           </div>
                                         </div>
                                       </button>

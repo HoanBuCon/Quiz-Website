@@ -1,5 +1,7 @@
 import React from 'react';
 import { Question } from '../types';
+import MathText from './MathText';
+import { processMathInput } from '../utils/mathConverter';
 
 interface QuizPreviewProps {
   questions: Question[];
@@ -245,14 +247,41 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
           <textarea
             ref={textareaRef}
             value={editableContent}
-            onChange={handleContentChange}
+            onChange={(e) => {
+              setEditableContent(e.target.value);
+              onEdit && onEdit(e.target.value);
+            }}
+            onPaste={(e) => {
+              e.preventDefault();
+              const text = e.clipboardData.getData('text');
+
+              // Process math in the pasted text (line by line to be safe?)
+              // Or just process the whole chunk
+              const processed = text.split('\n').map(line => processMathInput(line)).join('\n');
+
+              // Insert processed text at cursor
+              const textarea = e.target as HTMLTextAreaElement;
+              const start = textarea.selectionStart;
+              const end = textarea.selectionEnd;
+              const currentValue = textarea.value;
+
+              const newValue = currentValue.substring(0, start) + processed + currentValue.substring(end);
+
+              setEditableContent(newValue);
+              onEdit && onEdit(newValue);
+
+              // Restore cursor position (approximate)
+              requestAnimationFrame(() => {
+                textarea.selectionStart = textarea.selectionEnd = start + processed.length;
+              });
+            }}
             className="w-full h-full min-h-[600px] p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white font-mono text-sm resize-none custom-scrollbar"
             placeholder="Chỉnh sửa nội dung file..."
           />
         ) : (
-          <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words custom-scrollbar overflow-auto">
-            {editableContent}
-          </pre>
+          <div className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words custom-scrollbar overflow-auto">
+            <MathText text={editableContent} />
+          </div>
         )}
       </div>
 

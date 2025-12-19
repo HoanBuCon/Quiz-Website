@@ -19,6 +19,7 @@ const BackgroundMusic = () => {
         { name: "AYLEOND - NNX LXSY", src: require("../assets/music/chill_phonk/ayleond_nnx_lxsy.mp3") },
         { name: "NUMB - INTERWORLD X DEVILISH TRIO", src: require("../assets/music/chill_phonk/numb.mp3") },
         { name: "CLOSE EYES - DVRST", src: require("../assets/music/chill_phonk/close_eyes.mp3") },
+        { name: "NEBULAESY - NNX LXSY", src: require("../assets/music/chill_phonk/nebulaesy_nnx_lxsy.mp3") },
         { name: "DEAD INSIDE - АДЛИН", src: require("../assets/music/chill_phonk/dead_inside.mp3") },
         { name: "TWILIGHT - GRAVECHILL", src: require("../assets/music/chill_phonk/twilight.mp3") },
         { name: "TIRED OF PROBLEMS - NUEKI x TOLCHONOV x GLICHERY", src: require("../assets/music/chill_phonk/tired_of_problems.mp3") },
