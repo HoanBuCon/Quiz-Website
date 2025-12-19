@@ -126,7 +126,7 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
 
       // Determine type if not explicitly set (e.g. by group/result parsing)
       if (!currentQuestion.type) {
-        currentQuestion.type = determineQuestionType(currentCorrectAnswers);
+        currentQuestion.type = determineQuestionType(currentCorrectAnswers, currentOptions);
       }
 
       // Construct final object
@@ -376,14 +376,24 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
 }
 
 function determineQuestionType(
-  correctAnswers: string[]
+  correctAnswers: string[],
+  options?: string[]
 ): "single" | "multiple" | "text" {
-  if (correctAnswers.length === 0) {
-    return "text"; // Mặc định là text nếu không có đáp án đúng (hoặc điền khuyết)
-  } else if (correctAnswers.length === 1) {
+  if (Array.isArray(options) && options.length > 0) {
+    // Nếu có options, nhưng không có đáp án đúng -> vấn là single (để hiển thị editor)
+    if (correctAnswers.length > 1) {
+      return "multiple";
+    }
     return "single";
+  }
+  
+  // Không có options
+  if (correctAnswers.length === 0) {
+    return "text"; 
+  } else if (correctAnswers.length === 1) {
+    return "single"; // Trường hợp hiếm, có thể là điền khuyết
   } else {
-    return "multiple";
+    return "multiple"; // Trường hợp hiếm
   }
 }
 

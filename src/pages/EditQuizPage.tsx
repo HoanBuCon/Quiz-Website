@@ -367,8 +367,17 @@ const EditQuizPage: React.FC = () => {
 
     // Determine question type helper
     const determineQuestionType = (
-      correctAnswers: string[] | Record<string, string>
+      correctAnswers: string[] | Record<string, string>,
+      options?: string[]
     ): "single" | "multiple" | "text" => {
+      // Ưu tiên check options trước
+      if (Array.isArray(options) && options.length > 0) {
+        if (Array.isArray(correctAnswers) && correctAnswers.length > 1) {
+          return "multiple";
+        }
+        return "single";
+      }
+
       if (Array.isArray(correctAnswers)) {
         if (correctAnswers.length === 0) {
           return "text";
@@ -396,7 +405,7 @@ const EditQuizPage: React.FC = () => {
 
         // Determine type if not explicitly set (e.g. by group/result parsing)
         if (!currentQuestion.type) {
-          currentQuestion.type = determineQuestionType(currentCorrectAnswers);
+          currentQuestion.type = determineQuestionType(currentCorrectAnswers, currentOptions);
         }
 
         // Construct final object
