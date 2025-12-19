@@ -204,7 +204,7 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
     if (line.startsWith("ID:")) {
       if (currentQuestion.question) flushQuestion();
       
-      const idMatch = line.match(/ID:\s*(\w+)/);
+      const idMatch = line.match(/ID:\s*([\w-]+)/);
       currentQuestion = {
         id: idMatch ? idMatch[1] : generateId()
       };

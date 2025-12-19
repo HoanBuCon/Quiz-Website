@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import QuizPreview from "../components/QuizPreview";
 import MathText from "../components/MathText";
 import UnassignedImagesGallery from "../components/UnassignedImagesGallery";
+import { useUndoRedo } from "../hooks/useUndoRedo";
 import { ImagesAPI } from "../utils/api";
 import {
   DndContext,
@@ -243,12 +244,23 @@ const EditQuizPage: React.FC = () => {
   );
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [previewContent, setPreviewContent] = useState("");
-  // Image gallery state
-  const [unassignedImages, setUnassignedImages] = useState<import('../types').ExtractedImage[]>(
-    state?.unassignedImages || []
-  );
+
+  // Undo/Redo State Manager
+  const {
+    state: editorState,
+    set: setEditorState,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useUndoRedo({
+    content: "",
+    unassignedImages: state?.unassignedImages || [],
+    pastedImagesMap: {} as Record<string, string>,
+  });
+
   // Lưu trữ edited state của từng câu hỏi để tránh mất dữ liệu khi scroll/remount
+  // eslint-disable-next-line
   const editedQuestionsMapRef = useRef<Map<string, QuestionWithImages>>(new Map());
   // Lưu lại thông tin vị trí phần tử để giữ nguyên viewport sau các thao tác chỉnh sửa
   const scrollAnchorRef = useRef<{
@@ -257,12 +269,87 @@ const EditQuizPage: React.FC = () => {
     ts: number;
   } | null>(null);
 
-  // Store images pasted directly into the editor
-  const [pastedImagesMap, setPastedImagesMap] = useState<Record<string, string>>({});
+  // Derived state for compatibility
+  const previewContent = editorState.content;
+  const unassignedImages = editorState.unassignedImages;
+  const pastedImagesMap = editorState.pastedImagesMap;
+
+  // Helpers to lookup ID from Data (Reverse Map)
+  // Memoize this if performance becomes an issue
+  const findImageIdByData = (data: string): string | undefined => {
+    if (!data) return undefined;
+    // Check pastedImagesMap
+    for (const [id, value] of Object.entries(pastedImagesMap)) {
+      if (value === data) return id;
+    }
+    // Check unassignedImages (though less likely to be used for assigned question)
+    const foundInGallery = unassignedImages.find((img) => img.data === data);
+    if (foundInGallery) return foundInGallery.id;
+    return undefined;
+  };
+
+  // State Setters Wrappers
+  const setPreviewContent = (action: string | ((prev: string) => string)) => {
+    setEditorState((prev) => {
+      const newContent =
+        typeof action === "function" ? action(prev.content) : action;
+
+      // Logic: If content changed, check for removed Image IDs to "Delete Completely"
+      // BUT actually, we only need to ensure valid IDs in text are REMOVED from Unassigned Gallery.
+      // And we rely on the parser to interpret the new text.
+
+      // Detect IDs in new content
+      const imageTagRegex = /\[IMAGE:([^\]]+)\]/g;
+      const idsInText = new Set<string>();
+      let match;
+      while ((match = imageTagRegex.exec(newContent)) !== null) {
+        idsInText.add(match[1]);
+      }
+
+      // Filter unassignedImages: Remove any image that is now assigned in the text
+      const newUnassigned = prev.unassignedImages.filter(
+        (img) => !idsInText.has(img.id)
+      );
+
+      return {
+        ...prev,
+        content: newContent,
+        unassignedImages: newUnassigned,
+      };
+    });
+  };
+
+  const setUnassignedImages = (
+    action:
+      | import("../types").ExtractedImage[]
+      | ((
+        prev: import("../types").ExtractedImage[]
+      ) => import("../types").ExtractedImage[])
+  ) => {
+    setEditorState((prev) => ({
+      ...prev,
+      unassignedImages:
+        typeof action === "function" ? action(prev.unassignedImages) : action,
+    }));
+  };
+
+  const setPastedImagesMap = (
+    action:
+      | Record<string, string>
+      | ((prev: Record<string, string>) => Record<string, string>)
+  ) => {
+    setEditorState((prev) => ({
+      ...prev,
+      pastedImagesMap:
+        typeof action === "function" ? action(prev.pastedImagesMap) : action,
+    }));
+  };
 
   // Handler to remove image from unassigned list when assigned
+  // Note: With the new setPreviewContent logic, this might be redundant if the text is updated,
+  // but we keep it for direct dragging operations that might not immediately update text.
   const handleImageAssigned = (imageId: string) => {
-    setUnassignedImages(prev => prev.filter(img => img.id !== imageId));
+    setUnassignedImages((prev) => prev.filter((img) => img.id !== imageId));
   };
 
   const handleAssignImage = (imageId: string, callback: (data: string) => void) => {
@@ -323,15 +410,21 @@ const EditQuizPage: React.FC = () => {
   });
 
   const handlePastedImages = (newImages: Record<string, string>) => {
-    setPastedImagesMap(prev => ({ ...prev, ...newImages }));
-    // Also add to unassignedImages just in case user wants to drag them later?
-    // Or just keep them internal? 
-    // Let's add them to unassignedImages so they appear in formatting/management if needed.
-    const newExtractedImages = Object.entries(newImages).map(([id, data]) => ({
-      id,
-      data
-    }));
-    setUnassignedImages(prev => [...prev, ...newExtractedImages]);
+    // FIX Issue 3: Wrap both state updates in single setEditorState for atomic undo/redo
+    // This ensures when user presses CTRL+Z, both pastedImagesMap AND unassignedImages
+    // revert together, completely removing the pasted image from all locations
+    setEditorState(prev => {
+      const newExtractedImages = Object.entries(newImages).map(([id, data]) => ({
+        id,
+        data
+      }));
+
+      return {
+        ...prev,
+        pastedImagesMap: { ...prev.pastedImagesMap, ...newImages },
+        unassignedImages: [...prev.unassignedImages, ...newExtractedImages]
+      };
+    });
     toast.success(`Đã nhận diện ${Object.keys(newImages).length} ảnh từ bộ nhớ tạm`);
   };
 
@@ -552,7 +645,7 @@ const EditQuizPage: React.FC = () => {
       if (line.startsWith("ID:")) {
         if (currentQuestion.question) flushQuestion();
 
-        const idMatch = line.match(/ID:\s*(\w+)/);
+        const idMatch = line.match(/ID:\s*([\w-]+)/);
         currentQuestion = {
           id: idMatch ? idMatch[1] : generateId()
         };
@@ -719,6 +812,64 @@ const EditQuizPage: React.FC = () => {
 
     // Flush last question
     flushQuestion();
+
+    // FIX Issue 2: Re-index all images from parsed questions to prevent disappearance
+    // This ensures that images present in questions (from initial parse or edits) 
+    // are properly indexed in pastedImagesMap so findImage() can locate them
+    // NOTE: We do NOT add to unassignedImages here - that's handled by setPreviewContent
+    // which removes assigned images from the gallery when they appear in [IMAGE:id] tags
+    parsedQuestions.forEach(q => {
+      // Index question image if it exists and has valid data
+      if (q.questionImage && q.questionImage.trim()) {
+        const existingId = findImageIdByData(q.questionImage);
+        if (!existingId) {
+          // Image data exists but not in map - generate new ID and index it
+          const newId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+          setPastedImagesMap(prev => ({ ...prev, [newId]: q.questionImage! }));
+        }
+      }
+
+      // Index option images if they exist
+      if (q.optionImages && typeof q.optionImages === 'object') {
+        Object.values(q.optionImages).forEach(imgData => {
+          if (imgData && typeof imgData === 'string' && imgData.trim()) {
+            const existingId = findImageIdByData(imgData);
+            if (!existingId) {
+              // Image data exists but not in map - generate new ID and index it
+              const newId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+              setPastedImagesMap(prev => ({ ...prev, [newId]: imgData }));
+            }
+          }
+        });
+      }
+
+      // Recursively process subQuestions for composite questions
+      if (q.subQuestions && Array.isArray(q.subQuestions)) {
+        q.subQuestions.forEach(subQ => {
+          // Index sub-question image
+          if (subQ.questionImage && subQ.questionImage.trim()) {
+            const existingId = findImageIdByData(subQ.questionImage);
+            if (!existingId) {
+              const newId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+              setPastedImagesMap(prev => ({ ...prev, [newId]: subQ.questionImage! }));
+            }
+          }
+
+          // Index sub-question option images
+          if (subQ.optionImages && typeof subQ.optionImages === 'object') {
+            Object.values(subQ.optionImages).forEach(imgData => {
+              if (imgData && typeof imgData === 'string' && imgData.trim()) {
+                const existingId = findImageIdByData(imgData);
+                if (!existingId) {
+                  const newId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+                  setPastedImagesMap(prev => ({ ...prev, [newId]: imgData }));
+                }
+              }
+            });
+          }
+        });
+      }
+    });
 
     return parsedQuestions;
   };
@@ -1386,8 +1537,34 @@ const EditQuizPage: React.FC = () => {
               q.correctAnswers.includes(option);
             const prefix = isCorrect ? "*" : "";
             const letter = String.fromCharCode(65 + optIndex);
-            content += `${prefix}${letter}. ${option}\n`;
+            content += `${prefix}${letter}. ${option}`;
+
+            // Append Option Image Tag if exists
+            if (q.optionImages && q.optionImages[option]) {
+              const imgId = findImageIdByData(q.optionImages[option]);
+              // If we found an ID, use it. If not, and it's base64, maybe we should generate one?
+              // For now only serialize if ID exists in map to avoid broken tags.
+              if (imgId) content += ` [IMAGE:${imgId}]`;
+            }
+            content += `\n`;
           });
+        }
+      }
+
+      // Append Question Image Tag if exists (at end of question line? or separate line?)
+      // Parser expects [IMAGE:id] anywhere in the block.
+      // Let's put it after the question text line for clarity
+      if (q.questionImage) {
+        const imgId = findImageIdByData(q.questionImage);
+        if (imgId) {
+          // Check if already in content (e.g. if we appended it to question text)
+          // But here we are building content.
+          // Insert after "Câu n: ..." line
+          // We already added newline after question text.
+          // Let's insert before the options/results?
+          // Actually, inserting it at the end of the question text line is safest for parser association.
+          // Replace the last newline with the tag and newline
+          content = content.trimEnd() + ` [IMAGE:${imgId}]\n`;
         }
       }
 
@@ -1398,6 +1575,56 @@ const EditQuizPage: React.FC = () => {
 
     return content;
   };
+
+  // Bind Undo/Redo Keys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if Input/Textarea is focused (unless it's the body/preview)
+      // BUT we usually want Global Undo in this page?
+      // If user is editing a specific input field, browser native undo might trigger.
+      // We should only trigger custom undo if browser undo doesn't apply?
+      // Or if we are capturing the "Whole Editor State".
+      // Since we are syncing `previewContent` with `questions`, modifying a specific input updates `editedQuestion` (local state)
+      // AND `handleQuestionSave` updates `editorState`.
+      // So local edits inside `QuestionEditor` are NOT in `editorState` history UNTIL Saved.
+      // This is a UX decision: Undo only works for "Saved/Committed" steps.
+      // We should probably check if `isEditing` is null or if e.target is not an input?
+
+      // Actually, user requested "CTRL+Z để khôi phục trạng thái nội dung editor".
+      // If I am typing in a textarea, I want native undo.
+      // If I am "viewing" or "drag dropping", I want Page Undo.
+
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA";
+
+      if (isInput) return; // Let native behavior handle inputs
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (canRedo) {
+            redo();
+            toast.success("Redo");
+          }
+        } else {
+          if (canUndo) {
+            undo();
+            toast.success("Undo");
+          }
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        if (canRedo) {
+          redo();
+          toast.success("Redo");
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo, canUndo, canRedo]);
 
   const handleQuestionDelete = (questionId: string) => {
     setQuestions((prev) => {
@@ -1528,6 +1755,17 @@ const EditQuizPage: React.FC = () => {
     index: number;
     dragHandleProps?: any;
   }> = ({ question, index, dragHandleProps }) => {
+    // Buffer for images removed during this editing session.
+    // They are only restored to gallery if the user explicitly saves.
+    const [pendingRestores, setPendingRestores] = useState<string[]>([]);
+
+    // Wrapper to flush restores before saving
+    const saveAndFlush = (id: string, data: any) => {
+      pendingRestores.forEach((img) => handleRestoreToGallery(img));
+      setPendingRestores([]);
+      handleQuestionSave(id, data);
+    };
+
     const savedOptionsRef = useRef<string[]>(
       Array.isArray(question.options)
         ? (question.options as string[])
@@ -1627,7 +1865,7 @@ const EditQuizPage: React.FC = () => {
 
         console.log("Saving text question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
-        handleQuestionSave(question.id, updatedData);
+        saveAndFlush(question.id, updatedData);
       } else if (editedQuestion.type === "drag") {
         // Lưu cấu trúc kéo thả: options.targets, options.items, correctAnswers là map itemId->targetId
         const dragOpt = (editedQuestion.options as any) || {
@@ -1668,7 +1906,7 @@ const EditQuizPage: React.FC = () => {
           correctAnswers: cleanedMap, // Không bắt buộc phải map hết
         };
         setScrollAnchor(question.id);
-        handleQuestionSave(question.id, updatedData);
+        saveAndFlush(question.id, updatedData);
       } else if (editedQuestion.type === "composite") {
         // Đối với câu hỏi mẹ
         const subQuestions = editedQuestion.subQuestions || [];
@@ -1724,7 +1962,7 @@ const EditQuizPage: React.FC = () => {
 
         console.log("Saving composite question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
-        handleQuestionSave(question.id, updatedData);
+        saveAndFlush(question.id, updatedData);
       } else {
         // Đối với câu hỏi trắc nghiệm
         const filteredOptions = (
@@ -1755,7 +1993,7 @@ const EditQuizPage: React.FC = () => {
 
         console.log("Saving multiple choice question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
-        handleQuestionSave(question.id, updatedData);
+        saveAndFlush(question.id, updatedData);
       }
     };
 
@@ -2002,7 +2240,7 @@ const EditQuizPage: React.FC = () => {
                     onAssignFromGallery={(id) =>
                       handleAssignImage(id, handleQuestionImageUpload)
                     }
-                    onImageRemoved={handleRestoreToGallery}
+                    onImageRemoved={(img) => setPendingRestores((prev) => [...prev, img])}
                   />
                 </div>
                 {/* Nửa phải: Paste ảnh */}

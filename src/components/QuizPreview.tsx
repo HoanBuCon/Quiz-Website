@@ -243,7 +243,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
               Trình chỉnh sửa
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {isEditable ? 'Chỉnh sửa trực tiếp định dạng Quiz' : 'Định dạng xuất ra File'}
+              {isEditable ? 'Chỉnh sửa trực tiếp nội dung Quiz' : 'Nội dung xuất ra File'}
             </p>
           </div>
           {isContentChanged && (
