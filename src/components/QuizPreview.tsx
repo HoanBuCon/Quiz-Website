@@ -256,21 +256,34 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     }
   }, [questions, isContentControlled]);
 
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   // Helper to trigger update with debounce and loading state
   const updateContentWithDebounce = (newContent: string) => {
     setEditableContent(newContent);
     setIsContentChanged(true);
 
+    // Xóa timeout cũ nếu có
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
     // Debounce việc gọi callback để tránh update quá nhiều
-    const timeoutId = setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       if (onEdit) {
         lastSubmittedContentRef.current = newContent; // Mark as submitted
         onEdit(newContent);
       }
       setIsContentChanged(false);
+      timeoutRef.current = null;
     }, 500);
-
-    return () => clearTimeout(timeoutId);
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
