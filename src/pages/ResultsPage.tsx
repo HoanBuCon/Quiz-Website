@@ -476,7 +476,7 @@ const ResultsPage: React.FC = () => {
                               {subQ.type === "text" ? (
                                 <div className="space-y-2">
                                   <div
-                                    className={`p-2 rounded-lg border text-sm ${isCorrect
+                                    className={`p-2 rounded-lg border text-sm whitespace-pre-wrap ${isCorrect
                                       ? "bg-green-100 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300"
                                       : "bg-red-200 border-red-500 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300"
                                       }`}
@@ -488,7 +488,7 @@ const ResultsPage: React.FC = () => {
                                     {isCorrect && <span className="ml-2">✓</span>}
                                   </div>
                                   {!isCorrect && (
-                                    <div className="p-2 rounded-lg border bg-green-100 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300 text-sm">
+                                    <div className="p-2 rounded-lg border bg-green-100 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300 text-sm whitespace-pre-wrap">
                                       <span className="font-medium">
                                         Đáp án đúng:{" "}
                                       </span>
@@ -602,7 +602,7 @@ const ResultsPage: React.FC = () => {
                 <div key={q.id} id={`q-${q.id}`} className="card p-6">
                   <div className="flex items-start justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                      <span className="mr-3">Câu {qIndex + 1}:</span>
+                      <span className="mr-3 whitespace-nowrap">Câu {qIndex + 1}:</span>
                       {isCorrect ? (
                         <span className="text-green-600">✓</span>
                       ) : (
@@ -638,7 +638,7 @@ const ResultsPage: React.FC = () => {
                     {q.type === "text" ? (
                       <div className="space-y-3">
                         <div
-                          className={`p-3 rounded-lg border ${isCorrect
+                          className={`p-3 rounded-lg border whitespace-pre-wrap ${isCorrect
                             ? "bg-green-200 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300"
                             : "bg-red-300 border-red-500 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300"
                             }`}
@@ -659,7 +659,7 @@ const ResultsPage: React.FC = () => {
                           </div>
                         </div>
                         {!isCorrect && (
-                          <div className="p-3 rounded-lg border bg-green-200 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300">
+                          <div className="p-3 rounded-lg border bg-green-200 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300 whitespace-pre-wrap">
                             <div className="flex items-center justify-between">
                               <span className="font-medium">
                                 Đáp án đúng:{" "}
@@ -765,8 +765,10 @@ const ResultsPage: React.FC = () => {
                                         <span className="font-semibold">
                                           Bạn chọn:
                                         </span>{" "}
-                                        {userTarget?.label ||
-                                          "(Không thuộc nhóm nào)"}
+                                        <span className="whitespace-pre-wrap">
+                                          {userTarget?.label ||
+                                            "(Không thuộc nhóm nào)"}
+                                        </span>
                                         {isItemCorrect && (
                                           <span className="ml-2">✓</span>
                                         )}
@@ -776,8 +778,10 @@ const ResultsPage: React.FC = () => {
                                           <span className="font-semibold">
                                             Đáp án đúng:
                                           </span>{" "}
-                                          {correctTarget?.label ||
-                                            "(Không thuộc nhóm nào)"}{" "}
+                                          <span className="whitespace-pre-wrap">
+                                            {correctTarget?.label ||
+                                              "(Không thuộc nhóm nào)"}
+                                          </span>{" "}
                                           ✓
                                         </div>
                                       )}
@@ -839,7 +843,7 @@ const ResultsPage: React.FC = () => {
                             return (
                               <div key={optionIndex} className={optionClass}>
                                 <div className="flex items-center justify-between">
-                                  <span><MathText text={option} /></span>
+                                  <span className="whitespace-pre-wrap"><MathText text={option} /></span>
                                   <div className="flex items-center gap-2">
                                     {isUserChoice && (
                                       <span

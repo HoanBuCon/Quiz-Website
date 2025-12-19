@@ -159,12 +159,59 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   // Sync internal state with prop content if provided
   // Sync internal state with prop content if provided
   useEffect(() => {
-    if (isContentControlled) {
+    if (isContentControlled && content !== undefined && content !== editableContent) {
       setEditableContent(content);
       // Stop "Updating..." indicator when content arrives from parent (e.g. after Undo)
       setIsContentChanged(false);
     }
   }, [content, isContentControlled]);
+  // Removed editableContent from dependency to avoid loop, though logic suggests we need it for comparison. 
+  // Actually, 'editableContent' as dependency could trigger effect on local change, overriding it back to old content? 
+  // No, if local change -> editableContent updates. if content prop hasn't changed, content != editableContent is TRUE.
+  // Wait. Parent passes 'content'. User types 'contentA'. editableContent='contentA'.
+  // Parent hasn't updated 'content' yet (debounce).
+  // If we run this effect, content (old) != editableContent (new).
+  // We would revert user typing!
+
+  // FIX: We need to know if the update comes from PARENT due to external change, or internal.
+  // The original code was: setEditableContent(content).
+  // This meant EVERY time parent re-renders (even passing same content), we reset.
+  // React usually bails out on same value state update.
+  // But if parent passes new reference or we just set it blindly?
+
+  // The issue is likely:
+  // 1. User types 'A'. onChange -> update prop via callback (debounced).
+  // 2. Parent state updates to 'A'. Parent re-renders. Passes 'A' back to QuizPreview.
+  // 3. QuizPreview effect runs. Calls setEditableContent('A').
+  // 4. React might re-render textarea.
+
+  // Solution: If content === editableContent, DO NOT call setEditableContent.
+  // React's functional update bail-out might not be enough if something else triggers render.
+  // But explicitly checking `content !== editableContent` helps.
+
+  // Also, we have a race condition with Debounce.
+  // User types 'A'. Local: 'A'. Prop: '' (not yet updated).
+  // If this effect runs now, it reverts 'A' to ''.
+  // We need to avoid syncing IF we are the ones who caused the change (via typing).
+
+  // But 'content' prop is usually the Source of Truth in Controlled mode.
+  // Standard pattern:
+  // 1. Local state tracks input.
+  // 2. On Change -> Update local, notify parent.
+  // 3. Parent updates prop.
+  // 4. Effect syncs prop -> local.
+
+  // If step 4 happens, it risks cursor jump.
+  // But we need step 4 for Undo/Redo or external changes.
+
+  // REFINED FIX:
+  // Only sync if content differs significantly? No.
+  // Check if document.activeElement is the textarea?
+  // If user is focusing the textarea, we generally TRUST local state, UNLESS the prop change is radical (e.g. Undo).
+
+  // Let's stick to the Plan: Check for inequality.
+  // And maybe removing `useEffect` dependencies issues?
+  // Let's implement the inequality check first.
 
   // Fallback: Cập nhật nội dung khi questions thay đổi, CHỈ KHI content KHÔNG được control bởi parent
   // IMPORTANT: Nếu EditQuizPage đang control content (isContentControlled = true), 

@@ -1086,6 +1086,29 @@ const EditQuizPage: React.FC = () => {
         currentQuestion.type = 'drag';
         continue;
       }
+
+      // 6. Fallback: Multiline / Continuation
+      // If line didn't match any marker, assume it belongs to the previous context
+      if (currentOptions.length > 0) {
+        // Append to last option
+        const lastIdx = currentOptions.length - 1;
+        // Use a space separator if the line appears to be a separate word, or just newline?
+        // User request is multiline support -> so Newline.
+        const oldVal = currentOptions[lastIdx];
+        const newVal = oldVal + '\n' + line;
+        currentOptions[lastIdx] = newVal;
+
+        // Sync correctAnswers if holding the value (and not a map)
+        if (Array.isArray(currentCorrectAnswers)) {
+          const idx = currentCorrectAnswers.indexOf(oldVal);
+          if (idx !== -1) {
+            currentCorrectAnswers[idx] = newVal;
+          }
+        }
+      } else if (currentQuestion.question) {
+        // Append to question
+        currentQuestion.question += '\n' + line;
+      }
     }
 
     // Flush last question
@@ -3952,11 +3975,6 @@ const EditQuizPage: React.FC = () => {
           question.type !== "composite" &&
           question.options && (
             <div className="space-y-3">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                {question.type === "single"
-                  ? "Chọn 1 đáp án đúng"
-                  : "Chọn nhiều đáp án đúng"}
-              </div>
               {Array.isArray(question.options) &&
                 question.options.map((option: string, index: number) => (
                   <div
@@ -3984,7 +4002,7 @@ const EditQuizPage: React.FC = () => {
                           )}
                       </div>
                       <div className="flex-1">
-                        <span className="text-gray-900 dark:text-gray-100">
+                        <span className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                           <MathText text={option} />
                         </span>
                         {/* Option Image Display */}
@@ -4018,7 +4036,7 @@ const EditQuizPage: React.FC = () => {
                   <span className="text-sm font-medium text-primary-600 dark:text-primary-400">
                     Câu {subIdx + 1}:
                   </span>
-                  <span className="ml-2 text-gray-900 dark:text-white">
+                  <span className="ml-2 text-gray-900 dark:text-white whitespace-pre-wrap">
                     <MathText text={subQ.question} />
                   </span>
                 </div>
@@ -4044,7 +4062,7 @@ const EditQuizPage: React.FC = () => {
                                 ✓
                               </span>
                             )}
-                          <span className="ml-2 text-gray-900 dark:text-gray-100">
+                          <span className="ml-2 text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                             <MathText text={opt} />
                           </span>
                         </div>
@@ -4080,7 +4098,7 @@ const EditQuizPage: React.FC = () => {
                     <span className="font-medium text-blue-600 dark:text-blue-400">
                       Giải thích:{" "}
                     </span>
-                    <span className="text-blue-700 dark:text-blue-300">
+                    <span className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
                       <MathText text={subQ.explanation} />
                     </span>
                   </div>
@@ -4132,7 +4150,7 @@ const EditQuizPage: React.FC = () => {
             <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
               Giải thích:{" "}
             </span>
-            <span className="text-sm text-blue-700 dark:text-blue-300">
+            <span className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
               <MathText text={question.explanation} />
             </span>
           </div>
