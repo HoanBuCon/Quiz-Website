@@ -635,7 +635,7 @@ const EditQuizPage: React.FC = () => {
       .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
       // Keywords đặc biệt
       // Keywords đặc biệt
-      .replace(/([^\n])\s*(result:|group:|{ |^{|}$| }|}$)/gm, '$1\n$2')
+      .replace(/([^\n])\s*(result:|group:|^{|}$)/gm, '$1\n$2')
       // Remove image placeholder tags
       .replace(/<hình ảnh>/g, "");
 
@@ -750,8 +750,9 @@ const EditQuizPage: React.FC = () => {
       let line = lines[i];
 
       // 3. Options Detection (Hoist regex)
-      const optionRegex = /([*]?)([A-E])\.\s*/g;
-      const hasOptions = /([*]?)([A-E])\.\s*/.test(line);
+      // FIX: Allow optional '$' prefix for math context (e.g. $A. content)
+      const optionRegex = /([$]?)([*]?)([A-E])\.\s*/g;
+      const hasOptions = /([$]?)([*]?)([A-E])\.\s*/.test(line);
 
       // CHECK FOR IMAGE MARKER [IMAGE:id]
       // FIX: Only run global extraction if NO options are detected on this line.
@@ -876,13 +877,16 @@ const EditQuizPage: React.FC = () => {
 
       const optionMatches: {
         isCorrect: boolean;
+        hasMathPrefix: boolean;
         index: number;
         length: number;
       }[] = [];
 
       while ((match = optionRegex.exec(line)) !== null) {
+        // match[1] is $, match[2] is *, match[3] is Letter
         optionMatches.push({
-          isCorrect: match[1] === "*",
+          hasMathPrefix: match[1] === "$",
+          isCorrect: match[2] === "*",
           index: match.index,
           length: match[0].length,
         });
@@ -934,6 +938,11 @@ const EditQuizPage: React.FC = () => {
           // FIX: Allow empty content for options (e.g. initial state "A. ", "B. ")
           // Logic: If it matched the regex, it IS an option, even if empty.
           if (content.length >= 0 || imagesInThisOption.length > 0) {
+            // FIX: If option had '$' prefix, prepend '$' to content to fix broken LaTeX
+            if ((optionMatches[i] as any).hasMathPrefix) {
+              content = "$" + content;
+            }
+
             currentOptions.push(content);
 
             // Assign images to THIS option
@@ -983,8 +992,8 @@ const EditQuizPage: React.FC = () => {
         if (line.match(/^(result|group):/i)) return true;
         // 4. Structural ({, })
         if (line === "{" || line === "}") return true;
-        // 5. Options (*A., A.)
-        if (line.match(/^[*]?\s*[A-Z]\.\s*/)) return true;
+        // 5. Options (*A., A., $A.)
+        if (line.match(/^[$]?[*]?\s*[A-Z]\.\s*/)) return true;
 
         return false;
       };
