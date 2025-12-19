@@ -10,6 +10,9 @@ interface QuizPreviewProps {
   onEdit?: (content: string) => void;
   isEditable?: boolean;
   onPastedImages?: (images: Record<string, string>) => void;
+  content?: string;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 const QuizPreview: React.FC<QuizPreviewProps> = ({
@@ -17,7 +20,10 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   quizTitle = "Preview Quiz",
   onEdit,
   isEditable = false,
-  onPastedImages
+  onPastedImages,
+  content,
+  onUndo,
+  onRedo
 }) => {
   // Chuyển đổi questions thành format text để hiển thị
   // SỬ DỤNG FORMAT MỚI CỦA docsParser
@@ -145,14 +151,21 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   const [isContentChanged, setIsContentChanged] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-  // Cập nhật nội dung khi questions thay đổi, chỉ khi textarea không focus
+  // Sync internal state with prop content if provided
+  useEffect(() => {
+    if (content !== undefined) {
+      setEditableContent(content);
+    }
+  }, [content]);
+
+  // Fallback: Cập nhật nội dung khi questions thay đổi, chỉ khi textarea không focus và không có prop content
   React.useEffect(() => {
-    if (document.activeElement !== textareaRef.current) {
+    if (content === undefined && document.activeElement !== textareaRef.current) {
       const newContent = generatePreviewText();
       setEditableContent(newContent);
       setIsContentChanged(false);
     }
-  }, [questions]);
+  }, [questions, content]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
@@ -168,6 +181,18 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     }, 500);
 
     return () => clearTimeout(timeoutId);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.shiftKey) {
+        onRedo && onRedo();
+      } else {
+        onUndo && onUndo();
+      }
+    }
   };
 
   const parseEditedContent = (content: string) => {
@@ -263,10 +288,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
           <textarea
             ref={textareaRef}
             value={editableContent}
-            onChange={(e) => {
-              setEditableContent(e.target.value);
-              onEdit && onEdit(e.target.value);
-            }}
+            onChange={handleContentChange}
+            onKeyDown={handleKeyDown}
             onPaste={(e) => {
               e.preventDefault();
 
