@@ -1603,7 +1603,7 @@ const EditQuizPage: React.FC = () => {
       if (q.questionImage) {
         const imgId = findImageIdByData(q.questionImage, overrideMap);
         if (imgId) {
-          content += `\n[IMAGE:${imgId}]`;
+          content += `[IMAGE:${imgId}]`;
         }
       }
       content += `\n`; // End of Question Line
