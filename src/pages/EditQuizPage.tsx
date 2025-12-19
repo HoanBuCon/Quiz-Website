@@ -257,6 +257,9 @@ const EditQuizPage: React.FC = () => {
     ts: number;
   } | null>(null);
 
+  // Store images pasted directly into the editor
+  const [pastedImagesMap, setPastedImagesMap] = useState<Record<string, string>>({});
+
   // Handler to remove image from unassigned list when assigned
   const handleImageAssigned = (imageId: string) => {
     setUnassignedImages(prev => prev.filter(img => img.id !== imageId));
@@ -319,6 +322,19 @@ const EditQuizPage: React.FC = () => {
     }
   });
 
+  const handlePastedImages = (newImages: Record<string, string>) => {
+    setPastedImagesMap(prev => ({ ...prev, ...newImages }));
+    // Also add to unassignedImages just in case user wants to drag them later?
+    // Or just keep them internal? 
+    // Let's add them to unassignedImages so they appear in formatting/management if needed.
+    const newExtractedImages = Object.entries(newImages).map(([id, data]) => ({
+      id,
+      data
+    }));
+    setUnassignedImages(prev => [...prev, ...newExtractedImages]);
+    toast.success(`Đã nhận diện ${Object.keys(newImages).length} ảnh từ bộ nhớ tạm`);
+  };
+
   // Hàm xử lý khi nội dung preview được chỉnh sửa
   const handlePreviewEdit = (content: string) => {
     setPreviewContent(content);
@@ -326,6 +342,19 @@ const EditQuizPage: React.FC = () => {
     const parsedQuestions = parseEditedContent(content);
     setQuestions(parsedQuestions);
   };
+
+  // Need to re-run parse if pastedImagesMap changes, but actually handlePreviewEdit triggers on text change.
+  // We should trigger a re-parse when images are pasted too? 
+  // But updating state inside `handlePastedImages` will trigger re-render, 
+  // relying on `previewContent` state which should be current?
+  // Let's use useEffect to re-parse when pastedImagesMap changes? 
+  // Ideally `previewContent` is the source of truth.
+  useEffect(() => {
+    if (previewContent) {
+      const parsed = parseEditedContent(previewContent);
+      setQuestions(parsed);
+    }
+  }, [pastedImagesMap]);
 
   // Hàm parse nội dung text thành questions
   // SỬ DỤNG GIỐNG HỆT LOGIC CỦA docsParser.parseDocsContent
@@ -393,6 +422,16 @@ const EditQuizPage: React.FC = () => {
       return "text";
     };
 
+    // TÌM ẢNH TỪ QUESTIONS CŨ DỰA VÀO ID HOẶC PASTED MAP
+    // Helper find image by ID
+    const findImage = (imgId: string): string | undefined => {
+      // 1. Check pasted/unassigned
+      if (pastedImagesMap[imgId]) return pastedImagesMap[imgId];
+      const inUnassigned = unassignedImages.find(u => u.id === imgId);
+      if (inUnassigned) return inUnassigned.data;
+      return undefined;
+    };
+
     const flushQuestion = () => {
       // Only flush if we have a question text
       if (currentQuestion.question) {
@@ -447,6 +486,28 @@ const EditQuizPage: React.FC = () => {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+
+      // CHECK FOR IMAGE MARKER [IMAGE:id]
+      const imgMatch = line.match(/\[IMAGE:([^\]]+)\]/);
+      if (imgMatch) {
+        const imgId = imgMatch[1];
+        const imgData = findImage(imgId);
+
+        if (imgData) {
+          // If currently parsing options, assign to last option
+          if (currentOptions.length > 0) {
+            const lastOption = currentOptions[currentOptions.length - 1];
+            if (!currentQuestion.optionImages) currentQuestion.optionImages = {};
+            currentQuestion.optionImages[lastOption] = imgData;
+          } else {
+            // Assign to question
+            currentQuestion.questionImage = imgData;
+          }
+        }
+        // Continue to next line or consume? 
+        // If the line is JUST the image marker, we might want to skip other processing?
+        // But continue works if we don't want to break flow.
+      }
 
       // --- COMPOSITE BLOCK HANDLING ---
       if (isCollectingComposite) {
@@ -721,7 +782,7 @@ const EditQuizPage: React.FC = () => {
             `✗ Failed to upload questionImage for Q${i + 1}:`,
             error
           );
-          toast.error(`Không thể upload ảnh câu hỏi ${i + 1}`);
+          toast.error(`Ảnh câu hỏi ${i + 1} lỗi upload. Vui lòng thử lại!`);
         }
       }
 
@@ -777,6 +838,7 @@ const EditQuizPage: React.FC = () => {
                   error
                 );
                 newOptionImages[key] = img; // Keep original on error
+                toast.error(`Ảnh đáp án "${key}" (câu ${i + 1}) lỗi upload.`);
               }
             } else {
               newOptionImages[key] = img; // Already URL or null
@@ -3609,6 +3671,7 @@ const EditQuizPage: React.FC = () => {
                       quizTitle={quizTitle}
                       onEdit={handlePreviewEdit}
                       isEditable={true}
+                      onPastedImages={handlePastedImages}
                     />
                   </div>
                 </div>

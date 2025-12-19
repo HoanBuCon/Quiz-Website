@@ -8,13 +8,15 @@ interface QuizPreviewProps {
   quizTitle?: string;
   onEdit?: (content: string) => void;
   isEditable?: boolean;
+  onPastedImages?: (images: Record<string, string>) => void;
 }
 
 const QuizPreview: React.FC<QuizPreviewProps> = ({
   questions,
   quizTitle = "Preview Quiz",
   onEdit,
-  isEditable = false
+  isEditable = false,
+  onPastedImages
 }) => {
   // Chuyển đổi questions thành format text để hiển thị
   // SỬ DỤNG FORMAT MỚI CỦA docsParser
@@ -266,27 +268,131 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             }}
             onPaste={(e) => {
               e.preventDefault();
-              const text = e.clipboardData.getData('text');
 
-              // Process math in the pasted text (line by line to be safe?)
-              // Or just process the whole chunk
-              const processed = text.split('\n').map(line => processMathInput(line)).join('\n');
+              // 1. Handle Images (File/Blob)
+              const items = e.clipboardData.items;
+              const images: Record<string, string> = {};
+              let hasImages = false;
 
-              // Insert processed text at cursor
-              const textarea = e.target as HTMLTextAreaElement;
-              const start = textarea.selectionStart;
-              const end = textarea.selectionEnd;
-              const currentValue = textarea.value;
+              // Helper: Insert text at cursor
+              const insertText = (text: string) => {
+                const textarea = e.target as HTMLTextAreaElement;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const currentValue = textarea.value;
 
-              const newValue = currentValue.substring(0, start) + processed + currentValue.substring(end);
+                const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
 
-              setEditableContent(newValue);
-              onEdit && onEdit(newValue);
+                setEditableContent(newValue);
+                onEdit && onEdit(newValue);
 
-              // Restore cursor position (approximate)
-              requestAnimationFrame(() => {
-                textarea.selectionStart = textarea.selectionEnd = start + processed.length;
-              });
+                requestAnimationFrame(() => {
+                  textarea.selectionStart = textarea.selectionEnd = start + text.length;
+                });
+              };
+
+              // 2. Handle Text/HTML (Complex Word Paste)
+              const html = e.clipboardData.getData('text/html');
+              const plainText = e.clipboardData.getData('text');
+
+              if (html || plainText) {
+                const processedText = plainText ? plainText.split('\n').map(line => processMathInput(line)).join('\n') : "";
+
+                // Check for image items (Files)
+                const imageCodes: string[] = [];
+                const promises: Promise<void>[] = [];
+                let foundItems = false;
+
+                for (let i = 0; i < items.length; i++) {
+                  if (items[i].type.indexOf('image') !== -1) {
+                    foundItems = true;
+                    hasImages = true;
+                    const blob = items[i].getAsFile();
+                    if (blob) {
+                      const p = new Promise<void>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const base64 = event.target?.result as string;
+                          const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+                          images[id] = base64;
+                          imageCodes.push(`[IMAGE:${id}]`);
+                          resolve();
+                        };
+                        reader.readAsDataURL(blob);
+                      });
+                      promises.push(p);
+                    }
+                  }
+                }
+
+                // If no file items found, try to extract base64 from HTML (Word Mixed Content)
+                if (!foundItems && html) {
+                  const imgRegex = /<img[^>]+src="([^">]+)"/g;
+                  let match;
+                  while ((match = imgRegex.exec(html)) !== null) {
+                    const src = match[1];
+                    if (src && src.startsWith('data:image/')) {
+                      hasImages = true;
+                      // Validate base64 structure slightly?
+                      const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+                      images[id] = src;
+                      imageCodes.push(`[IMAGE:${id}]`);
+                    }
+                  }
+                }
+
+                if (hasImages || foundItems) {
+                  Promise.all(promises).then(() => {
+                    onPastedImages && onPastedImages(images);
+                    // Insert text + image codes
+                    const finalContent = processedText + (processedText && imageCodes.length > 0 ? '\n' : '') + imageCodes.join('\n');
+                    insertText(finalContent);
+                  });
+                  return;
+                } else {
+                  // Just text processing
+                  insertText(processedText);
+                  return;
+                }
+              }
+
+              // 3. Fallback: Pure Image Paste (e.g. Screenshot) or Pure Text
+              // Check loop again if we didn't match HTML branch
+              const imageCodes: string[] = [];
+              const promises: Promise<void>[] = [];
+
+              for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                  hasImages = true;
+                  const blob = items[i].getAsFile();
+                  if (blob) {
+                    const p = new Promise<void>((resolve) => {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const base64 = event.target?.result as string;
+                        const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+                        images[id] = base64;
+                        imageCodes.push(`[IMAGE:${id}]`);
+                        resolve();
+                      };
+                      reader.readAsDataURL(blob);
+                    });
+                    promises.push(p);
+                  }
+                }
+              }
+
+              if (hasImages) {
+                Promise.all(promises).then(() => {
+                  onPastedImages && onPastedImages(images);
+                  insertText(imageCodes.join('\n'));
+                });
+              } else {
+                // Standard text paste with math processing
+                const text = e.clipboardData.getData('text');
+                const processed = text.split('\n').map(line => processMathInput(line)).join('\n');
+                insertText(processed);
+              }
             }}
             className="w-full h-full min-h-[600px] p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white font-mono text-sm resize-none custom-scrollbar"
             placeholder="Chỉnh sửa nội dung file..."
@@ -308,7 +414,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
           <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">{'{ ... }'}</code> = câu hỏi mẹ chứa câu con</div>
           <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 rounded border-l-4 border-blue-400 dark:border-blue-500">
             <div className="text-blue-700 dark:text-blue-200">
-              <strong>💡 Mẹo:</strong> Thay đổi ở đây sẽ tự động cập nhật cột bên trái!
+              <strong>💡 Mẹo:</strong> Thay đổi ở đây sẽ tự động cập nhật nội dung Quiz bên trái!
             </div>
           </div>
         </div>
