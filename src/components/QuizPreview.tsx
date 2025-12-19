@@ -24,6 +24,10 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     questions.forEach((q, index) => {
       content += `ID: ${q.id}\n`;
       content += `Câu ${index + 1}: ${q.question}\n`;
+      // Hiển thị marker nếu có ảnh câu hỏi
+      if ((q as any).questionImage) {
+        content += `<hình ảnh>\n`;
+      }
 
       if (q.type === 'text') {
         // Format: result: <answer>
@@ -39,6 +43,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         if (q.subQuestions && q.subQuestions.length > 0) {
           q.subQuestions.forEach((subQ, subIdx) => {
             content += `Câu ${subIdx + 1}: ${subQ.question}\n`;
+            if ((subQ as any).questionImage) {
+              content += `<hình ảnh>\n`;
+            }
             if (subQ.type === 'text') {
               const answers = Array.isArray(subQ.correctAnswers)
                 ? (subQ.correctAnswers as string[]).filter((a) => a.trim())
@@ -54,6 +61,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                 const prefix = isCorrect ? '*' : '';
                 const letter = String.fromCharCode(65 + optIdx);
                 content += `${prefix}${letter}. ${opt}\n`;
+                if ((subQ as any).optionImages && (subQ as any).optionImages[opt]) {
+                  content += `<hình ảnh>\n`;
+                }
               });
             }
 
@@ -112,6 +122,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             const prefix = isCorrect ? '*' : '';
             const letter = String.fromCharCode(65 + optIndex); // A, B, C, D...
             content += `${prefix}${letter}. ${option}\n`;
+            if ((q as any).optionImages && (q as any).optionImages[option]) {
+              content += `<hình ảnh>\n`;
+            }
           });
         }
       }

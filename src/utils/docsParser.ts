@@ -98,7 +98,10 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
     .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
 
     // Keywords đặc biệt
-    .replace(/([^\n])\s*(result:|group:|{ |^{|}$| }|}$)/gm, '$1\n$2');
+    // Keywords đặc biệt
+    .replace(/([^\n])\s*(result:|group:|{ |^{|}$| }|}$)/gm, '$1\n$2')
+    // Remove image placeholder tags
+    .replace(/<hình ảnh>/g, "");
 
   const questions: ParsedQuestion[] = [];
   const lines = normalizedContent
