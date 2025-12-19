@@ -147,25 +147,32 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   };
 
 
-  const [editableContent, setEditableContent] = React.useState(generatePreviewText());
+  // Check if content is controlled by parent (EditQuizPage)
+  const isContentControlled = content !== undefined;
+
+  const [editableContent, setEditableContent] = React.useState(
+    isContentControlled ? content : generatePreviewText()
+  );
   const [isContentChanged, setIsContentChanged] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   // Sync internal state with prop content if provided
   useEffect(() => {
-    if (content !== undefined) {
+    if (isContentControlled) {
       setEditableContent(content);
     }
-  }, [content]);
+  }, [content, isContentControlled]);
 
-  // Fallback: Cập nhật nội dung khi questions thay đổi, chỉ khi textarea không focus và không có prop content
+  // Fallback: Cập nhật nội dung khi questions thay đổi, CHỈ KHI content KHÔNG được control bởi parent
+  // IMPORTANT: Nếu EditQuizPage đang control content (isContentControlled = true), 
+  // KHÔNG được gọi generatePreviewText() vì sẽ ghi đè [IMAGE:id] tags bằng <hình ảnh> placeholders
   React.useEffect(() => {
-    if (content === undefined && document.activeElement !== textareaRef.current) {
+    if (!isContentControlled && document.activeElement !== textareaRef.current) {
       const newContent = generatePreviewText();
       setEditableContent(newContent);
       setIsContentChanged(false);
     }
-  }, [questions, content]);
+  }, [questions, isContentControlled]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
