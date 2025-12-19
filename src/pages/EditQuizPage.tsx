@@ -696,8 +696,8 @@ const EditQuizPage: React.FC = () => {
     };
 
     const flushQuestion = () => {
-      // Only flush if we have a question text
-      if (currentQuestion.question) {
+      // Only flush if we have a question text (allow empty string for new questions)
+      if (currentQuestion.question !== undefined) {
         // Default ID if missing
         if (!currentQuestion.id) {
           currentQuestion.id = generateId();
@@ -844,9 +844,10 @@ const EditQuizPage: React.FC = () => {
 
       // 1. Explicit ID (Optional)
       if (line.startsWith("ID:")) {
-        if (currentQuestion.question) flushQuestion();
+        if (currentQuestion.question !== undefined) flushQuestion();
 
-        const idMatch = line.match(/ID:\s*([\w-]+)/);
+        // FIX: Allow dots in ID just in case (though we should generate safe IDs)
+        const idMatch = line.match(/ID:\s*([\w-.]+)/);
         currentQuestion = {
           id: idMatch ? idMatch[1] : generateId()
         };
@@ -854,8 +855,8 @@ const EditQuizPage: React.FC = () => {
       }
 
       // 2. Question Text (Câu n:)
-      if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) {
-        if (currentQuestion.question) flushQuestion();
+      if (line.startsWith("Câu") && (line.includes(":") || line.match(/^Câu\s+\d+/i))) {
+        if (currentQuestion.question !== undefined) flushQuestion();
 
         // Extract text after colon
         const colonIndex = line.indexOf(":");
@@ -930,7 +931,9 @@ const EditQuizPage: React.FC = () => {
           // Remove tags
           content = content.replace(imgInOptRegex, "").trim();
 
-          if (content.length > 0 || imagesInThisOption.length > 0) {
+          // FIX: Allow empty content for options (e.g. initial state "A. ", "B. ")
+          // Logic: If it matched the regex, it IS an option, even if empty.
+          if (content.length >= 0 || imagesInThisOption.length > 0) {
             currentOptions.push(content);
 
             // Assign images to THIS option
@@ -2132,7 +2135,8 @@ const EditQuizPage: React.FC = () => {
 
   const handleAddQuestion = () => {
     const newQuestion: QuestionWithImages = {
-      id: `q-${Date.now()}-${Math.random()}`,
+      // FIX: Generate SAFE alphanumeric ID to match parser expectations
+      id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       question: "",
       type: "single",
       options: ["", ""], // Bắt đầu với 2 đáp án trống
@@ -2150,7 +2154,24 @@ const EditQuizPage: React.FC = () => {
       }, 0);
       return updated;
     });
-    setIsEditing(newQuestion.id);
+
+    // UX IMPROVEMENT: Prioritize editing the OLDEST empty question
+    // If user clicks "Add" multiple times, we stay on the first unfinished question.
+    // Logic: Find first question with empty content.
+    const firstEmptyQuestion = questions.find(q => !q.question || q.question.trim() === "");
+
+    // If we found an existing empty question, focus it. Otherwise focus the new one.
+    const targetId = firstEmptyQuestion ? firstEmptyQuestion.id : newQuestion.id;
+
+    setIsEditing(targetId);
+
+    // Scroll to target question and focus
+    setTimeout(() => {
+      const element = document.querySelector(`[data-qid="${targetId}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   };
 
   // Component để wrap các câu hỏi với drag & drop
