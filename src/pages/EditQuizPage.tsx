@@ -584,6 +584,12 @@ const EditQuizPage: React.FC = () => {
       const allImages = prev.pastedImagesMap;
       const newUnassigned: import('../types').ExtractedImage[] = [];
 
+      console.log("DEBUG: syncUnassignedFromContent", {
+        foundIds: Array.from(usedIds),
+        mapKeys: Object.keys(allImages).length,
+        sampleMapKey: Object.keys(allImages)[0]
+      });
+
       Object.entries(allImages).forEach(([id, data]) => {
         if (!usedIds.has(id)) {
           newUnassigned.push({ id, data });
@@ -924,7 +930,7 @@ const EditQuizPage: React.FC = () => {
           // Remove tags
           content = content.replace(imgInOptRegex, "").trim();
 
-          if (content.length > 0) {
+          if (content.length > 0 || imagesInThisOption.length > 0) {
             currentOptions.push(content);
 
             // Assign images to THIS option
@@ -932,9 +938,26 @@ const EditQuizPage: React.FC = () => {
               if (!currentQuestion.optionImages) currentQuestion.optionImages = {};
               if (!currentQuestion.optionImageIds) currentQuestion.optionImageIds = {};
 
-              // Use last image found? Or allow multiple? Current structure supports 1 image per option key.
-              // We use the last one if multiple.
+              // Use last image found
               const lastImg = imagesInThisOption[imagesInThisOption.length - 1];
+
+              // Handle Key Collision for identical text (common with empty text)
+              // We append invisible spaces to make key unique in the MAP, 
+              // but currentOptions must match that key for the UI to link them.
+              // Wait, if we change key in map, we MUST change content in currentOptions array too.
+              let uniqueKey = content;
+              while (currentQuestion.optionImageIds[uniqueKey]) {
+                uniqueKey += " ";
+              }
+
+              // If we changed the key, we must update the pushed option
+              if (uniqueKey !== content) {
+                currentOptions.pop();
+                currentOptions.push(uniqueKey);
+                // Update 'content' var for correctAnswers check below
+                content = uniqueKey;
+              }
+
               currentQuestion.optionImageIds[content] = lastImg.id;
               if (lastImg.data) currentQuestion.optionImages[content] = lastImg.data;
             }
@@ -1539,11 +1562,12 @@ const EditQuizPage: React.FC = () => {
 
       // Option images
       if (q.optionImages) {
+        const oldOptionIds = q.optionImageIds || {};
         q.optionImageIds = {};
         for (const [optionText, imgData] of Object.entries(q.optionImages)) {
           // We might not have per-option ID from parser easily, pass undefined to auto-gen
           // OR if the parser gave us IDs, pass them. Assuming undefined for now unless extended.
-          const imgId = extractAndGetId(imgData, (q as any).optionImageIds?.[optionText]);
+          const imgId = extractAndGetId(imgData, oldOptionIds[optionText]);
           if (imgId) {
             q.optionImageIds[optionText] = imgId;
           }
@@ -1558,9 +1582,10 @@ const EditQuizPage: React.FC = () => {
             subQ.questionImageId = extractAndGetId(subQ.questionImage, (subQ as any).questionImageId);
           }
           if (subQ.optionImages) {
+            const oldSubOptionIds = subQ.optionImageIds || {};
             subQ.optionImageIds = {};
             for (const [optionText, imgData] of Object.entries(subQ.optionImages)) {
-              const imgId = extractAndGetId(imgData, (subQ as any).optionImageIds?.[optionText]);
+              const imgId = extractAndGetId(imgData, oldSubOptionIds[optionText]);
               if (imgId) {
                 subQ.optionImageIds[optionText] = imgId;
               }
@@ -1622,7 +1647,6 @@ const EditQuizPage: React.FC = () => {
       ...prev,
       content: initialPreviewContent,
       pastedImagesMap: {
-        ...prev.pastedImagesMap,
         ...initialImagesMap
       },
       unassignedImages: initialUnassignedImages // Set correct initial unassigned images
@@ -1869,6 +1893,8 @@ const EditQuizPage: React.FC = () => {
         const imgId = q.questionImageId || findImageIdByData(q.questionImage, overrideMap);
         if (imgId) {
           content += `[IMAGE:${imgId}]`;
+        } else {
+          console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
         }
       }
       content += `\n`; // End of Question Line
