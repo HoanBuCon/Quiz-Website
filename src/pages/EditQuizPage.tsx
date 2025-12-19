@@ -1892,12 +1892,11 @@ const EditQuizPage: React.FC = () => {
         // FIX: Prioritize explicit ID if available (preserves unique subIDs)
         const imgId = q.questionImageId || findImageIdByData(q.questionImage, overrideMap);
         if (imgId) {
-          content += `[IMAGE:${imgId}]`;
+          content += `[IMAGE:${imgId}]\n`;
         } else {
           console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
         }
       }
-      content += `\n`; // End of Question Line
 
       if (q.type === "text") {
         // Format: result: <answer>
