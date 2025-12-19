@@ -1580,26 +1580,28 @@ const EditQuizPage: React.FC = () => {
       imageIdsInInitialContent.add(match[1]);
     }
 
-    // ROBUST CALCULATION for Initial Unassigned Images
-    // 1. Identify all "Used Data" from initial content
-    const usedData = new Set<string>();
-    imageIdsInInitialContent.forEach(id => {
-      if (initialImagesMap[id]) {
-        usedData.add(initialImagesMap[id]);
-      }
-    });
+    // ROBUST CALCULATION for Initial Unassigned Images (ID-BASED)
+    // We strictly use ID presence in content to determine if an image is "Assigned".
+    // 1. imageIdsInInitialContent already contains all [IMAGE:id] tags found in text.
 
-    // 2. Filter unassigned images (deduped by data)
-    const uniqueUnassignedData = new Set<string>();
+    // 2. Filter unassigned images (ID not in content)
     const initialUnassignedImages: import('../types').ExtractedImage[] = [];
 
     Object.entries(initialImagesMap).forEach(([id, data]) => {
-      // If data is used in content, skip
-      if (usedData.has(data)) return;
+      // If ID is found in content tags, it is assigned.
+      if (imageIdsInInitialContent.has(id)) return;
 
-      // Dedupe for gallery
-      if (!uniqueUnassignedData.has(data)) {
-        uniqueUnassignedData.add(data);
+      // Otherwise, it is unassigned.
+      // We still dedupe by Data for the GALLERY view (don't show 5 identical icons)
+      // BUT logic is driven by ID.
+      // Actually, for Gallery, we usually want to see what is available. 
+      // If we have duplicate data unassigned, we might want to dedupe them visually?
+      // Let's keep it simple: Add to gallery if ID is unused.
+      // And optional: dedupe by data to prevent visual clutter in gallery list.
+
+      // Let's maintain visual deduplication for gallery:
+      const isAlreadyInGallery = initialUnassignedImages.some(img => img.data === data);
+      if (!isAlreadyInGallery) {
         initialUnassignedImages.push({ id, data });
       }
     });
