@@ -1485,6 +1485,8 @@ const EditQuizPage: React.FC = () => {
         subQuestions: q.subQuestions, // Giữ lại subQuestions nếu có
         questionImage: (q as any).questionImage, // Giữ lại ảnh câu hỏi nếu có
         optionImages: (q as any).optionImages, // Giữ lại ảnh đáp án nếu có
+        questionImageId: (q as any).questionImageId, // FIXED: Preserve ID to prevent regeneration
+        optionImageIds: (q as any).optionImageIds, // FIXED: Preserve ID map
       })
     );
     setQuestions(convertedQuestions);
@@ -1585,26 +1587,35 @@ const EditQuizPage: React.FC = () => {
     // 1. imageIdsInInitialContent already contains all [IMAGE:id] tags found in text.
 
     // 2. Filter unassigned images (ID not in content)
-    const initialUnassignedImages: import('../types').ExtractedImage[] = [];
+    let initialUnassignedImages: import('../types').ExtractedImage[] = [];
 
-    Object.entries(initialImagesMap).forEach(([id, data]) => {
-      // If ID is found in content tags, it is assigned.
-      if (imageIdsInInitialContent.has(id)) return;
+    // DEBUG: Log state to diagnose ID regeneration issues
+    // console.log("Initializing EditQuizPage. State Questions sample:", state.questions?.[0]);
+    // console.log("State Unassigned Images:", state.unassignedImages?.length);
 
-      // Otherwise, it is unassigned.
-      // We still dedupe by Data for the GALLERY view (don't show 5 identical icons)
-      // BUT logic is driven by ID.
-      // Actually, for Gallery, we usually want to see what is available. 
-      // If we have duplicate data unassigned, we might want to dedupe them visually?
-      // Let's keep it simple: Add to gallery if ID is unused.
-      // And optional: dedupe by data to prevent visual clutter in gallery list.
+    // FIX: Restore unassignedImages from state if available (Priority to saved state)
+    // This handles the "Editor Reload" case where we want to preserve the exact gallery state
+    // instead of recalculating (which might resurrect ghost images).
+    if (state.unassignedImages && Array.isArray(state.unassignedImages)) {
+      console.log("Restoring unassignedImages from state:", state.unassignedImages.length);
+      initialUnassignedImages = state.unassignedImages;
+      // Optional: We could validate these against content just to be safe, 
+      // but trusting state prevents "Ghosts".
+    } else {
+      console.log("Calculating unassignedImages from initialImagesMap.");
+      // Fallback: Calculate from initial map (for new imports logic remains same)
+      Object.entries(initialImagesMap).forEach(([id, data]) => {
+        // If ID is found in content tags, it is assigned.
+        if (imageIdsInInitialContent.has(id)) return;
 
-      // Let's maintain visual deduplication for gallery:
-      const isAlreadyInGallery = initialUnassignedImages.some(img => img.data === data);
-      if (!isAlreadyInGallery) {
-        initialUnassignedImages.push({ id, data });
-      }
-    });
+        // Otherwise, it is unassigned.
+        // Let's maintain visual deduplication for gallery:
+        const isAlreadyInGallery = initialUnassignedImages.some(img => img.data === data);
+        if (!isAlreadyInGallery) {
+          initialUnassignedImages.push({ id, data });
+        }
+      });
+    }
 
     // Update Editor State directly with properly calculated unassignedImages
     setEditorState(prev => ({
@@ -1692,7 +1703,9 @@ const EditQuizPage: React.FC = () => {
             optionImageIds: q.optionImageIds,
           })),
           // IMPORTANT: Save image map to restore unassigned/pasted images
-          pastedImagesMap: pastedImagesMap
+          pastedImagesMap: pastedImagesMap,
+          // FIX: Persist unassignedImages explicitly as requested by user
+          unassignedImages: unassignedImages
         },
         className: state.classInfo?.name || "",
         quizId: state.fileId, // Using fileId as identifier
@@ -1712,12 +1725,13 @@ const EditQuizPage: React.FC = () => {
 
     const timer = setTimeout(saveProgress, 1000); // Debounce save
     return () => clearTimeout(timer);
-  }, [questions, quizTitle, quizDescription, state]);
+  }, [questions, quizTitle, quizDescription, state, pastedImagesMap, unassignedImages]); // Added unassignedImages dependency
 
   const handleQuestionEdit = (questionId: string) => {
     setScrollAnchor(questionId);
     // Khôi phục edited state nếu có (từ lần edit trước)
     const question = questions.find(q => q.id === questionId);
+
     if (question && !editedQuestionsMapRef.current.has(questionId)) {
       // Lưu state hiện tại của câu hỏi vào map
       editedQuestionsMapRef.current.set(questionId, { ...question });
