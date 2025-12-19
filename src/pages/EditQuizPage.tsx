@@ -415,13 +415,22 @@ const EditQuizPage: React.FC = () => {
   const handleRestoreToGallery = (imageData: string) => {
     if (!imageData) return;
 
-    // Always restore the image, generating a new ID
-    const newImage: import("../types").ExtractedImage = {
-      id: `restored-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      data: imageData,
-      // position is undefined for restored images
-    };
-    setUnassignedImages((prev) => [...prev, newImage]);
+    const newId = `restored-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    setEditorState(prev => ({
+      ...prev,
+      pastedImagesMap: {
+        ...prev.pastedImagesMap,
+        [newId]: imageData
+      },
+      unassignedImages: [
+        ...prev.unassignedImages,
+        {
+          id: newId,
+          data: imageData
+        }
+      ]
+    }));
     toast.success("Ảnh đã được đưa về kho!");
   };
 
@@ -460,17 +469,44 @@ const EditQuizPage: React.FC = () => {
     // This ensures when user presses CTRL+Z, both pastedImagesMap AND unassignedImages
     // revert together, completely removing the pasted image from all locations
     setEditorState(prev => {
-      const newExtractedImages = Object.entries(newImages).map(([id, data]) => ({
-        id,
-        data
-      }));
+      const allImages = { ...prev.pastedImagesMap, ...newImages };
+      const content = prev.content;
+
+      // Recalculate Unassigned Images ROBUSTLY
+      // 1. Identify all "Used Data" from content
+      const imageTagRegex = /\[IMAGE:([^\]]+)\]/g;
+      const imageIdsInContent = new Set<string>();
+      let match;
+      while ((match = imageTagRegex.exec(content)) !== null) {
+        imageIdsInContent.add(match[1]);
+      }
+
+      const usedData = new Set<string>();
+      imageIdsInContent.forEach(id => {
+        if (allImages[id]) {
+          usedData.add(allImages[id]);
+        }
+      });
+
+      // 2. Filter unassigned images
+      const uniqueUnassignedData = new Set<string>();
+      const newUnassigned: import('../types').ExtractedImage[] = [];
+
+      Object.entries(allImages).forEach(([id, data]) => {
+        // If this data is already used in content, skip it entirely
+        if (usedData.has(data)) return;
+
+        // If we haven't added this data to our unassigned list yet, add it
+        if (!uniqueUnassignedData.has(data)) {
+          uniqueUnassignedData.add(data);
+          newUnassigned.push({ id, data });
+        }
+      });
 
       return {
         ...prev,
-        pastedImagesMap: { ...prev.pastedImagesMap, ...newImages },
-        // Do NOT add to unassignedImages here. 
-        // handlePreviewEdit will calculate unassigned based on usage in text.
-        // unassignedImages: [...prev.unassignedImages, ...newExtractedImages]
+        pastedImagesMap: allImages,
+        unassignedImages: newUnassigned
       };
     });
     toast.success(`Đã nhận diện ${Object.keys(newImages).length} ảnh từ bộ nhớ tạm`);
@@ -502,39 +538,32 @@ const EditQuizPage: React.FC = () => {
         sampleMapKeys: Object.keys(allImages).slice(0, 5)
       });
 
-      // 1. Identify all "Used Data"
-      // Find data for every ID that is currently present in the text content
-      const usedData = new Set<string>();
-      imageIdsInContent.forEach(id => {
-        if (allImages[id]) {
-          usedData.add(allImages[id]);
-        }
-      });
+      // 1. Identify all "Used IDs"
+      // Since we now enforce Unique IDs for every image instance, we just check ID presence.
+      const usedIds = imageIdsInContent;
 
-      // 2. Filter unassigned images
-      // An image is unassigned ONLY if its DATA is not used anywhere in the content
-      const uniqueUnassignedData = new Set<string>();
+      // 2. Filter unassigned images (ID-based)
       const newUnassigned: import('../types').ExtractedImage[] = [];
 
       Object.entries(allImages).forEach(([id, data]) => {
-        // If this data is already used in content, skip it entirely
-        if (usedData.has(data)) return;
+        // If this ID is present in the text, it is "Assigned".
+        if (usedIds.has(id)) return;
 
-        // If we haven't added this data to our unassigned list yet, add it
-        if (!uniqueUnassignedData.has(data)) {
-          uniqueUnassignedData.add(data);
-          newUnassigned.push({ id, data });
-        }
+        // If not in text, it's Unassigned.
+        // We do NOT check for duplicate data elsewhere.
+        // This ensures if you delete "IMG-1" (Data A), and "IMG-2" (Data A) exists, 
+        // "IMG-1" still goes to gallery.
+        newUnassigned.push({ id, data });
       });
 
-      console.log("DEBUG: Auto-Restore Result", {
-        usedDataCount: usedData.size,
+      console.log("DEBUG: Auto-Restore Result (ID-Based)", {
+        usedIdsCount: usedIds.size,
         newUnassignedCount: newUnassigned.length
       });
 
       return {
         ...prev,
-        content: content, // Update content here instead of separate call
+        content: content,
         unassignedImages: newUnassigned
       };
     });
@@ -542,14 +571,40 @@ const EditQuizPage: React.FC = () => {
     // Auto-save logic handles the rest
   };
 
-  // Need to re-run parse if pastedImagesMap changes, but actually handlePreviewEdit triggers on text change.
-  // We should trigger a re-parse when images are pasted too? 
-  // But updating state inside `handlePastedImages` will trigger re-render, 
-  // relying on `previewContent` state which should be current?
-  // Let's use useEffect to re-parse when pastedImagesMap changes? 
-  // Ideally `previewContent` is the source of truth.
-  // Re-parse when pastedImagesMap changes to ensure visual consistency
-  // Re-parse when pastedImagesMap OR content changes (critical for Undo/Redo sync)
+  // Helper to recalculate unassigned images from content (to be used by GUI save)
+  const syncUnassignedFromContent = (content: string) => {
+    setEditorState(prev => {
+      const imageTagRegex = /\[IMAGE:([^\]]+)\]/g;
+      const usedIds = new Set<string>();
+      let match;
+      while ((match = imageTagRegex.exec(content)) !== null) {
+        usedIds.add(match[1]);
+      }
+
+      const allImages = prev.pastedImagesMap;
+      const newUnassigned: import('../types').ExtractedImage[] = [];
+
+      Object.entries(allImages).forEach(([id, data]) => {
+        if (!usedIds.has(id)) {
+          newUnassigned.push({ id, data });
+        }
+      });
+
+      return {
+        ...prev,
+        unassignedImages: newUnassigned
+      };
+    });
+  };
+
+  // Re-parse when pastedImagesMap OR content changes
+  // Also sync unassigned images if content changed from OUTSIDE handlePreviewEdit (e.g. GUI edit)
+  // BUT avoid double-calc if handlePreviewEdit already did it. 
+  // handlePreviewEdit updates 'content' and 'unassignedImages' atomically.
+  // GUI update via setPreviewContent updates 'content' only.
+  // So we can listen to content change? No, too risky for loops.
+  // Better to call syncUnassignedFromContent in handleQuestionSave.
+
   useEffect(() => {
     // Always sync questions with content when content changes (including Undo/Redo)
     if (previewContent !== undefined) {
@@ -688,36 +743,62 @@ const EditQuizPage: React.FC = () => {
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i];
 
+      // 3. Options Detection (Hoist regex)
+      const optionRegex = /([*]?)([A-E])\.\s*/g;
+      const hasOptions = /([*]?)([A-E])\.\s*/.test(line);
+
       // CHECK FOR IMAGE MARKER [IMAGE:id]
-      // Use loop to handle multiple images on same line (though we prefer newlines)
-      // And use global regex
-      const imgRegex = /\[IMAGE:([^\]]+)\]/g;
-      let imgMatchIterator;
-      while ((imgMatchIterator = imgRegex.exec(line)) !== null) {
-        const imgId = imgMatchIterator[1];
-        const imgData = findImage(imgId);
+      // FIX: Only run global extraction if NO options are detected on this line.
+      // If options exist, we handle images INSIDE the option parser to ensure correct association.
+      if (!hasOptions) {
+        const imgRegex = /\[IMAGE:([^\]]+)\]/g;
+        let imgMatchIterator;
+        while ((imgMatchIterator = imgRegex.exec(line)) !== null) {
+          const imgId = imgMatchIterator[1];
+          const imgData = findImage(imgId);
 
-        // Always assign ID to structure for "Usage Tracking"
-        // If currently parsing options, assign to last option
-        if (currentOptions.length > 0) {
-          const lastOption = currentOptions[currentOptions.length - 1];
-          if (!currentQuestion.optionImages) currentQuestion.optionImages = {};
-          if (!currentQuestion.optionImageIds) currentQuestion.optionImageIds = {};
+          // Always assign ID to structure for "Usage Tracking"
+          // If currently parsing options, assign to last option
+          if (currentOptions.length > 0) {
+            const lastOption = currentOptions[currentOptions.length - 1];
+            if (!currentQuestion.optionImages) currentQuestion.optionImages = {};
+            if (!currentQuestion.optionImageIds) currentQuestion.optionImageIds = {};
 
-          currentQuestion.optionImageIds[lastOption] = imgId;
-          if (imgData) {
-            currentQuestion.optionImages[lastOption] = imgData;
-          }
-        } else {
-          // Assign to question
-          currentQuestion.questionImageId = imgId;
-          if (imgData) {
-            currentQuestion.questionImage = imgData;
+            currentQuestion.optionImageIds[lastOption] = imgId;
+            if (imgData) {
+              currentQuestion.optionImages[lastOption] = imgData;
+            }
+          } else {
+            // Assign to question
+            currentQuestion.questionImageId = imgId;
+            if (imgData) {
+              currentQuestion.questionImage = imgData;
+            }
           }
         }
+        // Remove all markers
+        line = line.replace(imgRegex, "").trim();
       }
-      // Remove all markers
-      line = line.replace(imgRegex, "").trim();
+
+      if (!line) continue; // Skip line if it only contained the image markers
+
+      // ... (Composite Block Logic - unchanged, kept in context or separate check) 
+      // But wait, the original code had text processing logic below.
+      // I need to ensure I don't break flow.
+      // I will rely on the target context matching.
+
+      // --- COMPOSITE BLOCK HANDLING --- (Skipping in this replacement if possible, but line numbers suggest I need to replace strictly what I touch)
+      // I will restrict this replacement block to the Image Handling -> Option Logic, but I need to include the Option Logic modification.
+      // The original code has Composite Handling in between lines 778-836.
+      // If I want to modify Image Handling (746) AND Option Handling (838), I have a huge block.
+      // I should do two replaces?
+      // No, `hasOptions` logic links them.
+      // I will implement "Step 1: Modify Image Handling" and "Step 2: Modify Option Handling".
+      // But `hasOptions` must be defined.
+      // I will define `hasOptions` and use it in Step 1.
+
+      // Let's assume I replace the top block first.
+
       if (!line) continue; // Skip line if it only contained the image markers
 
       // --- COMPOSITE BLOCK HANDLING ---
@@ -781,7 +862,9 @@ const EditQuizPage: React.FC = () => {
       }
 
       // 3. Options (A. B. C. D.) — ROBUST PARSER
-      const optionRegex = /([*]?)([A-E])\.\s*/g;
+      // optionOptionRegex already defined above for hoisting
+
+
       let match: RegExpExecArray | null;
 
       const optionMatches: {
@@ -799,6 +882,28 @@ const EditQuizPage: React.FC = () => {
       }
 
       if (optionMatches.length > 0) {
+        // Handle text BEFORE first option (e.g. "[IMAGE] A. ...")
+        const preText = line.substring(0, optionMatches[0].index).trim();
+        if (preText) {
+          const imgInPreRegex = /\[IMAGE:([^\]]+)\]/g;
+          let m;
+          while ((m = imgInPreRegex.exec(preText)) !== null) {
+            const imgId = m[1];
+            const imgData = findImage(imgId);
+            // Assign to last option if exists, else Question
+            if (currentOptions.length > 0) {
+              const last = currentOptions[currentOptions.length - 1];
+              if (!currentQuestion.optionImages) currentQuestion.optionImages = {};
+              if (!currentQuestion.optionImageIds) currentQuestion.optionImageIds = {};
+              currentQuestion.optionImageIds[last] = imgId;
+              if (imgData) currentQuestion.optionImages[last] = imgData;
+            } else {
+              currentQuestion.questionImageId = imgId;
+              if (imgData) currentQuestion.questionImage = imgData;
+            }
+          }
+        }
+
         for (let i = 0; i < optionMatches.length; i++) {
           const start = optionMatches[i].index + optionMatches[i].length;
           const end =
@@ -806,10 +911,34 @@ const EditQuizPage: React.FC = () => {
               ? optionMatches[i + 1].index
               : line.length;
 
-          const content = line.substring(start, end).trim();
+          let content = line.substring(start, end).trim();
+
+          // EXTRACT IMAGES FROM OPTION CONTENT
+          const imgInOptRegex = /\[IMAGE:([^\]]+)\]/g;
+          const imagesInThisOption: { id: string, data?: string }[] = [];
+
+          let m;
+          while ((m = imgInOptRegex.exec(content)) !== null) {
+            imagesInThisOption.push({ id: m[1], data: findImage(m[1]) });
+          }
+          // Remove tags
+          content = content.replace(imgInOptRegex, "").trim();
 
           if (content.length > 0) {
             currentOptions.push(content);
+
+            // Assign images to THIS option
+            if (imagesInThisOption.length > 0) {
+              if (!currentQuestion.optionImages) currentQuestion.optionImages = {};
+              if (!currentQuestion.optionImageIds) currentQuestion.optionImageIds = {};
+
+              // Use last image found? Or allow multiple? Current structure supports 1 image per option key.
+              // We use the last one if multiple.
+              const lastImg = imagesInThisOption[imagesInThisOption.length - 1];
+              currentQuestion.optionImageIds[content] = lastImg.id;
+              if (lastImg.data) currentQuestion.optionImages[content] = lastImg.data;
+            }
+
             if (optionMatches[i].isCorrect && Array.isArray(currentCorrectAnswers)) {
               (currentCorrectAnswers as string[]).push(content);
             }
@@ -1362,34 +1491,57 @@ const EditQuizPage: React.FC = () => {
 
     // Extract existing images to initial map AND assign IDs to questions
     const initialImagesMap: Record<string, string> = {};
+    const usedIds = new Set<string>();
+    const duplicateCounters: Record<string, number> = {};
 
     // Helper to extract and return ID
-    const extractAndGetId = (imgData?: string): string | undefined => {
+    const extractAndGetId = (imgData?: string, originalId?: string): string | undefined => {
       if (!imgData) return undefined;
 
-      // Check if already in map (duplicate image usage) - return existing ID
-      for (const [existingId, val] of Object.entries(initialImagesMap)) {
-        if (val === imgData) return existingId;
+      // FIX: FORCE UNIQUE ID for every occurrence with SEQUENTIAL SUFFIX
+      // If originalId exists, use it as base.
+      let baseId = originalId;
+
+      // If no ID, generate a base one
+      if (!baseId) {
+        baseId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
       }
 
-      // Generate new ID for editor session
-      const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-      initialImagesMap[id] = imgData;
-      return id;
+      let finalId = baseId;
+
+      // Check for collision in THIS session
+      if (usedIds.has(finalId)) {
+        // Collision detected. Use counter for this baseId.
+        if (!duplicateCounters[baseId]) {
+          duplicateCounters[baseId] = 0;
+        }
+        duplicateCounters[baseId]++; // Increment counter
+        finalId = `${baseId}-${duplicateCounters[baseId]}`; // Append suffix: -1, -2, etc.
+      } else {
+        // First time seeing this baseId, we keep it as is.
+        // But we assume count 0 if we see it again? No, next time usedIds.has() will be true.
+      }
+
+      // Add to map and mark as used
+      initialImagesMap[finalId] = imgData;
+      usedIds.add(finalId);
+      return finalId;
     };
 
     // Process all questions and assign IDs
     convertedQuestions.forEach(q => {
       // Question image
       if (q.questionImage) {
-        q.questionImageId = extractAndGetId(q.questionImage);
+        q.questionImageId = extractAndGetId(q.questionImage, (q as any).questionImageId);
       }
 
       // Option images
       if (q.optionImages) {
         q.optionImageIds = {};
         for (const [optionText, imgData] of Object.entries(q.optionImages)) {
-          const imgId = extractAndGetId(imgData);
+          // We might not have per-option ID from parser easily, pass undefined to auto-gen
+          // OR if the parser gave us IDs, pass them. Assuming undefined for now unless extended.
+          const imgId = extractAndGetId(imgData, (q as any).optionImageIds?.[optionText]);
           if (imgId) {
             q.optionImageIds[optionText] = imgId;
           }
@@ -1401,12 +1553,12 @@ const EditQuizPage: React.FC = () => {
         q.subQuestions.forEach(sq => {
           const subQ = sq as QuestionWithImages;
           if (subQ.questionImage) {
-            subQ.questionImageId = extractAndGetId(subQ.questionImage);
+            subQ.questionImageId = extractAndGetId(subQ.questionImage, (subQ as any).questionImageId);
           }
           if (subQ.optionImages) {
             subQ.optionImageIds = {};
             for (const [optionText, imgData] of Object.entries(subQ.optionImages)) {
-              const imgId = extractAndGetId(imgData);
+              const imgId = extractAndGetId(imgData, (subQ as any).optionImageIds?.[optionText]);
               if (imgId) {
                 subQ.optionImageIds[optionText] = imgId;
               }
@@ -1579,6 +1731,68 @@ const EditQuizPage: React.FC = () => {
   ) => {
     console.log("Saving question:", questionId, updatedQuestion); // Debug log
 
+    // FIX: Register new images (from GUI upload/paste) into pastedImagesMap immediately
+    // ensuring generatePreviewContent can produce [IMAGE:id] tags and QuizPreview can render them.
+    const newImagesToRegister: Record<string, string> = {};
+    const currentMap = editorState.pastedImagesMap || {};
+
+    const processImage = (imgData?: string, existingId?: string): string | undefined => {
+      if (!imgData) return undefined;
+      // If we have an ID and it matches map, keep it.
+      if (existingId && currentMap[existingId] === imgData) return existingId;
+
+      // If we have an ID but data is missing in map (rare), or data differs?
+      // Or if no ID. We register as new.
+      // Check if this EXACT data is already in newImagesToRegister (dedupe within this save)
+      // (Optional optimization)
+
+      const newId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      newImagesToRegister[newId] = imgData;
+      return newId;
+    };
+
+    // 1. Process Question Image
+    if (updatedQuestion.questionImage) {
+      updatedQuestion.questionImageId = processImage(updatedQuestion.questionImage, updatedQuestion.questionImageId);
+    }
+
+    // 2. Process Option Images
+    if (updatedQuestion.optionImages) {
+      if (!updatedQuestion.optionImageIds) updatedQuestion.optionImageIds = {};
+      for (const [opt, data] of Object.entries(updatedQuestion.optionImages)) {
+        const pid = processImage(data, updatedQuestion.optionImageIds[opt]);
+        if (pid) updatedQuestion.optionImageIds[opt] = pid;
+      }
+    }
+
+    // 3. Process SubQuestions (Composite)
+    if (updatedQuestion.subQuestions) {
+      updatedQuestion.subQuestions.forEach((subQ: any) => { // Type force for flexibility
+        if (subQ.questionImage) {
+          subQ.questionImageId = processImage(subQ.questionImage, subQ.questionImageId);
+        }
+        if (subQ.optionImages) {
+          if (!subQ.optionImageIds) subQ.optionImageIds = {};
+          for (const [opt, data] of Object.entries(subQ.optionImages as Record<string, string>)) {
+            const pid = processImage(data, subQ.optionImageIds[opt]);
+            if (pid) subQ.optionImageIds[opt] = pid;
+          }
+        }
+      });
+    }
+
+    // Update Editor State if we have new images
+    if (Object.keys(newImagesToRegister).length > 0) {
+      setEditorState(prev => ({
+        ...prev,
+        pastedImagesMap: {
+          ...prev.pastedImagesMap,
+          ...newImagesToRegister
+        }
+      }));
+    }
+
+
     setQuestions((prev) => {
       const updated = prev.map((q) => {
         if (q.id === questionId) {
@@ -1616,6 +1830,8 @@ const EditQuizPage: React.FC = () => {
       setTimeout(() => {
         const newPreviewContent = generatePreviewContent(updated);
         setPreviewContent(newPreviewContent);
+        // FIX: Ensure unassigned images are recalculated when editing via GUI
+        syncUnassignedFromContent(newPreviewContent);
       }, 0);
 
       return updated;
@@ -1633,7 +1849,8 @@ const EditQuizPage: React.FC = () => {
 
       // Append Question Image Tag (NEW LINE)
       if (q.questionImage) {
-        const imgId = findImageIdByData(q.questionImage, overrideMap);
+        // FIX: Prioritize explicit ID if available (preserves unique subIDs)
+        const imgId = q.questionImageId || findImageIdByData(q.questionImage, overrideMap);
         if (imgId) {
           content += `[IMAGE:${imgId}]`;
         }
@@ -1655,7 +1872,8 @@ const EditQuizPage: React.FC = () => {
           q.subQuestions.forEach((subQ, subIdx) => {
             content += `Câu ${subIdx + 1}: ${subQ.question}`;
             if ((subQ as any).questionImage) {
-              const imgId = findImageIdByData((subQ as any).questionImage, overrideMap);
+              // FIX: Prioritize explicit ID
+              const imgId = (subQ as any).questionImageId || findImageIdByData((subQ as any).questionImage, overrideMap);
               if (imgId) content += `\n[IMAGE:${imgId}]`;
             }
             content += "\n";
@@ -1677,7 +1895,9 @@ const EditQuizPage: React.FC = () => {
                 content += `${prefix}${letter}. ${opt}`;
 
                 if ((subQ as any).optionImages && (subQ as any).optionImages[opt]) {
-                  const imgId = findImageIdByData((subQ as any).optionImages[opt], overrideMap);
+                  // FIX: Prioritize explicit ID for options
+                  const explicitId = (subQ as any).optionImageIds && (subQ as any).optionImageIds[opt];
+                  const imgId = explicitId || findImageIdByData((subQ as any).optionImages[opt], overrideMap);
                   if (imgId) content += `\n[IMAGE:${imgId}]`;
                 }
                 content += "\n";
@@ -1692,6 +1912,9 @@ const EditQuizPage: React.FC = () => {
         }
         content += `}\n`;
       } else if (q.type === "drag") {
+        // ... existing drag logic ...
+        // (Drag questions logic continues below, unchanged by this block, assuming replace matches context)
+
         // Format: result: [...] \n group: (...)
         const dragOptions = q.options as any;
         if (dragOptions && dragOptions.items) {
@@ -1744,7 +1967,9 @@ const EditQuizPage: React.FC = () => {
 
             // Append Option Image Tag if exists
             if (q.optionImages && q.optionImages[option]) {
-              const imgId = findImageIdByData(q.optionImages[option], overrideMap);
+              // FIX: Prioritize explicit ID for options
+              const explicitId = (q as any).optionImageIds && (q as any).optionImageIds[option];
+              const imgId = explicitId || findImageIdByData((q as any).optionImages[option], overrideMap);
               if (imgId) {
                 content += `\n[IMAGE:${imgId}]`;
               }

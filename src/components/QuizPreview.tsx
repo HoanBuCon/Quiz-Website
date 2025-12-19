@@ -157,9 +157,12 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   // Sync internal state with prop content if provided
+  // Sync internal state with prop content if provided
   useEffect(() => {
     if (isContentControlled) {
       setEditableContent(content);
+      // Stop "Updating..." indicator when content arrives from parent (e.g. after Undo)
+      setIsContentChanged(false);
     }
   }, [content, isContentControlled]);
 
@@ -174,8 +177,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     }
   }, [questions, isContentControlled]);
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
+  // Helper to trigger update with debounce and loading state
+  const updateContentWithDebounce = (newContent: string) => {
     setEditableContent(newContent);
     setIsContentChanged(true);
 
@@ -190,10 +193,17 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     return () => clearTimeout(timeoutId);
   };
 
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    updateContentWithDebounce(newContent);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
       e.stopPropagation();
+      // Show "Updating..." state immediately for visual feedback
+      setIsContentChanged(true);
       if (e.shiftKey) {
         onRedo && onRedo();
       } else {
@@ -201,6 +211,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
       }
     }
   };
+
+
+
 
   const parseEditedContent = (content: string) => {
     // Parse nội dung đã chỉnh sửa thành questions
@@ -314,8 +327,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
                 const newValue = currentValue.substring(0, start) + text + currentValue.substring(end);
 
-                setEditableContent(newValue);
-                onEdit && onEdit(newValue);
+                // Use the helper to trigger debounce and "Updating..." state
+                updateContentWithDebounce(newValue);
 
                 requestAnimationFrame(() => {
                   textarea.selectionStart = textarea.selectionEnd = start + text.length;
