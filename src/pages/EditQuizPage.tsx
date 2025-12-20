@@ -61,6 +61,11 @@ const ImageUpload: React.FC<{
   onAssignFromGallery?: (imageId: string, source?: any) => void;
   onImageRemoved?: (imageData: string, imageId?: string) => void;
   currentImageId?: string;
+  sourceInfo?: {
+    sourceType: 'question' | 'option';
+    questionId: string;
+    optionText?: string;
+  };
 }> = ({
   onImageUpload,
   currentImage,
@@ -69,6 +74,7 @@ const ImageUpload: React.FC<{
   className = "",
   onAssignFromGallery,
   onImageRemoved,
+  sourceInfo,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -181,6 +187,22 @@ const ImageUpload: React.FC<{
       }
     };
 
+    const handleImageDragStart = (e: React.DragEvent<HTMLImageElement>) => {
+      if (!sourceInfo || !currentImage) return;
+
+      // Store source information for drag-and-drop
+      const dragData = {
+        imageData: currentImage,
+        imageId: currentImageId,
+        sourceType: sourceInfo.sourceType,
+        questionId: sourceInfo.questionId,
+        optionText: sourceInfo.optionText,
+      };
+
+      e.dataTransfer.setData('image/assigned-source', JSON.stringify(dragData));
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
     return (
       <div className={className}>
         {currentImage ? (
@@ -188,7 +210,9 @@ const ImageUpload: React.FC<{
             <img
               src={currentImage}
               alt="Uploaded"
-              className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+              draggable={!!sourceInfo}
+              onDragStart={handleImageDragStart}
+              className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move"
             />
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
@@ -2895,8 +2919,13 @@ const EditQuizPage: React.FC = () => {
                   <ImageUpload
                     onImageUpload={handleQuestionImageUpload}
                     currentImage={editedQuestion.questionImage}
+                    currentImageId={editedQuestion.questionImageId}
                     placeholder="Thêm ảnh cho câu hỏi"
                     className="w-full"
+                    sourceInfo={{
+                      sourceType: 'question',
+                      questionId: question.id
+                    }}
                     onAssignFromGallery={(id, source) => {
                       // Special case: moving within the same question being edited
                       if (source && source.questionId === question.id) {
@@ -3188,6 +3217,11 @@ const EditQuizPage: React.FC = () => {
                               currentImageId={editedQuestion.optionImageIds?.[option]}
                               placeholder="Thêm ảnh cho đáp án"
                               className="w-full"
+                              sourceInfo={{
+                                sourceType: 'option',
+                                questionId: question.id,
+                                optionText: option
+                              }}
                               onAssignFromGallery={(id, source) => {
                                 // Special case: moving within the same question being edited
                                 if (source && source.questionId === question.id) {
