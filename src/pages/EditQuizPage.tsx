@@ -58,7 +58,7 @@ const ImageUpload: React.FC<{
   currentImage?: string;
   placeholder?: string;
   className?: string;
-  onAssignFromGallery?: (imageId: string) => void;
+  onAssignFromGallery?: (imageId: string, source?: any) => void;
   onImageRemoved?: (imageData: string, imageId?: string) => void;
   currentImageId?: string;
 }> = ({
@@ -114,7 +114,25 @@ const ImageUpload: React.FC<{
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
 
-      // Check if dropping from UnassignedImagesGallery (ID based)
+      // 1. Check for assigned image (move operation from another question/answer)
+      const assignedSource = event.dataTransfer.getData('image/assigned-source');
+      if (assignedSource) {
+        try {
+          const source = JSON.parse(assignedSource);
+          if (onAssignFromGallery) {
+            // First, remove from source location
+            // We need access to handleRemoveImageFromSource from parent
+            // Since we can't access it directly, we'll pass the source info through callback
+            // and let the parent handle the removal
+            onAssignFromGallery(source.imageId || source.imageData, source);
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to parse assigned source:', e);
+        }
+      }
+
+      // 2. Check if dropping from UnassignedImagesGallery (ID based)
       const unassignedId = event.dataTransfer.getData('image/unassigned-id');
       if (unassignedId) {
         if (onAssignFromGallery) {
@@ -123,7 +141,7 @@ const ImageUpload: React.FC<{
         }
       }
 
-      // Otherwise handle as file drop
+      // 3. Otherwise handle as file drop
       const file = event.dataTransfer.files[0];
       if (file) {
         handleFile(file);
@@ -406,10 +424,9 @@ const EditQuizPage: React.FC = () => {
     const img = unassignedImages.find((i) => i.id === imageId);
     if (img) {
       callback(img.data);
-      // Delay removal slightly
-      setTimeout(() => {
-        handleImageAssigned(imageId);
-      }, 100);
+      // FIX: Immediately remove from gallery after assignment
+      // This ensures that even on the first drop, the image is removed from the unassigned gallery
+      handleImageAssigned(imageId);
       toast.success("Đã gán ảnh!");
     } else {
       toast.error("Không tìm thấy dữ liệu ảnh!");
@@ -457,6 +474,50 @@ const EditQuizPage: React.FC = () => {
     // Immediate feedback is handled by state update above
     toast.success("Ảnh đã được đưa về kho!");
   };
+
+  // Helper function to remove image from its source location when moving between questions/answers
+  const handleRemoveImageFromSource = (source: {
+    imageData: string;
+    imageId?: string;
+    sourceType: 'question' | 'option';
+    questionId: string;
+    optionText?: string;
+  }) => {
+    // Find the source question and remove the image
+    setQuestions(prev => {
+      return prev.map(q => {
+        if (q.id !== source.questionId) return q;
+
+        const updated = { ...q };
+
+        if (source.sourceType === 'question') {
+          // Remove question image
+          updated.questionImage = undefined;
+          updated.questionImageId = undefined;
+        } else if (source.sourceType === 'option' && source.optionText) {
+          // Remove option image
+          const newOptionImages = { ...updated.optionImages };
+          const newOptionImageIds = { ...updated.optionImageIds };
+          delete newOptionImages[source.optionText];
+          delete newOptionImageIds[source.optionText];
+          updated.optionImages = newOptionImages;
+          updated.optionImageIds = newOptionImageIds;
+        }
+
+        return updated;
+      });
+    });
+
+    // Update preview content to reflect the change
+    setTimeout(() => {
+      setQuestions(currentQuestions => {
+        const newContent = generatePreviewContent(currentQuestions);
+        setPreviewContent(newContent);
+        return currentQuestions;
+      });
+    }, 0);
+  };
+
 
   const setScrollAnchor = (questionId: string) => {
     const element = document.querySelector<HTMLElement>(`[data-qid="${questionId}"]`);
@@ -2363,6 +2424,7 @@ const EditQuizPage: React.FC = () => {
     };
 
     const [editedQuestion, _setEditedQuestion] = useState<QuestionWithImages>(getInitialState);
+
     const setEditedQuestion = (
       updater: React.SetStateAction<QuestionWithImages>
     ) => {
@@ -2823,9 +2885,40 @@ const EditQuizPage: React.FC = () => {
                     currentImage={editedQuestion.questionImage}
                     placeholder="Thêm ảnh cho câu hỏi"
                     className="w-full"
-                    onAssignFromGallery={(id) =>
-                      handleAssignImage(id, (data) => handleQuestionImageUpload(data, id))
-                    }
+                    onAssignFromGallery={(id, source) => {
+                      // Special case: moving within the same question being edited
+                      if (source && source.questionId === question.id) {
+                        // Handle atomically within editedQuestion state
+                        // Use source.imageData directly since it's not from gallery
+                        setEditedQuestion(prev => {
+                          const updated = { ...prev };
+                          // Remove from source
+                          if (source.sourceType === 'option' && source.optionText) {
+                            const newOptionImages = { ...prev.optionImages };
+                            const newOptionImageIds = { ...prev.optionImageIds };
+                            delete newOptionImages[source.optionText];
+                            delete newOptionImageIds[source.optionText];
+                            updated.optionImages = newOptionImages;
+                            updated.optionImageIds = newOptionImageIds;
+                          }
+                          // Add to destination (question)
+                          updated.questionImage = source.imageData;
+                          updated.questionImageId = source.imageId || id;
+                          return updated;
+                        });
+                        return;
+                      }
+                      // Different question or from gallery: handle normally
+                      if (source && source.questionId) {
+                        // From another question, not gallery
+                        handleRemoveImageFromSource(source);
+                        // Use source data directly
+                        handleQuestionImageUpload(source.imageData, source.imageId || id);
+                      } else {
+                        // From gallery
+                        handleAssignImage(id, (data) => handleQuestionImageUpload(data, id));
+                      }
+                    }}
                     onImageRemoved={handleRestoreToGallery}
                   />
                 </div>
@@ -3069,11 +3162,49 @@ const EditQuizPage: React.FC = () => {
                               currentImageId={editedQuestion.optionImageIds?.[option]}
                               placeholder="Thêm ảnh cho đáp án"
                               className="w-full"
-                              onAssignFromGallery={(id) =>
-                                handleAssignImage(id, (data) =>
-                                  handleOptionImageUpload(option, data, id)
-                                )
-                              }
+                              onAssignFromGallery={(id, source) => {
+                                // Special case: moving within the same question being edited
+                                if (source && source.questionId === question.id) {
+                                  // Handle atomically within editedQuestion state
+                                  // Use source.imageData directly since it's not from gallery
+                                  setEditedQuestion(prev => {
+                                    const updated = { ...prev };
+                                    // Remove from source
+                                    if (source.sourceType === 'question') {
+                                      updated.questionImage = undefined;
+                                      updated.questionImageId = undefined;
+                                    } else if (source.sourceType === 'option' && source.optionText) {
+                                      const newOptionImages = { ...prev.optionImages };
+                                      const newOptionImageIds = { ...prev.optionImageIds };
+                                      delete newOptionImages[source.optionText];
+                                      delete newOptionImageIds[source.optionText];
+                                      updated.optionImages = newOptionImages;
+                                      updated.optionImageIds = newOptionImageIds;
+                                    }
+                                    // Add to destination (this option)
+                                    const finalOptionImages = { ...updated.optionImages };
+                                    const finalOptionImageIds = { ...updated.optionImageIds };
+                                    finalOptionImages[option] = source.imageData;
+                                    finalOptionImageIds[option] = source.imageId || id;
+                                    updated.optionImages = finalOptionImages;
+                                    updated.optionImageIds = finalOptionImageIds;
+                                    return updated;
+                                  });
+                                  return;
+                                }
+                                // Different question or from gallery: handle normally
+                                if (source && source.questionId) {
+                                  // From another question, not gallery
+                                  handleRemoveImageFromSource(source);
+                                  // Use source data directly
+                                  handleOptionImageUpload(option, source.imageData, source.imageId || id);
+                                } else {
+                                  // From gallery
+                                  handleAssignImage(id, (data) =>
+                                    handleOptionImageUpload(option, data, id)
+                                  );
+                                }
+                              }}
                               onImageRemoved={handleRestoreToGallery}
                             />
                           </div>
@@ -4017,19 +4148,191 @@ const EditQuizPage: React.FC = () => {
     index: number;
     dragHandleProps?: any;
   }> = ({ question, index, dragHandleProps }) => {
+    const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+
+    const handleDragOver = (e: React.DragEvent, target: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOverTarget(target);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOverTarget(null);
+    };
+
+    const handleDrop = async (e: React.DragEvent, target: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOverTarget(null);
+
+      let imageData = "";
+
+      // 1. Check for assigned image (move operation)
+      const assignedSource = e.dataTransfer.getData('image/assigned-source');
+      if (assignedSource) {
+        try {
+          const source = JSON.parse(assignedSource);
+
+          // Special case: moving within the same question (e.g., between options)
+          // We need to do this atomically to avoid duplication
+          if (source.questionId === question.id) {
+            // Atomic update for same-question moves
+            const updatedDiff: Partial<QuestionWithImages> = {};
+
+            // Remove from source
+            if (source.sourceType === 'question') {
+              updatedDiff.questionImage = undefined;
+              updatedDiff.questionImageId = undefined;
+            } else if (source.sourceType === 'option' && source.optionText) {
+              const newOptionImages = { ...question.optionImages };
+              const newOptionImageIds = { ...question.optionImageIds };
+              delete newOptionImages[source.optionText];
+              delete newOptionImageIds[source.optionText];
+              updatedDiff.optionImages = newOptionImages;
+              updatedDiff.optionImageIds = newOptionImageIds;
+            }
+
+            // Add to destination
+            if (target === "question") {
+              updatedDiff.questionImage = source.imageData;
+              updatedDiff.questionImageId = source.imageId;
+            } else if (target.startsWith("option-")) {
+              const optText = target.replace("option-", "");
+              // CRITICAL: Use updatedDiff.optionImages (which has source removed) not question.optionImages
+              const finalOptionImages = updatedDiff.optionImages || {};
+              const finalOptionImageIds = updatedDiff.optionImageIds || {};
+              finalOptionImages[optText] = source.imageData;
+              if (source.imageId) {
+                finalOptionImageIds[optText] = source.imageId;
+              }
+              updatedDiff.optionImages = finalOptionImages;
+              updatedDiff.optionImageIds = finalOptionImageIds;
+            }
+
+            // Single atomic update
+            handleQuestionSave(question.id, updatedDiff);
+            toast.success("Đã di chuyển ảnh!");
+            return;
+          }
+
+          // Different question: remove from source first, then add to destination
+          handleRemoveImageFromSource(source);
+          // Then assign to new location
+          saveDroppedImage(source.imageData, target, source.imageId);
+          return;
+        } catch (error) {
+          console.error('Failed to parse assigned source:', error);
+        }
+      }
+
+      // 2. Check for Internal DnD (Unassigned Image ID)
+      const unassignedId = e.dataTransfer.getData("image/unassigned-id");
+      if (unassignedId) {
+        handleAssignImage(unassignedId, (data) => {
+          saveDroppedImage(data, target, unassignedId);
+        });
+        return;
+      }
+
+      // 3. Check for File Drop
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const result = ev.target?.result as string;
+          saveDroppedImage(result, target);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    const saveDroppedImage = (imgData: string, target: string, sourceId?: string) => {
+      // Clone current question to avoid mutating state directly
+      const updatedDiff: Partial<QuestionWithImages> = {};
+
+      if (target === "question") {
+        updatedDiff.questionImage = imgData;
+        // If we have a source ID from gallery, try to use it (processImage in handleQuestionSave will handle registration)
+        // If it's a file drop, sourceId is undefined, processImage generates new ID.
+        updatedDiff.questionImageId = sourceId;
+
+        // If reusing an unassigned image, we want to Keep it? handleAssignImage handles removal from unassigned list?
+        // handleAssignImage calls: callback(data), then setTimeout(handleImageAssigned(id)) which removes it.
+        // So we just need to Save.
+      } else if (target.startsWith("option-")) {
+        const optText = target.replace("option-", "");
+
+        const newOptionImages = { ...question.optionImages };
+        // We use the image data directly. The ID logic is handled in handleQuestionSave.
+        newOptionImages[optText] = imgData;
+
+        updatedDiff.optionImages = newOptionImages;
+
+        // Pass IDs if available
+        if (sourceId) {
+          const newOptionImageIds = { ...question.optionImageIds };
+          newOptionImageIds[optText] = sourceId;
+          updatedDiff.optionImageIds = newOptionImageIds;
+        }
+      }
+
+      handleQuestionSave(question.id, updatedDiff);
+      toast.success("Đã cập nhật ảnh!");
+    };
+
     return (
-      <div className="card p-6 mb-4 relative">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <div className="flex items-center mb-2">
-              {dragHandleProps && (
-                <div
-                  {...dragHandleProps}
-                  className="cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  title="Kéo để sắp xếp"
+      <div className="card p-6 mb-4 relative wrapper-node">
+
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex items-center flex-wrap gap-y-1">
+            {dragHandleProps && (
+              <div
+                {...dragHandleProps}
+                className="cursor-grab active:cursor-grabbing p-1 mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                title="Kéo để sắp xếp"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </div>
+            )}
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-3">
+              Câu {index + 1}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 mr-2">
+              ID: {question.id}
+            </span>
+
+            <span className="px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-400 mr-2 whitespace-nowrap">
+              {question.type === "single"
+                ? "Chọn 1 đáp án"
+                : question.type === "multiple"
+                  ? "Chọn nhiều đáp án"
+                  : question.type === "drag"
+                    ? "Kéo thả"
+                    : question.type === "composite"
+                      ? "Câu mẹ"
+                      : "Điền từ"}
+            </span>
+
+            {(question.questionImage ||
+              (question.optionImages &&
+                Object.keys(question.optionImages).length > 0)) && (
+                <span className="flex items-center text-xs text-blue-600 dark:text-blue-400 whitespace-nowrap">
                   <svg
-                    className="w-5 h-5"
+                    className="w-3 h-3 mr-1"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -4038,68 +4341,14 @@ const EditQuizPage: React.FC = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                </div>
+                  Có ảnh
+                </span>
               )}
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-3">
-                Câu {index + 1}
-              </span>
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                ID: {question.id}
-              </span>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2 whitespace-pre-wrap">
-              <MathText text={question.question} />
-            </h3>
-
-            {/* Question Image Display */}
-            {question.questionImage && (
-              <div className="mb-4">
-                <img
-                  src={question.questionImage}
-                  alt="Question"
-                  className="max-w-md max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
-                />
-              </div>
-            )}
-
-            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-              <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
-                {question.type === "single"
-                  ? "Chọn 1"
-                  : question.type === "multiple"
-                    ? "Chọn nhiều"
-                    : question.type === "drag"
-                      ? "Kéo thả"
-                      : question.type === "composite"
-                        ? "Câu hỏi mẹ"
-                        : "Điền đáp án"}
-              </span>
-
-              {(question.questionImage ||
-                (question.optionImages &&
-                  Object.keys(question.optionImages).length > 0)) && (
-                  <span className="flex items-center">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    Có ảnh
-                  </span>
-                )}
-            </div>
           </div>
+
           <div className="flex space-x-2">
             <button
               onClick={() => handleQuestionEdit(question.id)}
@@ -4140,6 +4389,54 @@ const EditQuizPage: React.FC = () => {
           </div>
         </div>
 
+        <div
+          className={`rounded-lg border-2 border-transparent transition-colors mb-4 ${dragOverTarget === "question"
+            ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
+            : "hover:border-dashed hover:border-gray-300 dark:hover:border-gray-600"
+            }`}
+          onDragOver={(e) => handleDragOver(e, "question")}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, "question")}
+          title="Kéo thả ảnh vào đây để đặt ảnh cho câu hỏi"
+        >
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white p-2 whitespace-pre-wrap">
+            <MathText text={question.question} />
+          </h3>
+          {/* Overlay hint when dragging over */}
+          {dragOverTarget === "question" && (
+            <div className="text-xs text-primary-600 dark:text-primary-400 font-normal px-2 pb-2 flex items-center">
+              <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Thả để gán ảnh cho câu hỏi
+            </div>
+          )}
+        </div>
+
+        {/* Question Image Display */}
+        {question.questionImage && (
+          <div className="mb-4">
+            <img
+              src={question.questionImage}
+              alt="Question"
+              className="max-w-md max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('image/assigned-source', JSON.stringify({
+                  imageData: question.questionImage,
+                  imageId: question.questionImageId,
+                  sourceType: 'question',
+                  questionId: question.id
+                }));
+                e.dataTransfer.effectAllowed = 'move';
+              }}
+              title="Kéo để di chuyển ảnh sang vị trí khác"
+            />
+          </div>
+        )}
+
+
+
         {question.type !== "text" &&
           question.type !== "composite" &&
           question.options && (
@@ -4156,9 +4453,12 @@ const EditQuizPage: React.FC = () => {
                       : "border-gray-200 dark:border-gray-600"
                       }`}
                   >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <span className="font-medium text-gray-600 dark:text-gray-300">
+                    <div className="flex items-baseline space-x-3">
+                      <div className="flex-shrink-0 pt-[2px]">
+                        <span
+                          className={`font-medium text-gray-600 dark:text-gray-300 ${dragOverTarget === `option-${option}` ? "text-primary-600 dark:text-primary-400" : ""
+                            }`}
+                        >
                           {String.fromCharCode(65 + index)}.
                         </span>
                         {(Array.isArray(question.correctAnswers)
@@ -4170,7 +4470,16 @@ const EditQuizPage: React.FC = () => {
                             </span>
                           )}
                       </div>
-                      <div className="flex-1">
+                      <div
+                        className={`flex-1 p-2 -mt-2 rounded-lg border-2 border-transparent transition-colors ${dragOverTarget === `option-${option}`
+                          ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
+                          : ""
+                          }`}
+                        onDragOver={(e) => handleDragOver(e, `option-${option}`)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, `option-${option}`)}
+                        title="Kéo thả ảnh vào đây để đặt ảnh cho đáp án"
+                      >
                         <span className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                           <MathText text={option} />
                         </span>
@@ -4180,8 +4489,28 @@ const EditQuizPage: React.FC = () => {
                             <img
                               src={question.optionImages[option]}
                               alt={`Option ${String.fromCharCode(65 + index)}`}
-                              className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                              className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('image/assigned-source', JSON.stringify({
+                                  imageData: question.optionImages![option],
+                                  imageId: question.optionImageIds?.[option],
+                                  sourceType: 'option',
+                                  questionId: question.id,
+                                  optionText: option
+                                }));
+                                e.dataTransfer.effectAllowed = 'move';
+                              }}
+                              title="Kéo để di chuyển ảnh sang vị trí khác"
                             />
+                          </div>
+                        )}
+                        {dragOverTarget === `option-${option}` && (
+                          <div className="text-xs text-primary-600 dark:text-primary-400 font-normal mt-1 flex items-center">
+                            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Thả để gán ảnh cho đáp án
                           </div>
                         )}
                       </div>
