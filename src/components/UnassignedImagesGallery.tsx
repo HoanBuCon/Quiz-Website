@@ -95,7 +95,7 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
             {/* Helper Text at Bottom */}
             <div className="sticky bottom-0 bg-gradient-to-t from-white dark:from-gray-800 to-transparent p-4 text-center">
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                    💡 Mẹo: Kéo ảnh vào vùng "Thêm ảnh" của câu hỏi hoặc đáp án
+                    💡 Mẹo: Kéo thả ảnh trong kho vào vùng "Thêm ảnh" của câu hỏi hoặc đáp án hoặc "Trình chỉnh sửa" để gán ảnh
                 </p>
             </div>
         </div>

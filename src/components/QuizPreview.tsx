@@ -162,6 +162,135 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   const [isContentChanged, setIsContentChanged] = React.useState(false);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
+  // --- DRAG & DROP LOGIC ---
+  const [dragPlaceholder, setDragPlaceholder] = React.useState<{ start: number, end: number, text: string } | null>(null);
+  const dragTargetRef = React.useRef<{ lineIndex: number, type: 'question' | 'option' | 'none' } | null>(null);
+
+  // Helper: Measure line height
+  const getLineHeight = (textarea: HTMLTextAreaElement) => {
+    const computed = window.getComputedStyle(textarea);
+    const lh = computed.lineHeight;
+    if (lh === 'normal') return parseInt(computed.fontSize) * 1.2; // Approximate
+    return parseInt(lh);
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    // Only accept if image/unassigned-id exists
+    if (!e.dataTransfer.types.includes('image/unassigned-id')) return;
+
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+
+    const textarea = e.currentTarget;
+    const lh = getLineHeight(textarea);
+    const paddingTop = parseInt(window.getComputedStyle(textarea).paddingTop);
+    // Calc relative Y (add scrollTop)
+    const y = e.nativeEvent.offsetY + textarea.scrollTop - paddingTop;
+    let lineIndex = Math.floor(y / lh);
+
+    if (lineIndex < 0) lineIndex = 0;
+
+    // Parse content lines
+    const lines = editableContent.split('\n');
+    if (lineIndex >= lines.length) lineIndex = lines.length - 1;
+
+    // Check if we are already showing placeholder at this context
+    if (dragTargetRef.current?.lineIndex === lineIndex) return;
+
+    const line = lines[lineIndex];
+    let context: 'question' | 'option' | 'none' = 'none';
+    let placeholderText = "";
+
+    if (line.match(/^Câu \d+:/)) {
+      context = 'question';
+      placeholderText = `\n--------------------------------------------\n   ⬇️ THẢ ẢNH CHO CÂU HỎI VÀO ĐÂY ☢️ \n--------------------------------------------`;
+    } else if (line.match(/^\*?[A-Z]\./)) {
+      context = 'option';
+      placeholderText = `\n--------------------------------------------\n   ⬇️ THẢ ẢNH CHO ĐÁP ÁN VÀO ĐÂY ☢️\n--------------------------------------------`;
+    }
+
+    if (context !== 'none') {
+      dragTargetRef.current = { lineIndex, type: context };
+
+      // Remove old placeholder if exists
+      let currentContent = editableContent;
+
+      if (dragPlaceholder) {
+        // Remove previous placeholder first
+        const before = currentContent.substring(0, dragPlaceholder.start);
+        const after = currentContent.substring(dragPlaceholder.end);
+        currentContent = before + after;
+      }
+
+      // We need to find the character index of the end of the line
+      const freshLines = currentContent.split('\n');
+      // Re-clamp lineIndex for safety
+      if (lineIndex >= freshLines.length) lineIndex = freshLines.length - 1;
+
+      // Calc index
+      let charIndex = 0;
+      for (let i = 0; i <= lineIndex; i++) {
+        charIndex += freshLines[i].length + 1; // +1 for \n
+      }
+      // charIndex is now at START of next line (or end of content)
+
+      // Insert
+      const newValue = currentContent.substring(0, charIndex - 1) + placeholderText + currentContent.substring(charIndex - 1);
+
+      // Update State
+      setDragPlaceholder({
+        start: charIndex - 1,
+        end: charIndex - 1 + placeholderText.length,
+        text: placeholderText
+      });
+
+      setEditableContent(newValue);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    // Logic to remove placeholder? 
+    // Only if leaving the TEXTAREA completely.
+    // e.relatedTarget check is needed.
+    if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return;
+
+    if (dragPlaceholder) {
+      const before = editableContent.substring(0, dragPlaceholder.start);
+      const after = editableContent.substring(dragPlaceholder.end);
+      const cleanContent = before + after;
+      setEditableContent(cleanContent);
+      setDragPlaceholder(null);
+      dragTargetRef.current = null;
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    const imageId = e.dataTransfer.getData('image/unassigned-id');
+    if (!imageId) return;
+
+    e.preventDefault();
+
+    if (dragPlaceholder) {
+      // Replace placeholder with [IMAGE:id]
+      const before = editableContent.substring(0, dragPlaceholder.start);
+      const after = editableContent.substring(dragPlaceholder.end);
+
+      // We want a clean line break usually
+      const imageTag = `\n[IMAGE:${imageId}]`;
+      const newContent = before + imageTag + after;
+
+      updateContentWithDebounce(newContent);
+      setDragPlaceholder(null);
+      dragTargetRef.current = null;
+    } else {
+      // Fallback: Drop at cursor if no placeholder logic triggered
+      const start = e.currentTarget.selectionStart;
+      const before = editableContent.substring(0, start);
+      const after = editableContent.substring(start);
+      updateContentWithDebounce(before + `\n[IMAGE:${imageId}]\n` + after);
+    }
+  };
+
   // Ref to store cursor position for restoration
   const cursorRef = React.useRef<{ start: number; end: number } | null>(null);
 
@@ -509,6 +638,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             value={editableContent}
             onChange={handleContentChange}
             onKeyDown={handleKeyDown}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             onPaste={(e) => {
               e.preventDefault();
 
