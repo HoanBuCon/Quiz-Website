@@ -13,6 +13,7 @@ import CreateClassPage from "./pages/CreateClassPage";
 import EditQuizPage from "./pages/EditQuizPage";
 import EditClassPage from "./pages/EditClassPage";
 import DocumentsPage from "./pages/DocumentsPage";
+import DocumentViewerPage from "./pages/DocumentViewerPage";
 import QuizPage from "./pages/QuizPage";
 import ResultsPage from "./pages/ResultsPage";
 import ClassViewPage from "./pages/ClassViewPage";
@@ -301,6 +302,16 @@ function App() {
                   <MaintenanceGuard>
                     <Layout>
                       <DocumentsPage />
+                    </Layout>
+                  </MaintenanceGuard>
+                }
+              />
+              <Route
+                path="/document/:id"
+                element={
+                  <MaintenanceGuard>
+                    <Layout>
+                      <DocumentViewerPage />
                     </Layout>
                   </MaintenanceGuard>
                 }
