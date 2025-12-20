@@ -2297,6 +2297,18 @@ const EditQuizPage: React.FC = () => {
     window.scrollTo({ top: docH, behavior: "smooth" });
   };
 
+  // Helper: Update preview content from current editing state (including edited questions)
+  // This allows preview to reflect changes without closing edit mode
+  const updatePreviewFromEditMap = () => {
+    const updatedQuestions = questions.map(q => {
+      // If this question is being edited, use the edited version from map
+      const editedVersion = editedQuestionsMapRef.current.get(q.id);
+      return editedVersion || q;
+    });
+    const newPreviewContent = generatePreviewContent(updatedQuestions);
+    setPreviewContent(newPreviewContent);
+  };
+
   const handleAddQuestion = () => {
     const newQuestion: QuestionWithImages = {
       // FIX: Generate SAFE alphanumeric ID to match parser expectations
@@ -2915,8 +2927,22 @@ const EditQuizPage: React.FC = () => {
                         // Use source data directly
                         handleQuestionImageUpload(source.imageData, source.imageId || id);
                       } else {
-                        // From gallery
-                        handleAssignImage(id, (data) => handleQuestionImageUpload(data, id));
+                        // From gallery - update preview without closing edit mode
+                        handleAssignImage(id, (data) => {
+                          // Build updated question data with new image SYNCHRONOUSLY
+                          const updatedQuestion = {
+                            ...editedQuestion,
+                            questionImage: data,
+                            questionImageId: id
+                          };
+                          // Update local state and map IMMEDIATELY
+                          setEditedQuestion(updatedQuestion);
+                          editedQuestionsMapRef.current.set(question.id, updatedQuestion);
+                          // Update preview to show image immediately, without closing edit mode
+                          setTimeout(() => {
+                            updatePreviewFromEditMap();
+                          }, 50);
+                        });
                       }
                     }}
                     onImageRemoved={handleRestoreToGallery}
@@ -3199,10 +3225,28 @@ const EditQuizPage: React.FC = () => {
                                   // Use source data directly
                                   handleOptionImageUpload(option, source.imageData, source.imageId || id);
                                 } else {
-                                  // From gallery
-                                  handleAssignImage(id, (data) =>
-                                    handleOptionImageUpload(option, data, id)
-                                  );
+                                  // From gallery - update preview without closing edit mode
+                                  handleAssignImage(id, (data) => {
+                                    // Build updated question data with new option image SYNCHRONOUSLY
+                                    const updatedQuestion = {
+                                      ...editedQuestion,
+                                      optionImages: {
+                                        ...editedQuestion.optionImages,
+                                        [option]: data
+                                      },
+                                      optionImageIds: {
+                                        ...editedQuestion.optionImageIds,
+                                        [option]: id
+                                      }
+                                    };
+                                    // Update local state and map IMMEDIATELY
+                                    setEditedQuestion(updatedQuestion);
+                                    editedQuestionsMapRef.current.set(question.id, updatedQuestion);
+                                    // Update preview to show image immediately, without closing edit mode
+                                    setTimeout(() => {
+                                      updatePreviewFromEditMap();
+                                    }, 50);
+                                  });
                                 }
                               }}
                               onImageRemoved={handleRestoreToGallery}
