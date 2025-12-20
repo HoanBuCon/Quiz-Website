@@ -47,6 +47,87 @@ const DocumentsPage: React.FC = () => {
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === documents.length && documents.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(documents.map(d => d.id)));
+    }
+  };
+
+  const handleBulkDownload = async () => {
+    if (selectedIds.size === 0) return;
+
+    const selectedDocs = documents.filter(d => selectedIds.has(d.id));
+
+    // Process sequentially to be nice to the browser/server
+    for (const doc of selectedDocs) {
+      await handleDownload(doc);
+      // Small delay to prevent browser blocking visible downloads
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} tài liệu đang chọn?`)) {
+      return;
+    }
+
+    try {
+      const { getToken } = await import("../utils/auth");
+      const token = getToken();
+      if (!token) return;
+
+      const { DocumentsAPI } = await import("../utils/api");
+
+      let successCount = 0;
+      const errors: string[] = [];
+
+      // Execute deletions
+      await Promise.all(Array.from(selectedIds).map(async (id) => {
+        try {
+          await DocumentsAPI.remove(id, token);
+          successCount++;
+        } catch (e) {
+          errors.push(id);
+        }
+      }));
+
+      // Update local state
+      setDocuments(prev => prev.filter(d => !selectedIds.has(d.id)));
+      setSelectedIds(new Set());
+
+      if (successCount > 0) {
+        alert(`Đã xóa thành công ${successCount} tài liệu!`);
+      }
+      if (errors.length > 0) {
+        console.error("Failed to delete some files:", errors);
+        alert(`Có ${errors.length} tài liệu không xóa được.`);
+      }
+
+    } catch (e) {
+      console.error("Bulk delete failed:", e);
+      alert("Có lỗi xảy ra khi xóa tài liệu.");
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -832,13 +913,50 @@ const DocumentsPage: React.FC = () => {
           ) : (
             // Danh sách tài liệu
             <div className="space-y-4">
+              {/* Bulk Actions Header */}
+              {/* Bulk Actions Header REMOVED - Replaced by FAB */}
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500"
+                  onClick={() => {
+                    if (selectedIds.size > 0) {
+                      toggleSelection(doc.id);
+                    }
+                  }}
+                  className={`group card p-4 sm:p-6 transition-all duration-300 border-l-4 
+                    ${selectedIds.has(doc.id)
+                      ? "bg-blue-50 dark:bg-blue-900/10 border-blue-500 ring-1 ring-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:shadow-xl hover:scale-[1.01]"
+                      : selectedIds.size > 0
+                        ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-xl hover:scale-[1.01] border-l-stone-400 dark:border-l-gray-600"
+                        : "hover:shadow-xl hover:scale-[1.01] border-l-stone-400 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500"
+                    }`}
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">
+                    {/* Selection Overlay for entire card click (optional) */}
+
                     <div className="flex items-center space-x-3 sm:space-x-4">
+                      {/* Custom Checkbox */}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelection(doc.id);
+                        }}
+                        className={`relative w-6 h-6 flex-shrink-0 cursor-pointer rounded-full border-2 flex items-center justify-center transition-all duration-200
+                          ${selectedIds.has(doc.id)
+                            ? "bg-blue-600 border-blue-600 scale-105"
+                            : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-blue-400"
+                          }
+                        `}
+                      >
+                        <svg
+                          className={`w-3.5 h-3.5 text-white transition-all duration-200 ${selectedIds.has(doc.id) ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                       <div className="flex-shrink-0">
                         {getFileIcon(doc.type)}
                       </div>
@@ -857,7 +975,10 @@ const DocumentsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2 sm:flex-shrink-0">
                       <button
-                        onClick={() => handleDownload(doc)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(doc);
+                        }}
                         className="btn-secondary text-sm flex items-center flex-1 sm:flex-initial justify-center"
                       >
                         <svg
@@ -876,7 +997,10 @@ const DocumentsPage: React.FC = () => {
                         Tải về
                       </button>
                       <button
-                        onClick={() => handleCreateClass(doc)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCreateClass(doc);
+                        }}
                         className="btn-primary text-sm flex items-center flex-1 sm:flex-initial justify-center"
                       >
                         <svg
@@ -895,7 +1019,10 @@ const DocumentsPage: React.FC = () => {
                         Tạo Quiz
                       </button>
                       <button
-                        onClick={() => handleDeleteFile(doc.id, doc.name)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteFile(doc.id, doc.name);
+                        }}
                         className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2"
                         title="Xóa tài liệu"
                       >
@@ -1364,6 +1491,76 @@ const DocumentsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+
+      {/* Floating Action Bar (FAB) for Bulk Actions */}
+      <div
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 transition-all duration-500 ease-out transform ${selectedIds.size > 0
+          ? "translate-y-0 opacity-100 scale-100"
+          : "translate-y-20 opacity-0 scale-95 pointer-events-none"
+          }`}
+      >
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 min-w-[320px] justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
+              title="Bỏ chọn tất cả"
+            >
+              <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <span className="font-semibold text-gray-900 dark:text-white text-lg">
+              {selectedIds.size}
+            </span>
+          </div>
+
+          <div className="h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+
+          <div className="flex items-center gap-2">
+
+            <button
+              onClick={handleSelectAll}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group relative overflow-hidden"
+              title={selectedIds.size === documents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+            >
+              <div className="relative z-10">
+                {selectedIds.size === documents.length ? (
+                  <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 group-hover:text-blue-500 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7.53 12L9 10.5l1.4-1.41 2.07 2.08L17.17 6.5l1.41 1.41L12.47 14zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z" />
+                  </svg>
+                )}
+              </div>
+            </button>
+
+            <button
+              onClick={handleBulkDownload}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
+              title="Tải xuống File đã chọn"
+            >
+              <svg className="w-6 h-6 group-hover:text-green-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+
+            <button
+              onClick={handleBulkDelete}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
+              title="Xóa File đã chọn"
+            >
+              <svg className="w-6 h-6 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };
