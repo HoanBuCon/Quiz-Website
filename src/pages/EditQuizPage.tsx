@@ -59,10 +59,12 @@ const ImageUpload: React.FC<{
   placeholder?: string;
   className?: string;
   onAssignFromGallery?: (imageId: string) => void;
-  onImageRemoved?: (imageData: string) => void;
+  onImageRemoved?: (imageData: string, imageId?: string) => void;
+  currentImageId?: string;
 }> = ({
   onImageUpload,
   currentImage,
+  currentImageId,
   placeholder = "Thêm ảnh",
   className = "",
   onAssignFromGallery,
@@ -148,13 +150,15 @@ const ImageUpload: React.FC<{
     };
 
     const removeImage = () => {
-      const imgToRestore = currentImage; // Capture current image before clearing
+      const imgToRestore = currentImage;
+      const idToRestore = currentImageId;
+
       onImageUpload(""); // Clear UI immediately
 
       if (imgToRestore && onImageRemoved) {
         // Use timeout to separate the restore action from the delete action
         setTimeout(() => {
-          onImageRemoved(imgToRestore);
+          onImageRemoved(imgToRestore, idToRestore);
         }, 50);
       }
     };
@@ -412,25 +416,45 @@ const EditQuizPage: React.FC = () => {
     }
   };
 
-  const handleRestoreToGallery = (imageData: string) => {
+  const handleRestoreToGallery = (imageData: string, imageId?: string) => {
     if (!imageData) return;
 
-    const newId = `restored-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Use existing ID if available
+    let idToUse = imageId;
 
-    setEditorState(prev => ({
-      ...prev,
-      pastedImagesMap: {
-        ...prev.pastedImagesMap,
-        [newId]: imageData
-      },
-      unassignedImages: [
-        ...prev.unassignedImages,
-        {
-          id: newId,
-          data: imageData
-        }
-      ]
-    }));
+    // If no ID provided, look it up in the map to reuse existing ID (prevent duplicates)
+    if (!idToUse) {
+      idToUse = findImageIdByData(imageData);
+    }
+
+    // If still no ID, generate new one
+    if (!idToUse) {
+      idToUse = `restored-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    setEditorState(prev => {
+      // Check if already exists in map or unassigned to prevent duplicates
+      const existsInMap = prev.pastedImagesMap[idToUse!];
+      const existsInUnassigned = prev.unassignedImages.some(img => img.id === idToUse);
+
+      const newMap = { ...prev.pastedImagesMap };
+      if (!existsInMap) {
+        newMap[idToUse!] = imageData;
+      }
+
+      let newUnassigned = prev.unassignedImages;
+      if (!existsInUnassigned) {
+        newUnassigned = [...prev.unassignedImages, { id: idToUse!, data: imageData }];
+      }
+
+      return {
+        ...prev,
+        pastedImagesMap: newMap,
+        unassignedImages: newUnassigned
+      };
+    });
+
+    // Immediate feedback is handled by state update above
     toast.success("Ảnh đã được đưa về kho!");
   };
 
@@ -2305,14 +2329,10 @@ const EditQuizPage: React.FC = () => {
     index: number;
     dragHandleProps?: any;
   }> = ({ question, index, dragHandleProps }) => {
-    // Buffer for images removed during this editing session.
-    // They are only restored to gallery if the user explicitly saves.
-    const [pendingRestores, setPendingRestores] = useState<string[]>([]);
+    // Buffer logic removed for immediate feedback
+    // Images are restored immediately via handleRestoreToGallery passed to ImageUpload
 
-    // Wrapper to flush restores before saving
     const saveAndFlush = (id: string, data: any) => {
-      pendingRestores.forEach((img) => handleRestoreToGallery(img));
-      setPendingRestores([]);
       handleQuestionSave(id, data);
     };
 
@@ -2707,22 +2727,38 @@ const EditQuizPage: React.FC = () => {
     };
 
     // Handle image uploads for question
-    const handleQuestionImageUpload = (imageData: string) => {
+    const handleQuestionImageUpload = (imageData: string, imageId?: string) => {
       setEditedQuestion((prev) => ({
         ...prev,
         questionImage: imageData,
+        // If specific ID passed (from gallery), use it. Else generate new if missing? 
+        // ImageUpload generates new ID if uploading file, but here we just receive data.
+        // Actually ImageUpload calls onImageUpload(data). It doesn't pass ID for new files.
+        // But for "Assign from Gallery", we pass ID.
+        questionImageId: imageId || (imageData ? `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}` : undefined)
       }));
     };
 
     // Handle image uploads for options
-    const handleOptionImageUpload = (optionText: string, imageData: string) => {
-      setEditedQuestion((prev) => ({
-        ...prev,
-        optionImages: {
-          ...prev.optionImages,
-          [optionText]: imageData,
-        },
-      }));
+    const handleOptionImageUpload = (optionText: string, imageData: string, imageId?: string) => {
+      setEditedQuestion((prev) => {
+        const newOptionImages = { ...prev.optionImages };
+        const newOptionImageIds = { ...prev.optionImageIds };
+
+        if (imageData) {
+          newOptionImages[optionText] = imageData;
+          newOptionImageIds[optionText] = imageId || `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        } else {
+          delete newOptionImages[optionText];
+          delete newOptionImageIds[optionText];
+        }
+
+        return {
+          ...prev,
+          optionImages: newOptionImages,
+          optionImageIds: newOptionImageIds
+        };
+      });
     };
 
     return (
@@ -2788,9 +2824,9 @@ const EditQuizPage: React.FC = () => {
                     placeholder="Thêm ảnh cho câu hỏi"
                     className="w-full"
                     onAssignFromGallery={(id) =>
-                      handleAssignImage(id, handleQuestionImageUpload)
+                      handleAssignImage(id, (data) => handleQuestionImageUpload(data, id))
                     }
-                    onImageRemoved={(img) => setPendingRestores((prev) => [...prev, img])}
+                    onImageRemoved={handleRestoreToGallery}
                   />
                 </div>
                 {/* Nửa phải: Paste ảnh */}
@@ -3030,11 +3066,12 @@ const EditQuizPage: React.FC = () => {
                               currentImage={
                                 editedQuestion.optionImages?.[option]
                               }
+                              currentImageId={editedQuestion.optionImageIds?.[option]}
                               placeholder="Thêm ảnh cho đáp án"
                               className="w-full"
                               onAssignFromGallery={(id) =>
                                 handleAssignImage(id, (data) =>
-                                  handleOptionImageUpload(option, data)
+                                  handleOptionImageUpload(option, data, id)
                                 )
                               }
                               onImageRemoved={handleRestoreToGallery}

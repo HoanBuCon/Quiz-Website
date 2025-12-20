@@ -25,7 +25,7 @@ export function convertToLatex(text: string, options: ConversionOptions = {}): s
     protectedText = text.replace(/\[IMAGE:[^\]]+\]/g, (match) => {
       const index = markers.length;
       markers.push(match);
-      return `__MARKER_${index}__`;
+      return `IMAGEOHMARKER${index}END`;
     });
   }
 
@@ -70,7 +70,7 @@ export function convertToLatex(text: string, options: ConversionOptions = {}): s
   // Restore markers
   if (preserveMarkers) {
     markers.forEach((marker, index) => {
-      result = result.replace(`__MARKER_${index}__`, marker);
+      result = result.replace(`IMAGEOHMARKER${index}END`, marker);
     });
   }
 
