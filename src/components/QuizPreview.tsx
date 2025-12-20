@@ -165,6 +165,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   // --- DRAG & DROP LOGIC ---
   const [dragPlaceholder, setDragPlaceholder] = React.useState<{ start: number, end: number, text: string } | null>(null);
   const dragTargetRef = React.useRef<{ lineIndex: number, type: 'question' | 'option' | 'none' } | null>(null);
+  const isDraggingOverRef = React.useRef(false);
 
   // Helper: Measure line height
   const getLineHeight = (textarea: HTMLTextAreaElement) => {
@@ -178,10 +179,26 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     // Only accept if image/unassigned-id exists
     if (!e.dataTransfer.types.includes('image/unassigned-id')) return;
 
+    isDraggingOverRef.current = true;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
 
     const textarea = e.currentTarget;
+
+    // --- AUTO SCROLL LOGIC ---
+    // Scroll when dragging near edges
+    const { scrollTop, scrollHeight, clientHeight } = textarea;
+    const { offsetY } = e.nativeEvent;
+    const scrollThreshold = 80;
+    const scrollSpeed = 20;
+
+    if (offsetY < scrollThreshold) {
+      textarea.scrollTop = Math.max(0, scrollTop - scrollSpeed);
+    } else if (offsetY > clientHeight - scrollThreshold) {
+      textarea.scrollTop = Math.min(scrollHeight - clientHeight, scrollTop + scrollSpeed);
+    }
+    // -------------------------
+
     const lh = getLineHeight(textarea);
     const paddingTop = parseInt(window.getComputedStyle(textarea).paddingTop);
     // Calc relative Y (add scrollTop)
@@ -214,17 +231,14 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
       // Remove old placeholder if exists
       let currentContent = editableContent;
-
       if (dragPlaceholder) {
-        // Remove previous placeholder first
         const before = currentContent.substring(0, dragPlaceholder.start);
         const after = currentContent.substring(dragPlaceholder.end);
         currentContent = before + after;
       }
 
-      // We need to find the character index of the end of the line
+      // Need recalculate lines/index after removal
       const freshLines = currentContent.split('\n');
-      // Re-clamp lineIndex for safety
       if (lineIndex >= freshLines.length) lineIndex = freshLines.length - 1;
 
       // Calc index
@@ -232,7 +246,6 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
       for (let i = 0; i <= lineIndex; i++) {
         charIndex += freshLines[i].length + 1; // +1 for \n
       }
-      // charIndex is now at START of next line (or end of content)
 
       // Insert
       const newValue = currentContent.substring(0, charIndex - 1) + placeholderText + currentContent.substring(charIndex - 1);
@@ -249,10 +262,10 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLTextAreaElement>) => {
-    // Logic to remove placeholder? 
     // Only if leaving the TEXTAREA completely.
-    // e.relatedTarget check is needed.
     if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return;
+
+    isDraggingOverRef.current = false;
 
     if (dragPlaceholder) {
       const before = editableContent.substring(0, dragPlaceholder.start);
@@ -265,6 +278,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   };
 
   const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    isDraggingOverRef.current = false;
+
     const imageId = e.dataTransfer.getData('image/unassigned-id');
     if (!imageId) return;
 
@@ -284,6 +299,11 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
       dragTargetRef.current = null;
     } else {
       // Fallback: Drop at cursor if no placeholder logic triggered
+      // We can't trust selectionStart during dragover usually, but let's try
+      // Or just append? 
+      // User context implies we usually have placeholder if we want specific pos.
+      // But if we dropped in 'none' context, maybe just don't insert or insert at end?
+      // Let's stick to old logic
       const start = e.currentTarget.selectionStart;
       const before = editableContent.substring(0, start);
       const after = editableContent.substring(start);
@@ -641,6 +661,22 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            onWheel={(e) => {
+              // Allow scrolling while dragging (if browser blocks it)
+              if (dragPlaceholder) {
+                // Determine if we need to force it. 
+                // Usually safe to add delta.
+                // e.currentTarget.scrollTop += e.deltaY; 
+                // Actually, let's leave it to browser default first, 
+                // but checking dragPlaceholder confirms we are in that mode.
+                // The issue is usually preventDefault in dragOver.
+                // But we need preventDefault for Drop.
+                // So... just MANUAL scroll here is practically safe if standard scroll fails.
+                // To avoid double scroll in working browsers:
+                // We can't easily know. But faster scroll is acceptable.
+                e.currentTarget.scrollTop += e.deltaY;
+              }
+            }}
             onPaste={(e) => {
               e.preventDefault();
 

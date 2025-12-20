@@ -358,9 +358,29 @@ const DocumentsPage: React.FC = () => {
         // NEW FILE: Download từ server
         const { getApiBaseUrl } = await import("../utils/api");
         const fileUrl = `${getApiBaseUrl()}/${(file as any).filePath}`;
-        link.href = fileUrl;
-        link.download = file.name;
-        link.click();
+
+        try {
+          const response = await fetch(fileUrl);
+          if (!response.ok) throw new Error("Network response was not ok");
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+
+          link.href = blobUrl;
+          link.download = file.name;
+          document.body.appendChild(link); // Append to body to ensure click works in all browsers
+          link.click();
+          document.body.removeChild(link);
+
+          // Clean up
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        } catch (fetchError) {
+          console.error("Fetch error during download:", fetchError);
+          // Fallback to direct link if fetch fails, though filename might be wrong
+          link.href = fileUrl;
+          link.download = file.name;
+          link.target = "_blank";
+          link.click();
+        }
       } else if (file.content) {
         // LEGACY FILE: Download từ content
         if (file.type === "docs") {
