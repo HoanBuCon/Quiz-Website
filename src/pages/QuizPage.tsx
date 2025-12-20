@@ -57,6 +57,9 @@ const QuizPage: React.FC = () => {
   // State đang exit (để render animation out)
   const [isExiting, setIsExiting] = useState(false);
 
+  // Ref cho minimap container để xử lý scroll
+  const minimapRef = React.useRef<HTMLDivElement>(null);
+
   // Hàm trộn mảng (Fisher-Yates shuffle)
   const shuffleArray = <T,>(array: T[]): T[] => {
     const result = [...array];
@@ -306,9 +309,22 @@ const QuizPage: React.FC = () => {
     }
   }, [quizId, quizTitle, className, questions, userAnswers, currentQuestionIndex, attemptId, uiMode, shuffleMode, selectedUiMode, revealed, elapsed, effectiveQuizId, loading, isSubmitting]);
 
-  // Reset focus khi chuyển câu hỏi
+  // Reset focus khi chuyển câu hỏi & Auto scroll minimap
   useEffect(() => {
     setFocusedOption(-1);
+
+    // Auto scroll minimap to center current question
+    if (minimapRef.current) {
+      const activeBtn = minimapRef.current.children[currentQuestionIndex] as HTMLElement;
+      if (activeBtn) {
+        const container = minimapRef.current;
+        const scrollLeft =
+          activeBtn.offsetLeft -
+          container.offsetWidth / 2 +
+          activeBtn.offsetWidth / 2;
+        container.scrollTo({ left: scrollLeft, behavior: "smooth" });
+      }
+    }
   }, [currentQuestionIndex]);
 
   // ======================
@@ -944,7 +960,7 @@ const QuizPage: React.FC = () => {
           {/* Question */}
           <div
             key={currentQuestionIndex}
-            className={`group card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 
+            className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 
               ${isExiting
                 ? slideDirection === "right"
                   ? "animate-slideOutLeft"
@@ -985,7 +1001,7 @@ const QuizPage: React.FC = () => {
                       : [...prev, currentQuestion.id]
                   );
                 }}
-                className={`text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight transition-colors w-auto md:w-fit max-w-[120px] md:max-w-none overflow-hidden text-ellipsis whitespace-nowrap min-h-[1.75rem] max-h-[1.75rem] md:min-h-[2rem] md:max-h-[2rem] flex items-center shrink-0 ${markedQuestions.includes(currentQuestion.id)
+                className={`prevent-selection text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight transition-colors w-auto md:w-fit max-w-[120px] md:max-w-none overflow-hidden text-ellipsis whitespace-nowrap min-h-[1.75rem] max-h-[1.75rem] md:min-h-[2rem] md:max-h-[2rem] flex items-center shrink-0 ${markedQuestions.includes(currentQuestion.id)
                   ? "bg-yellow-500 text-white hover:bg-yellow-600"
                   : "bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
@@ -997,7 +1013,8 @@ const QuizPage: React.FC = () => {
             </div>
 
             {/* Question text */}
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 text-selectable whitespace-pre-wrap">
+            {/* Question text */}
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 whitespace-pre-wrap">
               <MathText text={currentQuestion.question} />
             </h2>
             {/* Question image nếu có */}
@@ -1194,7 +1211,7 @@ const QuizPage: React.FC = () => {
                             // Space vẫn trigger click (mặc định của button)
                             if (e.key === 'Enter') e.preventDefault();
                           }}
-                          className={`group/answer ${base} ${computedClassName} flex flex-col items-start gap-3`}
+                          className={`allow-selection group/answer ${base} ${computedClassName} flex flex-col items-start gap-3`}
                         >
                           {/* Row 1: Icon, Tick, Content */}
                           <div className="flex w-full items-center gap-3">
@@ -1242,7 +1259,7 @@ const QuizPage: React.FC = () => {
 
                             {/* Text Content */}
                             <div className="flex-1 min-w-0">
-                              <span className="text-selectable whitespace-pre-wrap block">
+                              <span className="whitespace-pre-wrap block">
                                 <MathText text={option} />
                               </span>
                             </div>
@@ -1321,7 +1338,7 @@ const QuizPage: React.FC = () => {
                                     : "Chọn nhiều"}
                               </span>
                             </div>
-                            <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 text-selectable whitespace-pre-wrap">
+                            <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                               <MathText text={sub.question} />
                             </div>
                             {sub.type === "text" && (
@@ -1508,7 +1525,7 @@ const QuizPage: React.FC = () => {
                                         onKeyDown={(e) => {
                                           if (e.key === 'Enter') e.preventDefault();
                                         }}
-                                        className={`group/answer ${base} ${computedClassName} flex flex-col items-start gap-3`}
+                                        className={`allow-selection group/answer ${base} ${computedClassName} flex flex-col items-start gap-3`}
                                       >
                                         <div className="flex w-full items-center gap-3">
                                           <div className="flex items-center gap-2">
@@ -1555,7 +1572,7 @@ const QuizPage: React.FC = () => {
 
                                           {/* Nội dung bên phải */}
                                           <div className="flex-1 min-w-0">
-                                            <span className="text-selectable whitespace-pre-wrap block"><MathText text={opt} /></span>
+                                            <span className="whitespace-pre-wrap block"><MathText text={opt} /></span>
                                           </div>
                                         </div>
                                       </button>
@@ -1739,7 +1756,10 @@ const QuizPage: React.FC = () => {
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-1 sm:gap-2">
+            <div
+              ref={minimapRef}
+              className="flex overflow-x-auto snap-x no-scrollbar gap-2 p-4 -m-4 lg:m-0 lg:p-0 lg:pb-0 lg:grid lg:grid-cols-5 lg:overflow-visible"
+            >
               {questions.map((question, index) => (
                 <button
                   key={question.id}
@@ -1756,7 +1776,7 @@ const QuizPage: React.FC = () => {
                       setIsExiting(false);
                     }, 200);
                   }}
-                  className={`p-1 sm:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm
+                  className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center p-0 lg:p-2 rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm snap-center
                     ${index === currentQuestionIndex
                       ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
                       : uiMode === "instant" && isQuestionWrong(question)

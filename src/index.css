@@ -343,6 +343,35 @@ code {
   user-select: text !important;
 }
 
+/* New Utility: Allow selection but keep original cursor (e.g. pointer on buttons) */
+.allow-selection,
+.allow-selection * {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Force disable selection (overrides allow-selection) */
+.prevent-selection,
+.prevent-selection * {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
 /* Custom styles cho dark mode và soft light mode */
 @layer base {
   body {
