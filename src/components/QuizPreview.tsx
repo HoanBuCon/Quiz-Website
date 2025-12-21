@@ -13,6 +13,7 @@ interface QuizPreviewProps {
   content?: string;
   onUndo?: () => void;
   onRedo?: () => void;
+  onCursorQuestionChange?: (questionId: string | null) => void;
 }
 
 const QuizPreview: React.FC<QuizPreviewProps> = ({
@@ -23,7 +24,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   onPastedImages,
   content,
   onUndo,
-  onRedo
+  onRedo,
+  onCursorQuestionChange
 }) => {
   // Chuyển đổi questions thành format text để hiển thị
   // SỬ DỤNG FORMAT MỚI CỦA docsParser
@@ -460,6 +462,26 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     }
   };
 
+  // Track cursor position to determine which question is being edited
+  const handleCursorChange = () => {
+    if (!onCursorQuestionChange || !textareaRef.current) return;
+
+    const pos = textareaRef.current.selectionStart;
+    const textBeforeCursor = editableContent.substring(0, pos);
+    const lines = textBeforeCursor.split('\n');
+
+    // Find most recent "ID: xxx" line before cursor
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const match = lines[i].match(/^ID:\s*(.+)/);
+      if (match) {
+        onCursorQuestionChange(match[1].trim());
+        return;
+      }
+    }
+
+    onCursorQuestionChange(null);
+  };
+
 
 
 
@@ -661,6 +683,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            onFocus={handleCursorChange}
+            onClick={handleCursorChange}
             onWheel={(e) => {
               // Allow scrolling while dragging (if browser blocks it)
               if (dragPlaceholder) {

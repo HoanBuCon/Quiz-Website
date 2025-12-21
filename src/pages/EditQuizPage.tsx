@@ -317,6 +317,8 @@ const EditQuizPage: React.FC = () => {
     offsetTop: number;
     ts: number;
   } | null>(null);
+  // Refs for auto-scroll preview when editor cursor changes
+  const questionCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // Derived state for compatibility
   const previewContent = editorState.content;
@@ -1411,6 +1413,19 @@ const EditQuizPage: React.FC = () => {
 
     return processedQuestions;
   };
+
+  // Auto-scroll preview panel when cursor changes in editor
+  const scrollToQuestionPreview = React.useCallback((questionId: string | null) => {
+    if (!questionId) return;
+
+    const card = questionCardRefs.current.get(questionId);
+    if (!card) return;
+
+    card.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+  }, []);
 
   const handlePublish = async () => {
     try {
@@ -2910,7 +2925,7 @@ const EditQuizPage: React.FC = () => {
 
             {/* Question Image Upload + Paste from clipboard */}
             <div className="mt-3">
-              <div className="flex gap-4 items-start">
+              <div className="flex gap-4 items-center">
                 {/* Nửa trái: Click, kéo thả... */}
                 <div className="flex flex-col w-1/2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -3200,7 +3215,7 @@ const EditQuizPage: React.FC = () => {
                       </div>
                       {/* Option Image Upload + Paste from clipboard */}
                       {option.trim() && (
-                        <div className="flex gap-4 items-start">
+                        <div className="flex gap-4 items-center">
                           {/* Nửa trái: Click, kéo thả... */}
                           <div className="flex flex-col w-1/2">
                             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
@@ -4361,7 +4376,16 @@ const EditQuizPage: React.FC = () => {
     };
 
     return (
-      <div className="card p-6 mb-4 relative wrapper-node">
+      <div
+        className="card p-6 mb-4 relative wrapper-node"
+        ref={(el) => {
+          if (el) {
+            questionCardRefs.current.set(question.id, el);
+          } else {
+            questionCardRefs.current.delete(question.id);
+          }
+        }}
+      >
 
         <div className="flex justify-between items-start mb-2">
           <div className="flex items-center flex-wrap gap-y-1">
@@ -4531,7 +4555,7 @@ const EditQuizPage: React.FC = () => {
                       : "border-gray-200 dark:border-gray-600"
                       }`}
                   >
-                    <div className="flex items-baseline space-x-3">
+                    <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0 pt-[2px]">
                         <span
                           className={`font-medium text-gray-600 dark:text-gray-300 ${dragOverTarget === `option-${option}` ? "text-primary-600 dark:text-primary-400" : ""
@@ -4549,7 +4573,7 @@ const EditQuizPage: React.FC = () => {
                           )}
                       </div>
                       <div
-                        className={`flex-1 p-2 -mt-2 rounded-lg border-2 border-transparent transition-colors ${dragOverTarget === `option-${option}`
+                        className={`flex-1 p-2 rounded-lg border-2 border-transparent transition-colors ${dragOverTarget === `option-${option}`
                           ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
                           : ""
                           }`}
@@ -4995,6 +5019,7 @@ const EditQuizPage: React.FC = () => {
                       content={previewContent}
                       onUndo={undo}
                       onRedo={redo}
+                      onCursorQuestionChange={scrollToQuestionPreview}
                     />
                   </div>
                 </div>

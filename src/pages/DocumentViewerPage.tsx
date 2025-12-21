@@ -190,11 +190,11 @@ const DocumentViewerPage: React.FC = () => {
     return (
         <div className="container-fluid px-4 py-6 h-[calc(100vh-64px)] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-center justify-between mb-4 flex-shrink-0 gap-3 sm:gap-0">
-                <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-4 flex-shrink-0 gap-3 sm:gap-4">
+                <div className="flex items-center gap-4 w-full sm:flex-1 min-w-0">
                     <button
                         onClick={handleBack}
-                        className="flex items-center text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                        className="flex items-center text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors flex-shrink-0"
                     >
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -202,7 +202,7 @@ const DocumentViewerPage: React.FC = () => {
                         Quay lại
                     </button>
                     {document && (
-                        <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate max-w-xs sm:max-w-md hidden xs:block">
+                        <h1 className="text-xl font-bold text-gray-900 dark:text-white break-words flex-1 min-w-0">
                             {document.name}
                         </h1>
                     )}

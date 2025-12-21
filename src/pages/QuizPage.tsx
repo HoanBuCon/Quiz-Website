@@ -1014,7 +1014,7 @@ const QuizPage: React.FC = () => {
 
             {/* Question text */}
             {/* Question text */}
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 whitespace-pre-wrap">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 whitespace-pre-wrap break-words">
               <MathText text={currentQuestion.question} />
             </h2>
             {/* Question image nếu có */}
@@ -1259,7 +1259,7 @@ const QuizPage: React.FC = () => {
 
                             {/* Text Content */}
                             <div className="flex-1 min-w-0">
-                              <span className="whitespace-pre-wrap block">
+                              <span className="whitespace-pre-wrap break-words block">
                                 <MathText text={option} />
                               </span>
                             </div>
@@ -1338,7 +1338,7 @@ const QuizPage: React.FC = () => {
                                     : "Chọn nhiều"}
                               </span>
                             </div>
-                            <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                            <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
                               <MathText text={sub.question} />
                             </div>
                             {sub.type === "text" && (
@@ -1572,7 +1572,7 @@ const QuizPage: React.FC = () => {
 
                                           {/* Nội dung bên phải */}
                                           <div className="flex-1 min-w-0">
-                                            <span className="whitespace-pre-wrap block"><MathText text={opt} /></span>
+                                            <span className="whitespace-pre-wrap break-words block"><MathText text={opt} /></span>
                                           </div>
                                         </div>
                                       </button>

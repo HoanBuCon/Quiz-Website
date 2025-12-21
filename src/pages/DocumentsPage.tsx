@@ -954,7 +954,7 @@ const DocumentsPage: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">
                     {/* Selection Overlay for entire card click (optional) */}
 
-                    <div className="flex items-center space-x-3 sm:space-x-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4 overflow-hidden">
                       {/* Custom Checkbox */}
                       <div
                         onClick={(e) => {
