@@ -100,11 +100,34 @@ const QuizAnswerOption: React.FC<QuizAnswerOptionProps> = ({
         const { naturalWidth, naturalHeight } = img;
         const ratio = naturalWidth / naturalHeight;
 
-        // Logic updated:
-        // 1. If ratio <= 4/3 (Portrait, Square, Compact Landscape) -> Right (Row)
-        // 2. If ratio > 4/3 (Wide Landscape) -> Bottom (Col)
-
+        // Portrait/Square → always row layout (right side)
         if (ratio <= 4 / 3) {
+            setLayoutMode("row");
+            return;
+        }
+
+        // Wide landscape → check if it fits on right without collision
+        // Get button container to measure available space
+        const button = img.closest('button');
+        if (!button) {
+            // Fallback: use col layout if can't measure
+            setLayoutMode("col");
+            return;
+        }
+
+        const containerWidth = button.offsetWidth;
+
+        // Calculate rendered image width when constrained by max-h-[400px]
+        const maxHeight = 400;
+        const renderedWidth = (naturalWidth / naturalHeight) * Math.min(maxHeight, naturalHeight);
+
+        // In row layout, image gets max-w-[50%] on desktop (sm breakpoint)
+        // Check if 50% of container is enough for this image
+        const maxImageWidth = containerWidth * 0.5;
+
+        // If image fits in 50% with some margin (0.9 factor), use row layout
+        // Otherwise use col layout to avoid collision
+        if (renderedWidth <= maxImageWidth * 0.9) {
             setLayoutMode("row");
         } else {
             setLayoutMode("col");
@@ -183,7 +206,7 @@ const QuizAnswerOption: React.FC<QuizAnswerOptionProps> = ({
                     alt={`Option ${String.fromCharCode(65 + index)}`}
                     onLoad={handleImageLoad}
                     className={`${layoutMode === "row"
-                        ? "w-auto max-h-[400px] min-w-[69px] sm:h-auto sm:max-w-[50%] sm:ml-auto"
+                        ? "w-auto max-h-[400px] min-w-[69px] min-h-[69px] sm:h-auto sm:max-w-[50%] sm:ml-auto sm:self-center"
                         : "w-auto max-h-[400px] min-h-[69px] self-center sm:self-end"
                         } rounded-lg border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in`}
                     onClick={(e) => {
