@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import QuizPreview from "../components/QuizPreview";
 import MathText from "../components/MathText";
 import UnassignedImagesGallery from "../components/UnassignedImagesGallery";
+import ImageModal from "../components/ImageModal";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { ImagesAPI } from "../utils/api";
 import {
@@ -66,6 +67,7 @@ const ImageUpload: React.FC<{
     questionId: string;
     optionText?: string;
   };
+  onImageClick?: (imageUrl: string) => void;
 }> = ({
   onImageUpload,
   currentImage,
@@ -75,6 +77,7 @@ const ImageUpload: React.FC<{
   onAssignFromGallery,
   onImageRemoved,
   sourceInfo,
+  onImageClick,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -212,7 +215,9 @@ const ImageUpload: React.FC<{
               alt="Uploaded"
               draggable={!!sourceInfo}
               onDragStart={handleImageDragStart}
-              className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move"
+              onClick={() => onImageClick?.(currentImage)}
+              className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
+              title="Click để xem ảnh | Kéo để di chuyển"
             />
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
@@ -294,6 +299,21 @@ const EditQuizPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // Image Modal State
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [imageModalUrl, setImageModalUrl] = useState("");
+
+  // Image Modal Handlers
+  const handleImageClick = (imageUrl: string) => {
+    setImageModalUrl(imageUrl);
+    setImageModalOpen(true);
+  };
+
+  const handleImageModalClose = () => {
+    setImageModalOpen(false);
+    setImageModalUrl("");
+  };
+
   // Undo/Redo State Manager
   const {
     state: editorState,
@@ -319,6 +339,10 @@ const EditQuizPage: React.FC = () => {
   } | null>(null);
   // Refs for auto-scroll preview when editor cursor changes
   const questionCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Track dragged image for drop-anywhere feature
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const draggedImageRef = useRef<any>(null);
 
   // Derived state for compatibility
   const previewContent = editorState.content;
@@ -1459,6 +1483,35 @@ const EditQuizPage: React.FC = () => {
       block: 'center'
     });
   }, []);
+
+  // Page-level drop handler for drop-anywhere feature
+  const handlePageDragOver = (e: React.DragEvent) => {
+    if (!isDraggingImage) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handlePageDrop = (e: React.DragEvent) => {
+    if (!isDraggingImage || !draggedImageRef.current) return;
+
+    // Check if dropped OUTSIDE question cards
+    const target = e.target as HTMLElement;
+    const isInsideQuestionCard = target.closest('.wrapper-node');
+
+    if (!isInsideQuestionCard) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleImageRestoreFromDrag(draggedImageRef.current);
+    }
+
+    setIsDraggingImage(false);
+    draggedImageRef.current = null;
+  };
+
+  const handleImageDragEnd = () => {
+    setIsDraggingImage(false);
+    draggedImageRef.current = null;
+  };
 
   const handlePublish = async () => {
     try {
@@ -4551,22 +4604,49 @@ const EditQuizPage: React.FC = () => {
         {/* Question Image Display */}
         {question.questionImage && (
           <div className="mb-4">
-            <img
-              src={question.questionImage}
-              alt="Question"
-              className="max-w-md max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('image/assigned-source', JSON.stringify({
-                  imageData: question.questionImage,
-                  imageId: question.questionImageId,
-                  sourceType: 'question',
-                  questionId: question.id
-                }));
-                e.dataTransfer.effectAllowed = 'move';
-              }}
-              title="Kéo để di chuyển ảnh sang vị trí khác"
-            />
+            <div className="relative group inline-block">
+              <img
+                src={question.questionImage}
+                alt="Question"
+                className="max-w-md max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
+                draggable
+                onDragStart={(e) => {
+                  const source = {
+                    imageData: question.questionImage,
+                    imageId: question.questionImageId,
+                    sourceType: 'question' as const,
+                    questionId: question.id
+                  };
+                  e.dataTransfer.setData('image/assigned-source', JSON.stringify(source));
+                  e.dataTransfer.effectAllowed = 'move';
+                  setIsDraggingImage(true);
+                  draggedImageRef.current = source;
+                }}
+                onDragEnd={handleImageDragEnd}
+                title="Kéo để di chuyển ảnh sang vị trí khác"
+              />
+              {/* Quick Remove Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (question.questionImageId) {
+                    const imageTag = `[IMAGE:${question.questionImageId}]`;
+                    setPreviewContent(prev => prev.replace(new RegExp(imageTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''));
+                  }
+                  handleRestoreToGallery(question.questionImage!, question.questionImageId);
+                  handleQuestionSave(question.id, {
+                    questionImage: undefined,
+                    questionImageId: undefined
+                  });
+                }}
+                className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-lg z-10"
+                title="Gỡ ảnh về kho"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
 
@@ -4621,23 +4701,55 @@ const EditQuizPage: React.FC = () => {
                         {/* Option Image Display */}
                         {question.optionImages?.[option] && (
                           <div className="mt-2">
-                            <img
-                              src={question.optionImages[option]}
-                              alt={`Option ${String.fromCharCode(65 + index)}`}
-                              className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
-                              draggable
-                              onDragStart={(e) => {
-                                e.dataTransfer.setData('image/assigned-source', JSON.stringify({
-                                  imageData: question.optionImages![option],
-                                  imageId: question.optionImageIds?.[option],
-                                  sourceType: 'option',
-                                  questionId: question.id,
-                                  optionText: option
-                                }));
-                                e.dataTransfer.effectAllowed = 'move';
-                              }}
-                              title="Kéo để di chuyển ảnh sang vị trí khác"
-                            />
+                            <div className="relative group inline-block">
+                              <img
+                                src={question.optionImages[option]}
+                                alt={`Option ${String.fromCharCode(65 + index)}`}
+                                className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
+                                draggable
+                                onDragStart={(e) => {
+                                  const source = {
+                                    imageData: question.optionImages![option],
+                                    imageId: question.optionImageIds?.[option],
+                                    sourceType: 'option' as const,
+                                    questionId: question.id,
+                                    optionText: option
+                                  };
+                                  e.dataTransfer.setData('image/assigned-source', JSON.stringify(source));
+                                  e.dataTransfer.effectAllowed = 'move';
+                                  setIsDraggingImage(true);
+                                  draggedImageRef.current = source;
+                                }}
+                                onDragEnd={handleImageDragEnd}
+                                title="Kéo để di chuyển ảnh sang vị trí khác"
+                              />
+                              {/* Quick Remove Button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const imageId = question.optionImageIds?.[option];
+                                  if (imageId) {
+                                    const imageTag = `[IMAGE:${imageId}]`;
+                                    setPreviewContent(prev => prev.replace(new RegExp(imageTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''));
+                                  }
+                                  handleRestoreToGallery(question.optionImages![option], imageId);
+                                  const newOptionImages = { ...question.optionImages };
+                                  const newOptionImageIds = { ...question.optionImageIds };
+                                  delete newOptionImages[option];
+                                  delete newOptionImageIds[option];
+                                  handleQuestionSave(question.id, {
+                                    optionImages: newOptionImages,
+                                    optionImageIds: newOptionImageIds
+                                  });
+                                }}
+                                className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-lg z-10"
+                                title="Gỡ ảnh về kho"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         )}
                         {dragOverTarget === `option-${option}` && (
@@ -4812,7 +4924,11 @@ const EditQuizPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div
+      className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      onDragOver={handlePageDragOver}
+      onDrop={handlePageDrop}
+    >
       <div className="flex-1 min-w-0">
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -4935,6 +5051,7 @@ const EditQuizPage: React.FC = () => {
                     images={unassignedImages}
                     onImageRemove={(imageId) => handleImageDeleted(imageId)}
                     onImageRestore={handleImageRestoreFromDrag}
+                    onImageClick={handleImageClick}
                     className="card !p-0 shadow-xl max-h-96 lg:max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden custom-thin-scrollbar"
                   />
                 </div>
@@ -5223,6 +5340,13 @@ const EditQuizPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      <ImageModal
+        imageUrl={imageModalUrl}
+        isOpen={imageModalOpen}
+        onClose={handleImageModalClose}
+      />
     </div>
   );
 };

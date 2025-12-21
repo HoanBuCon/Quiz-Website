@@ -11,6 +11,7 @@ interface UnassignedImagesGalleryProps {
         questionId: string;
         optionText?: string;
     }) => void;
+    onImageClick?: (imageUrl: string) => void;
     className?: string;
 }
 
@@ -22,6 +23,7 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
     images,
     onImageRemove,
     onImageRestore,
+    onImageClick,
     className = '',
 }) => {
     const [isDraggingOver, setIsDraggingOver] = React.useState(false);
@@ -102,7 +104,8 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
                             <img
                                 src={image.data}
                                 alt={`Unassigned ${index + 1}`}
-                                className="w-full h-auto max-h-64 object-contain"
+                                className={`w-full h-auto max-h-64 object-contain ${onImageClick ? 'cursor-pointer' : ''}`}
+                                onClick={() => onImageClick?.(image.data)}
                             />
 
                             {/* Drag Indicator */}
