@@ -118,10 +118,10 @@ const QuizAnswerOption: React.FC<QuizAnswerOptionProps> = ({
             onKeyDown={(e) => {
                 if (e.key === "Enter") e.preventDefault();
             }}
-            className={`allow-selection group/answer ${base} ${computedClassName} flex ${layoutMode === "row" ? "flex-row items-start" : "flex-col"
+            className={`allow-selection group/answer ${base} ${computedClassName} flex ${layoutMode === "row" ? "flex-col sm:flex-row sm:flex-wrap sm:items-start" : "flex-col"
                 } gap-3`}
         >
-            <div className={`flex flex-col gap-3 ${layoutMode === "row" ? "flex-1" : "w-full text-left"}`}>
+            <div className={`flex flex-col gap-3 ${layoutMode === "row" ? "w-full sm:flex-1 sm:min-w-[55%]" : "w-full text-left"}`}>
                 {/* Row 1: Icon, Tick, Content */}
                 <div className="flex w-full items-center gap-3">
                     <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ const QuizAnswerOption: React.FC<QuizAnswerOptionProps> = ({
                     alt={`Option ${String.fromCharCode(65 + index)}`}
                     onLoad={handleImageLoad}
                     className={`${layoutMode === "row"
-                        ? "h-auto max-h-[400px] w-auto max-w-[50%]"
+                        ? "w-auto max-h-[400px] sm:h-auto sm:max-w-[50%] sm:ml-auto"
                         : "w-auto max-h-[400px] self-end"
                         } rounded-lg border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in`}
                     onClick={(e) => {
