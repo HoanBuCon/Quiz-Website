@@ -4647,7 +4647,7 @@ const EditQuizPage: React.FC = () => {
                     questionId: question.id
                   };
                   e.dataTransfer.setData('image/assigned-source', JSON.stringify(source));
-                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.effectAllowed = 'copyMove';
                   setIsDraggingImage(true);
                   draggedImageRef.current = source;
                 }}
@@ -4745,7 +4745,7 @@ const EditQuizPage: React.FC = () => {
                                     optionText: option
                                   };
                                   e.dataTransfer.setData('image/assigned-source', JSON.stringify(source));
-                                  e.dataTransfer.effectAllowed = 'move';
+                                  e.dataTransfer.effectAllowed = 'copyMove';
                                   setIsDraggingImage(true);
                                   draggedImageRef.current = source;
                                 }}

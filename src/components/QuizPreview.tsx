@@ -178,8 +178,14 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
-    // Only accept if image/unassigned-id exists
-    if (!e.dataTransfer.types.includes('image/unassigned-id')) return;
+    console.log("QuizPreview handleDragOver types:", e.dataTransfer.types);
+
+    // Accept if image/unassigned-id OR image/assigned-source exists
+    if (!e.dataTransfer.types.includes('image/unassigned-id') &&
+      !e.dataTransfer.types.includes('image/assigned-source')) {
+      console.log("QuizPreview handleDragOver REJECTED");
+      return;
+    }
 
     isDraggingOverRef.current = true;
     e.preventDefault();
@@ -282,38 +288,67 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
   const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
     isDraggingOverRef.current = false;
+    console.log("QuizPreview handleDrop triggered");
 
-    const imageId = e.dataTransfer.getData('image/unassigned-id');
+    let imageId = e.dataTransfer.getData('image/unassigned-id');
+
+    // If not unassigned, check for assigned source
+    if (!imageId) {
+      const assignedSourceStr = e.dataTransfer.getData('image/assigned-source');
+      if (assignedSourceStr) {
+        try {
+          const source = JSON.parse(assignedSourceStr);
+          if (source.imageId) {
+            imageId = source.imageId;
+          }
+        } catch (err) {
+          console.error("Failed to parse assigned source", err);
+        }
+      }
+    }
+
     if (!imageId) return;
 
     e.preventDefault();
     e.stopPropagation();
 
+    // Prepare the image tag
+    const imageTag = `[IMAGE:${imageId}]`;
+    const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapeRegExp(imageTag), 'g');
+
     if (dragPlaceholder) {
       // Replace placeholder with [IMAGE:id]
-      const before = editableContent.substring(0, dragPlaceholder.start);
-      const after = editableContent.substring(dragPlaceholder.end);
+      let before = editableContent.substring(0, dragPlaceholder.start);
+      let after = editableContent.substring(dragPlaceholder.end);
+
+      // Remove existing occurrences of this image tag (Move logic)
+      // Note: Removing tag changes indices relative to original string, 
+      // but 'before' and 'after' are already extracted segments.
+      // We just clean them up.
+      before = before.replace(regex, '');
+      after = after.replace(regex, '');
 
       // We want a clean line break usually
-      const imageTag = `\n[IMAGE:${imageId}]`;
-      const newContent = before + imageTag + after;
+      const newContent = before + `\n${imageTag}` + after;
 
       updateContentWithDebounce(newContent);
       setDragPlaceholder(null);
       dragTargetRef.current = null;
     } else {
       // Fallback: Drop at cursor if no placeholder logic triggered
-      // We can't trust selectionStart during dragover usually, but let's try
-      // Or just append? 
-      // User context implies we usually have placeholder if we want specific pos.
-      // But if we dropped in 'none' context, maybe just don't insert or insert at end?
-      // Let's stick to old logic
       const start = e.currentTarget.selectionStart;
-      const before = editableContent.substring(0, start);
-      const after = editableContent.substring(start);
-      updateContentWithDebounce(before + `\n[IMAGE:${imageId}]\n` + after);
+      let before = editableContent.substring(0, start);
+      let after = editableContent.substring(start);
+
+      // Remove existing tags
+      before = before.replace(regex, '');
+      after = after.replace(regex, '');
+
+      updateContentWithDebounce(before + `\n${imageTag}\n` + after);
     }
   };
+
 
   // Ref to store cursor position for restoration
   const cursorRef = React.useRef<{ start: number; end: number } | null>(null);
