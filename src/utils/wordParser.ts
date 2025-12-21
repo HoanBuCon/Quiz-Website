@@ -40,8 +40,11 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
           
           mathNodes.forEach((node) => {
             try {
-              const latex = convertOMMLToLatex(node);
+              let latex = convertOMMLToLatex(node);
               if (latex) {
+                // Convert to linear format to match copy-paste style
+                latex = convertToLinearFormat(latex);
+                
                 // Create a new Text Run <w:r><w:t>...</w:t></w:r>
                 const run = doc.createElement("w:r");
                 const textNode = doc.createElement("w:t");
@@ -223,37 +226,223 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
   }
 }
 
+/**
+ * Convert LaTeX format to linear notation (matching copy-paste style)
+ * - \sqrt{...} → \sqrt(...)
+ * - Fix brace positioning: {x_i} → x_{i}, {s^2} → s^{2}
+ * - Remove unnecessary outer braces
+ * - \left( and \right) → ( and )
+ */
+function convertToLinearFormat(latex: string): string {
+  let result = latex;
+  
+  // Step 1: Fix brace positioning for subscripts/superscripts
+  // Pattern: {variable_subscript} or {variable^superscript} → variable_{subscript} or variable^{superscript}
+  // Example: {x_i} → x_{i}, {s^2} → s^{2}
+  result = result.replace(/\{([a-zA-Z])_([a-zA-Z0-9]+)\}/g, '$1_{$2}');
+  result = result.replace(/\{([a-zA-Z])\^([a-zA-Z0-9]+)\}/g, '$1^{$2}');
+  
+  // Step 2: Remove unnecessary outer braces around simple expressions
+  // {( ... )} → ( ... ) but be careful not to break LaTeX commands
+  result = result.replace(/\{(\([^{}]*\))\}/g, '$1');
+  
+  // Step 3: Convert \sqrt{...} to \sqrt(...)
+  let attempts = 0;
+  const maxAttempts = 100;
+  
+  while (result.includes('\\sqrt{') && attempts < maxAttempts) {
+    attempts++;
+    const sqrtIndex = result.indexOf('\\sqrt{');
+    if (sqrtIndex === -1) break;
+    
+    // Replace opening
+    result = result.substring(0, sqrtIndex) + '\\sqrt(' + result.substring(sqrtIndex + 6);
+    
+    // Find matching closing brace
+    let braceCount = 1;
+    let i = sqrtIndex + 6; // after '\sqrt('
+    while (i < result.length && braceCount > 0) {
+      if (result[i] === '\\' && i + 1 < result.length) {
+        i += 2; // skip escaped char
+        continue;
+      }
+      if (result[i] === '{') braceCount++;
+      else if (result[i] === '}') {
+        braceCount--;
+        if (braceCount === 0) {
+          // Replace this } with )
+          result = result.substring(0, i) + ')' + result.substring(i + 1);
+          break;
+        }
+      }
+      i++;
+    }
+    if (braceCount !== 0) break; // Unmatched, stop trying
+  }
+  
+  // Step 4: Simplify subscripts and superscripts with single simple content
+  // _{n} → _n, ^{2} → ^2 (only for simple single char/digit)
+  result = result.replace(/_\{([a-zA-Z0-9])\}/g, '_$1');
+  result = result.replace(/\^\{([a-zA-Z0-9])\}/g, '^$1');
+  
+  // Step 5: \left( and \right) → just ( and )
+  result = result.replace(/\\left\s*\(/g, '(');
+  result = result.replace(/\\right\s*\)/g, ')');
+  
+  // Step 6: Normalize spaces (remove trailing, normalize multiple to single)
+  result = result.replace(/\s+/g, ' ').trim();
+  
+  return result;
+}
+
+/**
+ * Helper function to protect LaTeX expressions before text cleaning
+ * Extracts LaTeX content and replaces it with placeholders
+ */
+function protectLatexExpressions(text: string): { text: string; protectedExpressions: string[] } {
+  const protectedExpressions: string[] = [];
+  let result = text;
+
+  // Protect display math $$...$$
+  result = result.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
+    const index = protectedExpressions.length;
+    protectedExpressions.push(match.replace(/\n/g, ' ').replace(/\s+/g, ' '));
+    return `__LATEX_PROTECTED_${index}__`;
+  });
+
+  // Protect inline math $...$
+  result = result.replace(/\$[^$\n]+\$/g, (match) => {
+    const index = protectedExpressions.length;
+    protectedExpressions.push(match.replace(/\n/g, ' ').replace(/\s+/g, ' '));
+    return `__LATEX_PROTECTED_${index}__`;
+  });
+
+  // Protect LaTeX commands with braces (ANY level of nesting supported)
+  // Use a proper brace-matching algorithm instead of regex
+  // IMPORTANT: Capture ALL consecutive brace arguments (e.g., \frac{num}{den})
+  let i = 0;
+  while (i < result.length) {
+    // Look for backslash followed by letters
+    if (result[i] === '\\' && i + 1 < result.length && /[a-zA-Z]/.test(result[i + 1])) {
+      // Extract command name
+      let cmdStart = i;
+      i++; // skip backslash
+      while (i < result.length && /[a-zA-Z]/.test(result[i])) {
+        i++;
+      }
+      
+      // Skip whitespace after command
+      while (i < result.length && /\s/.test(result[i])) {
+        i++;
+      }
+      
+      // Check if followed by opening brace - and capture ALL consecutive brace groups
+      let hasAnyBraces = false;
+      let cmdEnd = i;
+      
+      while (i < result.length && result[i] === '{') {
+        hasAnyBraces = true;
+        // Match braces properly
+        let braceCount = 1;
+        i++; // skip opening brace
+        
+        while (i < result.length && braceCount > 0) {
+          if (result[i] === '\\' && i + 1 < result.length) {
+            // Skip escaped characters
+            i += 2;
+          } else if (result[i] === '{') {
+            braceCount++;
+            i++;
+          } else if (result[i] === '}') {
+            braceCount--;
+            i++;
+          } else {
+            i++;
+          }
+        }
+        
+        // If braces didn't match, break
+        if (braceCount !== 0) {
+          break;
+        }
+        
+        // Update end position
+        cmdEnd = i;
+        
+        // Skip whitespace before next potential brace group
+        while (i < result.length && /\s/.test(result[i])) {
+          i++;
+        }
+      }
+      
+      // If we found at least one brace group, protect the entire command
+      if (hasAnyBraces) {
+        const latexCmd = result.substring(cmdStart, cmdEnd);
+        const index = protectedExpressions.length;
+        // Remove internal newlines and normalize spaces
+        protectedExpressions.push(latexCmd.replace(/\n/g, ' ').replace(/\s+/g, ' '));
+        
+        // Replace in result
+        result = result.substring(0, cmdStart) + `__LATEX_PROTECTED_${index}__` + result.substring(cmdEnd);
+        // Reset i to continue after the replacement
+        i = cmdStart + `__LATEX_PROTECTED_${index}__`.length;
+      }
+    } else {
+      i++;
+    }
+  }
+
+  return { text: result, protectedExpressions };
+}
+
+/**
+ * Helper function to restore protected LaTeX expressions
+ */
+function restoreLatexExpressions(text: string, protectedExpressions: string[]): string {
+  let result = text;
+  protectedExpressions.forEach((latex, index) => {
+    result = result.replace(`__LATEX_PROTECTED_${index}__`, latex);
+  });
+  return result;
+}
+
 function cleanWordText(text: string): string {
   // Loại bỏ các ký tự đặc biệt và định dạng không cần thiết
   // GIỐNG HỆT VỚI docsParser.ts để đảm bảo format nhất quán
-  return (
-    text
-      // Normalize line endings to \n (handle Windows CRLF and Mac CR)
-      .replace(/\r\n/g, "\n")
-      .replace(/\r/g, "\n")
-      // Thay thế smart quotes (quotes cong) bằng quotes thẳng
-      .replace(/[\u201C\u201D]/g, '"')
-      .replace(/[\u2018\u2019]/g, "'")
-      // Thay thế Vertical Tab (\x0B) bằng newline để tránh dính dòng
-      // eslint-disable-next-line no-control-regex
-      .replace(/\x0B/g, "\n")
-      // Loại bỏ các ký tự điều khiển khác (giữ lại \n, \t)
-      // eslint-disable-next-line no-control-regex
-      .replace(/[\x00-\x08\x0C\x0E-\x1F\x7F]/g, "")
-      // Thay thế các ký tự bullet points bằng format chuẩn (giữ nguyên * nếu có)
-      // Chỉ loại bỏ bullet points không phải *, giữ lại * để đánh dấu đáp án đúng
-      .replace(/^[•·▪▫◦‣⁃]\s*/gm, "")
-      // Relaxed number removal to avoid stripping math lines starting with numbers
-      .replace(/^[1-9]\.\s*/gm, "")
-      // Chuẩn hóa khoảng trắng trong dòng (không loại bỏ dòng trống)
-      .replace(/[ \t]+/g, " ")
-      // Loại bỏ khoảng trắng ở đầu và cuối dòng
-      .split("\n")
-      .map((line) => line.trim())
-      .join("\n")
-      // Loại bỏ các dòng trống ở đầu và cuối file
-      .trim()
-  );
+  
+  // STEP 1: Protect LaTeX expressions before processing
+  const { text: protectedText, protectedExpressions: latexExpressions } = protectLatexExpressions(text);
+  
+  // STEP 2: Apply all cleaning operations on protected text
+  const cleaned = protectedText
+    // Normalize line endings to \n (handle Windows CRLF and Mac CR)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    // Thay thế smart quotes (quotes cong) bằng quotes thẳng
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    // Thay thế Vertical Tab (\x0B) bằng newline để tránh dính dòng
+    // eslint-disable-next-line no-control-regex
+    .replace(/\x0B/g, "\n")
+    // Loại bỏ các ký tự điều khiển khác (giữ lại \n, \t)
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\x00-\x08\x0C\x0E-\x1F\x7F]/g, "")
+    // Thay thế các ký tự bullet points bằng format chuẩn (giữ nguyên * nếu có)
+    // Chỉ loại bỏ bullet points không phải *, giữ lại * để đánh dấu đáp án đúng
+    .replace(/^[•·▪▫◦‣⁃]\s*/gm, "")
+    // Relaxed number removal to avoid stripping math lines starting with numbers
+    .replace(/^[1-9]\.\s*/gm, "")
+    // Chuẩn hóa khoảng trắng trong dòng (không loại bỏ dòng trống)
+    .replace(/[ \t]+/g, " ")
+    // Loại bỏ khoảng trắng ở đầu và cuối dòng
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n")
+    // Loại bỏ các dòng trống ở đầu và cuối file
+    .trim();
+  
+  // STEP 3: Restore LaTeX expressions (now without internal newlines)
+  return restoreLatexExpressions(cleaned, latexExpressions);
 }
 
 export function validateWordFormat(content: string): {

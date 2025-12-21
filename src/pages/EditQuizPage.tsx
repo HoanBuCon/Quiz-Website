@@ -4755,8 +4755,8 @@ const EditQuizPage: React.FC = () => {
                         onDrop={(e) => handleDrop(e, `option-${option}`)}
                         title="Kéo thả ảnh vào đây để đặt ảnh cho đáp án"
                       >
-                        <span className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
-                          <MathText text={option} />
+                        <span className="text-gray-900 dark:text-gray-100">
+                          <MathText text={option.replace(/\n/g, ' ')} />
                         </span>
                         {/* Option Image Display */}
                         {question.optionImages?.[option] && (
