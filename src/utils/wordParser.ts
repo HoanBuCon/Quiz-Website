@@ -14,13 +14,38 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
 
     // --- Pre-process DOCX to handle Math Equations (OMML) ---
     try {
-      const zip = new JSZip();
-      await zip.loadAsync(arrayBuffer);
+      // --------------------------------------------------------
+      // MAMMOTH PREPROCESSING: Convert Office Math (OMML) to LaTeX BEFORE mammoth
+      // Mammoth doesn't handle math equations well, so we convert them to text first
+      const zip = await JSZip.loadAsync(arrayBuffer);
+      const docXml = await zip.file("word/document.xml")?.async("string");
 
-      // Read document.xml
-      const docXmlEntry = zip.file("word/document.xml");
-      if (docXmlEntry) {
-        const docXml = await docXmlEntry.async("string");
+      if (docXml) {
+        // DEBUG: Search for x-bar in raw XML before any processing
+        const xBarPatterns = [
+          'x̄',           // Precomposed x-bar (U+0078 U+0304 or U+0304)
+          'x\u0304',     // x + combining overline
+          /x[^>]*?combining/i,  // x with combining markup
+          /<w:t[^>]*>x<\/w:t>/  // Plain x in text nodes (to compare)
+        ];
+        
+        console.log('🔍 Searching for x-bar in RAW Word XML:');
+        xBarPatterns.forEach((pattern, idx) => {
+          const matches = typeof pattern === 'string' 
+            ? docXml.includes(pattern)
+            : pattern.test(docXml);
+          if (matches) {
+            console.log(`  ✅ Pattern ${idx} FOUND: ${pattern}`);
+            // Show context
+            if (typeof pattern === 'string') {
+              const index = docXml.indexOf(pattern);
+              if (index !== -1) {
+                console.log(`     Context: ...${docXml.substring(index - 20, index + 50)}...`);
+              }
+            }
+          }
+        });
+
         const parser = new DOMParser();
         const doc = parser.parseFromString(docXml, "application/xml");
 
@@ -42,8 +67,11 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
             try {
               let latex = convertOMMLToLatex(node);
               if (latex) {
+                console.log(`📐 OMML → LaTeX: "${latex.substring(0, 80)}"`);
+                
                 // Convert to linear format to match copy-paste style
                 latex = convertToLinearFormat(latex);
+                console.log(`   → Linear: "${latex.substring(0, 80)}"`);
                 
                 // Create a new Text Run <w:r><w:t>...</w:t></w:r>
                 const run = doc.createElement("w:r");
@@ -63,7 +91,42 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
             }
           });
         }
-
+        
+        // After all processing, convert Unicode combining characters globally
+        // This catches x̄ that are outside of <m:oMath> elements
+        const body = doc.querySelector("w\\:body");
+        if (body) {
+          // Process all text nodes
+          const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+          const textNodesToUpdate: { node: Text; newValue: string }[] = [];
+          
+          let currentNode = walker.nextNode();
+          while (currentNode) {
+            const textContent = currentNode.textContent || "";
+            // Convert Unicode combining overline to LaTeX
+            const converted = textContent.replace(/([a-zA-Z])\u0304/g, '\\overline{$1\\vphantom{b}}');
+            if (converted !== textContent) {
+              textNodesToUpdate.push({ node: currentNode as Text, newValue: converted });
+            }
+            currentNode = walker.nextNode();
+          }
+          
+          // Apply updates
+          textNodesToUpdate.forEach(({ node, newValue }) => {
+            node.textContent = newValue;
+          });
+          
+          if (textNodesToUpdate.length > 0) {
+            modified = true;
+            console.log(`🔧 Converted ${textNodesToUpdate.length} Unicode combining characters to LaTeX`);
+            textNodesToUpdate.forEach((update, idx) => {
+              if (idx < 3) { // Log first 3 for debugging
+                console.log(`  [${idx}]: "${update.node.textContent?.substring(0, 50)}" → "${update.newValue.substring(0, 50)}"`);
+              }
+            });
+          }
+        }
+        
         if (modified) {
            // Serialize back content
            const serializer = new XMLSerializer();
@@ -206,7 +269,25 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
     }
 
     // Làm sạch text để phù hợp với format của docsParser
-    const cleanedText = cleanWordText(plainText);
+    let cleanedText = cleanWordText(plainText);
+    
+    // CRITICAL: Apply processMathInput to match copy-paste behavior
+    // This converts x̄ → \overline{x\vphantom{b}} and other math notation
+    // Import at top of file
+    const { processMathInput } = await import('./mathConverter');
+    const lines = cleanedText.split('\n');
+    const processedLines = lines.map(line => processMathInput(line));
+    cleanedText = processedLines.join('\n');
+    
+    // DEBUG: Log sample text to find x-bar
+    const sampleLines = cleanedText.split('\n').slice(0, 30);
+    const linesWithOverline = sampleLines.filter(l => l.includes('overline'));
+    if (linesWithOverline.length > 0) {
+      console.log('✅ Found \\overline after processMathInput:');
+      linesWithOverline.slice(0, 3).forEach((line, idx) => {
+        console.log(`  [${idx}]: ${line.substring(0, 80)}`);
+      });
+    }
 
     console.log(`✓ Extracted ${extractedImages.length} images from Word document`);
 
@@ -227,6 +308,23 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
 }
 
 /**
+ * Convert Unicode combining characters to LaTeX notation
+ * Common in Word documents where math symbols are stored as Unicode
+ */
+function convertUnicodeToLatex(text: string): string {
+  let result = text;
+  
+  // x̄ (combining overline U+0304) → \overline{x\vphantom{b}}
+  // Pattern: any letter + combining overline
+  result = result.replace(/([a-zA-Z])\u0304/g, '\\overline{$1\\vphantom{b}}');
+  
+  // ȳ, s̄, etc - similar pattern for any variable
+  // The regex above handles all cases
+  
+  return result;
+}
+
+/**
  * Convert LaTeX format to linear notation (matching copy-paste style)
  * - \sqrt{...} → \sqrt(...)
  * - Fix brace positioning: {x_i} → x_{i}, {s^2} → s^{2}
@@ -236,17 +334,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
 function convertToLinearFormat(latex: string): string {
   let result = latex;
   
-  // Step 1: Fix brace positioning for subscripts/superscripts
-  // Pattern: {variable_subscript} or {variable^superscript} → variable_{subscript} or variable^{superscript}
-  // Example: {x_i} → x_{i}, {s^2} → s^{2}
-  result = result.replace(/\{([a-zA-Z])_([a-zA-Z0-9]+)\}/g, '$1_{$2}');
-  result = result.replace(/\{([a-zA-Z])\^([a-zA-Z0-9]+)\}/g, '$1^{$2}');
-  
-  // Step 2: Remove unnecessary outer braces around simple expressions
-  // {( ... )} → ( ... ) but be careful not to break LaTeX commands
-  result = result.replace(/\{(\([^{}]*\))\}/g, '$1');
-  
-  // Step 3: Convert \sqrt{...} to \sqrt(...)
+  // Convert \sqrt{...} to \sqrt(...)
   let attempts = 0;
   const maxAttempts = 100;
   
@@ -280,16 +368,18 @@ function convertToLinearFormat(latex: string): string {
     if (braceCount !== 0) break; // Unmatched, stop trying
   }
   
-  // Step 4: Simplify subscripts and superscripts with single simple content
-  // _{n} → _n, ^{2} → ^2 (only for simple single char/digit)
-  result = result.replace(/_\{([a-zA-Z0-9])\}/g, '_$1');
-  result = result.replace(/\^\{([a-zA-Z0-9])\}/g, '^$1');
+  // Simplify single-letter/digit subscripts and superscripts
+  // ^{n} → ^n, _{i} → _i (but keep _{i=1}, _{max}, etc.)
+  // Simplify single-letter/digit subscripts and superscripts
+  // REMOVED: User prefers strict LaTeX format (e.g., s^{2})
+  // result = result.replace(/_\{([a-zA-Z0-9])\}/g, '_$1');
+  // result = result.replace(/\^\{([a-zA-Z0-9])\}/g, '^$1');
   
-  // Step 5: \left( and \right) → just ( and )
+  // \left( and \right) → just ( and )
   result = result.replace(/\\left\s*\(/g, '(');
   result = result.replace(/\\right\s*\)/g, ')');
   
-  // Step 6: Normalize spaces (remove trailing, normalize multiple to single)
+  // Remove extra spaces around math operators but preserve single spaces
   result = result.replace(/\s+/g, ' ').trim();
   
   return result;
@@ -540,24 +630,78 @@ function convertOMMLToLatex(node: Node): string {
       }
       return `\\sqrt{${convertOMMLToLatex(base!)}}`;
       
+    // Bar (Overline) - e.g., x̄
+    case "bar":
+      const barE = findChild(element, "e");
+      const barContent = convertOMMLToLatex(barE!);
+      // Add \vphantom{b} to match copy-paste format
+      return `\\overline{${barContent}\\vphantom{b}}`;    
+
+    // Accent (e.g. Overline built with Accent)
+    case "acc":
+      const accE = findChild(element, "e");
+      if (!accE) return ""; 
+
+      const content = convertOMMLToLatex(accE);
+      const accPr = findChild(element, "accPr");
+      
+      if (accPr) {
+          const chr = findChild(accPr, "chr");
+          const val = chr?.getAttribute("m:val");
+          
+          // Overline
+          if (val === "̅" || val === "¯" || val === "\u0305" || val === "\u00AF") {
+              return `\\overline{${content}\\vphantom{b}}`;
+          } 
+          // Hat
+          else if (val === "̂" || val === "\u0302") { 
+               return `\\hat{${content}}`;
+          } 
+          // Check/Caron
+          else if (val === "̌" || val === "\u030C") {
+               return `\\check{${content}}`;
+          }
+          // Tilde
+          else if (val === "̃" || val === "\u0303") { 
+               return `\\tilde{${content}}`;
+          } 
+          // Vector (Arrow)
+          else if (val === "⃗" || val === "\u20D7") { 
+               return `\\vec{${content}}`;
+          }
+          // Dot
+          else if (val === "̇" || val === "\u0307") { 
+               return `\\dot{${content}}`;
+          }
+          // Double Dot
+          else if (val === "̈" || val === "\u0308") { 
+               return `\\ddot{${content}}`;
+          }
+      }
+      
+      // Fallback: just return inner content (or we could assume overline for stats, but that's risky)
+      // Given the user specifically asked for x-bar support in Word, and we handled it above,
+      // this fallback covers cases where accent property is missing or unrecognized.
+      return content;    
+      
     // Superscript
     case "sSup":
       const supE = findChild(element, "e");
       const sup = findChild(element, "sup");
-      return `{${convertOMMLToLatex(supE!)}^{${convertOMMLToLatex(sup!)}}}`;
+      return `${convertOMMLToLatex(supE!)}^{${convertOMMLToLatex(sup!)}}`;
       
     // Subscript
     case "sSub":
       const subE = findChild(element, "e");
       const sub = findChild(element, "sub");
-      return `{${convertOMMLToLatex(subE!)}_{${convertOMMLToLatex(sub!)}}}`;
+      return `${convertOMMLToLatex(subE!)}_{${convertOMMLToLatex(sub!)}}`;
       
     // SubSup
     case "sSubSup":
       const subSupE = findChild(element, "e");
       const subS = findChild(element, "sub");
       const supS = findChild(element, "sup");
-      return `{${convertOMMLToLatex(subSupE!)}_{${convertOMMLToLatex(subS!)}}^{${convertOMMLToLatex(supS!)}}}`;
+      return `${convertOMMLToLatex(subSupE!)}_{${convertOMMLToLatex(subS!)}}^{${convertOMMLToLatex(supS!)}}`;
       
     // N-ary (Sum, Integral, etc.)
     case "nary":
@@ -639,7 +783,10 @@ function convertOMMLToLatex(node: Node): string {
        }
        // Text Node
        if (node.nodeType === 3) {
-           return node.textContent || "";
+           let textContent = node.textContent || "";
+           // Convert Unicode combining characters inline
+           textContent = textContent.replace(/([a-zA-Z])\u0304/g, '\\overline{$1\\vphantom{b}}');
+           return textContent;
        }
        return "";
   }

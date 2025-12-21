@@ -297,14 +297,13 @@ export function parseDocsContent(
     }
 
     if (optionMatches.length > 0) {
+      // Extract text for each matched option
       for (let i = 0; i < optionMatches.length; i++) {
-        const start = optionMatches[i].index + optionMatches[i].length;
-        const end =
-          i + 1 < optionMatches.length
-            ? optionMatches[i + 1].index
-            : line.length;
-
-        const content = line.substring(start, end).trim();
+        const m = optionMatches[i];
+        const nextMatch = optionMatches[i + 1];
+        const endIndex = nextMatch ? nextMatch.index : line.length;
+        // Clean newlines from option text to prevent LaTeX breaking
+        const content = line.substring(m.index + m.length, endIndex).trim().replace(/\n/g, ' ');
 
         if (content.length > 0) {
           currentOptions.push(content);

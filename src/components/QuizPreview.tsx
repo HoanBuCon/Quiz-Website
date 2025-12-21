@@ -138,7 +138,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             const isCorrect = Array.isArray(q.correctAnswers) && q.correctAnswers.includes(option);
             const prefix = isCorrect ? '*' : '';
             const letter = String.fromCharCode(65 + optIndex);
-            content += `${prefix}${letter}. ${option}\n`;
+            // Clean newlines from option text to prevent LaTeX breaking
+            const cleanOption = option.replace(/\n/g, ' ');
+            content += `${prefix}${letter}. ${cleanOption}\n`;
 
             // Handle option images
             // We prioritize IDs if available
@@ -596,7 +598,10 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
       } else if (trimmedLine.match(/^\*?[A-Z]\./)) {
         // Bắt đầu một option mới
         const isCorrect = trimmedLine.startsWith('*');
-        const optionText = trimmedLine.replace(/^\*?[A-Z]\.\s*/, '');
+        let optionText = trimmedLine.replace(/^\*?[A-Z]\.\s*/, '');
+
+        // Clean newlines from option text to prevent LaTeX breaking
+        optionText = optionText.replace(/\n/g, ' ');
 
         currentOptions.push(optionText);
         if (isCorrect) {
@@ -634,18 +639,13 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
           } else if (currentSection === 'option') {
             if (currentOptions.length > 0) {
               // Append vào option cuối cùng
-              // Update cả trong currentCorrectAnswers nếu nó là đáp án đúng?
-              // Rất KHÓ vì currentCorrectAnswers lưu string value.
-              // Cách tốt nhất: Sửa trực tiếp trong currentOptions, sau đó CẬP NHẬT lại currentCorrectAnswers
-              // bằng cách check lại logic (nhưng ta đã push vào correctAnswers lúc tạo option rồi).
-
-              // Fix: Ta cần track index của option đang edit.
               const lastOptIdx = currentOptions.length - 1;
               const oldVal = currentOptions[lastOptIdx];
-              const newVal = oldVal + '\n' + trimmedLine;
+              // Clean newlines when appending to prevent LaTeX breaking
+              const newVal = oldVal + ' ' + trimmedLine;
               currentOptions[lastOptIdx] = newVal;
 
-              // Nếu option này là correct, ta cũng phải update trong correctAnswers
+              // Nếu option này là correct, ta cũng phải update trong currentCorrectAnswers
               // Vì correctAnswers là mảng string values (không phải index), nên ta phải tìm và update.
               // Tuy nhiên, nếu có 2 option nội dung giống hệt nhau (ít gặp), sẽ bug.
               // Nhưng text editor flow thường tuyến tính.
