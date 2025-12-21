@@ -68,7 +68,7 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
     const handleDragStart = (e: React.DragEvent, image: ExtractedImage) => {
         // Store image ID in drag event
         e.dataTransfer.setData('image/unassigned-id', image.id);
-        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.effectAllowed = 'copyMove';
     };
 
     return (

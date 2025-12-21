@@ -163,6 +163,17 @@ const ImageUpload: React.FC<{
 
     const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
+      event.stopPropagation(); // Important: Stop event from bubbling to parent handlers
+
+      // Determine if we are dragging a valid image source (internal or external)
+      const hasAssignedSource = event.dataTransfer.types.includes('image/assigned-source');
+      const hasUnassignedId = event.dataTransfer.types.includes('image/unassigned-id');
+
+      if (hasAssignedSource || hasUnassignedId) {
+        event.dataTransfer.dropEffect = 'move';
+      } else {
+        event.dataTransfer.dropEffect = 'copy';
+      }
     };
 
     const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
@@ -207,8 +218,8 @@ const ImageUpload: React.FC<{
       };
 
       e.dataTransfer.setData('image/assigned-source', JSON.stringify(dragData));
-      // Enforce 'move' to ensure source cleanup works reliably
-      e.dataTransfer.effectAllowed = 'move';
+      // Allow both copy and move to be flexible with drop targets
+      e.dataTransfer.effectAllowed = 'copyMove';
 
       // NEW: Notify parent for page-level drop handling
       onDragStateChange?.(true, dragData);
@@ -231,7 +242,11 @@ const ImageUpload: React.FC<{
     return (
       <div className={className}>
         {currentImage ? (
-          <div className="relative group">
+          <div
+            className="relative group"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          >
             <img
               src={currentImage}
               alt="Uploaded"
@@ -257,7 +272,7 @@ const ImageUpload: React.FC<{
               }}
               className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:opacity-90 transition-opacity"
               style={{ cursor: sourceInfo ? 'grab' : 'pointer' }}
-              title="Click để xem ảnh | Kéo để di chuyển"
+              title="Click để xem ảnh | Kéo để di chuyển | Kéo ảnh khác vào để thay thế"
               tabIndex={0}
             />
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
