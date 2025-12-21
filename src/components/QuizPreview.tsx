@@ -178,12 +178,12 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
-    console.log("QuizPreview handleDragOver types:", e.dataTransfer.types);
+    // console.log("QuizPreview handleDragOver types:", e.dataTransfer.types);
 
     // Accept if image/unassigned-id OR image/assigned-source exists
     if (!e.dataTransfer.types.includes('image/unassigned-id') &&
       !e.dataTransfer.types.includes('image/assigned-source')) {
-      console.log("QuizPreview handleDragOver REJECTED");
+      // console.log("QuizPreview handleDragOver REJECTED");
       return;
     }
 
