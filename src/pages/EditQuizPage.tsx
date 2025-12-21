@@ -465,20 +465,20 @@ const EditQuizPage: React.FC = () => {
     // Use existing ID if available
     let idToUse = imageId;
 
-    // If no ID provided, look it up in the map to reuse existing ID (prevent duplicates)
+    // If no ID provided, try to find existing or generate new
     if (!idToUse) {
-      idToUse = findImageIdByData(imageData);
+      // First check if this exact data already exists in the map
+      idToUse = findImageIdByData(imageData, editorState.pastedImagesMap);
+      // If still not found, generate new ID
+      if (!idToUse) {
+        idToUse = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      }
     }
 
-    // If still no ID, generate new one
-    if (!idToUse) {
-      idToUse = `restored-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    }
-
-    setEditorState(prev => {
-      // Check if already exists in map or unassigned to prevent duplicates
-      const existsInMap = prev.pastedImagesMap[idToUse!];
-      const existsInUnassigned = prev.unassignedImages.some(img => img.id === idToUse);
+    setEditorState((prev) => {
+      // Check if image already exists in unassigned list or map
+      const existsInUnassigned = prev.unassignedImages.some((img) => img.id === idToUse);
+      const existsInMap = idToUse! in prev.pastedImagesMap;
 
       const newMap = { ...prev.pastedImagesMap };
       if (!existsInMap) {
@@ -501,6 +501,30 @@ const EditQuizPage: React.FC = () => {
     toast.success("Ảnh đã được đưa về kho!");
   };
 
+  // Handler for dragging images from questions/answers back to gallery
+  const handleImageRestoreFromDrag = (source: {
+    imageData: string;
+    imageId?: string;
+    sourceType: 'question' | 'option';
+    questionId: string;
+    optionText?: string;
+  }) => {
+    console.log('Restoring image from drag:', source);
+
+    // CRITICAL: Remove image tag from preview content FIRST
+    // This prevents handlePreviewEdit from restoring the image
+    if (source.imageId) {
+      const imageTag = `[IMAGE:${source.imageId}]`;
+      setPreviewContent(prev => prev.replace(new RegExp(imageTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''));
+    }
+
+    // Then remove from question/option
+    handleRemoveImageFromSource(source);
+
+    // Add back to gallery
+    handleRestoreToGallery(source.imageData, source.imageId);
+  };
+
   // Helper function to remove image from its source location when moving between questions/answers
   const handleRemoveImageFromSource = (source: {
     imageData: string;
@@ -509,8 +533,14 @@ const EditQuizPage: React.FC = () => {
     questionId: string;
     optionText?: string;
   }) => {
+    console.log('handleRemoveImageFromSource called with:', source);
+
     // Find the source question and remove the image
     setQuestions(prev => {
+      console.log('Current questions count:', prev.length);
+      const foundQuestion = prev.find(q => q.id === source.questionId);
+      console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
+
       return prev.map(q => {
         if (q.id !== source.questionId) return q;
 
@@ -518,10 +548,12 @@ const EditQuizPage: React.FC = () => {
 
         if (source.sourceType === 'question') {
           // Remove question image
+          console.log('Removing question image from question:', q.id);
           updated.questionImage = undefined;
           updated.questionImageId = undefined;
         } else if (source.sourceType === 'option' && source.optionText) {
           // Remove option image
+          console.log('Removing option image:', source.optionText, 'from question:', q.id);
           const newOptionImages = { ...updated.optionImages };
           const newOptionImageIds = { ...updated.optionImageIds };
           delete newOptionImages[source.optionText];
@@ -530,6 +562,7 @@ const EditQuizPage: React.FC = () => {
           updated.optionImageIds = newOptionImageIds;
         }
 
+        console.log('Updated question:', updated.id, updated.questionImage ? 'still has image' : 'image removed');
         return updated;
       });
     });
@@ -4901,6 +4934,7 @@ const EditQuizPage: React.FC = () => {
                   <UnassignedImagesGallery
                     images={unassignedImages}
                     onImageRemove={(imageId) => handleImageDeleted(imageId)}
+                    onImageRestore={handleImageRestoreFromDrag}
                     className="card !p-0 shadow-xl max-h-96 lg:max-h-[calc(100vh-2rem)] overflow-y-auto overflow-x-hidden custom-thin-scrollbar"
                   />
                 </div>

@@ -3,8 +3,14 @@ import { ExtractedImage } from '../types';
 
 interface UnassignedImagesGalleryProps {
     images: ExtractedImage[];
-    onImageSelect?: (image: ExtractedImage) => void;
-    onImageRemove?: (imageId: string) => void;
+    onImageRemove: (imageId: string) => void;
+    onImageRestore?: (source: {
+        imageData: string;
+        imageId?: string;
+        sourceType: 'question' | 'option';
+        questionId: string;
+        optionText?: string;
+    }) => void;
     className?: string;
 }
 
@@ -14,10 +20,45 @@ interface UnassignedImagesGalleryProps {
  */
 const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
     images,
-    onImageSelect,
     onImageRemove,
+    onImageRestore,
     className = '',
 }) => {
+    const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+
+    const handleDragOver = (e: React.DragEvent) => {
+        // Only accept assigned images (from questions/answers)
+        const hasAssignedSource = e.dataTransfer.types.includes('image/assigned-source');
+        if (!hasAssignedSource) return;
+
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setIsDraggingOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        // Only reset if leaving the gallery completely
+        if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) {
+            setIsDraggingOver(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingOver(false);
+
+        const assignedSource = e.dataTransfer.getData('image/assigned-source');
+        if (!assignedSource || !onImageRestore) return;
+
+        try {
+            const source = JSON.parse(assignedSource);
+            onImageRestore(source);
+        } catch (error) {
+            console.error('Failed to parse image source:', error);
+        }
+    };
+
     if (!images || images.length === 0) {
         return null;  // Hide gallery if no unassigned images
     }
@@ -29,7 +70,13 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
     };
 
     return (
-        <div className={`unassigned-images-gallery ${className}`}>
+        <div
+            className={`unassigned-images-gallery ${className} ${isDraggingOver ? 'ring-4 ring-purple-500 ring-opacity-50 bg-purple-50 dark:bg-purple-900/20' : ''
+                }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
             <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 z-10">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
