@@ -60,7 +60,7 @@ const ImageUpload: React.FC<{
   placeholder?: string;
   className?: string;
   onAssignFromGallery?: (imageId: string, source?: any) => void;
-  onImageRemoved?: (imageData: string, imageId?: string) => void;
+  onImageRemoved?: (imageData: string, imageId?: string, sourceInfo?: any) => void;
   currentImageId?: string;
   sourceInfo?: {
     sourceType: 'question' | 'option';
@@ -200,7 +200,7 @@ const ImageUpload: React.FC<{
       if (imgToRestore && onImageRemoved) {
         // Use timeout to separate the restore action from the delete action
         setTimeout(() => {
-          onImageRemoved(imgToRestore, idToRestore);
+          onImageRemoved(imgToRestore, idToRestore, sourceInfo);
         }, 50);
       }
     };
@@ -387,6 +387,7 @@ const EditQuizPage: React.FC = () => {
   // Lưu trữ edited state của từng câu hỏi để tránh mất dữ liệu khi scroll/remount
   // eslint-disable-next-line
   const editedQuestionsMapRef = useRef<Map<string, QuestionWithImages>>(new Map());
+  const handleQuestionSaveRef = useRef<((id: string, q: any) => void) | null>(null);
   // Lưu lại thông tin vị trí phần tử để giữ nguyên viewport sau các thao tác chỉnh sửa
   const scrollAnchorRef = useRef<{
     id: string;
@@ -539,7 +540,39 @@ const EditQuizPage: React.FC = () => {
     }
   };
 
-  const handleRestoreToGallery = (imageData: string, imageId?: string) => {
+  const handleRestoreToGallery = (imageData: string, imageId?: string, sourceInfo?: any) => {
+    // NEW: Auto-save if dragging from currently edited question
+    if (sourceInfo && isEditing && sourceInfo.questionId === isEditing) {
+      if (handleQuestionSaveRef.current) {
+        const currentQ = editedQuestionsMapRef.current.get(sourceInfo.questionId);
+        if (currentQ) {
+          const updatedQ = { ...currentQ };
+
+          // Remove image logic
+          if (sourceInfo.sourceType === 'question') {
+            updatedQ.questionImage = undefined;
+            updatedQ.questionImageId = undefined;
+          } else if (sourceInfo.sourceType === 'option' && sourceInfo.optionText) {
+            if (updatedQ.optionImages) {
+              const newOptionImages = { ...updatedQ.optionImages };
+              delete newOptionImages[sourceInfo.optionText];
+              updatedQ.optionImages = newOptionImages;
+            }
+            if (updatedQ.optionImageIds) {
+              const newOptionIds = { ...updatedQ.optionImageIds };
+              delete newOptionIds[sourceInfo.optionText];
+              updatedQ.optionImageIds = newOptionIds;
+            }
+          }
+
+          handleQuestionSaveRef.current(sourceInfo.questionId, updatedQ);
+          // Toast handled by handleQuestionSave or we can add one
+          toast.success("Đã lưu và đưa ảnh về kho!");
+          return;
+        }
+      }
+    }
+
     if (!imageData) return;
 
     // Use existing ID if available
@@ -555,8 +588,9 @@ const EditQuizPage: React.FC = () => {
       }
     }
 
+    // 1. Atomic Global History Update (Content + Gallery)
     setEditorState((prev) => {
-      // Check if image already exists in unassigned list or map
+      // A. Add to Gallery Logic
       const existsInUnassigned = prev.unassignedImages.some((img) => img.id === idToUse);
       const existsInMap = idToUse! in prev.pastedImagesMap;
 
@@ -570,12 +604,85 @@ const EditQuizPage: React.FC = () => {
         newUnassigned = [...prev.unassignedImages, { id: idToUse!, data: imageData }];
       }
 
+      // B. Remove from Content Logic (If source provided)
+      let newContent = prev.content;
+      if (sourceInfo && idToUse) {
+        // Create regex to remove the specific image tag [IMAGE:id]
+        // Escaping for regex: [ and ] need escaping.
+        const regex = new RegExp(`\\[IMAGE:${idToUse.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
+
+        // Remove the tag. 
+        // Note: We might leave extra newlines, but that is acceptable for markdown-like parser.
+        newContent = newContent.replace(regex, '');
+      }
+
       return {
         ...prev,
+        content: newContent,
         pastedImagesMap: newMap,
         unassignedImages: newUnassigned
       };
     });
+
+    // 2. Visual Update (Questions State) - NO HISTORY UPDATE
+    // Only needed if we are removing from a source (Question/Option)
+    if (sourceInfo && sourceInfo.questionId) {
+      setQuestions(prevQuestions => {
+        return prevQuestions.map(q => {
+          if (q.id === sourceInfo.questionId) {
+            const newQ = { ...q };
+
+            // Sync with Edit Map if exists (for QuestionEditor)
+            const cachedEditState = editedQuestionsMapRef.current.get(q.id);
+            let cachedUpdated = cachedEditState ? { ...cachedEditState } : null;
+
+            // Case 1: Question Image
+            if (sourceInfo.sourceType === 'question') {
+              newQ.questionImage = undefined;
+              newQ.questionImageId = undefined;
+
+              if (cachedUpdated) {
+                cachedUpdated.questionImage = undefined;
+                cachedUpdated.questionImageId = undefined;
+              }
+            }
+            // Case 2: Option Image
+            else if (sourceInfo.sourceType === 'option' && sourceInfo.optionText) {
+              if (newQ.optionImages) {
+                const newOptionImages = { ...newQ.optionImages };
+                delete newOptionImages[sourceInfo.optionText];
+                newQ.optionImages = newOptionImages;
+              }
+              if (newQ.optionImageIds) {
+                const newOptionImageIds = { ...newQ.optionImageIds };
+                delete newOptionImageIds[sourceInfo.optionText];
+                newQ.optionImageIds = newOptionImageIds;
+              }
+
+              if (cachedUpdated) {
+                if (cachedUpdated.optionImages) {
+                  const cachedOptionImages = { ...cachedUpdated.optionImages };
+                  delete cachedOptionImages[sourceInfo.optionText];
+                  cachedUpdated.optionImages = cachedOptionImages;
+                }
+                if (cachedUpdated.optionImageIds) {
+                  const cachedOptionImageIds = { ...cachedUpdated.optionImageIds };
+                  delete cachedOptionImageIds[sourceInfo.optionText];
+                  cachedUpdated.optionImageIds = cachedOptionImageIds;
+                }
+              }
+            }
+
+            // Update Map
+            if (cachedUpdated) {
+              editedQuestionsMapRef.current.set(q.id, cachedUpdated);
+            }
+            return newQ;
+          }
+          return q;
+        });
+      });
+    }
 
     // Immediate feedback is handled by state update above
     toast.success("Ảnh đã được đưa về kho!");
@@ -589,20 +696,8 @@ const EditQuizPage: React.FC = () => {
     questionId: string;
     optionText?: string;
   }) => {
-    console.log('Restoring image from drag:', source);
-
-    // CRITICAL: Remove image tag from preview content FIRST
-    // This prevents handlePreviewEdit from restoring the image
-    if (source.imageId) {
-      const imageTag = `[IMAGE:${source.imageId}]`;
-      setPreviewContent(prev => prev.replace(new RegExp(imageTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''));
-    }
-
-    // Then remove from question/option
-    handleRemoveImageFromSource(source);
-
-    // Add back to gallery
-    handleRestoreToGallery(source.imageData, source.imageId);
+    // Just delegate to the atomic handler
+    handleRestoreToGallery(source.imageData, source.imageId, source);
   };
 
   // Helper function to remove image from its source location when moving between questions/answers
@@ -2321,6 +2416,10 @@ const EditQuizPage: React.FC = () => {
     });
   };
 
+  useEffect(() => {
+    handleQuestionSaveRef.current = handleQuestionSave;
+  }, [handleQuestionSave]);
+
   // Hàm tạo nội dung preview từ questions
   // TẠO CONTENT THEO ĐÚNG FORMAT CỦA docsParser
   const generatePreviewContent = (questionsArray: QuestionWithImages[], overrideMap?: Record<string, string>) => {
@@ -3214,21 +3313,16 @@ const EditQuizPage: React.FC = () => {
                         // Use source data directly
                         handleQuestionImageUpload(source.imageData, source.imageId || id);
                       } else {
-                        // From gallery - update preview without closing edit mode
+                        // From gallery - auto-save and close edit mode
                         handleAssignImage(id, (data) => {
-                          // Build updated question data with new image SYNCHRONOUSLY
+                          // Build updated question data with new image
                           const updatedQuestion = {
                             ...editedQuestion,
                             questionImage: data,
                             questionImageId: id
                           };
-                          // Update local state and map IMMEDIATELY
-                          setEditedQuestion(updatedQuestion);
-                          editedQuestionsMapRef.current.set(question.id, updatedQuestion);
-                          // Update preview to show image immediately, without closing edit mode
-                          setTimeout(() => {
-                            updatePreviewFromEditMap();
-                          }, 50);
+                          // Save and close editor
+                          saveAndFlush(question.id, updatedQuestion);
                         });
                       }
                     }}
@@ -3523,9 +3617,9 @@ const EditQuizPage: React.FC = () => {
                                   // Use source data directly
                                   handleOptionImageUpload(option, source.imageData, source.imageId || id);
                                 } else {
-                                  // From gallery - update preview without closing edit mode
+                                  // From gallery - auto-save and close edit mode
                                   handleAssignImage(id, (data) => {
-                                    // Build updated question data with new option image SYNCHRONOUSLY
+                                    // Build updated question data with new option image
                                     const updatedQuestion = {
                                       ...editedQuestion,
                                       optionImages: {
@@ -3537,13 +3631,8 @@ const EditQuizPage: React.FC = () => {
                                         [option]: id
                                       }
                                     };
-                                    // Update local state and map IMMEDIATELY
-                                    setEditedQuestion(updatedQuestion);
-                                    editedQuestionsMapRef.current.set(question.id, updatedQuestion);
-                                    // Update preview to show image immediately, without closing edit mode
-                                    setTimeout(() => {
-                                      updatePreviewFromEditMap();
-                                    }, 50);
+                                    // Save and close editor
+                                    saveAndFlush(question.id, updatedQuestion);
                                   });
                                 }
                               }}

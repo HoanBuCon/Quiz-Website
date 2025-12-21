@@ -184,7 +184,7 @@ const QuizAnswerOption: React.FC<QuizAnswerOptionProps> = ({
                     onLoad={handleImageLoad}
                     className={`${layoutMode === "row"
                         ? "w-auto max-h-[400px] sm:h-auto sm:max-w-[50%] sm:ml-auto"
-                        : "w-auto max-h-[400px] self-end"
+                        : "w-auto max-h-[400px] min-h-[69px] self-center sm:self-end"
                         } rounded-lg border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in`}
                     onClick={(e) => {
                         e.stopPropagation();

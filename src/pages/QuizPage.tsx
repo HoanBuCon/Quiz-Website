@@ -62,6 +62,9 @@ const QuizPage: React.FC = () => {
   // State xem ảnh fullscreen
   const [viewingImage, setViewingImage] = useState<string | null>(null);
 
+  // State để theo dõi layout của ảnh câu hỏi (portrait hoặc landscape)
+  const [questionImageLayout, setQuestionImageLayout] = useState<"portrait" | "landscape">("portrait");
+
   // Ref cho minimap container để xử lý scroll
   const minimapRef = React.useRef<HTMLDivElement>(null);
 
@@ -1031,7 +1034,19 @@ const QuizPage: React.FC = () => {
                   <img
                     src={currentQuestion.questionImage}
                     alt="Question"
-                    className="w-auto h-auto max-w-full max-h-[400px] rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in mx-auto"
+                    onLoad={(e) => {
+                      const img = e.currentTarget;
+                      const { naturalWidth, naturalHeight } = img;
+                      const ratio = naturalWidth / naturalHeight;
+
+                      // If ratio > 4/3, it's a wide landscape image
+                      if (ratio > 4 / 3) {
+                        setQuestionImageLayout("landscape");
+                      } else {
+                        setQuestionImageLayout("portrait");
+                      }
+                    }}
+                    className={`w-auto h-auto max-w-full max-h-[400px] ${questionImageLayout === "landscape" ? "min-h-[100px]" : ""} rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in mx-auto`}
                     onClick={() => setViewingImage(currentQuestion.questionImage!)}
                   />
                 </div>
