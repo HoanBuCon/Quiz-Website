@@ -71,6 +71,12 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
                 
                 // Convert to linear format to match copy-paste style
                 latex = convertToLinearFormat(latex);
+                
+                // FINAL FIX: Force remove ALL spaces before } to fix {n } → {n}
+                // This is the last line of defense against Word XML whitespace
+                latex = latex.replace(/\s+}/g, '}');
+                latex = latex.replace(/{\s+/g, '{');
+                
                 console.log(`   → Linear: "${latex.substring(0, 80)}"`);
                 
                 // Create a new Text Run <w:r><w:t>...</w:t></w:r>
@@ -78,7 +84,8 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
                 const textNode = doc.createElement("w:t");
                 // Preserve whitespace
                 textNode.setAttribute("xml:space", "preserve");
-                textNode.textContent = ` ${latex} `; // Add padding spaces
+                // FIX: Remove padding spaces to avoid extra space before closing braces
+                textNode.textContent = latex;
                 
                 run.appendChild(textNode);
                 
@@ -382,6 +389,11 @@ function convertToLinearFormat(latex: string): string {
   // Remove extra spaces around math operators but preserve single spaces
   result = result.replace(/\s+/g, ' ').trim();
   
+  // FIX: Remove spaces inside braces to fix {n } → {n} and { n-1 } → {n-1}
+  // This handles trailing spaces before } and leading spaces after {
+  result = result.replace(/\{\s+/g, '{');  // Remove space after {
+  result = result.replace(/\s+\}/g, '}');  // Remove space before }
+  
   return result;
 }
 
@@ -470,7 +482,10 @@ function protectLatexExpressions(text: string): { text: string; protectedExpress
         const latexCmd = result.substring(cmdStart, cmdEnd);
         const index = protectedExpressions.length;
         // Remove internal newlines and normalize spaces
-        protectedExpressions.push(latexCmd.replace(/\n/g, ' ').replace(/\s+/g, ' '));
+        // FIX: Also trim spaces before closing braces to avoid "n }" -> "n}"
+        let normalizedLatex = latexCmd.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+        normalizedLatex = normalizedLatex.replace(/\s+}/g, '}'); // Remove space before }
+        protectedExpressions.push(normalizedLatex);
         
         // Replace in result
         result = result.substring(0, cmdStart) + `__LATEX_PROTECTED_${index}__` + result.substring(cmdEnd);
@@ -774,7 +789,8 @@ function convertOMMLToLatex(node: Node): string {
        return getChildrenText(element);
        
     case "t": // m:t
-       return element.textContent || "";
+       // FIX: Trim to remove trailing/leading whitespace from Word XML
+       return (element.textContent || "").trim();
        
     default:
        // Fallback: traverse children
@@ -783,7 +799,8 @@ function convertOMMLToLatex(node: Node): string {
        }
        // Text Node
        if (node.nodeType === 3) {
-           let textContent = node.textContent || "";
+           // FIX: Trim to remove trailing/leading whitespace from Word XML
+           let textContent = (node.textContent || "").trim();
            // Convert Unicode combining characters inline
            textContent = textContent.replace(/([a-zA-Z])\u0304/g, '\\overline{$1\\vphantom{b}}');
            return textContent;

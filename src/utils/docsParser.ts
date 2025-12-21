@@ -142,6 +142,11 @@ export function parseDocsContent(
     .replace(/([^\n])\s*(result:|group:|{ |^{|}$| }|}$)/gm, '$1\n$2')
     // Remove image placeholder tags
     .replace(/<hình ảnh>/g, "");
+  
+  // FIX: Normalize LaTeX braces - remove whitespace/newlines inside braces
+  // This fixes {n } → {n} and {n\n} → {n}
+  normalizedContent = normalizedContent.replace(/\{\s+/g, '{');
+  normalizedContent = normalizedContent.replace(/\s+\}/g, '}');
 
   const questions: ParsedQuestion[] = [];
   const lines = normalizedContent

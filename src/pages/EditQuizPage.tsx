@@ -867,6 +867,11 @@ const EditQuizPage: React.FC = () => {
       // Remove image placeholder tags
       .replace(/<hình ảnh>/g, "");
 
+    // FIX: Normalize LaTeX braces - remove whitespace/newlines inside braces
+    // This fixes {n } → {n} and {n\n} → {n} after image drop
+    normalizedContent = normalizedContent.replace(/\{\s+/g, '{');
+    normalizedContent = normalizedContent.replace(/\s+\}/g, '}');
+
     const lines = normalizedContent
       .split("\n")
       .map((line) => line.trim())
