@@ -967,3 +967,26 @@ code {
     left: 0.75rem !important;
   } */
 }
+
+/* Premium Editor Focus Effect */
+@layer components {
+  .editor-focus-ring {
+    @apply transition-all duration-300 ease-out outline-none;
+  }
+
+  .editor-focus-ring:focus,
+  .editor-focus-ring:focus-within {
+    @apply border-orange-500 dark:border-sky-400;
+    box-shadow: 
+      0 0 0 2px rgba(249, 115, 22, 0.1),
+      0 8px 40px rgba(249, 115, 22, 0.15); /* Soft wide fade */
+  }
+
+  .dark .editor-focus-ring:focus,
+  .dark .editor-focus-ring:focus-within {
+    box-shadow: 
+      0 0 0 2px rgba(56, 189, 248, 0.2), /* Tight inner glow */
+      0 0 20px rgba(56, 189, 248, 0.15), /* Mid glow */
+      0 0 60px rgba(56, 189, 248, 0.1); /* Far outer fade */
+  }
+}

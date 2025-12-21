@@ -920,7 +920,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                 insertText(processed);
               }
             }}
-            className="w-full h-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white font-mono text-sm resize-none custom-scrollbar"
+            className="w-full h-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg editor-focus-ring bg-white dark:bg-gray-700 dark:text-white font-mono text-sm resize-none custom-scrollbar"
             placeholder="Chỉnh sửa nội dung file..."
           />
         ) : (
