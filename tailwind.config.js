@@ -9,6 +9,13 @@ module.exports = {
       screens: {
         nav: "1024px", // Custom breakpoint cho navigation menu
       },
+
+      fontFamily: {
+        inter: ["Inter", "sans-serif"],
+        space: ['"Space Mono"', "monospace"],
+        share: ['"Share Tech Mono"', "monospace"],
+      },
+
       colors: {
         primary: {
           50: "#eff6ff",

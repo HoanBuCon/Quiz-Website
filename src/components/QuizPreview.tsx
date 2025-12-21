@@ -190,7 +190,13 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     isDraggingOverRef.current = true;
     e.preventDefault();
     e.stopPropagation();
-    e.dataTransfer.dropEffect = 'copy';
+
+    // Use 'move' for assigned sources (from one question to another/editor) to avoid duplication
+    if (e.dataTransfer.types.includes('image/assigned-source')) {
+      e.dataTransfer.dropEffect = 'move';
+    } else {
+      e.dataTransfer.dropEffect = 'copy';
+    }
 
     const textarea = e.currentTarget;
 

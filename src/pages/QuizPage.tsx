@@ -10,6 +10,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import MathText from "../components/MathText";
 import { Question, UserAnswer, DragTarget, DragItem } from "../types";
 import { buildShortId } from "../utils/share";
+import ImageModal from "../components/ImageModal";
 
 // Component trang làm bài trắc nghiệm
 const QUIZ_PROGRESS_KEY = "quiz_progress";
@@ -56,6 +57,9 @@ const QuizPage: React.FC = () => {
   const [slideDirection, setSlideDirection] = useState<"left" | "right" | "none">("none");
   // State đang exit (để render animation out)
   const [isExiting, setIsExiting] = useState(false);
+
+  // State xem ảnh fullscreen
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   // Ref cho minimap container để xử lý scroll
   const minimapRef = React.useRef<HTMLDivElement>(null);
@@ -937,7 +941,9 @@ const QuizPage: React.FC = () => {
           </h1>
           <div className="flex items-center gap-2 px-3 rounded-lg bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 w-fit h-full self-stretch shrink-0 whitespace-nowrap">
             <FaRegClock className="w-4 h-4 shrink-0" />
-            <span className="text-sm font-mono font-bold">{formatElapsed(elapsed)}</span>
+            <span className="text-sm font-share-tech-mono tabular-nums tracking-[0.15em]">
+              {formatElapsed(elapsed)}
+            </span>
           </div>
         </div>
         {/* Right header: Submit button (no wrapper div) */}
@@ -1024,7 +1030,8 @@ const QuizPage: React.FC = () => {
                   <img
                     src={currentQuestion.questionImage}
                     alt="Question"
-                    className="w-full h-auto rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain"
+                    className="w-full h-auto rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in"
+                    onClick={() => setViewingImage(currentQuestion.questionImage!)}
                     style={{
                       display: "block",
                       width: "100%",
@@ -1270,7 +1277,11 @@ const QuizPage: React.FC = () => {
                             <img
                               src={optionImage}
                               alt={`Option ${String.fromCharCode(65 + index)}`}
-                              className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 object-contain self-center"
+                              className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 object-contain self-center cursor-zoom-in"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Ngăn click button chọn đáp án
+                                setViewingImage(optionImage);
+                              }}
                               style={{
                                 display: "block",
                                 objectFit: "contain",
@@ -1710,7 +1721,7 @@ const QuizPage: React.FC = () => {
         {/* Right Section - Sidebar */}
         < div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2" >
           <div className="card p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center justify-between mb-3 sm:mb-4 lg:hidden">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Danh sách câu hỏi
               </h3>
@@ -2172,6 +2183,16 @@ const QuizPage: React.FC = () => {
           </div>
         )
       }
+      {/* Image Modal for viewing viewing images fullscreen */}
+      {
+        viewingImage && (
+          <ImageModal
+            imageUrl={viewingImage}
+            isOpen={!!viewingImage}
+            onClose={() => setViewingImage(null)}
+          />
+        )
+      }
     </div >
   );
 };
@@ -2548,6 +2569,8 @@ const DragDropQuestion: React.FC<{
           </div>
         )}
       </div>
+
+
     </div>
   );
 };

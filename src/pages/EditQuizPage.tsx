@@ -203,7 +203,15 @@ const ImageUpload: React.FC<{
       };
 
       e.dataTransfer.setData('image/assigned-source', JSON.stringify(dragData));
-      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.effectAllowed = 'copyMove';
+    };
+
+    const handleImageDragEnd = (e: React.DragEvent<HTMLImageElement>) => {
+      // If the drop effect was 'move', it means the image was successfully moved to a target
+      // that supports move (like the editor or another question), so we should remove it from here.
+      if (e.dataTransfer.dropEffect === 'move') {
+        removeImage();
+      }
     };
 
     return (
@@ -215,6 +223,7 @@ const ImageUpload: React.FC<{
               alt="Uploaded"
               draggable={!!sourceInfo}
               onDragStart={handleImageDragStart}
+              onDragEnd={handleImageDragEnd}
               onClick={() => onImageClick?.(currentImage)}
               className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
               title="Click để xem ảnh | Kéo để di chuyển"
@@ -793,7 +802,22 @@ const EditQuizPage: React.FC = () => {
   // Better to call syncUnassignedFromContent in handleQuestionSave.
 
   useEffect(() => {
-    // Always sync questions with content when content changes (including Undo/Redo)
+    const handleOpenImageModal = (event: CustomEvent<{ imageUrl: string }>) => {
+      setImageModalUrl(event.detail.imageUrl);
+      setImageModalOpen(true);
+    };
+
+    window.addEventListener('open-image-modal' as any, handleOpenImageModal);
+
+    return () => {
+      window.removeEventListener('open-image-modal' as any, handleOpenImageModal);
+    };
+  }, []);
+
+  // Always sync questions with content when content changes (including Undo/Redo)
+  // Sync questions with previewContent when content changes (and not from question edit)
+  // This is for Drag & Drop image FROM gallery TO editor? no, gallery to editor handled by editor drop handler.
+  useEffect(() => {
     if (previewContent !== undefined) {
       const parsed = parseEditedContent(previewContent);
       setQuestions(parsed);
@@ -3027,6 +3051,7 @@ const EditQuizPage: React.FC = () => {
                       sourceType: 'question',
                       questionId: question.id
                     }}
+                    onImageClick={handleImageClick}
                     onAssignFromGallery={(id, source) => {
                       // Special case: moving within the same question being edited
                       if (source && source.questionId === question.id) {
@@ -3323,6 +3348,7 @@ const EditQuizPage: React.FC = () => {
                                 questionId: question.id,
                                 optionText: option
                               }}
+                              onImageClick={handleImageClick}
                               onAssignFromGallery={(id, source) => {
                                 // Special case: moving within the same question being edited
                                 if (source && source.questionId === question.id) {
@@ -4326,7 +4352,8 @@ const EditQuizPage: React.FC = () => {
     question: QuestionWithImages;
     index: number;
     dragHandleProps?: any;
-  }> = ({ question, index, dragHandleProps }) => {
+    onImageClick?: (imageUrl: string) => void;
+  }> = ({ question, index, dragHandleProps, onImageClick }) => {
     const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
 
     const handleDragOver = (e: React.DragEvent, target: string) => {
@@ -4639,6 +4666,10 @@ const EditQuizPage: React.FC = () => {
                 alt="Question"
                 className="max-w-md max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
                 draggable
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onImageClick ? onImageClick(question.questionImage!) : window.dispatchEvent(new CustomEvent('open-image-modal', { detail: { imageUrl: question.questionImage } }));
+                }}
                 onDragStart={(e) => {
                   const source = {
                     imageData: question.questionImage,
@@ -4736,6 +4767,10 @@ const EditQuizPage: React.FC = () => {
                                 alt={`Option ${String.fromCharCode(65 + index)}`}
                                 className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
                                 draggable
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onImageClick ? onImageClick(question.optionImages![option]) : window.dispatchEvent(new CustomEvent('open-image-modal', { detail: { imageUrl: question.optionImages![option] } }));
+                                }}
                                 onDragStart={(e) => {
                                   const source = {
                                     imageData: question.optionImages![option],
