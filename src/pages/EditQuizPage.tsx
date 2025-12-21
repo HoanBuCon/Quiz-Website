@@ -4357,40 +4357,69 @@ const EditQuizPage: React.FC = () => {
           // Special case: moving within the same question (e.g., between options)
           // We need to do this atomically to avoid duplication
           if (source.questionId === question.id) {
-            // Atomic update for same-question moves
-            const updatedDiff: Partial<QuestionWithImages> = {};
+            // Atomic update for same-question moves (Swap Logic)
+            let newQuestionImage = question.questionImage;
+            let newQuestionImageId = question.questionImageId;
+            let newOptionImages = { ...question.optionImages };
+            let newOptionImageIds = { ...question.optionImageIds };
 
-            // Remove from source
-            if (source.sourceType === 'question') {
-              updatedDiff.questionImage = undefined;
-              updatedDiff.questionImageId = undefined;
-            } else if (source.sourceType === 'option' && source.optionText) {
-              const newOptionImages = { ...question.optionImages };
-              const newOptionImageIds = { ...question.optionImageIds };
-              delete newOptionImages[source.optionText];
-              delete newOptionImageIds[source.optionText];
-              updatedDiff.optionImages = newOptionImages;
-              updatedDiff.optionImageIds = newOptionImageIds;
-            }
+            // 1. Get Target Current State (to become New Source State)
+            let originalTargetData = "";
+            let originalTargetId = "";
 
-            // Add to destination
             if (target === "question") {
-              updatedDiff.questionImage = source.imageData;
-              updatedDiff.questionImageId = source.imageId;
+              originalTargetData = question.questionImage || "";
+              originalTargetId = question.questionImageId || "";
             } else if (target.startsWith("option-")) {
-              const optText = target.replace("option-", "");
-              // CRITICAL: Use updatedDiff.optionImages (which has source removed) not question.optionImages
-              const finalOptionImages = updatedDiff.optionImages || {};
-              const finalOptionImageIds = updatedDiff.optionImageIds || {};
-              finalOptionImages[optText] = source.imageData;
-              if (source.imageId) {
-                finalOptionImageIds[optText] = source.imageId;
-              }
-              updatedDiff.optionImages = finalOptionImages;
-              updatedDiff.optionImageIds = finalOptionImageIds;
+              const tOpt = target.replace("option-", "");
+              originalTargetData = question.optionImages?.[tOpt] || "";
+              originalTargetId = question.optionImageIds?.[tOpt] || "";
             }
 
-            // Single atomic update
+            // 2. Update Target with Source Data
+            if (target === "question") {
+              newQuestionImage = source.imageData;
+              newQuestionImageId = source.imageId;
+            } else if (target.startsWith("option-")) {
+              const tOpt = target.replace("option-", "");
+              newOptionImages[tOpt] = source.imageData;
+              if (source.imageId) {
+                newOptionImageIds[tOpt] = source.imageId;
+              } else {
+                delete newOptionImageIds[tOpt];
+              }
+            }
+
+            // 3. Update Source with Original Target Data (Swap) or Clear
+            if (source.sourceType === 'question') {
+              if (originalTargetData) {
+                newQuestionImage = originalTargetData;
+                newQuestionImageId = originalTargetId;
+              } else {
+                newQuestionImage = undefined;
+                newQuestionImageId = undefined;
+              }
+            } else if (source.sourceType === 'option' && source.optionText) {
+              if (originalTargetData) {
+                newOptionImages[source.optionText] = originalTargetData;
+                if (originalTargetId) {
+                  newOptionImageIds[source.optionText] = originalTargetId;
+                } else {
+                  delete newOptionImageIds[source.optionText];
+                }
+              } else {
+                delete newOptionImages[source.optionText];
+                delete newOptionImageIds[source.optionText];
+              }
+            }
+
+            const updatedDiff: Partial<QuestionWithImages> = {
+              questionImage: newQuestionImage,
+              questionImageId: newQuestionImageId,
+              optionImages: newOptionImages,
+              optionImageIds: newOptionImageIds
+            };
+
             handleQuestionSave(question.id, updatedDiff);
             toast.success("Đã di chuyển ảnh!");
             return;

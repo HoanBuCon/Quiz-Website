@@ -183,6 +183,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
     isDraggingOverRef.current = true;
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
 
     const textarea = e.currentTarget;
@@ -286,6 +287,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     if (!imageId) return;
 
     e.preventDefault();
+    e.stopPropagation();
 
     if (dragPlaceholder) {
       // Replace placeholder with [IMAGE:id]
