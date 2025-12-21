@@ -5370,7 +5370,7 @@ const EditQuizPage: React.FC = () => {
 
                 {/* Cột phải - Editor Preview - 40% */}
                 <div className="lg:col-span-2">
-                  <div className="sticky top-24">
+                  <div className="sticky top-24 h-[calc(100vh-7rem)] overflow-hidden">
                     <QuizPreview
                       questions={questions}
                       quizTitle={quizTitle}

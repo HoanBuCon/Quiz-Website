@@ -721,7 +721,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      {/* <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="text-center flex-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -740,10 +740,10 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             </div>
           )}
         </div>
-      </div>
+      </div> */}
 
       {/* Content */}
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="flex-1 p-4 min-h-0 relative">
         {isEditable ? (
           <textarea
             ref={textareaRef}
@@ -920,31 +920,34 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                 insertText(processed);
               }
             }}
-            className="w-full h-full min-h-[600px] p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white font-mono text-sm resize-none custom-scrollbar"
+            className="w-full h-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white font-mono text-sm resize-none custom-scrollbar"
             placeholder="Chỉnh sửa nội dung file..."
           />
         ) : (
-          <div className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words custom-scrollbar overflow-auto">
+          <div className="w-full h-full text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words custom-scrollbar overflow-auto p-4 border border-transparent">
             <MathText text={editableContent} />
           </div>
         )}
       </div>
 
       {/* Footer với hướng dẫn */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+      {/* <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1">
-          <div><strong className="text-gray-800 dark:text-gray-200">Hướng dẫn định dạng:</strong></div>
-          <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*A.</code> = đáp án đúng, nhiều <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*</code> = chọn nhiều</div>
-          <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">result: text</code> = câu hỏi điền khuyết</div>
-          <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">result: [...]</code> + <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">group: (...)</code> = kéo thả phân loại</div>
-          <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">{'{ ... }'}</code> = câu hỏi mẹ chứa câu con</div>
+          <div><strong className="text-gray-800 dark:text-gray-200 pb-2 block">Hướng dẫn định dạng:</strong></div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">*A.</code> = đáp án đúng</div>
+            <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">result: text</code> = điền khuyết</div>
+            <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">{'*'}</code> (nhiều) = chọn nhiều</div>
+            <div>• <code className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 rounded">{'{ ... }'}</code> = câu hỏi mẹ</div>
+          </div>
           <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/30 rounded border-l-4 border-blue-400 dark:border-blue-500">
-            <div className="text-blue-700 dark:text-blue-200">
-              <strong>💡 Mẹo:</strong> Thay đổi ở đây sẽ tự động cập nhật nội dung Quiz bên trái!
+            <div className="text-blue-700 dark:text-blue-200 flex items-center gap-2">
+              <span>💡</span>
+              <span>Thay đổi ở đây sẽ tự động cập nhật nội dung Quiz bên trái!</span>
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

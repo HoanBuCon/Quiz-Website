@@ -532,7 +532,7 @@ code {
   /* Custom scrollbar styles */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: #94a3b8 #e2e8f0; /* thumb-color track-color for Firefox */
+    scrollbar-color: #94a3b8 transparent; /* thumb-color track-color for Firefox */
   }
   
   .custom-scrollbar::-webkit-scrollbar {
@@ -541,7 +541,7 @@ code {
   }
   
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: #e2e8f0; /* slate-200 - darker track for more contrast */
+    background: transparent; /* slate-200 - darker track for more contrast */
     border-radius: 4px;
   }
   
@@ -557,11 +557,11 @@ code {
   
   /* Dark mode scrollbar */
   .dark .custom-scrollbar {
-    scrollbar-color: #64748b #374151; /* thumb-color track-color for Firefox */
+    scrollbar-color: #64748b transparent; /* thumb-color track-color for Firefox */
   }
   
   .dark .custom-scrollbar::-webkit-scrollbar-track {
-    background: #374151; /* dark track matching component backgrounds */
+    background: transparent; /* dark track matching component backgrounds */
   }
   
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
