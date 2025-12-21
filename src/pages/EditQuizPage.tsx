@@ -68,6 +68,8 @@ const ImageUpload: React.FC<{
     optionText?: string;
   };
   onImageClick?: (imageUrl: string) => void;
+  // NEW: Callback to notify parent when drag starts/ends for page-level drop handling
+  onDragStateChange?: (isDragging: boolean, dragData?: any) => void;
 }> = ({
   onImageUpload,
   currentImage,
@@ -78,6 +80,7 @@ const ImageUpload: React.FC<{
   onImageRemoved,
   sourceInfo,
   onImageClick,
+  onDragStateChange,
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,6 +125,7 @@ const ImageUpload: React.FC<{
 
     const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
+      event.stopPropagation(); // Stop bubbling to page handler
 
       // 1. Check for assigned image (move operation from another question/answer)
       const assignedSource = event.dataTransfer.getData('image/assigned-source');
@@ -203,13 +207,23 @@ const ImageUpload: React.FC<{
       };
 
       e.dataTransfer.setData('image/assigned-source', JSON.stringify(dragData));
-      e.dataTransfer.effectAllowed = 'copyMove';
+      // Enforce 'move' to ensure source cleanup works reliably
+      e.dataTransfer.effectAllowed = 'move';
+
+      // NEW: Notify parent for page-level drop handling
+      onDragStateChange?.(true, dragData);
     };
 
     const handleImageDragEnd = (e: React.DragEvent<HTMLImageElement>) => {
-      // If the drop effect was 'move', it means the image was successfully moved to a target
-      // that supports move (like the editor or another question), so we should remove it from here.
-      if (e.dataTransfer.dropEffect === 'move') {
+      // NEW: Notify parent that drag ended
+      onDragStateChange?.(false);
+
+      // Debug: Checking dropEffect
+      // toast.info(`Drop effect: ${e.dataTransfer.dropEffect}`); // Keep commented for production, assume user will uncomment for test if asked.
+
+      // Let's try to just trust it for now, BUT if it fails, maybe we fallback to 'copy' if we detect it?
+      // Actually, let's just make sure we catch 'copy' too if the browser forces it.
+      if (e.dataTransfer.dropEffect === 'move' || e.dataTransfer.dropEffect === 'copy') {
         removeImage();
       }
     };
@@ -222,11 +236,29 @@ const ImageUpload: React.FC<{
               src={currentImage}
               alt="Uploaded"
               draggable={!!sourceInfo}
-              onDragStart={handleImageDragStart}
+              onMouseDown={(e) => {
+                // FIX: Store initial mouse position to detect drag vs click
+                (e.target as any).dataset.mouseDownX = e.clientX;
+                (e.target as any).dataset.mouseDownY = e.clientY;
+                (e.target as any).dataset.isDragging = 'false';
+              }}
+              onDragStart={(e) => {
+                (e.target as any).dataset.isDragging = 'true';
+                handleImageDragStart(e);
+              }}
               onDragEnd={handleImageDragEnd}
-              onClick={() => onImageClick?.(currentImage)}
-              className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={(e) => {
+                // Only trigger click if not dragging
+                const isDragging = (e.target as any).dataset.isDragging === 'true';
+                if (!isDragging && onImageClick) {
+                  onImageClick(currentImage);
+                }
+                (e.target as any).dataset.isDragging = 'false';
+              }}
+              className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:opacity-90 transition-opacity"
+              style={{ cursor: sourceInfo ? 'grab' : 'pointer' }}
               title="Click để xem ảnh | Kéo để di chuyển"
+              tabIndex={0}
             />
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
@@ -486,7 +518,7 @@ const EditQuizPage: React.FC = () => {
       // FIX: Immediately remove from gallery after assignment
       // This ensures that even on the first drop, the image is removed from the unassigned gallery
       handleImageAssigned(imageId);
-      toast.success("Đã gán ảnh!");
+      // NOTE: Toast removed to avoid duplicate with saveDroppedImage's "Đã cập nhật ảnh!"
     } else {
       toast.error("Không tìm thấy dữ liệu ảnh!");
     }
@@ -1548,7 +1580,7 @@ const EditQuizPage: React.FC = () => {
 
     // Check if dropped OUTSIDE question cards
     const target = e.target as HTMLElement;
-    const isInsideQuestionCard = target.closest('.wrapper-node');
+    const isInsideQuestionCard = target.closest('[data-qid]');
 
     if (!isInsideQuestionCard) {
       e.preventDefault();
@@ -1560,7 +1592,59 @@ const EditQuizPage: React.FC = () => {
     draggedImageRef.current = null;
   };
 
-  const handleImageDragEnd = () => {
+  const handleImageMoved = (source: any) => {
+    // Logic to remove image from source after successful move
+    if (!source || !source.questionId) return;
+
+    setQuestions(prevQuestions => {
+      return prevQuestions.map(q => {
+        if (q.id === source.questionId) {
+          const newQ = { ...q };
+          // Case 1: Question Image
+          if (source.sourceType === 'question') {
+            newQ.questionImage = undefined;
+            newQ.questionImageId = undefined;
+          }
+          // Case 2: Option Image
+          else if (source.sourceType === 'option' && source.optionText) {
+            if (newQ.optionImages) {
+              const newOptionImages = { ...newQ.optionImages };
+              delete newOptionImages[source.optionText];
+              newQ.optionImages = newOptionImages;
+            }
+            if (newQ.optionImageIds) {
+              const newOptionImageIds = { ...newQ.optionImageIds };
+              delete newOptionImageIds[source.optionText];
+              newQ.optionImageIds = newOptionImageIds;
+            }
+          }
+
+          // Also update the edit map if this question is being edited
+          if (editedQuestionsMapRef.current.has(q.id)) {
+            editedQuestionsMapRef.current.set(q.id, newQ);
+            // Force UI update if needed? 
+            // Actually if we update 'questions' state, the editor might not re-render if it uses local state.
+            // But usually Edit mode relies on local state 'editedQuestion'. 
+            // We might need to force update the editor.
+            // Ideally we should use a global event or context, but for now updating the Map + State helps.
+          }
+
+          return newQ;
+        }
+        return q;
+      });
+    });
+
+    // Also notify if there is a helper for this
+    // handleRemoveImageFromSource(source); // Ensure this exists if we uncomment
+  };
+
+  const handleImageDragEnd = (e: React.DragEvent) => {
+    // Revert: We now rely on onImageMoved callback from QuizPreview
+    // Debug: Checking dropEffect
+    // toast.info(`Drop effect: ${e.dataTransfer.dropEffect}`); 
+
+    // We no longer rely on dropEffect here to avoid double-delete or unstable behavior
     setIsDraggingImage(false);
     draggedImageRef.current = null;
   };
@@ -3080,6 +3164,11 @@ const EditQuizPage: React.FC = () => {
                       questionId: question.id
                     }}
                     onImageClick={handleImageClick}
+                    onDragStateChange={(isDragging, dragData) => {
+                      // Enable page-level drop handler for drag-to-gallery from edit mode
+                      setIsDraggingImage(isDragging);
+                      draggedImageRef.current = isDragging ? dragData : null;
+                    }}
                     onAssignFromGallery={(id, source) => {
                       // Special case: moving within the same question being edited
                       if (source && source.questionId === question.id) {
@@ -3377,6 +3466,11 @@ const EditQuizPage: React.FC = () => {
                                 optionText: option
                               }}
                               onImageClick={handleImageClick}
+                              onDragStateChange={(isDragging, dragData) => {
+                                // Enable page-level drop handler for drag-to-gallery from edit mode
+                                setIsDraggingImage(isDragging);
+                                draggedImageRef.current = isDragging ? dragData : null;
+                              }}
                               onAssignFromGallery={(id, source) => {
                                 // Special case: moving within the same question being edited
                                 if (source && source.questionId === question.id) {
@@ -4692,13 +4786,25 @@ const EditQuizPage: React.FC = () => {
               <img
                 src={question.questionImage}
                 alt="Question"
-                className="max-w-md max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
+                className="max-w-md max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                style={{ cursor: 'grab' }}
                 draggable
+                onMouseDown={(e) => {
+                  // FIX: Track drag state to distinguish click vs drag
+                  (e.target as any).dataset.isDragging = 'false';
+                }}
                 onClick={(e) => {
+                  // Only trigger click if not dragging
+                  const isDragging = (e.target as any).dataset.isDragging === 'true';
+                  if (isDragging) {
+                    (e.target as any).dataset.isDragging = 'false';
+                    return;
+                  }
                   e.stopPropagation();
                   onImageClick ? onImageClick(question.questionImage!) : window.dispatchEvent(new CustomEvent('open-image-modal', { detail: { imageUrl: question.questionImage } }));
                 }}
                 onDragStart={(e) => {
+                  (e.target as any).dataset.isDragging = 'true';
                   const source = {
                     imageData: question.questionImage,
                     imageId: question.questionImageId,
@@ -4793,13 +4899,25 @@ const EditQuizPage: React.FC = () => {
                               <img
                                 src={question.optionImages[option]}
                                 alt={`Option ${String.fromCharCode(65 + index)}`}
-                                className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-move hover:opacity-80 transition-opacity"
+                                className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:opacity-80 transition-opacity"
+                                style={{ cursor: 'grab' }}
                                 draggable
+                                onMouseDown={(e) => {
+                                  // FIX: Track drag state to distinguish click vs drag
+                                  (e.target as any).dataset.isDragging = 'false';
+                                }}
                                 onClick={(e) => {
+                                  // Only trigger click if not dragging
+                                  const isDragging = (e.target as any).dataset.isDragging === 'true';
+                                  if (isDragging) {
+                                    (e.target as any).dataset.isDragging = 'false';
+                                    return;
+                                  }
                                   e.stopPropagation();
                                   onImageClick ? onImageClick(question.optionImages![option]) : window.dispatchEvent(new CustomEvent('open-image-modal', { detail: { imageUrl: question.optionImages![option] } }));
                                 }}
                                 onDragStart={(e) => {
+                                  (e.target as any).dataset.isDragging = 'true';
                                   const source = {
                                     imageData: question.optionImages![option],
                                     imageId: question.optionImageIds?.[option],
@@ -5152,9 +5270,9 @@ const EditQuizPage: React.FC = () => {
 
             {/* Phần còn lại: Grid 2 cột cho Editor và Preview */}
             <div className="flex-1 min-w-0">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Cột Editor - 2/3 */}
-                <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Cột trái - Quiz Cards - 60% */}
+                <div className="lg:col-span-3">
                   <div className="mb-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -5250,8 +5368,8 @@ const EditQuizPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Cột phải - Preview */}
-                <div className="lg:col-span-1">
+                {/* Cột phải - Editor Preview - 40% */}
+                <div className="lg:col-span-2">
                   <div className="sticky top-24">
                     <QuizPreview
                       questions={questions}
@@ -5263,6 +5381,7 @@ const EditQuizPage: React.FC = () => {
                       onUndo={undo}
                       onRedo={redo}
                       onCursorQuestionChange={scrollToQuestionPreview}
+                      onImageMoved={handleImageMoved}
                     />
                   </div>
                 </div>

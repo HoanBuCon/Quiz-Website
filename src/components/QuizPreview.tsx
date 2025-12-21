@@ -14,6 +14,8 @@ interface QuizPreviewProps {
   onUndo?: () => void;
   onRedo?: () => void;
   onCursorQuestionChange?: (questionId: string | null) => void;
+  // Callback when an image is moved from another source (like a question)
+  onImageMoved?: (source: any) => void;
 }
 
 const QuizPreview: React.FC<QuizPreviewProps> = ({
@@ -25,8 +27,11 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   content,
   onUndo,
   onRedo,
-  onCursorQuestionChange
+  onCursorQuestionChange,
+  onImageMoved
 }) => {
+  // Updated generatePreviewText to show real [IMAGE:id] tags instead of placeholder
+
   // Updated generatePreviewText to show real [IMAGE:id] tags instead of placeholder
   // This allows the editor to handle them correctly (drag, move, view)
   const generatePreviewText = () => {
@@ -327,6 +332,20 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
     e.preventDefault();
     e.stopPropagation();
+
+    // Force 'move' effect to signal source that transfer was successful
+    e.dataTransfer.dropEffect = 'move';
+
+    // Notify parent if this was a move operation from an assigned source
+    const assignedSourceStr = e.dataTransfer.getData('image/assigned-source');
+    if (assignedSourceStr && onImageMoved) {
+      try {
+        const source = JSON.parse(assignedSourceStr);
+        onImageMoved(source);
+      } catch (err) {
+        console.error("Failed to parse assigned source for callback", err);
+      }
+    }
 
     // Prepare the image tag
     const imageTag = `[IMAGE:${imageId}]`;
@@ -706,7 +725,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         <div className="flex items-center justify-between">
           <div className="text-center flex-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Trình chỉnh sửa
+              Trình soạn thảo
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {isEditable ? 'Chỉnh sửa trực tiếp nội dung Quiz' : 'Nội dung xuất ra File'}
