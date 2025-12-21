@@ -579,11 +579,21 @@ const EditQuizPage: React.FC = () => {
 
         const updated = { ...q };
 
+        // SYNC FIX: Also update the cached edit state if it exists
+        // This ensures that if the user opens Edit Mode later, they see the image removed
+        const cachedEditState = editedQuestionsMapRef.current.get(q.id);
+        let cachedUpdated = cachedEditState ? { ...cachedEditState } : null;
+
         if (source.sourceType === 'question') {
           // Remove question image
           console.log('Removing question image from question:', q.id);
           updated.questionImage = undefined;
           updated.questionImageId = undefined;
+
+          if (cachedUpdated) {
+            cachedUpdated.questionImage = undefined;
+            cachedUpdated.questionImageId = undefined;
+          }
         } else if (source.sourceType === 'option' && source.optionText) {
           // Remove option image
           console.log('Removing option image:', source.optionText, 'from question:', q.id);
@@ -593,6 +603,19 @@ const EditQuizPage: React.FC = () => {
           delete newOptionImageIds[source.optionText];
           updated.optionImages = newOptionImages;
           updated.optionImageIds = newOptionImageIds;
+
+          if (cachedUpdated) {
+            const cachedOptionImages = { ...cachedUpdated.optionImages };
+            const cachedOptionImageIds = { ...cachedUpdated.optionImageIds };
+            delete cachedOptionImages[source.optionText];
+            delete cachedOptionImageIds[source.optionText];
+            cachedUpdated.optionImages = cachedOptionImages;
+            cachedUpdated.optionImageIds = cachedOptionImageIds;
+          }
+        }
+
+        if (cachedUpdated) {
+          editedQuestionsMapRef.current.set(q.id, cachedUpdated);
         }
 
         console.log('Updated question:', updated.id, updated.questionImage ? 'still has image' : 'image removed');
