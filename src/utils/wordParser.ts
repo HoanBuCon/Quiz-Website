@@ -1,6 +1,5 @@
 import mammoth from "mammoth";
 import JSZip from "jszip";
-import { parseDocsContent } from "./docsParser";
 
 export interface WordParseResult {
   success: boolean;
@@ -103,8 +102,14 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
         });
         
         // Return marker để đánh dấu vị trí ảnh trong text
+        // Use ALT attribute to carry the ID, as SRC might be sanitized or encoded unpredictably
+        // Return marker để đánh dấu vị trí ảnh trong text
+        // Use a SPECIAL URL format that we can detect later.
+        // This avoids invalid URL issues or attribute stripping.
+        // We will replace this with the real data URL in the extractedImages array,
+        // but for the HTML text content, we want the ID marker.
         return {
-          src: `[IMAGE:${imageId}]` // Marker với ID để tracking
+          src: `http://quiz-placeholder/image/${imageId}` 
         };
       });
     });
@@ -141,9 +146,23 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
     // Replace img tags with [IMAGE:id] markers
     const imgTags = doc.querySelectorAll('img');
     imgTags.forEach(img => {
-      // Mammoth puts the return value of convertImage into the src attribute
-      // So src should be "[IMAGE:id]"
-      const markerText = img.getAttribute('src') || '[IMAGE]';
+      let markerText = '[IMAGE]';
+      const src = img.getAttribute('src') || '';
+      
+      // Check for our special placeholder
+      // Format: http://quiz-placeholder/image/img-1234...
+      if (src.includes('quiz-placeholder/image/')) {
+          const parts = src.split('quiz-placeholder/image/');
+          if (parts.length > 1) {
+              const id = parts[1];
+              markerText = `[IMAGE:${id}]`;
+          }
+      } 
+      // Fallback for legacy (should not happen with new logic)
+      else if (src.includes('[IMAGE:')) {
+           markerText = src;
+      }
+      
       const marker = doc.createTextNode(`\n${markerText}\n`);
       img.parentNode?.replaceChild(marker, img);
     });

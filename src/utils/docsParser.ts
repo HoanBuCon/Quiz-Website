@@ -55,13 +55,48 @@ export async function parseFile(file: File): Promise<ParseResult> {
       };
     }
 
-    // Parse questions
-    const questions = parseDocsContent(content);
+    // Parse questions - PASS images array to parser
+    const questions = parseDocsContent(content, images);
+
+    // FIX: Filter out images that have been assigned to questions/options
+    // Collect all assigned image IDs from parsed questions
+    const assignedImageIds = new Set<string>();
+    
+    questions.forEach(q => {
+      // Question images
+      if (q.questionImageId) {
+        assignedImageIds.add(q.questionImageId);
+      }
+      
+      // Option images
+      if (q.optionImageIds) {
+        Object.values(q.optionImageIds).forEach(id => {
+          if (id) assignedImageIds.add(id);
+        });
+      }
+      
+      // Sub-questions (for composite type)
+      if (q.subQuestions) {
+        q.subQuestions.forEach(subQ => {
+          if (subQ.questionImageId) {
+            assignedImageIds.add(subQ.questionImageId);
+          }
+          if (subQ.optionImageIds) {
+            Object.values(subQ.optionImageIds).forEach(id => {
+              if (id) assignedImageIds.add(id);
+            });
+          }
+        });
+      }
+    });
+
+    // Filter images to only include unassigned ones
+    const unassignedImages = images?.filter(img => !assignedImageIds.has(img.id));
 
     return {
       success: true,
       questions,
-      images,
+      images: unassignedImages,
       textContent: content, // For image mapping
     };
   } catch (error) {
@@ -81,7 +116,10 @@ function generateId(): string {
   return `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function parseDocsContent(content: string): ParsedQuestion[] {
+export function parseDocsContent(
+  content: string,
+  extractedImages?: import('../types').ExtractedImage[]
+): ParsedQuestion[] {
   // Pre-process: Normalize smart quotes and newlines
   let normalizedContent = content
     .replace(/\r\n/g, "\n")
@@ -111,6 +149,13 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
     // .filter((line) => line !== '[IMAGE]'); // Do NOT filter image markers now, we need them
+
+  // Helper to find image data by ID from extractedImages array
+  const findImageData = (imageId: string): string | undefined => {
+    if (!extractedImages) return undefined;
+    const img = extractedImages.find(img => img.id === imageId);
+    return img?.data;
+  };
 
   let currentQuestion: Partial<ParsedQuestion> = {};
   let currentOptions: string[] = [];
@@ -185,7 +230,7 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
         
         // Recursively parse buffer
         if (compositeBuffer.length > 0) {
-           const subQs = parseDocsContent(compositeBuffer.join("\n"));
+           const subQs = parseDocsContent(compositeBuffer.join("\n"), extractedImages);
            currentQuestion.subQuestions = subQs;
            currentQuestion.type = "composite";
            flushQuestion();
@@ -272,10 +317,12 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
     }
 
     // NEW: Image Marker Support [IMAGE:id]
-    // Matches: [IMAGE:img-1234]
-    const imgMarkerMatch = line.match(/^\[IMAGE:([^\]]+)\]$/);
+    // Matches: [IMAGE:img-1234] - Allow optional whitespace around
+    const imgMarkerMatch = line.match(/^\s*\[IMAGE:([^\]]+)\]\s*$/);
     if (imgMarkerMatch) {
       const imgId = imgMarkerMatch[1];
+      // FIX: Lookup actual image data from extractedImages array
+      const imgData = findImageData(imgId);
       
       // Determine where to attach this image
       if (currentOptions.length > 0) {
@@ -286,12 +333,19 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
         if (!currentQuestion.optionImages) currentQuestion.optionImages = {};
         if (!currentQuestion.optionImageIds) currentQuestion.optionImageIds = {};
         
-        // We link the ID. The ExtractedImage objects are in the separate result.images array
+        // FIX: Assign BOTH ID and DATA
         currentQuestion.optionImageIds[lastOptionText] = imgId;
+        if (imgData) {
+          currentQuestion.optionImages[lastOptionText] = imgData;
+        }
 
       } else {
         // Attach to question
+        // FIX: Assign BOTH ID and DATA
         currentQuestion.questionImageId = imgId;
+        if (imgData) {
+          currentQuestion.questionImage = imgData;
+        }
       }
       continue;
     }
