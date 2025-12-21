@@ -3313,16 +3313,21 @@ const EditQuizPage: React.FC = () => {
                         // Use source data directly
                         handleQuestionImageUpload(source.imageData, source.imageId || id);
                       } else {
-                        // From gallery - auto-save and close edit mode
+                        // From gallery - update preview without closing edit mode
                         handleAssignImage(id, (data) => {
-                          // Build updated question data with new image
+                          // Build updated question data with new image SYNCHRONOUSLY
                           const updatedQuestion = {
                             ...editedQuestion,
                             questionImage: data,
                             questionImageId: id
                           };
-                          // Save and close editor
-                          saveAndFlush(question.id, updatedQuestion);
+                          // Update local state and map IMMEDIATELY
+                          setEditedQuestion(updatedQuestion);
+                          editedQuestionsMapRef.current.set(question.id, updatedQuestion);
+                          // Update preview to show image immediately, without closing edit mode
+                          setTimeout(() => {
+                            updatePreviewFromEditMap();
+                          }, 50);
                         });
                       }
                     }}
@@ -3617,9 +3622,9 @@ const EditQuizPage: React.FC = () => {
                                   // Use source data directly
                                   handleOptionImageUpload(option, source.imageData, source.imageId || id);
                                 } else {
-                                  // From gallery - auto-save and close edit mode
+                                  // From gallery - update preview without closing edit mode
                                   handleAssignImage(id, (data) => {
-                                    // Build updated question data with new option image
+                                    // Build updated question data with new option image SYNCHRONOUSLY
                                     const updatedQuestion = {
                                       ...editedQuestion,
                                       optionImages: {
@@ -3631,8 +3636,13 @@ const EditQuizPage: React.FC = () => {
                                         [option]: id
                                       }
                                     };
-                                    // Save and close editor
-                                    saveAndFlush(question.id, updatedQuestion);
+                                    // Update local state and map IMMEDIATELY
+                                    setEditedQuestion(updatedQuestion);
+                                    editedQuestionsMapRef.current.set(question.id, updatedQuestion);
+                                    // Update preview to show image immediately, without closing edit mode
+                                    setTimeout(() => {
+                                      updatePreviewFromEditMap();
+                                    }, 50);
                                   });
                                 }
                               }}
