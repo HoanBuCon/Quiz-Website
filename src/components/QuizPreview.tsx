@@ -27,39 +27,38 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   onRedo,
   onCursorQuestionChange
 }) => {
-  // Chuyển đổi questions thành format text để hiển thị
-  // SỬ DỤNG FORMAT MỚI CỦA docsParser
+  // Updated generatePreviewText to show real [IMAGE:id] tags instead of placeholder
+  // This allows the editor to handle them correctly (drag, move, view)
   const generatePreviewText = () => {
     let content = '';
 
     questions.forEach((q, index) => {
       content += `ID: ${q.id}\n`;
       content += `Câu ${index + 1}: ${q.question}\n`;
-      // Hiển thị marker nếu có ảnh câu hỏi
-      if ((q as any).questionImage) {
+      // Use ID-based marker if available, otherwise just use generic if data exists
+      if ((q as any).questionImageId) {
+        content += `[IMAGE:${(q as any).questionImageId}]\n`;
+      } else if ((q as any).questionImage) {
+        // Fallback for legacy data without ID tracking (should ideally be migrated)
         content += `<hình ảnh>\n`;
       }
 
       if (q.type === 'text') {
-        // Format: result: "answer1", "answer2"
         const answers = Array.isArray(q.correctAnswers)
           ? (q.correctAnswers as string[]).filter((a) => a.trim())
           : [];
         if (answers.length > 0) {
-          // Check if multiple or if content contains comma/quotes, then safe quote it
-          // Or always quote it for consistency?
-          // User asked for: result: "A", "B"
-          // Let's quote everything for text answers to be safe and consistent
           const formattedAnswers = answers.map(a => `"${a}"`).join(", ");
           content += `result: ${formattedAnswers}\n`;
         }
       } else if (q.type === 'composite') {
-        // Format: { ... sub-questions ... }
         content += `{\n`;
         if (q.subQuestions && q.subQuestions.length > 0) {
           q.subQuestions.forEach((subQ, subIdx) => {
             content += `Câu ${subIdx + 1}: ${subQ.question}\n`;
-            if ((subQ as any).questionImage) {
+            if ((subQ as any).questionImageId) {
+              content += `[IMAGE:${(subQ as any).questionImageId}]\n`;
+            } else if ((subQ as any).questionImage) {
               content += `<hình ảnh>\n`;
             }
             if (subQ.type === 'text') {
@@ -78,13 +77,19 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                 const prefix = isCorrect ? '*' : '';
                 const letter = String.fromCharCode(65 + optIdx);
                 content += `${prefix}${letter}. ${opt}\n`;
-                if ((subQ as any).optionImages && (subQ as any).optionImages[opt]) {
+
+                // Track option images
+                const subOptImages = (subQ as any).optionImages;
+                const subOptImageIds = (subQ as any).optionImageIds;
+
+                if (subOptImageIds && subOptImageIds[opt]) {
+                  content += `[IMAGE:${subOptImageIds[opt]}]\n`;
+                } else if (subOptImages && subOptImages[opt]) {
                   content += `<hình ảnh>\n`;
                 }
               });
             }
 
-            // Add blank line between sub-questions
             if (subIdx < q.subQuestions!.length - 1) {
               content += '\n';
             }
@@ -92,7 +97,6 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         }
         content += `}\n`;
       } else if (q.type === 'drag') {
-        // Format: result: [...] \n group: (...)
         const dragOptions = q.options as any;
         if (dragOptions && dragOptions.items) {
           const itemLabels = dragOptions.items.map((item: any) => item.label || item.id);
@@ -100,11 +104,9 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         }
 
         if (dragOptions && dragOptions.targets && dragOptions.targets.length > 0) {
-          // Build group: line from correctAnswers mapping
           const mapping = q.correctAnswers as Record<string, string>;
           const groupsByTarget: Record<string, string[]> = {};
 
-          // Group items by their target
           dragOptions.targets.forEach((target: any) => {
             groupsByTarget[target.id] = [];
           });
@@ -119,7 +121,6 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             });
           }
 
-          // Format: group: ("Target1":["item1","item2"]), ("Target2":["item3"])
           const groupParts: string[] = [];
           dragOptions.targets.forEach((target: any) => {
             const targetLabel = target.label || target.id;
@@ -132,14 +133,21 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
           }
         }
       } else {
-        // Single/Multiple choice: *A. B. *C. D.
         if (Array.isArray(q.options)) {
           q.options.forEach((option, optIndex) => {
             const isCorrect = Array.isArray(q.correctAnswers) && q.correctAnswers.includes(option);
             const prefix = isCorrect ? '*' : '';
-            const letter = String.fromCharCode(65 + optIndex); // A, B, C, D...
+            const letter = String.fromCharCode(65 + optIndex);
             content += `${prefix}${letter}. ${option}\n`;
-            if ((q as any).optionImages && (q as any).optionImages[option]) {
+
+            // Handle option images
+            // We prioritize IDs if available
+            const optImages = (q as any).optionImages;
+            const optImageIds = (q as any).optionImageIds;
+
+            if (optImageIds && optImageIds[option]) {
+              content += `[IMAGE:${optImageIds[option]}]\n`;
+            } else if (optImages && optImages[option]) {
               content += `<hình ảnh>\n`;
             }
           });

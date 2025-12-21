@@ -9,7 +9,9 @@ export interface ParsedQuestion {
   explanation?: string;
   subQuestions?: ParsedQuestion[];
   questionImage?: string;
+  questionImageId?: string; // Added to support tracking
   optionImages?: Record<string, string>;
+  optionImageIds?: Record<string, string>; // Added to support tracking
 }
 
 export interface ParseResult {
@@ -107,8 +109,8 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
   const lines = normalizedContent
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .filter((line) => line !== '[IMAGE]'); // Skip image markers
+    .filter((line) => line.length > 0);
+    // .filter((line) => line !== '[IMAGE]'); // Do NOT filter image markers now, we need them
 
   let currentQuestion: Partial<ParsedQuestion> = {};
   let currentOptions: string[] = [];
@@ -139,7 +141,11 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
         type: currentQuestion.type as any,
         correctAnswers: currentCorrectAnswers.length > 0 ? currentCorrectAnswers : [],
         explanation: currentQuestion.explanation,
-        subQuestions: currentQuestion.subQuestions
+        subQuestions: currentQuestion.subQuestions,
+        questionImage: currentQuestion.questionImage,
+        questionImageId: currentQuestion.questionImageId,
+        optionImages: currentQuestion.optionImages,
+        optionImageIds: currentQuestion.optionImageIds
       };
 
       // Assign options based on type
@@ -226,7 +232,9 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
     }
 
     // 3. Options (A. B. C. D.) — ROBUST PARSER (ES5 compatible)
-    const optionRegex = /([*]?)([A-Z])\.\s*/g;
+    // Updated regex to handle potentially weird spacing or chars before the option letter
+    // Also captures `1.` if numbered lists are used (uncommon but possible fallback)
+    const optionRegex = /(?:^|\s)([*]?)([A-Z])\.\s*/g;
     let match: RegExpExecArray | null;
 
     const optionMatches: {
@@ -263,7 +271,32 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
       continue;
     }
 
-// Helper to check if a line is a start of a new semantic block
+    // NEW: Image Marker Support [IMAGE:id]
+    // Matches: [IMAGE:img-1234]
+    const imgMarkerMatch = line.match(/^\[IMAGE:([^\]]+)\]$/);
+    if (imgMarkerMatch) {
+      const imgId = imgMarkerMatch[1];
+      
+      // Determine where to attach this image
+      if (currentOptions.length > 0) {
+        // Attach to the last option
+        const lastOptionIndex = currentOptions.length - 1;
+        const lastOptionText = currentOptions[lastOptionIndex];
+        
+        if (!currentQuestion.optionImages) currentQuestion.optionImages = {};
+        if (!currentQuestion.optionImageIds) currentQuestion.optionImageIds = {};
+        
+        // We link the ID. The ExtractedImage objects are in the separate result.images array
+        currentQuestion.optionImageIds[lastOptionText] = imgId;
+
+      } else {
+        // Attach to question
+        currentQuestion.questionImageId = imgId;
+      }
+      continue;
+    }
+
+    // Helper to check if a line is a start of a new semantic block
     const isNewBlock = (line: string) => {
       // 1. ID
       if (line.startsWith("ID:")) return true;
@@ -395,6 +428,52 @@ export function parseDocsContent(content: string): ParsedQuestion[] {
       currentQuestion.correctAnswers = mapping;
       currentQuestion.type = 'drag';
       continue;
+    }
+
+    // 6. Generic Content (Continuation)
+    // If line didn't match any specific block start, it might be a continuation of the previous block
+    // (e.g. multi-line question text, or text split by image markers)
+    
+    if (currentOptions.length > 0) {
+      // Append to the last option
+      // Use space separator for continuity (Word wrap) or newline?
+      // wordParser.ts cleanText joins lines with \n. But cleanWordText trims them.
+      // Usually space is safer for flow, unless it's a list. 
+      // Let's use space.
+      const lastIdx = currentOptions.length - 1;
+      currentOptions[lastIdx] += " " + line;
+      
+      // If this option was correct, update the correct answers list
+      // Note: This is tricky because correctAnswers stores the value string.
+      // We need to find the old value and update it.
+      // But we just modified currentOptions[lastIdx].
+      // The OLD value is not easily available unless we stored it.
+      // A simple heuristic: If the option was just added, it might be at the end of correctAnswers?
+      // Or we iterate to find a partial match?
+      
+      // Better: we don't support multi-line text for correct answer checking perfectly here without refactor.
+      // BUT for "Single/Multiple" choice, the exact string match matters.
+      // If we change the option text, we MUST change the correct answer text.
+      
+      // Let's rely on the fact that if we are extending an option, it's likely the ONE we just processed?
+      // No, we could be lines down.
+      
+      // Attempt to resync: 
+      // If we can't easily resync, the user might need to re-select correct answer in editor.
+      // But let's try:
+      // We know `line` was appended. So `currentOptions[lastIdx]` ends with `line`.
+      // The old value was `currentOptions[lastIdx]` minus ` " " + line`.
+      const newVal = currentOptions[lastIdx];
+      const oldVal = newVal.substring(0, newVal.length - (line.length + 1));
+      
+      const caIdx = currentCorrectAnswers.indexOf(oldVal);
+      if (caIdx !== -1) {
+        currentCorrectAnswers[caIdx] = newVal;
+      }
+      
+    } else if (currentQuestion.question) {
+      // Append to question
+      currentQuestion.question += " " + line;
     }
   }
 

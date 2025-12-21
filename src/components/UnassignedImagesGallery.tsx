@@ -87,7 +87,7 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
                     Ảnh chưa gán: {images.length}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Kéo thả ảnh vào vùng chọn ảnh của câu hỏi hoặc đáp án để gắn ảnh
+                    Kéo thả ảnh vào câu hỏi hoặc đáp án để gắn ảnh. Click để xem ảnh
                 </p>
             </div>
 

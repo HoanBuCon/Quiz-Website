@@ -1,4 +1,5 @@
 import mammoth from "mammoth";
+import JSZip from "jszip";
 import { parseDocsContent } from "./docsParser";
 
 export interface WordParseResult {
@@ -10,8 +11,73 @@ export interface WordParseResult {
 
 export async function parseWordFile(file: File): Promise<WordParseResult> {
   try {
-    // Đọc file Word
-    const arrayBuffer = await file.arrayBuffer();
+    let arrayBuffer = await file.arrayBuffer();
+
+    // --- Pre-process DOCX to handle Math Equations (OMML) ---
+    try {
+      const zip = new JSZip();
+      await zip.loadAsync(arrayBuffer);
+
+      // Read document.xml
+      const docXmlEntry = zip.file("word/document.xml");
+      if (docXmlEntry) {
+        const docXml = await docXmlEntry.async("string");
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(docXml, "application/xml");
+
+        // Find all Math elements (m:oMath)
+        // We use getElementsByTagNameNS if possible, or just tag name with prefix
+        // Browsers might require namespaces, but "m:oMath" usually works in simple XML parse
+        let mathNodes = Array.from(doc.getElementsByTagName("m:oMath"));
+        
+        // Also handle m:oMathPara (paragraph math), typically contains m:oMath
+        // If we process m:oMath, we usually cover what's inside m:oMathPara.
+        // However, we might want to ensure newlines for paragraphs.
+        
+        let modified = false;
+
+        if (mathNodes.length > 0) {
+          console.log(`Found ${mathNodes.length} math formulas. Converting to LaTeX...`);
+          
+          mathNodes.forEach((node) => {
+            try {
+              const latex = convertOMMLToLatex(node);
+              if (latex) {
+                // Create a new Text Run <w:r><w:t>...</w:t></w:r>
+                const run = doc.createElement("w:r");
+                const textNode = doc.createElement("w:t");
+                // Preserve whitespace
+                textNode.setAttribute("xml:space", "preserve");
+                textNode.textContent = ` ${latex} `; // Add padding spaces
+                
+                run.appendChild(textNode);
+                
+                // Replace the math node with the text run
+                node.parentNode?.replaceChild(run, node);
+                modified = true;
+              }
+            } catch (err) {
+              console.warn("Failed to convert math node", err);
+            }
+          });
+        }
+
+        if (modified) {
+           // Serialize back content
+           const serializer = new XMLSerializer();
+           const newXml = serializer.serializeToString(doc);
+           
+           // Update zip
+           zip.file("word/document.xml", newXml);
+           
+           // Generate new array buffer
+           arrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
+        }
+      }
+    } catch (e) {
+      console.warn("JSZip pre-processing failed, falling back to original content:", e);
+    }
+    // --------------------------------------------------------
 
     // Array để lưu extracted images
     const extractedImages: import('../types').ExtractedImage[] = [];
@@ -43,10 +109,22 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
       });
     });
 
+    // Custom style map to ensure equations and special text boxes are rendered as paragraphs if possible
+    const options = {
+      convertImage: convertImage,
+      styleMap: [
+        "p[style-name='Equation'] => p:fresh",
+        "p[style-name='Caption'] => p:fresh",
+        "p[style-name='Subtitle'] => p:fresh",
+        "r[style-name='Equation Part'] => span:fresh"
+      ],
+      includeDefaultStyleMap: true
+    };
+
     // Chuyển đổi Word sang HTML với image converter
     const result = await mammoth.convertToHtml(
       { arrayBuffer },
-      { convertImage }
+      options
     );
 
     if (result.messages.length > 0) {
@@ -60,10 +138,13 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
     
-    // Replace img tags with [IMAGE] markers
+    // Replace img tags with [IMAGE:id] markers
     const imgTags = doc.querySelectorAll('img');
     imgTags.forEach(img => {
-      const marker = doc.createTextNode('\n[IMAGE]\n');
+      // Mammoth puts the return value of convertImage into the src attribute
+      // So src should be "[IMAGE:id]"
+      const markerText = img.getAttribute('src') || '[IMAGE]';
+      const marker = doc.createTextNode(`\n${markerText}\n`);
       img.parentNode?.replaceChild(marker, img);
     });
     
@@ -78,7 +159,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
         const tagName = element.tagName.toLowerCase();
         
         // Add newlines for block elements
-        if (['p', 'div', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+        if (['p', 'div', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'].includes(tagName)) {
           if (tagName === 'br') {
             plainText += '\n';
           } else if (plainText && !plainText.endsWith('\n')) {
@@ -90,7 +171,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
         node.childNodes.forEach(child => walk(child));
         
         // Add trailing newline for block elements
-        if (['p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+        if (['p', 'div', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'tr'].includes(tagName)) {
           if (!plainText.endsWith('\n')) {
             plainText += '\n';
           }
@@ -143,6 +224,7 @@ function cleanWordText(text: string): string {
       // Thay thế các ký tự bullet points bằng format chuẩn (giữ nguyên * nếu có)
       // Chỉ loại bỏ bullet points không phải *, giữ lại * để đánh dấu đáp án đúng
       .replace(/^[•·▪▫◦‣⁃]\s*/gm, "")
+      // Relaxed number removal to avoid stripping math lines starting with numbers
       .replace(/^[1-9]\.\s*/gm, "")
       // Chuẩn hóa khoảng trắng trong dòng (không loại bỏ dòng trống)
       .replace(/[ \t]+/g, " ")
@@ -193,4 +275,164 @@ export function validateWordFormat(content: string): {
     isValid: errors.length === 0,
     errors,
   };
+}
+
+// --- Helper to convert OMML (Word Math) to LaTeX ---
+// Simple recursive converter covering common math structures
+function convertOMMLToLatex(node: Node): string {
+  if (!node) return "";
+  
+  const element = node as Element;
+  const tagName = element.localName; // Using localName to ignore namespace prefix (e.g. 'f' from 'm:f')
+
+  // Helper to get text content of children (recursively)
+  const getChildrenText = (parent: Element, filter?: string) => {
+     let text = "";
+     for (let i = 0; i < parent.childNodes.length; i++) {
+         const child = parent.childNodes[i];
+         if (!filter || (child as Element).localName === filter) {
+             text += convertOMMLToLatex(child);
+         }
+     }
+     return text;
+  };
+
+  // Helper to find a specific child element (e.g. m:num)
+  const findChild = (parent: Element, name: string) => {
+      for (let i = 0; i < parent.childNodes.length; i++) {
+          const child = parent.childNodes[i] as Element;
+          if (child.localName === name) return child;
+      }
+      return null;
+  };
+
+  switch (tagName) {
+    case "oMath": // Wrapper
+    case "oMathPara":
+    case "e": // Base element
+      return getChildrenText(element);
+    
+    // Fraction
+    case "f":
+      const num = findChild(element, "num");
+      const den = findChild(element, "den");
+      return `\\frac{${convertOMMLToLatex(num!)}}{${convertOMMLToLatex(den!)}}`;
+      
+    // Radical / Root
+    case "rad":
+      const deg = findChild(element, "deg"); // Degree (optional)
+      const base = findChild(element, "e");
+      if (deg && deg.textContent) {
+          // Check if deg is empty (hidden) -> has m:ctrlPr?
+          // Simplest is to check text
+          const degText = convertOMMLToLatex(deg);
+          if (degText) {
+             return `\\sqrt[${degText}]{${convertOMMLToLatex(base!)}}`;
+          }
+      }
+      return `\\sqrt{${convertOMMLToLatex(base!)}}`;
+      
+    // Superscript
+    case "sSup":
+      const supE = findChild(element, "e");
+      const sup = findChild(element, "sup");
+      return `{${convertOMMLToLatex(supE!)}^{${convertOMMLToLatex(sup!)}}}`;
+      
+    // Subscript
+    case "sSub":
+      const subE = findChild(element, "e");
+      const sub = findChild(element, "sub");
+      return `{${convertOMMLToLatex(subE!)}_{${convertOMMLToLatex(sub!)}}}`;
+      
+    // SubSup
+    case "sSubSup":
+      const subSupE = findChild(element, "e");
+      const subS = findChild(element, "sub");
+      const supS = findChild(element, "sup");
+      return `{${convertOMMLToLatex(subSupE!)}_{${convertOMMLToLatex(subS!)}}^{${convertOMMLToLatex(supS!)}}}`;
+      
+    // N-ary (Sum, Integral, etc.)
+    case "nary":
+       const narySub = findChild(element, "sub");
+       const narySup = findChild(element, "sup");
+       const naryE = findChild(element, "e");
+       
+       // Operator character (e.g. ∑, ∫)
+       let op = "";
+       const naryPr = findChild(element, "naryPr");
+       if (naryPr) {
+           const chr = findChild(naryPr, "chr");
+           if (chr && chr.getAttribute("m:val")) {
+               const val = chr.getAttribute("m:val");
+               if (val === "∑") op = "\\sum";
+               else if (val === "∫") op = "\\int";
+               else if (val === "∏") op = "\\prod";
+               else op = val || "";
+           } else {
+               // Default usually Sum if not specified? Or we check default
+               // Actually, nary without chr usually defaults to integral in some contexts or sum?
+               // Let's guess Sum if simple, but often it's explicit.
+               // If empty, it might be Sum.
+               op = "\\sum"; 
+           }
+       } else {
+           op = "\\sum";
+       }
+
+       let result = op;
+       if (narySub) {
+           const t = convertOMMLToLatex(narySub);
+           if (t) result += `_{${t}}`;
+       }
+       if (narySup) {
+           const t = convertOMMLToLatex(narySup);
+           if (t) result += `^{${t}}`;
+       }
+       result += convertOMMLToLatex(naryE!);
+       return result;
+       
+    // Delimiters (Parentheses, etc.)
+    case "d":
+       const dPr = findChild(element, "dPr");
+       const dE = findChild(element, "e"); // Body
+       
+       let begChr = "(";
+       let endChr = ")";
+       if (dPr) {
+           const beg = findChild(dPr, "begChr");
+           if (beg) begChr = beg.getAttribute("m:val") || "(";
+           const end = findChild(dPr, "endChr");
+           if (end) endChr = end.getAttribute("m:val") || ")";
+       }
+       // LaTeX formatting for auto-sizing delimiters
+       return `\\left${begChr}${convertOMMLToLatex(dE!)}\\right${endChr}`;
+       
+    // Text Run
+    case "r": // m:r
+       // Contains m:t
+       // In OMML, m:r can contain m:t (text)
+       // Standard runs w:r are different.
+       // Check for m:t
+       const t = findChild(element, "t");
+       if (t) return t.textContent || "";
+       
+       // Or normal w:r if embedded? (Usually m:r > w:t is not valid, it's m:t)
+       // But sometimes m:wrapper contains w:r
+       // Let's just traverse children
+       return getChildrenText(element);
+       
+    case "t": // m:t
+       return element.textContent || "";
+       
+    default:
+       // Fallback: traverse children
+       if (node.hasChildNodes()) {
+           return getChildrenText(element);
+       }
+       // Text Node
+       if (node.nodeType === 3) {
+           return node.textContent || "";
+       }
+       return "";
+  }
 }
