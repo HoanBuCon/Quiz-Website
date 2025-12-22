@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { getToken } from "../utils/auth";
 import { ChatAPI, getApiBaseUrl } from "../utils/api";
 import { FiPaperclip, FiSend, FiTrash2, FiEyeOff } from "react-icons/fi";
+import { FaCommentDots } from "react-icons/fa";
 
 // --- INTERFACES & HELPERS ---
 interface ChatMessage {
@@ -379,6 +380,20 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
   };
 
   const [btnPos, setBtnPos] = useState(() => readBtnPos(vw, vh));
+
+  // Panel Alignment State ('left' | 'right')
+  const [panelAlign, setPanelAlign] = useState<'left' | 'right'>(() => {
+    try {
+      const saved = localStorage.getItem('chat_panel_align');
+      return (saved === 'left' || saved === 'right') ? saved : 'right';
+    } catch { return 'right'; }
+  });
+
+  const persistPanelAlign = (align: 'left' | 'right') => {
+    setPanelAlign(align);
+    try { localStorage.setItem('chat_panel_align', align); } catch { }
+  };
+
   const [isDragging, setIsDragging] = useState(false);
   const pendingPosRef = useRef<{ x: number; y: number } | null>(null);
   const pendingPanelPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -396,10 +411,28 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
 
   const getPanelPos = () => {
     if (isMobile) return { x: (vw - panelWidth) / 2, y: 40 };
-    let panelX = btnPos.x + btnSize + gap;
+
+    // Logic position based on alignment
+    let panelX = 0;
+    if (panelAlign === 'right') {
+      panelX = btnPos.x + btnSize + gap;
+      // Auto flip if overflow
+      if (panelX + panelWidth > vw - 8) panelX = btnPos.x - panelWidth - gap;
+    } else {
+      panelX = btnPos.x - panelWidth - gap;
+      // Auto flip if overflow
+      if (panelX < 8) panelX = btnPos.x + btnSize + gap;
+    }
+
     let panelY = btnPos.y;
-    if (panelX + panelWidth > vw - 8) panelX = btnPos.x - panelWidth - gap;
+    // Keep panel vertically on screen
     panelY = clamp(panelY, 8, vh - panelHeight - 8);
+
+    // Safety clamp for X to keep it visible regardless of align
+    // But allow full width
+    if (panelX < 8) panelX = 8;
+    if (panelX + panelWidth > vw - 8) panelX = vw - panelWidth - 8;
+
     return { x: panelX, y: panelY };
   };
 
@@ -436,7 +469,12 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
       setIsDragging(false);
       const latest = pendingPosRef.current ?? { x: sx, y: sy };
       pendingPosRef.current = null;
-      if (hasMoved) { setBtnPos(latest); persistBtnPos(latest); } else if (!open) { toggleChat(); }
+      if (hasMoved) {
+        setBtnPos(latest);
+        persistBtnPos(latest);
+        // Reset alignment to 'right' (default) when moving button manually, 
+        // to simplify UX, OR keep distinct. Let's keep distinct to avoid jumping.
+      } else if (!open) { toggleChat(); }
     };
     return { onMove, onEnd };
   };
@@ -474,10 +512,43 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
       const latest = pendingPanelPosRef.current ?? startPanel;
       pendingPanelPosRef.current = null;
       if (hasMoved) {
-        const nx = clamp(latest.x - btnSize - gap, 8, vw - btnSize - 8);
-        const ny = clamp(latest.y, 8, vh - btnSize - 8);
-        setBtnPos({ x: nx, y: ny });
-        persistBtnPos({ x: nx, y: ny });
+        // Calculate best button position and alignment based on new panel position
+        const pX = latest.x;
+        const pY = latest.y;
+
+        // Try 'right' align (Panel to right of button => Button to left of Panel)
+        const btnX_right_align = pX - gap - btnSize;
+        // Try 'left' align (Panel to left of button => Button to right of Panel)
+        const btnX_left_align = pX + panelWidth + gap;
+
+        let newAlign: 'left' | 'right' = panelAlign;
+        let newBtnX = btnPos.x;
+
+        if (btnX_right_align < 8) {
+          // Button would be off-screen left -> Force Left Align (Button on Right)
+          newAlign = 'left';
+          newBtnX = btnX_left_align;
+        } else if (btnX_left_align > vw - btnSize - 8) {
+          // Button would be off-screen right -> Force Right Align (Button on Left)
+          newAlign = 'right';
+          newBtnX = btnX_right_align;
+        } else {
+          // Both valid, prefer keeping current alignment unless we specifically want to switch?
+          // To ensure stability, calculate if we need to move the button to match the panel
+          if (panelAlign === 'right') {
+            newBtnX = btnX_right_align;
+          } else {
+            newBtnX = btnX_left_align;
+          }
+        }
+
+        // Clamp final button pos
+        newBtnX = clamp(newBtnX, 8, vw - btnSize - 8);
+        const newBtnY = clamp(pY, 8, vh - btnSize - 8);
+
+        setBtnPos({ x: newBtnX, y: newBtnY });
+        persistBtnPos({ x: newBtnX, y: newBtnY });
+        persistPanelAlign(newAlign);
       }
     };
     return { onMove, onEnd };
@@ -744,6 +815,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
         />
       )}
 
+
+
       {/* Floating button */}
       {!open && (!hideOnDesktop || vw < 1280) && (
         <button
@@ -763,9 +836,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
             willChange: 'transform'
           }}
         >
-          <svg className={isMobile ? 'w-6 h-6' : 'w-7 h-7'} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-          </svg>
+          <FaCommentDots className={isMobile ? 'w-6 h-6' : 'w-7 h-7'} />
           {unread > 0 && (
             <span
               className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-lg ring-2 ring-white"
@@ -799,9 +870,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
           }`} style={{ touchAction: 'none' }}>
           <div className="flex items-center gap-3 pointer-events-none">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-              </svg>
+              <FaCommentDots className="w-6 h-6" />
             </div>
             <div>
               <div className="font-semibold text-base">Cộng đồng Liêm Đại Hiệp</div>

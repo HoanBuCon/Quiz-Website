@@ -13,6 +13,7 @@ import {
   FaBook,
   FaPlus,
   FaGraduationCap,
+  FaCommentDots,
 } from "react-icons/fa";
 import { getToken, clearToken } from "../../utils/auth";
 import { toast } from "react-hot-toast";
@@ -56,6 +57,7 @@ const Header: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
   const [userName, setUserName] = useState<string | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isUserMenuHovered, setIsUserMenuHovered] = useState(false);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const shimmer = e.currentTarget.querySelector(
@@ -329,33 +331,28 @@ const Header: React.FC = () => {
 
               {/* Auth Buttons */}
               {isLoggedIn && (
-                <div className="relative user-menu-container">
+                <div
+                  className="relative user-menu-container"
+                  onMouseEnter={() => setIsUserMenuHovered(true)}
+                  onMouseLeave={() => setIsUserMenuHovered(false)}
+                >
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center space-x-2 pl-1 pr-3 py-1 rounded-lg text-sm font-medium bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300 h-10"
+                    className={`flex items-center space-x-2 pl-1 pr-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md h-10
+                      ${(isUserMenuOpen || isUserMenuHovered)
+                        ? "bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100 ring-2 ring-primary-500/50"
+                        : "bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 text-slate-700 dark:text-slate-300"
+                      }
+                    `}
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                       {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
                     </div>
                     <span className="hidden sm:inline">{userName || "Tài khoản"}</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${isUserMenuOpen ? "rotate-180" : ""
-                        }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
                   </button>
 
                   {/* Dropdown Menu */}
-                  {isUserMenuOpen && (
+                  {(isUserMenuOpen || isUserMenuHovered) && (
                     <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
                       <div className="py-1">
                         <Link
@@ -500,9 +497,7 @@ const Header: React.FC = () => {
                 className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
               >
                 <span className="flex items-center gap-3">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M2 5a3 3 0 013-3h14a3 3 0 013 3v9a3 3 0 01-3 3H9l-5 5v-5H5a3 3 0 01-3-3V5z" />
-                  </svg>
+                  <FaCommentDots className="w-4 h-4" />
                   <span>Chat</span>
                 </span>
                 {chatUnread > 0 && (

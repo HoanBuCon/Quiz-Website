@@ -187,8 +187,6 @@ const Sidebar: React.FC = () => {
                     {/* Chat Toggle */}
                     <button
                         onClick={toggleChat}
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
                         className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
                         title="Chat"
                     >
@@ -203,11 +201,6 @@ const Sidebar: React.FC = () => {
                         <span className="text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 overflow-hidden transition-opacity duration-500 ease-out delay-75">
                             Cộng đồng
                         </span>
-
-                        {/* Shimmer Effect */}
-                        <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
-                            <span className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-white/50 dark:via-blue-400/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out" />
-                        </div>
                     </button>
                     {/* Music Toggle */}
                     <button
@@ -253,7 +246,7 @@ const Sidebar: React.FC = () => {
 
                 {/* User Profile */}
                 {isLoggedIn ? (
-                    <div className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl bg-white/10 dark:bg-gray-800/30 border border-white/10 dark:border-gray-700/50 justify-start overflow-hidden group/profile relative transition-colors duration-500 ease-out hover:bg-blue-800/40 dark:hover:bg-gray-800/50">
+                    <div className="flex items-center gap-3 pl-[15px] pr-3 h-14 rounded-xl bg-white/10 dark:bg-gray-800/30 border border-white/10 dark:border-gray-700/50 justify-start overflow-hidden group/profile relative transition-colors duration-500 ease-out hover:bg-blue-800/40 dark:hover:bg-gray-800/50">
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-xs shadow-sm">
                                 {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
