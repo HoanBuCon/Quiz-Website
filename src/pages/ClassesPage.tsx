@@ -760,9 +760,10 @@ const ClassesPage: React.FC = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {/* Hero Section */}
-      <div className="mb-8 lg:hidden">
-        <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-6 sm:p-8 shadow-2xl">
+      {/* Hero Section (Unified) */}
+      <div className="mb-8 lg:mb-12">
+        <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
+          {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           {/* Overlay pattern */}
@@ -781,202 +782,204 @@ const ClassesPage: React.FC = () => {
             "
           ></div>
           <div className="relative z-10">
-            <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-2 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
               Lớp học của tôi
             </h1>
-            <p className="text-sm font-mono sm:text-base text-blue-100 dark:text-blue-200">
+            <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Chọn lớp học để bắt đầu làm bài trắc nghiệm
             </p>
+          </div>
+        </div>
+      </div>
 
-            {/* Stats Mobile */}
-            <div className="grid grid-cols-2 gap-4 sm:gap-6 mt-8">
-              {/* Ô 1: Lớp học */}
-              <div
-                className="
+      {/* Mobile Stats (only visible on mobile) */}
+      <div className="xl:hidden mb-8">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6">
+          {/* Ô 1: Lớp học */}
+          <div
+            className="
                   relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
                   overflow-hidden group isolate
                 "
-                style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
-              >
-                {/* Overlay pattern: vân chéo */}
-                <div
-                  className="
+            style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
+          >
+            {/* Overlay pattern: vân chéo */}
+            <div
+              className="
                     absolute inset-0 opacity-10
                     bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
                     dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
                     rounded-xl pointer-events-none
                   "
-                />
+            />
 
-                {/* Hiệu ứng shimmer ánh bạc */}
-                <div
-                  className="
+            {/* Hiệu ứng shimmer ánh bạc */}
+            <div
+              className="
                     absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
                     bg-gradient-to-r from-transparent via-white/80 to-transparent
                     translate-x-[-100%] group-hover:translate-x-[100%]
                     blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
                     rounded-xl mix-blend-overlay pointer-events-none
                   "
-                />
+            />
 
-                {/* Bóng sáng trung tâm */}
-                <div
-                  className="
+            {/* Bóng sáng trung tâm */}
+            <div
+              className="
                     absolute inset-0 pointer-events-none
                     bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
                     dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
                     rounded-xl
                   "
-                />
+            />
 
-                <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                  {classes.length}
-                </div>
-                <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-                  Lớp học
-                </div>
-              </div>
+            <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+              {classes.length}
+            </div>
+            <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+              Lớp học
+            </div>
+          </div>
 
-              {/* Ô 2: Bài kiểm tra */}
-              <div
-                className="
+          {/* Ô 2: Bài kiểm tra */}
+          <div
+            className="
                   relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
                   overflow-hidden group isolate
                 "
-                style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
-              >
-                <div
-                  className="
+            style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
+          >
+            <div
+              className="
                     absolute inset-0 opacity-10
                     bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
                     dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
                     rounded-xl pointer-events-none
                   "
-                />
-                <div
-                  className="
+            />
+            <div
+              className="
                     absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
                     bg-gradient-to-r from-transparent via-white/80 to-transparent
                     translate-x-[-100%] group-hover:translate-x-[100%]
                     blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
                     rounded-xl mix-blend-overlay pointer-events-none
                   "
-                />
-                <div
-                  className="
+            />
+            <div
+              className="
                     absolute inset-0 pointer-events-none
                     bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
                     dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
                     rounded-xl
                   "
-                />
+            />
 
-                <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                  {classes.reduce(
-                    (total, cls) => total + getValidQuizzes(cls).length,
-                    0
-                  )}
-                </div>
-                <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-                  Bài kiểm tra
-                </div>
-              </div>
+            <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+              {classes.reduce(
+                (total, cls) => total + getValidQuizzes(cls).length,
+                0
+              )}
+            </div>
+            <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+              Bài kiểm tra
+            </div>
+          </div>
 
-              {/* Ô 3: Đã hoàn thành */}
-              <div
-                className="
+          {/* Ô 3: Đã hoàn thành */}
+          <div
+            className="
                   relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
                   overflow-hidden group isolate
                 "
-                style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
-              >
-                <div
-                  className="
+            style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
+          >
+            <div
+              className="
                     absolute inset-0 opacity-10
                     bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
                     dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
                     rounded-xl pointer-events-none
                   "
-                />
-                <div
-                  className="
+            />
+            <div
+              className="
                     absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
                     bg-gradient-to-r from-transparent via-white/80 to-transparent
                     translate-x-[-100%] group-hover:translate-x-[100%]
                     blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
                     rounded-xl mix-blend-overlay pointer-events-none
                   "
-                />
-                <div
-                  className="
+            />
+            <div
+              className="
                     absolute inset-0 pointer-events-none
                     bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
                     dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
                     rounded-xl
                   "
-                />
+            />
 
-                <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                  {statsCompleted}
-                </div>
-                <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-                  Đã hoàn thành
-                </div>
-              </div>
+            <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+              {statsCompleted}
+            </div>
+            <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+              Đã hoàn thành
+            </div>
+          </div>
 
-              {/* Ô 4: Điểm trung bình */}
-              <div
-                className="
+          {/* Ô 4: Điểm trung bình */}
+          <div
+            className="
                   relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
                   overflow-hidden group isolate
                 "
-                style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
-              >
-                <div
-                  className="
+            style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
+          >
+            <div
+              className="
                     absolute inset-0 opacity-10
                     bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
                     dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
                     rounded-xl pointer-events-none
                   "
-                />
-                <div
-                  className="
+            />
+            <div
+              className="
                     absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
                     bg-gradient-to-r from-transparent via-white/80 to-transparent
                     translate-x-[-100%] group-hover:translate-x-[100%]
                     blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
                     rounded-xl mix-blend-overlay pointer-events-none
                   "
-                />
-                <div
-                  className="
+            />
+            <div
+              className="
                     absolute inset-0 pointer-events-none
                     bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
                     dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
                     rounded-xl
                   "
-                />
+            />
 
-                <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                  {statsAverage}
-                </div>
-                <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-                  Điểm trung bình
-                </div>
-              </div>
+            <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
+              {statsAverage}
+            </div>
+            <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
+              Điểm trung bình
             </div>
           </div>
         </div>
@@ -985,37 +988,7 @@ const ClassesPage: React.FC = () => {
       <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
         {/* Left Section - Main Content */}
         <div className="xl:w-[70%] min-w-0 order-1">
-          {/* Desktop Banner - Only visible on lg and above */}
-          <div className="hidden xl:block mb-8">
-            <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
-              {/* Decorative elements */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-              {/* Overlay pattern */}
-              <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
-              {/* Shimmer effect */}
-              <div
-                className="
-                  absolute inset-0
-                  opacity-30
-                  bg-gradient-to-r from-transparent via-white/65 to-transparent
-                  blur-[3px]
-                  animate-[shimmer_3s_ease-in-out_infinite]
-                  [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
-                  mix-blend-overlay
-                  rounded-2xl pointer-events-none
-                "
-              ></div>
-              <div className="relative z-10">
-                <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
-                  Lớp học của tôi
-                </h1>
-                <p className="text-base font-mono text-blue-100 dark:text-blue-200 leading-relaxed">
-                  Chọn lớp học để bắt đầu làm bài trắc nghiệm
-                </p>
-              </div>
-            </div>
-          </div>
+
 
           <div className="flex flex-wrap gap-2 mb-6">
             <button

@@ -33,7 +33,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, noPadding = fal
             </div>
 
             {/* Global Components */}
-            <ChatBox />
+            <ChatBox hideOnDesktop={true} />
             <QuizResumer />
         </div>
     );

@@ -407,8 +407,8 @@ const CreateClassPage: React.FC = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {/* Hero Section Mobile */}
-      <div className="mb-8 lg:hidden">
+      {/* Hero Section (Unified) */}
+      <div className="mb-8 lg:mb-12">
         <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
@@ -429,10 +429,10 @@ const CreateClassPage: React.FC = () => {
             "
           ></div>
           <div className="relative z-10">
-            <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-4 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
               Tạo lớp học mới
             </h1>
-            <p className="text-sm font-mono sm:text-base text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+            <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Nhập thông tin và chọn cách tạo bài kiểm tra
             </p>
           </div>
@@ -506,55 +506,7 @@ const CreateClassPage: React.FC = () => {
       <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
         {/* Left Section - Main Content */}
         <div className="xl:w-[70%] min-w-0 order-1">
-          {/* Desktop Banner - Only visible on lg and above */}
-          <div className="hidden xl:block mb-8">
-            <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
-              {/* Decorative elements */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-              {/* Overlay pattern */}
-              <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
-              {/* Shimmer effect */}
-              <div
-                className="
-                  absolute inset-0
-                  opacity-30
-                  bg-gradient-to-r from-transparent via-white/65 to-transparent
-                  blur-[3px]
-                  animate-[shimmer_3s_ease-in-out_infinite]
-                  [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
-                  mix-blend-overlay
-                  rounded-2xl pointer-events-none
-                "
-              ></div>
-              <div className="relative z-10">
-                <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
-                  Tạo lớp học mới
-                </h1>
-                <p className="text-base font-mono text-blue-100 dark:text-blue-200 leading-relaxed mb-4">
-                  Nhập thông tin lớp học và chọn cách tạo bài kiểm tra
-                </p>
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5 text-orange-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <p className="text-sm text-orange-200 font-medium">
-                    Tạo lớp học mới hoặc chọn lớp học có sẵn
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           {/* Block các thẻ tạo lớp/quiz/upload */}
           <div className="relative">

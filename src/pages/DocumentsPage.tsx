@@ -664,8 +664,8 @@ const DocumentsPage: React.FC = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {/* Hero Section Mobile */}
-      <div className="mb-8 xl:hidden">
+      {/* Hero Section (Unified) */}
+      <div className="mb-8 lg:mb-12">
         <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
@@ -686,15 +686,16 @@ const DocumentsPage: React.FC = () => {
             "
           ></div>
           <div className="relative z-10">
-            <h1 className="text-xl sm:text-2xl font-mono font-bold text-white mb-4 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
               Tài liệu của tôi
             </h1>
-            <p className="text-sm sm:text-base font-mono text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+            <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
               Quản lý và tạo bài kiểm tra từ tài liệu
             </p>
           </div>
         </div>
       </div>
+
 
       {/* Mobile Right Section - Kho tài liệu (chỉ hiển thị Kho tài liệu ở đây) */}
       <div className="xl:hidden mb-6 space-y-6">
@@ -787,37 +788,7 @@ const DocumentsPage: React.FC = () => {
       <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
         {/* Left Section - Main Content */}
         <div className="xl:w-[70%] min-w-0 order-1">
-          {/* Desktop Banner - Only visible on lg and above */}
-          <div className="hidden xl:block mb-8">
-            <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
-              {/* Decorative elements */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-              {/* Overlay pattern */}
-              <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
-              {/* Shimmer effect */}
-              <div
-                className="
-                  absolute inset-0
-                  opacity-30
-                  bg-gradient-to-r from-transparent via-white/65 to-transparent
-                  blur-[3px]
-                  animate-[shimmer_3s_ease-in-out_infinite]
-                  [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)]
-                  mix-blend-overlay
-                  rounded-2xl pointer-events-none
-                "
-              ></div>
-              <div className="relative z-10">
-                <h1 className="text-2xl sm:text-3xl font-mono font-bold text-white mb-3 tracking-tight">
-                  Tài liệu của tôi
-                </h1>
-                <p className="text-base font-mono text-blue-100 dark:text-blue-200 leading-relaxed">
-                  Quản lý và sử dụng các tài liệu đã tải lên
-                </p>
-              </div>
-            </div>
-          </div>
+
 
           {/* Upload Area */}
           <div className="card p-6 lg:p-8 mb-6">

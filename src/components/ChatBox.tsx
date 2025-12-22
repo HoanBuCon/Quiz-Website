@@ -37,9 +37,19 @@ function formatDateSeparator(dateString: string): string {
     month: 'long',
     day: 'numeric'
   });
+  return date.toLocaleDateString('vi-VN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 }
 
-const ChatBox: React.FC = () => {
+interface ChatBoxProps {
+  hideOnDesktop?: boolean;
+}
+
+const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
   // --- 1. STATE & REF (UI) ---
   const [open, setOpen] = useState(false);
   const openRef = useRef<boolean>(false);
@@ -735,7 +745,7 @@ const ChatBox: React.FC = () => {
       )}
 
       {/* Floating button */}
-      {!open && !isMobile && (
+      {!open && (!hideOnDesktop || vw < 1280) && (
         <button
           ref={bubbleRef}
           onPointerDown={handlePointerDown}

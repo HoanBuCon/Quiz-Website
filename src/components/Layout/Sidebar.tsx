@@ -10,7 +10,8 @@ import {
     FaHome,
     FaBook,
     FaPlus,
-    FaGraduationCap
+    FaGraduationCap,
+    FaCommentDots
 } from "react-icons/fa";
 import { getToken, clearToken } from "../../utils/auth";
 import { toast } from "react-hot-toast";
@@ -22,11 +23,30 @@ const Sidebar: React.FC = () => {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
     const [userName, setUserName] = useState<string | null>(null);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Listen for chat unread count
+    useEffect(() => {
+        const handleUnreadUpdate = (e: any) => {
+            setUnreadCount(e.detail?.count || 0);
+        };
+
+        // Initial load
+        const stored = localStorage.getItem('chat_unread_count');
+        if (stored) setUnreadCount(parseInt(stored, 10));
+
+        window.addEventListener('chat:unread', handleUnreadUpdate);
+        return () => window.removeEventListener('chat:unread', handleUnreadUpdate);
+    }, []);
+
+    const toggleChat = () => {
+        window.dispatchEvent(new Event('chat:toggle'));
+    };
 
     const { clearData } = useData();
 
     // Shimmer effect handlers (Keep existing)
-    const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
         const shimmer = e.currentTarget.querySelector(".nav-shimmer") as HTMLElement | null;
         if (!shimmer) return;
         shimmer.classList.remove("backward");
@@ -34,7 +54,7 @@ const Sidebar: React.FC = () => {
         shimmer.classList.add("forward");
     };
 
-    const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
         const shimmer = e.currentTarget.querySelector(".nav-shimmer") as HTMLElement | null;
         if (!shimmer) return;
         shimmer.classList.remove("forward");
@@ -116,7 +136,7 @@ const Sidebar: React.FC = () => {
                     </div>
                     {/* Logo Text */}
                     <span
-                        className="opacity-0 group-hover/sidebar:opacity-100 transition-all duration-500 ease-out delay-75 logo-text text-xl text-white dark:text-primary-300 whitespace-nowrap"
+                        className="opacity-0 group-hover/sidebar:opacity-100 transition-all duration-500 ease-out delay-75 logo-text text-[25px] text-white dark:text-primary-300 whitespace-nowrap"
                         style={{ transform: 'translateY(1px)' }}
                     >
                         liemdai
@@ -135,10 +155,10 @@ const Sidebar: React.FC = () => {
                             to={item.path}
                             onMouseEnter={handleMouseEnter}
                             onMouseLeave={handleMouseLeave}
-                            className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out group relative overflow-hidden
+                            className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out group relative overflow-hidden border-r-4
                                 ${active
-                                    ? "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/40 dark:to-blue-800/40 text-blue-900 dark:text-blue-400 font-medium shadow-sm"
-                                    : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner"
+                                    ? "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/40 dark:to-blue-800/40 text-blue-900 dark:text-blue-400 font-medium shadow-sm border-transparent group-hover/sidebar:border-blue-600 dark:group-hover/sidebar:border-blue-400"
+                                    : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner border-transparent"
                                 }
                             `}
                         >
@@ -146,11 +166,6 @@ const Sidebar: React.FC = () => {
                             <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out delay-75">
                                 {item.label}
                             </span>
-
-                            {/* Active Indicator */}
-                            {active && (
-                                <div className="absolute right-0 top-0 h-full w-1.5 bg-blue-600 dark:bg-blue-400 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out rounded-r-md" />
-                            )}
 
                             {/* Shimmer Effect */}
                             <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
@@ -169,6 +184,31 @@ const Sidebar: React.FC = () => {
 
                 {/* Controls Group */}
                 <div className="grid grid-cols-1 gap-2">
+                    {/* Chat Toggle */}
+                    <button
+                        onClick={toggleChat}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                        className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
+                        title="Chat"
+                    >
+                        <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center relative">
+                            <FaCommentDots className="w-5 h-5" />
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border border-blue-900 dark:border-gray-800">
+                                    {unreadCount > 99 ? '99+' : unreadCount}
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 overflow-hidden transition-opacity duration-500 ease-out delay-75">
+                            Cộng đồng
+                        </span>
+
+                        {/* Shimmer Effect */}
+                        <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
+                            <span className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-white/50 dark:via-blue-400/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out" />
+                        </div>
+                    </button>
                     {/* Music Toggle */}
                     <button
                         onClick={toggleMusicPlayer}
