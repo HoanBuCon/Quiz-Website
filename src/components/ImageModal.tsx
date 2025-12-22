@@ -185,7 +185,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, isOpen, onClose }) =>
                     className="px-3 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-full transition-colors whitespace-nowrap"
                     title="Đặt lại kích thước (Reset)"
                 >
-                    100%
+                    Reset
                 </button>
 
                 <div className="w-px h-6 bg-gray-700 mx-1"></div>
