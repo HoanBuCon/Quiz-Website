@@ -57,7 +57,7 @@ const Header: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
   const [userName, setUserName] = useState<string | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isUserMenuHovered, setIsUserMenuHovered] = useState(false);
+
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const shimmer = e.currentTarget.querySelector(
@@ -333,13 +333,11 @@ const Header: React.FC = () => {
               {isLoggedIn && (
                 <div
                   className="relative user-menu-container"
-                  onMouseEnter={() => setIsUserMenuHovered(true)}
-                  onMouseLeave={() => setIsUserMenuHovered(false)}
                 >
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                     className={`flex items-center space-x-2 pl-1 pr-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md h-10
-                      ${(isUserMenuOpen || isUserMenuHovered)
+                      ${(isUserMenuOpen)
                         ? "bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100 ring-2 ring-primary-500/50"
                         : "bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 text-slate-700 dark:text-slate-300"
                       }
@@ -352,7 +350,7 @@ const Header: React.FC = () => {
                   </button>
 
                   {/* Dropdown Menu */}
-                  {(isUserMenuOpen || isUserMenuHovered) && (
+                  {(isUserMenuOpen) && (
                     <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
                       <div className="py-1">
                         <Link
