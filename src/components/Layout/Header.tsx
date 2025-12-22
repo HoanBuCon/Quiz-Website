@@ -332,10 +332,12 @@ const Header: React.FC = () => {
                 <div className="relative user-menu-container">
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center space-x-1 px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300"
+                    className="flex items-center space-x-2 pl-1 pr-3 py-1 rounded-lg text-sm font-medium bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-300 shadow-sm hover:shadow-md text-slate-700 dark:text-slate-300 h-10"
                   >
-                    <FaUser className="w-4 h-4" />
-                    <span>{userName || "Tài khoản"}</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                      {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
+                    </div>
+                    <span className="hidden sm:inline">{userName || "Tài khoản"}</span>
                     <svg
                       className={`w-4 h-4 transition-transform duration-200 ${isUserMenuOpen ? "rotate-180" : ""
                         }`}
@@ -487,29 +489,29 @@ const Header: React.FC = () => {
               );
             })}
 
-            {/* Chat open button (mobile) */}
-            <button
-              onClick={() => {
-                window.dispatchEvent(new Event("chat:open"));
-                setIsMobileMenuOpen(false);
-              }}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
-            >
-              <span className="flex items-center gap-3">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M2 5a3 3 0 013-3h14a3 3 0 013 3v9a3 3 0 01-3 3H9l-5 5v-5H5a3 3 0 01-3-3V5z" />
-                </svg>
-                <span>Chat</span>
-              </span>
-              {chatUnread > 0 && (
-                <span className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md">
-                  {chatUnread > 99 ? '99+' : chatUnread}
-                </span>
-              )}
-            </button>
-
             {/* Mobile Auth Links */}
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-4">
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-4 flex flex-col space-y-2"  >
+              {/* Chat open button (mobile) */}
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new Event("chat:open"));
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
+              >
+                <span className="flex items-center gap-3">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2 5a3 3 0 013-3h14a3 3 0 013 3v9a3 3 0 01-3 3H9l-5 5v-5H5a3 3 0 01-3-3V5z" />
+                  </svg>
+                  <span>Chat</span>
+                </span>
+                {chatUnread > 0 && (
+                  <span className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md">
+                    {chatUnread > 99 ? '99+' : chatUnread}
+                  </span>
+                )}
+              </button>
+
               {isLoggedIn ? (
                 <div className="space-y-2">
                   <Link
@@ -520,6 +522,7 @@ const Header: React.FC = () => {
                     <FaUser className="w-4 h-4 mr-2" />
                     <span>Trang cá nhân</span>
                   </Link>
+
                   <button
                     onClick={() => {
                       handleLogout();

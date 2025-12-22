@@ -148,7 +148,7 @@ const Sidebar: React.FC = () => {
 
                             {/* Active Indicator */}
                             {active && (
-                                <div className="absolute right-0 top-0 h-full w-1.5 bg-blue-600 dark:bg-blue-400 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300" />
+                                <div className="absolute right-0 top-0 h-full w-1.5 bg-blue-600 dark:bg-blue-400 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 rounded-r-md" />
                             )}
 
                             {/* Shimmer Effect */}
