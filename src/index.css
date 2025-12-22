@@ -208,6 +208,7 @@ html, body {
 /* Chat scrollbar - thinner and subtle */
 .chat-scroll, .input-scroll {
   scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(100, 116, 139, 0.6) transparent; /* thumb-color track-color */
 }
 .chat-scroll::-webkit-scrollbar,
 .input-scroll::-webkit-scrollbar {

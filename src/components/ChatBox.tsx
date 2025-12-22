@@ -1109,6 +1109,14 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
           )}
           <div className="flex items-end gap-2">
             <div className={`flex-1 flex items-center gap-2 bg-slate-100 dark:bg-slate-800 ${isMultiline ? 'rounded-xl' : 'rounded-full'} px-4 py-2 border border-slate-200 dark:border-slate-700`}>
+              <label className="cursor-pointer text-primary-600 hover:text-primary-700 dark:text-primary-400">
+                <FiPaperclip className="w-5 h-5" />
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                />
+              </label>
               <textarea
                 ref={inputRef}
                 className="input-scroll flex-1 bg-transparent text-sm outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400 resize-none"
@@ -1130,14 +1138,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
                 placeholder="Aa"
                 style={{ height: 'auto', overflowY: 'hidden' }}
               />
-              <label className="cursor-pointer text-primary-600 hover:text-primary-700 dark:text-primary-400">
-                <FiPaperclip className="w-5 h-5" />
-                <input
-                  type="file"
-                  hidden
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                />
-              </label>
             </div>
             <button
               type="submit"

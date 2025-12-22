@@ -126,7 +126,7 @@ const Sidebar: React.FC = () => {
             {/* Logo Area */}
             <div className="h-24 flex items-center relative overflow-hidden">
                 <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 dark:via-gray-700 to-transparent"></div>
-                <Link to="/" className="flex items-center gap-3 pl-5 pr-3 w-full">
+                <Link to="/" className="flex items-center gap-[7px] pl-5 pr-3 w-full">
                     <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
                         <img
                             src="/Trollface.png"
