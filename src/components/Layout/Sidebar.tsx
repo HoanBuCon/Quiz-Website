@@ -104,18 +104,19 @@ const Sidebar: React.FC = () => {
             className="group/sidebar fixed xl:static inset-y-0 left-0 z-40 bg-gradient-to-b from-blue-900 to-blue-600 dark:from-[#1a1e3a] dark:to-[#1a1e3a] dark:bg-[#1a1e3a] border-r border-gray-200/20 dark:border-gray-700 shadow-xl transition-all duration-300 ease-in-out flex flex-col w-20 hover:w-64"
         >
             {/* Logo Area */}
-            <div className="h-16 flex items-center border-b border-white/10 dark:border-gray-700/50 overflow-hidden">
+            <div className="h-24 flex items-center relative overflow-hidden">
+                <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 dark:via-gray-700 to-transparent"></div>
                 <Link to="/" className="flex items-center gap-3 pl-5 pr-3 w-full">
                     <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
                         <img
                             src="/Trollface.png"
                             alt="Logo"
-                            className="w-10 h-10 object-contain transition-transform duration-200 group-hover/sidebar:scale-110"
+                            className="w-10 h-10 object-contain transition-transform duration-500 ease-out group-hover/sidebar:scale-110"
                         />
                     </div>
                     {/* Logo Text */}
                     <span
-                        className="opacity-0 group-hover/sidebar:opacity-100 overflow-hidden transition-opacity duration-300 delay-75 logo-text text-xl text-white dark:text-primary-300 whitespace-nowrap"
+                        className="opacity-0 group-hover/sidebar:opacity-100 transition-all duration-500 ease-out delay-75 logo-text text-xl text-white dark:text-primary-300 whitespace-nowrap"
                         style={{ transform: 'translateY(1px)' }}
                     >
                         liemdai
@@ -134,27 +135,27 @@ const Sidebar: React.FC = () => {
                             to={item.path}
                             onMouseEnter={handleMouseEnter}
                             onMouseLeave={handleMouseLeave}
-                            className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden
+                            className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out group relative overflow-hidden
                                 ${active
                                     ? "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/40 dark:to-blue-800/40 text-blue-900 dark:text-blue-400 font-medium shadow-sm"
                                     : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner"
                                 }
                             `}
                         >
-                            <Icon className={`w-6 h-6 flex-shrink-0 text-center ${active ? "text-blue-700 dark:text-blue-400" : "text-blue-200 dark:text-gray-500 group-hover:text-white dark:group-hover:text-gray-300"}`} />
-                            <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 delay-75">
+                            <Icon className={`w-6 h-6 flex-shrink-0 text-center transition-colors duration-500 ease-out ${active ? "text-blue-700 dark:text-blue-400" : "text-blue-200 dark:text-gray-500 group-hover:text-white dark:group-hover:text-gray-300"}`} />
+                            <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out delay-75">
                                 {item.label}
                             </span>
 
                             {/* Active Indicator */}
                             {active && (
-                                <div className="absolute right-0 top-0 h-full w-1.5 bg-blue-600 dark:bg-blue-400 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 rounded-r-md" />
+                                <div className="absolute right-0 top-0 h-full w-1.5 bg-blue-600 dark:bg-blue-400 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out rounded-r-md" />
                             )}
 
                             {/* Shimmer Effect */}
                             <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
                                 <span
-                                    className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-white/50 dark:via-blue-400/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out"
+                                    className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-white/50 dark:via-blue-400/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out"
                                 />
                             </div>
                         </Link>
@@ -163,14 +164,15 @@ const Sidebar: React.FC = () => {
             </nav>
 
             {/* Bottom Actions */}
-            <div className="p-3 border-t border-white/10 dark:border-gray-700/50 space-y-2">
+            <div className="p-3 relative space-y-2">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 dark:via-gray-700 to-transparent"></div>
 
                 {/* Controls Group */}
                 <div className="grid grid-cols-1 gap-2">
                     {/* Music Toggle */}
                     <button
                         onClick={toggleMusicPlayer}
-                        className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-200 w-full group relative overflow-hidden
+                        className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden
                             ${showMusicPlayer
                                 ? "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/30 dark:to-blue-900/30 dark:bg-blue-900/20 text-blue-900 dark:text-blue-400"
                                 : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
@@ -181,7 +183,7 @@ const Sidebar: React.FC = () => {
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                             <FaMusic className={`w-5 h-5 ${isPlaying ? 'animate-spin' : ''}`} style={isPlaying ? { animationDuration: '3s' } : undefined} />
                         </div>
-                        <span className="text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 overflow-hidden transition-opacity duration-300 delay-75">
+                        <span className="text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 overflow-hidden transition-opacity duration-500 ease-out delay-75">
                             Nhạc nền
                         </span>
                     </button>
@@ -189,7 +191,7 @@ const Sidebar: React.FC = () => {
                     {/* Theme Toggle */}
                     <button
                         onClick={toggleTheme}
-                        className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-200 w-full group relative overflow-hidden text-blue-100 dark:text-yellow-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
+                        className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-yellow-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
                         title="Toggle Theme"
                     >
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
@@ -203,7 +205,7 @@ const Sidebar: React.FC = () => {
                                 </svg>
                             )}
                         </div>
-                        <span className="text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 overflow-hidden transition-opacity duration-300 delay-75">
+                        <span className="text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 overflow-hidden transition-opacity duration-500 ease-out delay-75">
                             {isDarkMode ? 'Giao diện sáng' : 'Giao diện tối'}
                         </span>
                     </button>
@@ -211,14 +213,14 @@ const Sidebar: React.FC = () => {
 
                 {/* User Profile */}
                 {isLoggedIn ? (
-                    <div className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl bg-white/10 dark:bg-gray-800/30 border border-white/10 dark:border-gray-700/50 justify-start overflow-hidden group/profile relative transition-colors duration-200 hover:bg-blue-800/40 dark:hover:bg-gray-800/50">
+                    <div className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl bg-white/10 dark:bg-gray-800/30 border border-white/10 dark:border-gray-700/50 justify-start overflow-hidden group/profile relative transition-colors duration-500 ease-out hover:bg-blue-800/40 dark:hover:bg-gray-800/50">
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                             <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-xs shadow-sm">
                                 {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
                             </div>
                         </div>
 
-                        <div className="flex-1 min-w-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 whitespace-nowrap delay-75">
+                        <div className="flex-1 min-w-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out whitespace-nowrap delay-75">
                             <p className="text-sm font-medium text-white dark:text-gray-200 truncate">
                                 {userName || "Tài khoản"}
                             </p>
@@ -243,7 +245,7 @@ const Sidebar: React.FC = () => {
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                             <FaUser className="w-4 h-4" />
                         </div>
-                        <span className="text-sm font-medium opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 whitespace-nowrap delay-75">
+                        <span className="text-sm font-medium opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out whitespace-nowrap delay-75">
                             Đăng nhập
                         </span>
                     </Link>
