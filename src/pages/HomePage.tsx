@@ -251,9 +251,9 @@ const HomePage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+      <div className="flex flex-col xl:flex-row gap-6 xl:gap-8">
         {/* Left Section - Main Content */}
-        <div className="lg:w-[70%] order-2 lg:order-1">
+        <div className="xl:w-[70%] order-2 xl:order-1">
           <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Lớp học công khai
@@ -533,8 +533,8 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Right Section - Sidebar */}
-        <div className="w-full lg:w-[30%] lg:flex-shrink-0 order-1 lg:order-2">
-          <div className="lg:sticky lg:top-20">
+        <div className="w-full xl:w-[30%] xl:flex-shrink-0 order-1 xl:order-2">
+          <div className="xl:sticky xl:top-20">
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-3">

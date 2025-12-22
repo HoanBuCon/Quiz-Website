@@ -5,7 +5,7 @@ import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { MusicProvider } from "./context/MusicContext";
 import { DataProvider, useData } from "./context/DataContext";
 import Layout from "./components/Layout/Layout";
-import FixedLayout from "./components/Layout/FixedLayout";
+import SidebarLayout from "./components/Layout/SidebarLayout";
 import BackgroundMusic from "./components/BackgroundMusic";
 import HomePage from "./pages/HomePage";
 import ClassesPage from "./pages/ClassesPage";
@@ -250,9 +250,9 @@ function App() {
                 path="/"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout>
                       <HomePage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
@@ -260,9 +260,9 @@ function App() {
                 path="/classes"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout>
                       <ClassesPage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
@@ -270,9 +270,9 @@ function App() {
                 path="/profile"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout noPadding={true}>
                       <ProfilePage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
@@ -280,9 +280,9 @@ function App() {
                 path="/create"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout>
                       <CreateClassPage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
@@ -300,9 +300,9 @@ function App() {
                 path="/documents"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout>
                       <DocumentsPage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
@@ -310,9 +310,9 @@ function App() {
                 path="/document/:id"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout>
                       <DocumentViewerPage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
@@ -320,9 +320,9 @@ function App() {
                 path="/quiz/:quizId"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout>
                       <QuizPage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
@@ -330,9 +330,9 @@ function App() {
                 path="/results/:quizId"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout>
                       <ResultsPage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
@@ -340,21 +340,21 @@ function App() {
                 path="/class/:classId"
                 element={
                   <MaintenanceGuard>
-                    <Layout>
+                    <SidebarLayout>
                       <ClassViewPage />
-                    </Layout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />
 
-              {/* Route với FixedLayout */}
+              {/* Route với FixedLayout -> Chuyển sang SidebarLayout */}
               <Route
                 path="/edit-class/:classId"
                 element={
                   <MaintenanceGuard>
-                    <FixedLayout>
+                    <SidebarLayout>
                       <EditClassPage />
-                    </FixedLayout>
+                    </SidebarLayout>
                   </MaintenanceGuard>
                 }
               />

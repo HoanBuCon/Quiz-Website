@@ -665,7 +665,7 @@ const DocumentsPage: React.FC = () => {
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Hero Section Mobile */}
-      <div className="mb-8 lg:hidden">
+      <div className="mb-8 xl:hidden">
         <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
@@ -697,7 +697,7 @@ const DocumentsPage: React.FC = () => {
       </div>
 
       {/* Mobile Right Section - Kho tài liệu (chỉ hiển thị Kho tài liệu ở đây) */}
-      <div className="lg:hidden mb-6 space-y-6">
+      <div className="xl:hidden mb-6 space-y-6">
         {/* Kho tài liệu học tập - Mobile */}
         <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
           <div className="text-center mb-6">
@@ -784,11 +784,11 @@ const DocumentsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+      <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
         {/* Left Section - Main Content */}
-        <div className="lg:w-[70%] min-w-0 order-1">
+        <div className="xl:w-[70%] min-w-0 order-1">
           {/* Desktop Banner - Only visible on lg and above */}
-          <div className="hidden lg:block mb-8">
+          <div className="hidden xl:block mb-8">
             <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
               {/* Decorative elements */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>

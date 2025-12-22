@@ -393,9 +393,9 @@ const ResultsPage: React.FC = () => {
       </div>
 
       {/* Layout 2 cột: Trái = kết quả, Phải = minimap */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+      <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
         {/* Trái: kết quả chi tiết */}
-        <div className="flex-1 min-w-0 order-2 lg:order-1">
+        <div className="flex-1 min-w-0 order-2 xl:order-1">
           {/* Chi tiết từng câu hỏi */}
           <div className="space-y-6">
             {displayQuestions.map((q: any, qIndex: number) => {

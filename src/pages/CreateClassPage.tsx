@@ -503,11 +503,11 @@ const CreateClassPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+      <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
         {/* Left Section - Main Content */}
-        <div className="lg:w-[70%] min-w-0 order-1">
+        <div className="xl:w-[70%] min-w-0 order-1">
           {/* Desktop Banner - Only visible on lg and above */}
-          <div className="hidden lg:block mb-8">
+          <div className="hidden xl:block mb-8">
             <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl">
               {/* Decorative elements */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
