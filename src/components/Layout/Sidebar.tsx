@@ -198,7 +198,7 @@ const Sidebar: React.FC = () => {
                             )}
                         </div>
                         <span className="text-sm font-medium whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 overflow-hidden transition-opacity duration-500 ease-out delay-75">
-                            Cộng đồng
+                            Đại Liêm Gúp
                         </span>
                     </button>
                     {/* Music Toggle */}
