@@ -121,7 +121,7 @@ const Sidebar: React.FC = () => {
 
     return (
         <aside
-            className="group/sidebar fixed xl:static inset-y-0 left-0 z-40 bg-gradient-to-b from-blue-900 to-blue-600 dark:from-[#1a1e3a] dark:to-[#1a1e3a] dark:bg-[#1a1e3a] border-r border-gray-200/20 dark:border-gray-700 shadow-xl transition-all duration-300 ease-in-out flex flex-col w-20 hover:w-64"
+            className="group/sidebar fixed xl:static inset-y-0 left-0 z-40 bg-gradient-to-b from-blue-900 to-blue-600 dark:from-[#1a1e3a] dark:to-[#1a1e3a] dark:bg-[#1a1e3a] shadow-xl transition-all duration-300 ease-in-out flex flex-col w-20 hover:w-64"
         >
             {/* Logo Area */}
             <div className="h-24 flex items-center relative overflow-hidden">
@@ -131,13 +131,12 @@ const Sidebar: React.FC = () => {
                         <img
                             src="/Trollface.png"
                             alt="Logo"
-                            className="w-10 h-10 object-contain transition-transform duration-500 ease-out group-hover/sidebar:scale-110"
+                            className="w-10 h-10 object-contain transition-transform duration-500 ease-out group-hover/sidebar:scale-125"
                         />
                     </div>
                     {/* Logo Text */}
                     <span
-                        className="opacity-0 group-hover/sidebar:opacity-100 transition-all duration-500 ease-out delay-75 logo-text text-[25px] text-white dark:text-primary-300 whitespace-nowrap"
-                        style={{ transform: 'translateY(1px)' }}
+                        className="opacity-0 group-hover/sidebar:opacity-100 group-hover/sidebar:translate-x-2.5 transition-all duration-500 ease-out logo-text text-[25px] text-white dark:text-primary-300 whitespace-nowrap"
                     >
                         liemdai
                     </span>
@@ -244,11 +243,10 @@ const Sidebar: React.FC = () => {
                     </button>
                 </div>
 
-                {/* User Profile */}
                 {isLoggedIn ? (
                     <div className="flex items-center gap-3 pl-[15px] pr-3 h-14 rounded-xl bg-white/10 dark:bg-gray-800/30 border border-white/10 dark:border-gray-700/50 justify-start overflow-hidden group/profile relative transition-colors duration-500 ease-out hover:bg-blue-800/40 dark:hover:bg-gray-800/50">
-                        <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                        <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center transition-transform duration-500 ease-out origin-center">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-xs shadow-sm leading-none">
                                 {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
                             </div>
                         </div>

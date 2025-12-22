@@ -195,7 +195,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] shadow-xl border-b border-slate-200/80 dark:border-slate-700/80">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] shadow-xl">
         <div className="max-w-screen-2xl mx-auto relative z-10">
           <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
@@ -463,7 +463,7 @@ const Header: React.FC = () => {
 
       {/* Mobile Navigation Menu */}
       <div
-        className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-lg transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
+        className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 shadow-lg transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
           }`}
       >
         <div className="max-w-screen-2xl mx-auto">
@@ -487,7 +487,9 @@ const Header: React.FC = () => {
             })}
 
             {/* Mobile Auth Links */}
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-2 mt-4 flex flex-col space-y-2"  >
+            <div className="pt-2 mt-4 flex flex-col space-y-2 relative">
+              {/* Fade separator similar to Sidebar */}
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
               {/* Chat open button (mobile) */}
               <button
                 onClick={() => {
