@@ -150,8 +150,8 @@ const ImageUpload: React.FC<{
       if (unassignedId) {
         if (onAssignFromGallery) {
           onAssignFromGallery(unassignedId);
-          return;
         }
+        return;
       }
 
       // 3. Otherwise handle as file drop
@@ -195,13 +195,12 @@ const ImageUpload: React.FC<{
       const imgToRestore = currentImage;
       const idToRestore = currentImageId;
 
-      onImageUpload(""); // Clear UI immediately
-
       if (imgToRestore && onImageRemoved) {
-        // Use timeout to separate the restore action from the delete action
-        setTimeout(() => {
-          onImageRemoved(imgToRestore, idToRestore, sourceInfo);
-        }, 50);
+        // Gọi trực tiếp để tránh thêm nhiều history entries
+        onImageRemoved(imgToRestore, idToRestore, sourceInfo);
+      } else {
+        // Nếu không có callback restore, chỉ clear local view
+        onImageUpload("");
       }
     };
 
@@ -387,7 +386,7 @@ const EditQuizPage: React.FC = () => {
   // Lưu trữ edited state của từng câu hỏi để tránh mất dữ liệu khi scroll/remount
   // eslint-disable-next-line
   const editedQuestionsMapRef = useRef<Map<string, QuestionWithImages>>(new Map());
-  const handleQuestionSaveRef = useRef<((id: string, q: any) => void) | null>(null);
+  const handleQuestionSaveRef = useRef<((id: string, q: any, options?: { exitEditMode?: boolean }) => void) | null>(null);
   // Lưu lại thông tin vị trí phần tử để giữ nguyên viewport sau các thao tác chỉnh sửa
   const scrollAnchorRef = useRef<{
     id: string;
@@ -396,6 +395,8 @@ const EditQuizPage: React.FC = () => {
   } | null>(null);
   // Refs for auto-scroll preview when editor cursor changes
   const questionCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  // Flag to prevent infinite loop when syncing questions from content
+  const isUpdatingFromQuestionsRef = useRef(false);
 
   // Track dragged image for drop-anywhere feature
   const [isDraggingImage, setIsDraggingImage] = useState(false);
@@ -491,6 +492,7 @@ const EditQuizPage: React.FC = () => {
 
   // Explicit Delete from Gallery (permanently remove)
   const handleImageDeleted = (imageId: string) => {
+    // ATOMIC UPDATE: Remove image from content, map, unassigned, and update questions in one go
     setEditorState((prev) => {
       // Remove from unassigned
       const newUnassigned = prev.unassignedImages.filter((img) => img.id !== imageId);
@@ -504,6 +506,10 @@ const EditQuizPage: React.FC = () => {
       const regex = new RegExp(`\\[IMAGE:${imageId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
       const newContent = prev.content.replace(regex, '');
 
+      // Parse and update questions immediately
+      const parsed = parseEditedContent(newContent);
+      setQuestions(parsed);
+
       return {
         ...prev,
         content: newContent,
@@ -511,20 +517,6 @@ const EditQuizPage: React.FC = () => {
         unassignedImages: newUnassigned,
       };
     });
-
-    // Also trigger parse to update Left Preview immediately
-    // We can't access newContent easily from setEditorState callback result outside.
-    // So we assume state update triggers re-render, but questions need explicit update.
-    // Actually, we can just run parse on the PREDICTED new content.
-    // Or better: Use useEffect to watch content? No, risky.
-    // Let's just do it manually.
-    setTimeout(() => {
-      setEditorState(currentState => {
-        const parsed = parseEditedContent(currentState.content);
-        setQuestions(parsed);
-        return currentState;
-      });
-    }, 0);
   };
 
   const handleAssignImage = (imageId: string, callback: (data: string) => void) => {
@@ -565,7 +557,7 @@ const EditQuizPage: React.FC = () => {
             }
           }
 
-          handleQuestionSaveRef.current(sourceInfo.questionId, updatedQ);
+          handleQuestionSaveRef.current(sourceInfo.questionId, updatedQ, { exitEditMode: false });
           // Toast handled by handleQuestionSave or we can add one
           toast.success("Đã lưu và đưa ảnh về kho!");
           return;
@@ -588,47 +580,10 @@ const EditQuizPage: React.FC = () => {
       }
     }
 
-    // 1. Atomic Global History Update (Content + Gallery)
-    setEditorState((prev) => {
-      // A. Add to Gallery Logic
-      const existsInUnassigned = prev.unassignedImages.some((img) => img.id === idToUse);
-      const existsInMap = idToUse! in prev.pastedImagesMap;
-
-      const newMap = { ...prev.pastedImagesMap };
-      if (!existsInMap) {
-        newMap[idToUse!] = imageData;
-      }
-
-      let newUnassigned = prev.unassignedImages;
-      if (!existsInUnassigned) {
-        newUnassigned = [...prev.unassignedImages, { id: idToUse!, data: imageData }];
-      }
-
-      // B. Remove from Content Logic (If source provided)
-      let newContent = prev.content;
-      if (sourceInfo && idToUse) {
-        // Create regex to remove the specific image tag [IMAGE:id]
-        // Escaping for regex: [ and ] need escaping.
-        const regex = new RegExp(`\\[IMAGE:${idToUse.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'g');
-
-        // Remove the tag. 
-        // Note: We might leave extra newlines, but that is acceptable for markdown-like parser.
-        newContent = newContent.replace(regex, '');
-      }
-
-      return {
-        ...prev,
-        content: newContent,
-        pastedImagesMap: newMap,
-        unassignedImages: newUnassigned
-      };
-    });
-
-    // 2. Visual Update (Questions State) - NO HISTORY UPDATE
-    // Only needed if we are removing from a source (Question/Option)
+    // ATOMIC UPDATE: Update questions and editorState together in one history entry
     if (sourceInfo && sourceInfo.questionId) {
       setQuestions(prevQuestions => {
-        return prevQuestions.map(q => {
+        const updatedQuestions = prevQuestions.map(q => {
           if (q.id === sourceInfo.questionId) {
             const newQ = { ...q };
 
@@ -681,6 +636,70 @@ const EditQuizPage: React.FC = () => {
           }
           return q;
         });
+
+        // Set flag to prevent infinite loop in useEffect
+        isUpdatingFromQuestionsRef.current = true;
+
+        // ATOMIC UPDATE: Update editorState with content, gallery, and unassigned images in one go
+        setEditorState((prev) => {
+          // A. Add to Gallery Logic
+          const existsInUnassigned = prev.unassignedImages.some((img) => img.id === idToUse);
+          const existsInMap = idToUse! in prev.pastedImagesMap;
+
+          const newMap = { ...prev.pastedImagesMap };
+          if (!existsInMap) {
+            newMap[idToUse!] = imageData;
+          }
+
+          // Generate new content from updated questions with updated map
+          const newPreviewContent = generatePreviewContent(updatedQuestions, newMap);
+
+          // B. Recalculate unassigned images based on new content
+          const imageTagRegex = /\[IMAGE:([^\]]+)\]/g;
+          const usedIds = new Set<string>();
+          let match;
+          while ((match = imageTagRegex.exec(newPreviewContent)) !== null) {
+            usedIds.add(match[1]);
+          }
+
+          const recalculatedUnassigned: import('../types').ExtractedImage[] = [];
+          Object.entries(newMap).forEach(([id, data]) => {
+            if (!usedIds.has(id)) {
+              recalculatedUnassigned.push({ id, data });
+            }
+          });
+
+          return {
+            ...prev,
+            content: newPreviewContent,
+            pastedImagesMap: newMap,
+            unassignedImages: recalculatedUnassigned
+          };
+        });
+
+        return updatedQuestions;
+      });
+    } else {
+      // No source question, just add to gallery and update content if needed
+      setEditorState((prev) => {
+        const existsInUnassigned = prev.unassignedImages.some((img) => img.id === idToUse);
+        const existsInMap = idToUse! in prev.pastedImagesMap;
+
+        const newMap = { ...prev.pastedImagesMap };
+        if (!existsInMap) {
+          newMap[idToUse!] = imageData;
+        }
+
+        let newUnassigned = prev.unassignedImages;
+        if (!existsInUnassigned) {
+          newUnassigned = [...prev.unassignedImages, { id: idToUse!, data: imageData }];
+        }
+
+        return {
+          ...prev,
+          pastedImagesMap: newMap,
+          unassignedImages: newUnassigned
+        };
       });
     }
 
@@ -710,16 +729,16 @@ const EditQuizPage: React.FC = () => {
   }) => {
     console.log('handleRemoveImageFromSource called with:', source);
 
-    // Find the source question and remove the image
+    // ATOMIC UPDATE: Remove image from questions and update content together
     setQuestions(prev => {
       console.log('Current questions count:', prev.length);
       const foundQuestion = prev.find(q => q.id === source.questionId);
       console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
 
-      return prev.map(q => {
+      const updated = prev.map(q => {
         if (q.id !== source.questionId) return q;
 
-        const updated = { ...q };
+        const updatedQ = { ...q };
 
         // SYNC FIX: Also update the cached edit state if it exists
         // This ensures that if the user opens Edit Mode later, they see the image removed
@@ -729,8 +748,8 @@ const EditQuizPage: React.FC = () => {
         if (source.sourceType === 'question') {
           // Remove question image
           console.log('Removing question image from question:', q.id);
-          updated.questionImage = undefined;
-          updated.questionImageId = undefined;
+          updatedQ.questionImage = undefined;
+          updatedQ.questionImageId = undefined;
 
           if (cachedUpdated) {
             cachedUpdated.questionImage = undefined;
@@ -739,12 +758,12 @@ const EditQuizPage: React.FC = () => {
         } else if (source.sourceType === 'option' && source.optionText) {
           // Remove option image
           console.log('Removing option image:', source.optionText, 'from question:', q.id);
-          const newOptionImages = { ...updated.optionImages };
-          const newOptionImageIds = { ...updated.optionImageIds };
+          const newOptionImages = { ...updatedQ.optionImages };
+          const newOptionImageIds = { ...updatedQ.optionImageIds };
           delete newOptionImages[source.optionText];
           delete newOptionImageIds[source.optionText];
-          updated.optionImages = newOptionImages;
-          updated.optionImageIds = newOptionImageIds;
+          updatedQ.optionImages = newOptionImages;
+          updatedQ.optionImageIds = newOptionImageIds;
 
           if (cachedUpdated) {
             const cachedOptionImages = { ...cachedUpdated.optionImages };
@@ -760,19 +779,41 @@ const EditQuizPage: React.FC = () => {
           editedQuestionsMapRef.current.set(q.id, cachedUpdated);
         }
 
-        console.log('Updated question:', updated.id, updated.questionImage ? 'still has image' : 'image removed');
-        return updated;
+        console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
+        return updatedQ;
       });
-    });
 
-    // Update preview content to reflect the change
-    setTimeout(() => {
-      setQuestions(currentQuestions => {
-        const newContent = generatePreviewContent(currentQuestions);
-        setPreviewContent(newContent);
-        return currentQuestions;
+      // Set flag to prevent infinite loop in useEffect
+      isUpdatingFromQuestionsRef.current = true;
+
+      // ATOMIC UPDATE: Update editorState content and recalculate unassigned images
+      setEditorState(prev => {
+        // Generate new content from updated questions with current map
+        const newContent = generatePreviewContent(updated, prev.pastedImagesMap);
+
+        const imageTagRegex = /\[IMAGE:([^\]]+)\]/g;
+        const usedIds = new Set<string>();
+        let match;
+        while ((match = imageTagRegex.exec(newContent)) !== null) {
+          usedIds.add(match[1]);
+        }
+
+        const newUnassigned: import('../types').ExtractedImage[] = [];
+        Object.entries(prev.pastedImagesMap).forEach(([id, data]) => {
+          if (!usedIds.has(id)) {
+            newUnassigned.push({ id, data });
+          }
+        });
+
+        return {
+          ...prev,
+          content: newContent,
+          unassignedImages: newUnassigned
+        };
       });
-    }, 0);
+
+      return updated;
+    });
   };
 
 
@@ -980,14 +1021,19 @@ const EditQuizPage: React.FC = () => {
   }, []);
 
   // Always sync questions with content when content changes (including Undo/Redo)
-  // Sync questions with previewContent when content changes (and not from question edit)
-  // This is for Drag & Drop image FROM gallery TO editor? no, gallery to editor handled by editor drop handler.
+  // This ensures that when undo/redo happens, questions state is synced with editorState.content
   useEffect(() => {
-    if (previewContent !== undefined) {
+    // Skip sync if we're updating content from questions (to avoid infinite loop)
+    if (isUpdatingFromQuestionsRef.current) {
+      isUpdatingFromQuestionsRef.current = false;
+      return;
+    }
+
+    if (previewContent !== undefined && previewContent !== '') {
       const parsed = parseEditedContent(previewContent);
       setQuestions(parsed);
     }
-  }, [pastedImagesMap, previewContent]);
+  }, [previewContent, pastedImagesMap]);
 
   // Hàm parse nội dung text thành questions
   // SỬ DỤNG GIỐNG HỆT LOGIC CỦA docsParser.parseDocsContent
@@ -2305,7 +2351,8 @@ const EditQuizPage: React.FC = () => {
 
   const handleQuestionSave = (
     questionId: string,
-    updatedQuestion: Partial<QuestionWithImages>
+    updatedQuestion: Partial<QuestionWithImages>,
+    options?: { exitEditMode?: boolean }
   ) => {
     console.log("Saving question:", questionId, updatedQuestion); // Debug log
 
@@ -2359,18 +2406,7 @@ const EditQuizPage: React.FC = () => {
       });
     }
 
-    // Update Editor State if we have new images
-    if (Object.keys(newImagesToRegister).length > 0) {
-      setEditorState(prev => ({
-        ...prev,
-        pastedImagesMap: {
-          ...prev.pastedImagesMap,
-          ...newImagesToRegister
-        }
-      }));
-    }
-
-
+    // ATOMIC UPDATE: Update questions, editorState (content + images + unassigned) in one go
     setQuestions((prev) => {
       const updated = prev.map((q) => {
         if (q.id === questionId) {
@@ -2402,15 +2438,46 @@ const EditQuizPage: React.FC = () => {
       });
 
       console.log("Updated questions array:", updated); // Debug log
-      setIsEditing(null);
+      if (options?.exitEditMode ?? true) {
+        setIsEditing(null);
+      }
 
-      // Cập nhật preview content sau khi lưu câu hỏi
-      setTimeout(() => {
-        const newPreviewContent = generatePreviewContent(updated);
-        setPreviewContent(newPreviewContent);
-        // FIX: Ensure unassigned images are recalculated when editing via GUI
-        syncUnassignedFromContent(newPreviewContent);
-      }, 0);
+      // Set flag to prevent infinite loop in useEffect
+      isUpdatingFromQuestionsRef.current = true;
+
+      // ATOMIC UPDATE: Update editorState with content, images, and unassigned images in one go
+      setEditorState(prev => {
+        // Merge new images into map
+        const updatedMap = {
+          ...prev.pastedImagesMap,
+          ...newImagesToRegister
+        };
+
+        // Generate new content from updated questions with updated map
+        const newPreviewContent = generatePreviewContent(updated, updatedMap);
+
+        // Recalculate unassigned images based on new content
+        const imageTagRegex = /\[IMAGE:([^\]]+)\]/g;
+        const usedIds = new Set<string>();
+        let match;
+        while ((match = imageTagRegex.exec(newPreviewContent)) !== null) {
+          usedIds.add(match[1]);
+        }
+
+        const newUnassigned: import('../types').ExtractedImage[] = [];
+        Object.entries(updatedMap).forEach(([id, data]) => {
+          if (!usedIds.has(id)) {
+            newUnassigned.push({ id, data });
+          }
+        });
+
+        return {
+          ...prev,
+          content: newPreviewContent,
+          pastedImagesMap: updatedMap,
+          unassignedImages: newUnassigned
+        };
+      });
 
       return updated;
     });
@@ -3180,10 +3247,6 @@ const EditQuizPage: React.FC = () => {
       setEditedQuestion((prev) => ({
         ...prev,
         questionImage: imageData,
-        // If specific ID passed (from gallery), use it. Else generate new if missing? 
-        // ImageUpload generates new ID if uploading file, but here we just receive data.
-        // Actually ImageUpload calls onImageUpload(data). It doesn't pass ID for new files.
-        // But for "Assign from Gallery", we pass ID.
         questionImageId: imageId || (imageData ? `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}` : undefined)
       }));
     };
@@ -3353,7 +3416,7 @@ const EditQuizPage: React.FC = () => {
                                 const reader = new FileReader();
                                 reader.onload = (e) => {
                                   const result = e.target?.result as string;
-                                  handleQuestionImageUpload(result);
+                              handleQuestionImageUpload(result);
                                   toast.success("Đã dán ảnh từ clipboard!");
                                 };
                                 reader.readAsDataURL(blob);
@@ -4683,7 +4746,7 @@ const EditQuizPage: React.FC = () => {
               optionImageIds: newOptionImageIds
             };
 
-            handleQuestionSave(question.id, updatedDiff);
+          handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
             toast.success("Đã di chuyển ảnh!");
             return;
           }
@@ -4692,6 +4755,12 @@ const EditQuizPage: React.FC = () => {
           handleRemoveImageFromSource(source);
           // Then assign to new location
           saveDroppedImage(source.imageData, target, source.imageId);
+
+          // Nếu đang mở EditMode cho câu hỏi nguồn mà kéo sang quiz card khác
+          // thì thoát EditMode sau khi di chuyển ảnh
+          if (isEditing && isEditing === source.questionId && source.questionId !== question.id) {
+            setIsEditing(null);
+          }
           return;
         } catch (error) {
           console.error('Failed to parse assigned source:', error);
@@ -4749,7 +4818,7 @@ const EditQuizPage: React.FC = () => {
         }
       }
 
-      handleQuestionSave(question.id, updatedDiff);
+          handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
       toast.success("Đã cập nhật ảnh!");
     };
 
@@ -4942,10 +5011,10 @@ const EditQuizPage: React.FC = () => {
                     setPreviewContent(prev => prev.replace(new RegExp(imageTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''));
                   }
                   handleRestoreToGallery(question.questionImage!, question.questionImageId);
-                  handleQuestionSave(question.id, {
+          handleQuestionSave(question.id, {
                     questionImage: undefined,
                     questionImageId: undefined
-                  });
+          }, { exitEditMode: false });
                 }}
                 className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-lg z-10"
                 title="Gỡ ảnh về kho"
@@ -5064,7 +5133,7 @@ const EditQuizPage: React.FC = () => {
                                   handleQuestionSave(question.id, {
                                     optionImages: newOptionImages,
                                     optionImageIds: newOptionImageIds
-                                  });
+                                  }, { exitEditMode: false });
                                 }}
                                 className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-lg z-10"
                                 title="Gỡ ảnh về kho"
