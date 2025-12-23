@@ -328,7 +328,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
         }, 100);
       }
     } catch (e) {
-      console.error("Gửi lỗi:", e);
+      // console.error("Gửi lỗi:", e);
     } finally {
       setLoading(false);
     }

@@ -192,7 +192,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       }
 
     } catch (error) {
-      console.error("Failed to change track:", error);
+      // console.error("Failed to change track:", error);
 
       // Retry mechanism
       setTimeout(async () => {
@@ -205,7 +205,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
             showToast(`Playing: ${tracks[index]?.name || 'Unknown Track'}`, <FaPlay style={{ color: "#27ae60" }} />);
           }
         } catch (retryError) {
-          console.error("Retry failed:", retryError);
+          // console.error("Retry failed:", retryError);
         }
       }, 200);
     } finally {

@@ -74,7 +74,7 @@ const ClassesPage: React.FC = () => {
         setClasses((prev) => prev.filter((cls) => cls.id !== classId));
         alert(`Đã xóa lớp học "${className}" thành công!`);
       } catch (error) {
-        console.error("Error deleting class:", error);
+        // console.error("Error deleting class:", error);
         alert("Có lỗi xảy ra khi xóa lớp học. Vui lòng thử lại.");
       }
     }
@@ -123,7 +123,7 @@ const ClassesPage: React.FC = () => {
         );
         alert(`Đã xóa bài kiểm tra "${quizTitle}" thành công!`);
       } catch (error) {
-        console.error("Error deleting quiz:", error);
+        // error("Error deleting quiz:", error);
         alert("Có lỗi xảy ra khi xóa bài kiểm tra. Vui lòng thử lại.");
       }
     }
@@ -171,7 +171,7 @@ const ClassesPage: React.FC = () => {
         : "✅ Đã Private Class\n\n• Quiz Public → Private\n• Quiz Private → giữ nguyên";
       alert(successMsg);
     } catch (e) {
-      console.error("toggle public failed", e);
+      // console.error("toggle public failed", e);
       alert("❌ Không thể cập nhật trạng thái");
     }
   };
@@ -241,7 +241,7 @@ const ClassesPage: React.FC = () => {
         : "✅ Đã tắt chia sẻ Class\n\n• Quiz đang chia sẻ → tắt\n• Quiz đã tắt → giữ nguyên";
       alert(successMsg);
     } catch (e) {
-      console.error("toggle share failed", e);
+      // console.error("toggle share failed", e);
       alert("❌ Không thể cập nhật trạng thái chia sẻ");
     }
   };
@@ -279,7 +279,7 @@ const ClassesPage: React.FC = () => {
         : "✅ Đã tắt chia sẻ Quiz riêng lẻ\n\n⚠️ LƯU Ý:\n• User đã claim Quiz này → MẤT quyền ✗\n• User đã claim Class → VẪN truy cập ✓";
       alert(message);
     } catch (e) {
-      console.error("toggle share failed", e);
+      // console.error("toggle share failed", e);
       alert("❌ Không thể cập nhật trạng thái chia sẻ");
     }
   };
@@ -320,7 +320,7 @@ const ClassesPage: React.FC = () => {
         : "✅ Đã Private Quiz\n\n• Chỉ Quiz này Private\n• Class giữ Public";
       alert(message);
     } catch (e) {
-      console.error("toggle publish failed", e);
+      // console.error("toggle publish failed", e);
       alert("❌ Không thể cập nhật trạng thái");
     }
   };
@@ -368,7 +368,7 @@ const ClassesPage: React.FC = () => {
           : 0
       );
     } catch (e) {
-      console.error("Stats error", e);
+      // console.error("Stats error", e);
     }
   };
 
@@ -418,7 +418,7 @@ const ClassesPage: React.FC = () => {
       // =======================
 
     } catch (err) {
-      console.error("Error fetching classes:", err);
+      // error("Error fetching classes:", err);
     } finally {
       setLoading(false);
     }
@@ -751,7 +751,7 @@ const ClassesPage: React.FC = () => {
       setLoading(true);
       await loadMyClasses();
     } catch (e: any) {
-      console.error("Import failed", e);
+      // console.error("Import failed", e);
       alert(
         e?.message || "Không thể nhập. Vui lòng kiểm tra ID/Link và thử lại."
       );

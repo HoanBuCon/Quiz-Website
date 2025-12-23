@@ -113,7 +113,7 @@ const ResultsPage: React.FC = () => {
           completedAt: new Date(latest.completedAt),
         });
       } catch (e) {
-        console.error("Failed to load results:", e);
+        // console.error("Failed to load results:", e);
       } finally {
         setLoading(false);
       }
@@ -150,11 +150,11 @@ const ResultsPage: React.FC = () => {
           ? correctAnswers
           : {};
 
-      console.log("🔍 Drag question scoring:", {
-        questionId: question.id,
-        userMapping,
-        correctMap,
-      });
+      // console.log("🔍 Drag question scoring:", {
+      //   questionId: question.id,
+      //   userMapping,
+      //   correctMap,
+      // });
 
       // Lấy tất cả items từ question.options
       const dragOpt = (question.options as any) || { items: [] };
@@ -170,13 +170,13 @@ const ResultsPage: React.FC = () => {
         const normalizedUserTarget = userTargetId || undefined;
         const normalizedCorrectTarget = correctTargetId || undefined;
 
-        console.log(`  Item "${item.label}" (${itemId}):`, {
-          userTargetId,
-          correctTargetId,
-          normalizedUserTarget,
-          normalizedCorrectTarget,
-          isMatch: normalizedUserTarget === normalizedCorrectTarget,
-        });
+        // console.log(`  Item "${item.label}" (${itemId}):`, {
+        //   userTargetId,
+        //   correctTargetId,
+        //   normalizedUserTarget,
+        //   normalizedCorrectTarget,
+        //   isMatch: normalizedUserTarget === normalizedCorrectTarget,
+        // });
 
         // So sánh sau khi chuẩn hóa
         return normalizedUserTarget === normalizedCorrectTarget;

@@ -216,15 +216,15 @@ function App() {
   // Log trạng thái bảo trì khi app khởi động (chỉ trong development)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `%MAINTENANCE MODE: ${IS_MAINTENANCE_MODE ? 'ON' : 'OFF'}`,
-        `font-size: 14px; font-weight: bold; color: ${IS_MAINTENANCE_MODE ? '#ef4444' : '#10b981'}`
-      );
+      // console.log(
+      //   `%MAINTENANCE MODE: ${IS_MAINTENANCE_MODE ? 'ON' : 'OFF'}`,
+      //   `font-size: 14px; font-weight: bold; color: ${IS_MAINTENANCE_MODE ? '#ef4444' : '#10b981'}`
+      // );
       if (IS_MAINTENANCE_MODE) {
-        console.log(
-          '%To bypass maintenance, run: window.setMaintenanceBypass()',
-          'font-size: 12px; color: #3b82f6'
-        );
+        // console.log(
+        //   '%To bypass maintenance, run: window.setMaintenanceBypass()',
+        //   'font-size: 12px; color: #3b82f6'
+        // );
       }
     }
   }, []);

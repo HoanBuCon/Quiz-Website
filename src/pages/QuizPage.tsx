@@ -147,7 +147,7 @@ const QuizPage: React.FC = () => {
   useEffect(() => {
     const loadQuiz = async () => {
       if (!quizId) {
-        console.error("Quiz ID not provided");
+        // console.error("Quiz ID not provided");
         navigate("/classes");
         return;
       }
@@ -216,7 +216,7 @@ const QuizPage: React.FC = () => {
           throw new Error("Quiz không tìm thấy");
         }
       } catch (error: any) {
-        console.error("Error loading quiz:", error);
+        // console.error("Error loading quiz:", error);
         setQuestions([
           {
             id: "error",
@@ -883,7 +883,7 @@ const QuizPage: React.FC = () => {
         } catch { }
         navigate(`/results/${qid}`, { state: { questionOrder: questions.map((q) => q.id) } });
       } catch (e) {
-        console.error("Submit failed:", e);
+        // console.error("Submit failed:", e);
         alert("Có lỗi xảy ra khi nộp bài.");
         setIsSubmitting(false); // Re-enable if error
       }

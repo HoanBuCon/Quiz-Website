@@ -57,7 +57,7 @@ const UnassignedImagesGallery: React.FC<UnassignedImagesGalleryProps> = ({
             const source = JSON.parse(assignedSource);
             onImageRestore(source);
         } catch (error) {
-            console.error('Failed to parse image source:', error);
+            // console.error('Failed to parse image source:', error);
         }
     };
 

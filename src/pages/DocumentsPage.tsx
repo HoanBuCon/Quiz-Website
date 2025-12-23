@@ -118,12 +118,12 @@ const DocumentsPage: React.FC = () => {
         alert(`Đã xóa thành công ${successCount} tài liệu!`);
       }
       if (errors.length > 0) {
-        console.error("Failed to delete some files:", errors);
+        // console.error("Failed to delete some files:", errors);
         alert(`Có ${errors.length} tài liệu không xóa được.`);
       }
 
     } catch (e) {
-      console.error("Bulk delete failed:", e);
+      // console.error("Bulk delete failed:", e);
       alert("Có lỗi xảy ra khi xóa tài liệu.");
     }
   };
@@ -183,7 +183,7 @@ const DocumentsPage: React.FC = () => {
       }
       setTotalQuizzes(quizCount);
     } catch (e) {
-      console.error("Failed to load data:", e);
+      // console.error("Failed to load data:", e);
     } finally {
       setLoading(false);
     }
@@ -278,7 +278,7 @@ const DocumentsPage: React.FC = () => {
           ];
         });
       } catch (error) {
-        console.error("Lỗi khi xử lý file:", error);
+        // console.error("Lỗi khi xử lý file:", error);
         alert(`Lỗi khi xử lý file ${file.name}: ${error}`);
       }
     }
@@ -324,7 +324,7 @@ const DocumentsPage: React.FC = () => {
             resolve(content || "");
           }
         } catch (error) {
-          console.error("Lỗi khi xử lý nội dung file:", error);
+          // console.error("Lỗi khi xử lý nội dung file:", error);
           reject(new Error("Lỗi khi xử lý nội dung file"));
         }
       };
@@ -374,7 +374,7 @@ const DocumentsPage: React.FC = () => {
           // Clean up
           setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         } catch (fetchError) {
-          console.error("Fetch error during download:", fetchError);
+          // console.error("Fetch error during download:", fetchError);
           // Fallback to direct link if fetch fails, though filename might be wrong
           link.href = fileUrl;
           link.download = file.name;
@@ -412,7 +412,7 @@ const DocumentsPage: React.FC = () => {
         alert("File không có nội dung để tải về");
       }
     } catch (error) {
-      console.error("Lỗi khi tải file:", error);
+      // console.error("Lỗi khi tải file:", error);
       alert("Có lỗi xảy ra khi tải file");
     }
   };
@@ -534,7 +534,7 @@ const DocumentsPage: React.FC = () => {
         );
         result.questions = questionsWithImages;
         unassignedImages = getUnassignedImages(result.images);
-        console.log(`✓ Mapped images to questions. ${unassignedImages.length} unassigned.`);
+        // console.log(`✓ Mapped images to questions. ${unassignedImages.length} unassigned.`);
       }
 
       // Tạo quiz ID
@@ -563,7 +563,7 @@ const DocumentsPage: React.FC = () => {
 
       handleCloseModal();
     } catch (error) {
-      console.error("Lỗi khi xử lý file:", error);
+      // console.error("Lỗi khi xử lý file:", error);
       alert("Có lỗi xảy ra khi xử lý file");
     } finally {
       setIsProcessing(false);
@@ -585,7 +585,7 @@ const DocumentsPage: React.FC = () => {
         setDocuments((prev) => prev.filter((doc) => doc.id !== fileId));
         alert(`Đã xóa tài liệu "${fileName}" thành công!`);
       } catch (e) {
-        console.error("Delete file failed:", e);
+        // console.error("Delete file failed:", e);
         alert("Xóa tài liệu thất bại.");
       }
     }

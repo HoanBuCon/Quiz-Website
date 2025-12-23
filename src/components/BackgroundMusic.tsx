@@ -318,7 +318,7 @@ const BackgroundMusic = () => {
         showToast(`Playing: ${selectedTrack.name}`, <FaPlay style={{ color: '#27ae60' }} />);
 
       } catch (error) {
-        console.error("Autoplay failed:", error);
+        // console.error("Autoplay failed:", error);
 
         // Fallback: Show toast để user biết có thể click để phát nhạc
         showToast('Click Music button to start playing', <FaMusic style={{ color: '#3498db' }} />);
@@ -398,7 +398,7 @@ const BackgroundMusic = () => {
           showToast(`Playing: ${selectedTrack.name}`, <FaPlay style={{ color: '#27ae60' }} />);
 
         } catch (error) {
-          console.error("Autoplay via Music button failed:", error);
+          // error("Autoplay via Music button failed:", error);
 
           // Nếu autoplay thất bại, chỉ load nhạc sẵn sàng để user có thể play manual
           const randomPlaylistIndex = Math.floor(Math.random() * playlists.length);
@@ -520,7 +520,7 @@ const BackgroundMusic = () => {
       }
 
     } catch (error) {
-      console.error("Failed to change track:", error);
+      // console.error("Failed to change track:", error);
 
       // Retry mechanism - sử dụng trực tiếp targetIndex và currentTracks đã có sẵn
       setTimeout(async () => {
@@ -534,7 +534,7 @@ const BackgroundMusic = () => {
             showToast(`Playing: ${currentTracks[safeIndex]?.name || 'Unknown Track'}`, <FaPlay style={{ color: '#27ae60' }} />);
           }
         } catch (retryError) {
-          console.error("Retry failed:", retryError);
+          // console.error("Retry failed:", retryError);
         }
       }, 200);
     }

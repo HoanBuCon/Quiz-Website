@@ -53,11 +53,11 @@ const DocumentViewerPage: React.FC = () => {
                             }
                         }
                     } catch (fetchErr) {
-                        console.error("Failed to fetch file content from path:", fetchErr);
+                        // console.error("Failed to fetch file content from path:", fetchErr);
                     }
                 }
             } catch (err) {
-                console.error("Failed to fetch document:", err);
+                // console.error("Failed to fetch document:", err);
                 setError("Không thể tải tài liệu. Vui lòng thử lại sau.");
             } finally {
                 setLoading(false);

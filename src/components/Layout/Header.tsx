@@ -89,7 +89,7 @@ const Header: React.FC = () => {
           const response = await AuthAPI.me(token);
           setUserName(response.user.name || response.user.email.split("@")[0]);
         } catch (error) {
-          console.error("Failed to load user info:", error);
+          // console.error("Failed to load user info:", error);
           // Fallback to email prefix if name not available
           setUserName(null);
         }

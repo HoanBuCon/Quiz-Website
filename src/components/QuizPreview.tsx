@@ -309,7 +309,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
   const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
     isDraggingOverRef.current = false;
-    console.log("QuizPreview handleDrop triggered");
+    // console.log("QuizPreview handleDrop triggered");
 
     let imageId = e.dataTransfer.getData('image/unassigned-id');
 
@@ -323,7 +323,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             imageId = source.imageId;
           }
         } catch (err) {
-          console.error("Failed to parse assigned source", err);
+          // error("Failed to parse assigned source", err);
         }
       }
     }

@@ -29,18 +29,18 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
           /<w:t[^>]*>x<\/w:t>/  // Plain x in text nodes (to compare)
         ];
         
-        console.log('🔍 Searching for x-bar in RAW Word XML:');
+        // console.log('🔍 Searching for x-bar in RAW Word XML:');
         xBarPatterns.forEach((pattern, idx) => {
           const matches = typeof pattern === 'string' 
             ? docXml.includes(pattern)
             : pattern.test(docXml);
           if (matches) {
-            console.log(`  ✅ Pattern ${idx} FOUND: ${pattern}`);
+            // console.log(`  ✅ Pattern ${idx} FOUND: ${pattern}`);
             // Show context
             if (typeof pattern === 'string') {
               const index = docXml.indexOf(pattern);
               if (index !== -1) {
-                console.log(`     Context: ...${docXml.substring(index - 20, index + 50)}...`);
+                // console.log(`     Context: ...${docXml.substring(index - 20, index + 50)}...`);
               }
             }
           }
@@ -61,13 +61,13 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
         let modified = false;
 
         if (mathNodes.length > 0) {
-          console.log(`Found ${mathNodes.length} math formulas. Converting to LaTeX...`);
+          // console.log(`Found ${mathNodes.length} math formulas. Converting to LaTeX...`);
           
           mathNodes.forEach((node) => {
             try {
               let latex = convertOMMLToLatex(node);
               if (latex) {
-                console.log(`📐 OMML → LaTeX: "${latex.substring(0, 80)}"`);
+                // console.log(`📐 OMML → LaTeX: "${latex.substring(0, 80)}"`);
                 
                 // Convert to linear format to match copy-paste style
                 latex = convertToLinearFormat(latex);
@@ -77,7 +77,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
                 latex = latex.replace(/\s+}/g, '}');
                 latex = latex.replace(/{\s+/g, '{');
                 
-                console.log(`   → Linear: "${latex.substring(0, 80)}"`);
+                // console.log(`   → Linear: "${latex.substring(0, 80)}"`);
                 
                 // Create a new Text Run <w:r><w:t>...</w:t></w:r>
                 const run = doc.createElement("w:r");
@@ -94,7 +94,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
                 modified = true;
               }
             } catch (err) {
-              console.warn("Failed to convert math node", err);
+              // console.warn("Failed to convert math node", err);
             }
           });
         }
@@ -125,10 +125,10 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
           
           if (textNodesToUpdate.length > 0) {
             modified = true;
-            console.log(`🔧 Converted ${textNodesToUpdate.length} Unicode combining characters to LaTeX`);
+            // console.log(`🔧 Converted ${textNodesToUpdate.length} Unicode combining characters to LaTeX`);
             textNodesToUpdate.forEach((update, idx) => {
               if (idx < 3) { // Log first 3 for debugging
-                console.log(`  [${idx}]: "${update.node.textContent?.substring(0, 50)}" → "${update.newValue.substring(0, 50)}"`);
+                // console.log(`  [${idx}]: "${update.node.textContent?.substring(0, 50)}" → "${update.newValue.substring(0, 50)}"`);
               }
             });
           }
@@ -147,7 +147,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
         }
       }
     } catch (e) {
-      console.warn("JSZip pre-processing failed, falling back to original content:", e);
+      // console.warn("JSZip pre-processing failed, falling back to original content:", e);
     }
     // --------------------------------------------------------
 
@@ -206,7 +206,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
     );
 
     if (result.messages.length > 0) {
-      console.warn("Word parsing warnings:", result.messages);
+      // console.warn("Word parsing warnings:", result.messages);
     }
 
     // Extract text từ HTML và thay thế image tags bằng markers
@@ -290,13 +290,13 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
     const sampleLines = cleanedText.split('\n').slice(0, 30);
     const linesWithOverline = sampleLines.filter(l => l.includes('overline'));
     if (linesWithOverline.length > 0) {
-      console.log('✅ Found \\overline after processMathInput:');
+      // console.log('✅ Found \\overline after processMathInput:');
       linesWithOverline.slice(0, 3).forEach((line, idx) => {
-        console.log(`  [${idx}]: ${line.substring(0, 80)}`);
+        // console.log(`  [${idx}]: ${line.substring(0, 80)}`);
       });
     }
 
-    console.log(`✓ Extracted ${extractedImages.length} images from Word document`);
+    // console.log(`✓ Extracted ${extractedImages.length} images from Word document`);
 
     return {
       success: true,
@@ -304,7 +304,7 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
       images: extractedImages.length > 0 ? extractedImages : undefined,
     };
   } catch (error) {
-    console.error("Error parsing Word file:", error);
+    // console.error("Error parsing Word file:", error);
     return {
       success: false,
       error: `Không thể đọc file Word: ${

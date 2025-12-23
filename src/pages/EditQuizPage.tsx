@@ -118,7 +118,7 @@ const ImageUpload: React.FC<{
         onImageUpload(imageUrl);
       } catch (error) {
         toast.dismiss();
-        console.error("Upload error:", error);
+        // console.error("Upload error:", error);
         toast.error("Lỗi khi upload ảnh: " + (error as Error).message);
       }
     };
@@ -141,7 +141,7 @@ const ImageUpload: React.FC<{
             return;
           }
         } catch (e) {
-          console.error('Failed to parse assigned source:', e);
+          // console.error('Failed to parse assigned source:', e);
         }
       }
 
@@ -1455,7 +1455,7 @@ const EditQuizPage: React.FC = () => {
               targets: [] // will be filled by group:
             };
           } catch (e) {
-            console.warn("Failed to parse result array", e);
+            // console.warn("Failed to parse result array", e);
             // Fallback to text
             if (currentQuestion.type === 'text' && Array.isArray(currentCorrectAnswers)) {
               (currentCorrectAnswers as string[]).push(content);
@@ -1527,7 +1527,7 @@ const EditQuizPage: React.FC = () => {
               mapping[item] = targetId;
             });
           } catch (e) {
-            console.warn("Error parsing group items", e);
+            // console.warn("Error parsing group items", e);
           }
         }
 
@@ -1632,12 +1632,12 @@ const EditQuizPage: React.FC = () => {
           const token = getToken();
           const url = await ImagesAPI.upload(file, token!);
           q.questionImage = url;
-          console.log(`✓ Uploaded questionImage for Q${i + 1}: ${url}`);
+          // console.log(`✓ Uploaded questionImage for Q${i + 1}: ${url}`);
         } catch (error) {
-          console.error(
-            `✗ Failed to upload questionImage for Q${i + 1}:`,
-            error
-          );
+          // console.error(
+          //   `✗ Failed to upload questionImage for Q${i + 1}:`,
+          //   error
+          // );
           toast.error(`Ảnh câu hỏi ${i + 1} lỗi upload. Vui lòng thử lại!`);
         }
       }
@@ -1657,14 +1657,14 @@ const EditQuizPage: React.FC = () => {
                 const token = getToken();
                 const url = await ImagesAPI.upload(file, token!);
                 newOptionImages[j] = url;
-                console.log(
-                  `✓ Uploaded optionImage for Q${i + 1} option ${j}: ${url}`
-                );
+                // console.log(
+                //   `✓ Uploaded optionImage for Q${i + 1} option ${j}: ${url}`
+                // );
               } catch (error) {
-                console.error(
-                  `✗ Failed to upload optionImage for Q${i + 1} option ${j}:`,
-                  error
-                );
+                // console.error(
+                //   `✗ Failed to upload optionImage for Q${i + 1} option ${j}:`,
+                //   error
+                // );
                 newOptionImages[j] = img; // Keep original on error
               }
             } else {
@@ -1685,14 +1685,14 @@ const EditQuizPage: React.FC = () => {
                 const token = getToken();
                 const url = await ImagesAPI.upload(file, token!);
                 newOptionImages[key] = url;
-                console.log(
-                  `✓ Uploaded optionImage for Q${i + 1} "${key}": ${url}`
-                );
+                // console.log(
+                //   `✓ Uploaded optionImage for Q${i + 1} "${key}": ${url}`
+                // );
               } catch (error) {
-                console.error(
-                  `✗ Failed to upload optionImage for Q${i + 1} "${key}":`,
-                  error
-                );
+                // console.error(
+                //   `✗ Failed to upload optionImage for Q${i + 1} "${key}":`,
+                //   error
+                // );
                 newOptionImages[key] = img; // Keep original on error
                 toast.error(`Ảnh đáp án "${key}" (câu ${i + 1}) lỗi upload.`);
               }
@@ -1946,9 +1946,9 @@ const EditQuizPage: React.FC = () => {
       }
 
       // Upload all base64 images first and replace with URLs
-      console.log("Uploading images before publishing...");
+      // console.log("Uploading images before publishing...");
       const questionsWithUrls = await uploadImagesInQuestions(cleanedQuestions);
-      console.log("All images uploaded successfully!");
+      // console.log("All images uploaded successfully!");
 
       // Nếu có token, ưu tiên lưu về backend
       const { getToken } = await import("../utils/auth");
@@ -2035,7 +2035,7 @@ const EditQuizPage: React.FC = () => {
 
       alert("Vui lòng đăng nhập để xuất bản quiz.");
     } catch (error) {
-      console.error("Error publishing quiz:", error);
+      // console.error("Error publishing quiz:", error);
       toast.error("Có lỗi xảy ra khi xuất bản");
     } finally {
       setIsPublishing(false);
@@ -2050,10 +2050,10 @@ const EditQuizPage: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log("EditQuizPage: received state", state);
+    // console.log("EditQuizPage: received state", state);
 
     if (!state) {
-      console.log("No state provided, redirecting");
+      // console.log("No state provided, redirecting");
       toast.error("Không có thông tin quiz");
       navigate("/create");
       return;
@@ -2064,7 +2064,7 @@ const EditQuizPage: React.FC = () => {
       state.fileName === "Quiz thủ công" &&
       (!state.questions || state.questions.length === 0)
     ) {
-      console.log("Manual quiz - initializing empty questions");
+      // console.log("Manual quiz - initializing empty questions");
       setQuestions([]);
       setQuizTitle("Quiz thủ công");
       setQuizDescription("Bài trắc nghiệm tạo thủ công");
@@ -2074,7 +2074,7 @@ const EditQuizPage: React.FC = () => {
 
     // Với file upload - cần có câu hỏi
     if (!state?.questions || state.questions.length === 0) {
-      console.log("No questions found, redirecting");
+      // console.log("No questions found, redirecting");
       toast.error("Không có câu hỏi nào được tải lên");
       navigate("/create");
       return;
@@ -2206,12 +2206,12 @@ const EditQuizPage: React.FC = () => {
     // This handles the "Editor Reload" case where we want to preserve the exact gallery state
     // instead of recalculating (which might resurrect ghost images).
     if (state.unassignedImages && Array.isArray(state.unassignedImages)) {
-      console.log("Restoring unassignedImages from state:", state.unassignedImages.length);
+      // console.log("Restoring unassignedImages from state:", state.unassignedImages.length);
       initialUnassignedImages = state.unassignedImages;
       // Optional: We could validate these against content just to be safe, 
       // but trusting state prevents "Ghosts".
     } else {
-      console.log("Calculating unassignedImages from initialImagesMap.");
+      // console.log("Calculating unassignedImages from initialImagesMap.");
       // Fallback: Calculate from initial map (for new imports logic remains same)
       Object.entries(initialImagesMap).forEach(([id, data]) => {
         // If ID is found in content tags, it is assigned.
@@ -2323,7 +2323,7 @@ const EditQuizPage: React.FC = () => {
       try {
         localStorage.setItem("quiz_edit_progress", JSON.stringify(dataToSave));
       } catch (error) {
-        console.warn("Failed to save progress to localStorage:", error);
+        // console.warn("Failed to save progress to localStorage:", error);
         if (error instanceof DOMException && error.name === "QuotaExceededError") {
           // Provide feedback but don't spam toasts on every keystroke save
           // Maybe set internal flag that "saving failed"
@@ -2354,7 +2354,7 @@ const EditQuizPage: React.FC = () => {
     updatedQuestion: Partial<QuestionWithImages>,
     options?: { exitEditMode?: boolean }
   ) => {
-    console.log("Saving question:", questionId, updatedQuestion); // Debug log
+    // console.log("Saving question:", questionId, updatedQuestion); // Debug log
 
     // FIX: Register new images (from GUI upload/paste) into pastedImagesMap immediately
     // ensuring generatePreviewContent can produce [IMAGE:id] tags and QuizPreview can render them.
@@ -2431,13 +2431,13 @@ const EditQuizPage: React.FC = () => {
           // Cập nhật map với dữ liệu đã lưu
           editedQuestionsMapRef.current.set(questionId, result);
 
-          console.log("Question after save:", result); // Debug log
+          // console.log("Question after save:", result); // Debug log
           return result;
         }
         return q;
       });
 
-      console.log("Updated questions array:", updated); // Debug log
+      // console.log("Updated questions array:", updated); // Debug log
       if (options?.exitEditMode ?? true) {
         setIsEditing(null);
       }
@@ -2503,7 +2503,7 @@ const EditQuizPage: React.FC = () => {
         if (imgId) {
           content += `[IMAGE:${imgId}]\n`;
         } else {
-          console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
+          // console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
         }
       }
 
@@ -4763,7 +4763,7 @@ const EditQuizPage: React.FC = () => {
           }
           return;
         } catch (error) {
-          console.error('Failed to parse assigned source:', error);
+          // console.error('Failed to parse assigned source:', error);
         }
       }
 

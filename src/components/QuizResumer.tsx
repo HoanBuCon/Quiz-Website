@@ -37,7 +37,7 @@ const QuizResumer: React.FC = () => {
                         return;
                     }
                 } catch (e) {
-                    console.error("Error parsing saved quiz:", e);
+                    // console.error("Error parsing saved quiz:", e);
                 }
             }
 
@@ -52,7 +52,7 @@ const QuizResumer: React.FC = () => {
                         return;
                     }
                 } catch (e) {
-                    console.error("Error parsing saved edit:", e);
+                    // console.error("Error parsing saved edit:", e);
                 }
             }
 

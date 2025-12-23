@@ -100,7 +100,7 @@ export async function parseFile(file: File): Promise<ParseResult> {
       textContent: content, // For image mapping
     };
   } catch (error) {
-    console.error("Error parsing file:", error);
+    // console.error("Error parsing file:", error);
     return {
       success: false,
       error: `Lỗi khi xử lý file: ${
@@ -408,7 +408,7 @@ export function parseDocsContent(
                targets: [] // will be filled by group:
            };
         } catch (e) {
-           console.warn("Failed to parse result array", e);
+           // console.warn("Failed to parse result array", e);
            // Fallback to text
            currentCorrectAnswers.push(content);
            currentQuestion.type = 'text';
@@ -473,7 +473,7 @@ export function parseDocsContent(
                  mapping[item] = targetId;
              });
          } catch (e) {
-             console.warn("Error parsing group items", e);
+             // console.warn("Error parsing group items", e);
          }
       }
 

@@ -58,7 +58,7 @@ const CreateClassPage: React.FC = () => {
         const mine = await ClassesAPI.listMine(token);
         setExistingClasses(mine);
       } catch (e) {
-        console.error("Failed to load classes:", e);
+        // console.error("Failed to load classes:", e);
       }
     };
 
@@ -133,10 +133,10 @@ const CreateClassPage: React.FC = () => {
 
   // Tạo lớp học mới (để backward compatibility với các hàm khác)
   const createNewClass = (quizId: string) => {
-    console.log("createNewClass called with quizId:", quizId);
-    console.log(
-      "This function is deprecated - class creation now happens in EditQuizPage"
-    );
+    // console.log("createNewClass called with quizId:", quizId);
+    // console.log(
+    //   "This function is deprecated - class creation now happens in EditQuizPage"
+    // );
 
     // Trả về null để các hàm khác biết rằng không tạo lớp ở đây
     return null;
@@ -144,10 +144,10 @@ const CreateClassPage: React.FC = () => {
 
   // Thêm quiz vào lớp học có sẵn (để backward compatibility với các hàm khác)
   const addQuizToExistingClass = (quizId: string) => {
-    console.log("addQuizToExistingClass called with quizId:", quizId);
-    console.log(
-      "This function is deprecated - class creation now happens in EditQuizPage"
-    );
+    // console.log("addQuizToExistingClass called with quizId:", quizId);
+    // console.log(
+    //   "This function is deprecated - class creation now happens in EditQuizPage"
+    // );
 
     // Trả về null để các hàm khác biết rằng không tạo lớp ở đây
     return null;
@@ -155,7 +155,7 @@ const CreateClassPage: React.FC = () => {
 
   // Xử lý chuyển đến trang tạo quiz thủ công
   const handleCreateManualQuiz = () => {
-    console.log("handleCreateManualQuiz called");
+    // console.log("handleCreateManualQuiz called");
 
     // Kiểm tra validation trước
     if (!isFormValid()) {
@@ -172,25 +172,25 @@ const CreateClassPage: React.FC = () => {
     }
 
     const quizId = `manual-${Date.now()}-${Math.random()}`;
-    console.log("Generated quizId:", quizId);
+    // console.log("Generated quizId:", quizId);
 
     // KHÔNG tự động tạo lớp học - chỉ chuẩn bị thông tin để tạo sau khi xuất bản
 
-    console.log("About to navigate to /edit-quiz with state:", {
-      questions: [],
-      fileName: "Quiz thủ công",
-      fileId: quizId,
-      classInfo: isCreateNewClass
-        ? {
-          isNew: true,
-          name: className.trim(),
-          description: classDescription.trim(),
-        }
-        : {
-          isNew: false,
-          classId: selectedClassId,
-        },
-    });
+    // console.log("About to navigate to /edit-quiz with state:", {
+    //   questions: [],
+    //   fileName: "Quiz thủ công",
+    //   fileId: quizId,
+    //   classInfo: isCreateNewClass
+    //     ? {
+    //       isNew: true,
+    //       name: className.trim(),
+    //       description: classDescription.trim(),
+    //     }
+    //     : {
+    //       isNew: false,
+    //       classId: selectedClassId,
+    //     },
+    // });
 
     navigate("/edit-quiz", {
       state: {
@@ -210,12 +210,12 @@ const CreateClassPage: React.FC = () => {
       },
     });
 
-    console.log("Navigation completed");
+    // console.log("Navigation completed");
   };
 
   // Xử lý upload files
   const handleFiles = async (files: File[]) => {
-    console.log("handleFiles called with files:", files);
+    // console.log("handleFiles called with files:", files);
 
     // Kiểm tra validation trước khi xử lý file
     if (isCreateNewClass) {
@@ -237,7 +237,7 @@ const CreateClassPage: React.FC = () => {
     setIsUploading(true);
 
     for (const file of files) {
-      console.log("Processing file:", file.name);
+      // console.log("Processing file:", file.name);
       setProcessingFile(file.name);
 
       try {
@@ -268,22 +268,22 @@ const CreateClassPage: React.FC = () => {
           if (duplicateCheck.isDuplicate) {
             // Auto-rename logic as requested: default to (n) style without prompting
             uploadName = generateUniqueFileName(file.name, existingDocs);
-            console.log(`Auto-renaming duplicate file: ${file.name} -> ${uploadName}`);
+            // console.log(`Auto-renaming duplicate file: ${file.name} -> ${uploadName}`);
           }
         } catch (error) {
-          console.warn("Failed to check for duplicates, proceeding with original name", error);
+          // console.warn("Failed to check for duplicates, proceeding with original name", error);
         }
 
-        console.log("Uploading file to server...");
+        // console.log("Uploading file to server...");
         // Use the potentially new name
         const uploadedDoc = await DocumentsAPI.upload(file, token, uploadName);
 
-        console.log("File uploaded to server:", uploadedDoc);
+        // console.log("File uploaded to server:", uploadedDoc);
 
         // 2. PARSE FILE locally để lấy questions
-        console.log("Parsing file locally...");
+        // console.log("Parsing file locally...");
         const result = await parseFile(file);
-        console.log("Parse result:", result);
+        // console.log("Parse result:", result);
 
         if (!result.success) {
           const errorMessage = `File ${file.name} có lỗi định dạng:\n\n${result.error}\n\nHướng dẫn sử dụng file:\n1. Sử dụng font đơn giản (Times New Roman, Arial)\n2. Không sử dụng bullet points, chỉ dùng A. B. C. D.\n3. Không sử dụng màu sắc hoặc định dạng phức tạp\n4. Đánh dấu đáp án đúng bằng dấu *\n5. Xem template-docs.txt để biết định dạng chuẩn`;
@@ -307,13 +307,13 @@ const CreateClassPage: React.FC = () => {
           );
           result.questions = questionsWithImages;
           unassignedImages = getUnassignedImages(result.images);
-          console.log(`✓ Mapped images to questions. ${unassignedImages.length} unassigned.`);
+          // console.log(`✓ Mapped images to questions. ${unassignedImages.length} unassigned.`);
         }
 
         // 3. Navigate đến EditQuizPage với file info
         const quizId = `quiz-${Date.now()}-${Math.random()}`;
 
-        console.log("Navigating to edit-quiz with uploadedFileId:", uploadedDoc.id);
+        // console.log("Navigating to edit-quiz with uploadedFileId:", uploadedDoc.id);
 
         navigate("/edit-quiz", {
           state: {
@@ -338,7 +338,7 @@ const CreateClassPage: React.FC = () => {
         // Chỉ xử lý file đầu tiên, sau đó navigate
         break;
       } catch (error) {
-        console.error("Error processing file:", error);
+        // console.error("Error processing file:", error);
         alert(`Lỗi khi xử lý file ${file.name}: ${error}`);
       }
     }
@@ -379,7 +379,7 @@ const CreateClassPage: React.FC = () => {
             resolve(content || "");
           }
         } catch (error) {
-          console.error("Lỗi khi xử lý nội dung file:", error);
+          // console.error("Lỗi khi xử lý nội dung file:", error);
           reject(new Error("Lỗi khi xử lý nội dung file"));
         }
       };

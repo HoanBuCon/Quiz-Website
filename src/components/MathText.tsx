@@ -369,7 +369,7 @@ const MathText: React.FC<MathTextProps> = ({ text, className = '', block = false
                         });
                         return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
                     } catch (e) {
-                        console.error(e);
+                        // console.error(e);
                         return <span key={index}>{part}</span>;
                     }
                 } else {

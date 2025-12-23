@@ -93,7 +93,7 @@ const ProfilePage: React.FC = () => {
             setNewName(profileData.name || '');
             setNewEmail(profileData.email);
         } catch (error) {
-            console.error('Load profile error:', error);
+            // console.error('Load profile error:', error);
             toast.error('Không thể tải thông tin profile');
         } finally {
             setLoading(false);

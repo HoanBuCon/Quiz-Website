@@ -58,7 +58,7 @@ export const canBypassMaintenance = (): boolean => {
       return true;
     }
   } catch (e) {
-    console.error('Cannot access localStorage:', e);
+    // console.error('Cannot access localStorage:', e);
   }
   
   return false;
@@ -72,18 +72,18 @@ if (typeof window !== 'undefined') {
   (window as any).setMaintenanceBypass = () => {
     try {
       localStorage.setItem('maintenance_bypass', 'liemdai_dev_access_2024');
-      console.log('Maintenance bypass activated! Reload page to access.');
+      // console.log('Maintenance bypass activated! Reload page to access.');
     } catch (e) {
-      console.error('Cannot set bypass key:', e);
+      // console.error('Cannot set bypass key:', e);
     }
   };
   
   (window as any).clearMaintenanceBypass = () => {
     try {
       localStorage.removeItem('maintenance_bypass');
-      console.log('Maintenance bypass cleared!');
+      // console.log('Maintenance bypass cleared!');
     } catch (e) {
-      console.error('Cannot clear bypass key:', e);
+      // console.error('Cannot clear bypass key:', e);
     }
   };
 }

@@ -59,7 +59,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       for (const cls of myClassesData) {
         const quizzes = await QuizzesAPI.byClass(cls.id, token);
         const isOwner = (cls as any).accessType === "owner";
-        
+
         // Filter logic from ClassesPage
         if (!isOwner && quizzes.length === 0) continue;
 
@@ -90,7 +90,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setDocuments(processedDocuments);
       setIsDataLoaded(true);
     } catch (error) {
-      console.error("Error pre-fetching data:", error);
+      // console.error("Error pre-fetching data:", error);
       throw error;
     }
   };
