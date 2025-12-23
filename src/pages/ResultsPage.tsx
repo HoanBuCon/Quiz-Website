@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { Quiz, Question } from "../types";
 import MathText from "../components/MathText";
@@ -29,6 +35,9 @@ const ResultsPage: React.FC = () => {
   const [atBottom, setAtBottom] = useState(false);
   const [canScroll, setCanScroll] = useState(true);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+
+  // Container bên trái (khu vực hiển thị câu hỏi chi tiết)
+  const leftContentRef = useRef<HTMLDivElement | null>(null);
 
   // Shared measurement function to avoid duplication
   const computeScrollState = useCallback(() => {
@@ -402,7 +411,10 @@ const ResultsPage: React.FC = () => {
       {/* Layout 2 cột: Trái = kết quả, Phải = minimap */}
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Trái: kết quả chi tiết */}
-        <div className="flex-1 min-w-0 order-2 lg:order-1">
+        <div
+          ref={leftContentRef}
+          className="flex-1 min-w-0 order-2 lg:order-1"
+        >
           {/* Chi tiết từng câu hỏi */}
           <div className="space-y-6">
             {displayQuestions.map((q: any, qIndex: number) => {
@@ -958,14 +970,49 @@ const ResultsPage: React.FC = () => {
                     type="button"
                     key={q.id}
                     onClick={() => {
-                      const el = document.getElementById(`q-${q.id}`);
-                      if (el) {
-                        const offset = 100; // Adjust for header
+                      const container = leftContentRef.current;
+                      if (!container) return;
+
+                      // Quan trọng: chỉ tìm phần tử trong cùng ResultsPage (tránh đụng bản ẩn trong SidebarLayout)
+                      const el = container.querySelector(
+                        `#q-${q.id}`
+                      ) as HTMLElement | null;
+                      if (!el) return;
+
+                      const scrollContainer = el.closest(
+                        ".custom-scrollbar"
+                      ) as HTMLElement | null;
+
+                      const isDesktop =
+                        typeof window !== "undefined" &&
+                        window.matchMedia("(min-width: 1280px)").matches;
+
+                      if (isDesktop && scrollContainer) {
+                        // Cuộn trong container của SidebarLayout (desktop)
+                        const containerRect =
+                          scrollContainer.getBoundingClientRect();
+                        const elementRect = el.getBoundingClientRect();
+                        const currentScroll = scrollContainer.scrollTop;
+                        const offset = 16; // chút khoảng trống phía trên
+
+                        const targetScroll =
+                          currentScroll +
+                          (elementRect.top - containerRect.top) -
+                          offset;
+
+                        scrollContainer.scrollTo({
+                          top: targetScroll,
+                          behavior: "smooth",
+                        });
+                      } else {
+                        // Layout dùng header (mobile/tablet): cuộn theo window
+                        const offset = 100; // bù cho header cố định
                         const elementPosition = el.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - offset;
+                        const offsetPosition =
+                          elementPosition + window.pageYOffset - offset;
                         window.scrollTo({
                           top: offsetPosition,
-                          behavior: "smooth"
+                          behavior: "smooth",
                         });
                       }
                     }}
