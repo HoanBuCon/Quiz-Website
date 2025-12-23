@@ -397,6 +397,8 @@ const EditQuizPage: React.FC = () => {
   const questionCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   // Flag to prevent infinite loop when syncing questions from content
   const isUpdatingFromQuestionsRef = useRef(false);
+  // Flag để tắt auto-save khi người dùng hủy hoặc kết thúc chỉnh sửa
+  const autoSaveDisabledRef = useRef(false);
 
   // Track dragged image for drop-anywhere feature
   const [isDraggingImage, setIsDraggingImage] = useState(false);
@@ -2065,6 +2067,8 @@ const EditQuizPage: React.FC = () => {
   const handlePublish = async () => {
     try {
       setIsPublishing(true);
+      // Khi publish thì không cần giữ draft nữa
+      autoSaveDisabledRef.current = true;
 
       // Validation: Phải có ít nhất 1 câu hỏi
       if (questions.length === 0) {
@@ -2300,7 +2304,13 @@ const EditQuizPage: React.FC = () => {
   };
 
   const handleCancel = () => {
-    if (window.confirm("Bạn có chắc chắn muốn hủy bỏ mọi thay đổi?\n\nTất cả các chỉnh sửa chưa lưu sẽ bị mất và trạng thái sẽ quay về như cũ.")) {
+    if (
+      window.confirm(
+        "Bạn có chắc chắn muốn hủy bỏ mọi thay đổi?\n\nTất cả các chỉnh sửa chưa lưu sẽ bị mất và trạng thái sẽ quay về như cũ."
+      )
+    ) {
+      // Tắt auto-save để effect không ghi lại dữ liệu sau khi đã xóa
+      autoSaveDisabledRef.current = true;
       localStorage.removeItem("quiz_edit_progress");
       navigate("/classes"); // Or navigate(-1) but explicit path is safer for "cancel" action
     }
@@ -2535,6 +2545,7 @@ const EditQuizPage: React.FC = () => {
   // Auto-save edit progress
   useEffect(() => {
     if (!state) return;
+    if (autoSaveDisabledRef.current) return;
 
     const saveProgress = () => {
       // Don't save if we don't have questions or title yet (initial render)
