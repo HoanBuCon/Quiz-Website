@@ -144,21 +144,56 @@ function protectLatexExpressions(text: string): { text: string; protectedExpress
 
   // Helper to check if a brace group is part of a composite block
   // Composite blocks typically start with { followed by "Câu" or whitespace + "Câu"
+  // CRITICAL: Must be more lenient to catch all composite block patterns
   const isCompositeBlockStart = (text: string, braceIndex: number): boolean => {
-    // Check if this is a standalone { at start of line or after whitespace
-    const beforeBrace = text.substring(Math.max(0, braceIndex - 50), braceIndex).trim();
-    const afterBrace = text.substring(braceIndex + 1, Math.min(text.length, braceIndex + 20)).trim();
+    // Get context around the brace
+    const beforeBrace = text.substring(Math.max(0, braceIndex - 100), braceIndex);
+    const afterBrace = text.substring(braceIndex + 1, Math.min(text.length, braceIndex + 200));
     
-    // If { is at start of line or after newline/whitespace, and followed by "Câu", it's composite
-    if (beforeBrace === '' || beforeBrace.endsWith('\n')) {
-      if (afterBrace.match(/^\s*Câu\s*\d*:?/i)) {
-        return true;
-      }
+    // Check if { is at start of line or after newline
+    const isAtLineStart = braceIndex === 0 || beforeBrace.endsWith('\n');
+    
+    // Check if { is preceded by whitespace only (no content before it on same line)
+    const lastNewlineIndex = beforeBrace.lastIndexOf('\n');
+    const lineBeforeBrace = lastNewlineIndex >= 0 
+      ? beforeBrace.substring(lastNewlineIndex + 1) 
+      : beforeBrace;
+    const isAfterWhitespaceOnly = /^\s*$/.test(lineBeforeBrace);
+    
+    // Check if followed by "Câu" (with optional number and colon) - can be immediately or after whitespace/newline
+    const hasCauAfter = /^\s*Câu\s*\d*:?/i.test(afterBrace);
+    
+    // Check if followed by newline then "Câu" (common pattern after normalization)
+    // Look for newline followed by optional whitespace and "Câu"
+    const hasCauOnNextLine = /[\n\r]\s*Câu\s*\d*:?/i.test(afterBrace);
+    
+    // Composite block if:
+    // 1. At line start AND followed by "Câu" (immediately or on next line)
+    // 2. After whitespace only AND followed by "Câu"
+    if ((isAtLineStart || isAfterWhitespaceOnly) && (hasCauAfter || hasCauOnNextLine)) {
+      return true;
     }
     
-    // If { is preceded by whitespace and followed by "Câu", it's composite
-    if (beforeBrace.match(/\s$/) && afterBrace.match(/^\s*Câu\s*\d*:?/i)) {
-      return true;
+    // Also check if this looks like a structural brace (not math)
+    // If it's on its own line or after whitespace, and NOT preceded by math characters
+    const lastCharBeforeBrace = lineBeforeBrace.slice(-1);
+    const isNotMathContext = !/[a-zA-Z0-9_^=+\-*/]/.test(lastCharBeforeBrace);
+    
+    // CRITICAL: If it's at line start or after whitespace only, and not in math context,
+    // it's likely a structural brace (composite block), not a math expression
+    // We err on the side of NOT protecting it, so the parser can handle it as composite
+    // BUT: Only do this if we're reasonably sure it's not math (check a bit more context)
+    if ((isAtLineStart || isAfterWhitespaceOnly) && isNotMathContext) {
+      // Additional check: if afterBrace doesn't contain math operators immediately, it's likely composite
+      const firstFewChars = afterBrace.substring(0, 10).trim();
+      const looksLikeMathStart = /^[0-9+\-*/^_=<>]/.test(firstFewChars) || 
+                                  firstFewChars.startsWith('\\') ||
+                                  /^[a-zA-Z]\{/.test(firstFewChars);
+      
+      if (!looksLikeMathStart) {
+        // This looks like a structural brace, don't protect it as LaTeX
+        return true;
+      }
     }
     
     return false;
