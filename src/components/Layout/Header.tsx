@@ -196,7 +196,7 @@ const Header: React.FC = () => {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] shadow-xl">
-        <div className="max-w-screen-2xl mx-auto relative z-10">
+        <div className="w-full relative z-10">
           <div className="flex justify-between items-center h-16 px-4 sm:px-6 lg:px-8">
             {/* Logo */}
             <div className="flex items-center min-w-0">
@@ -219,7 +219,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav ref={navRef} className="hidden nav:flex space-x-8 relative">
+            <nav ref={navRef} className="hidden nav:flex flex-1 max-w-2xl mx-4 justify-between relative">
               {/* Highlight nền trượt (luôn nằm dưới các nút) */}
               <div
                 className={`absolute top-0 bottom-0 rounded-lg transition-all duration-500 ease-out z-0
@@ -336,14 +336,14 @@ const Header: React.FC = () => {
                 >
                   <button
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className={`flex items-center space-x-2 pl-1 pr-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md h-10
+                    className={`flex items-center space-x-2 pl-1 pr-3 py-1 rounded-lg text-sm font-medium transition-all duration-300 shadow-sm hover:shadow-md h-10 max-w-[200px]
                       ${(isUserMenuOpen)
                         ? "bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-slate-100 ring-2 ring-primary-500/50"
                         : "bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 hover:from-slate-200 hover:to-slate-300 dark:hover:from-slate-700 dark:hover:to-slate-600 text-slate-700 dark:text-slate-300"
                       }
                     `}
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                    <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                       {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
                     </div>
                     <span className="hidden sm:inline truncate max-w-[150px]">{userName || "Tài khoản"}</span>
@@ -359,7 +359,7 @@ const Header: React.FC = () => {
                           className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                         >
                           <FaUser className="w-4 h-4 mr-3" />
-                          <span>Trang cá nhân</span>
+                          <span>Hồ sơ cá nhân</span>
                         </Link>
 
                         <div className="border-t border-gray-200 dark:border-gray-700"></div>
@@ -515,7 +515,7 @@ const Header: React.FC = () => {
                     className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
                   >
                     <FaUser className="w-4 h-4 mr-2" />
-                    <span>Trang cá nhân</span>
+                    <span>Hồ sơ cá nhân</span>
                   </Link>
 
                   <button
