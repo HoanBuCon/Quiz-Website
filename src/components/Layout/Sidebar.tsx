@@ -144,7 +144,7 @@ const Sidebar: React.FC = () => {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 py-6 px-3 space-y-2 overflow-hidden group-hover/sidebar:overflow-y-auto overflow-x-hidden">
+            <nav className="flex-1 py-6 px-3 space-y-2 overflow-hidden group-hover/sidebar:overflow-y-auto overflow-x-hidden custom-scrollbar">
                 {navItems.map((item) => {
                     const active = isActive(item.path);
                     const Icon = item.icon;
