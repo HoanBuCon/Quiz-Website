@@ -67,6 +67,7 @@ const QuizPage: React.FC = () => {
 
   // Ref cho minimap container để xử lý scroll
   const minimapRef = React.useRef<HTMLDivElement>(null);
+  const navLockRef = React.useRef(false); // Lock synchronous navigation to prevent spamming
 
   // Hàm trộn mảng (Fisher-Yates shuffle)
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -294,26 +295,30 @@ const QuizPage: React.FC = () => {
   }, []);
 
   // Save progress effect
+  // Save progress effect (Debounced)
   useEffect(() => {
     if (isSubmitting) return; // Block saving if submitting
     if (!loading && questions.length > 0 && quizId) {
-      const dataToSave = {
-        quizId,
-        quizTitle,
-        className,
-        questions,
-        userAnswers,
-        currentQuestionIndex,
-        attemptId,
-        uiMode,
-        shuffleMode,
-        selectedUiMode,
-        revealed: Array.from(revealed),
-        elapsed, // Save current elapsed
-        effectiveQuizId,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(QUIZ_PROGRESS_KEY, JSON.stringify(dataToSave));
+      const timer = setTimeout(() => {
+        const dataToSave = {
+          quizId,
+          quizTitle,
+          className,
+          questions,
+          userAnswers,
+          currentQuestionIndex,
+          attemptId,
+          uiMode,
+          shuffleMode,
+          selectedUiMode,
+          revealed: Array.from(revealed),
+          elapsed, // Save current elapsed
+          effectiveQuizId,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(QUIZ_PROGRESS_KEY, JSON.stringify(dataToSave));
+      }, 500); // Debounce 500ms
+      return () => clearTimeout(timer);
     }
   }, [quizId, quizTitle, className, questions, userAnswers, currentQuestionIndex, attemptId, uiMode, shuffleMode, selectedUiMode, revealed, elapsed, effectiveQuizId, loading, isSubmitting]);
 
@@ -820,8 +825,11 @@ const QuizPage: React.FC = () => {
   };
 
   // Navigate to next/previous question
+  // Navigate to next/previous question
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0 && !isExiting) {
+      if (navLockRef.current) return;
+      navLockRef.current = true;
       setSlideDirection("left"); // Hướng đi về (Prev) -> Slide In Left (sau đó). Out sẽ là Right.
       // Logic:
       // Prev: Old slides out to Right -> New slides in from Left
@@ -830,12 +838,16 @@ const QuizPage: React.FC = () => {
       setTimeout(() => {
         setCurrentQuestionIndex((prev) => prev - 1);
         setIsExiting(false);
+        navLockRef.current = false;
+        setSlideDirection("none");
       }, 200); // 200ms khớp với animation duration
     }
   };
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1 && !isExiting) {
+      if (navLockRef.current) return;
+      navLockRef.current = true;
       setSlideDirection("right"); // Hướng đi tới (Next) -> Slide In Right. Out sẽ là Left.
       // Logic:
       // Next: Old slides out to Left -> New slides in from Right
@@ -844,6 +856,8 @@ const QuizPage: React.FC = () => {
       setTimeout(() => {
         setCurrentQuestionIndex((prev) => prev + 1);
         setIsExiting(false);
+        navLockRef.current = false;
+        setSlideDirection("none");
       }, 200);
     }
   };
@@ -970,7 +984,7 @@ const QuizPage: React.FC = () => {
           {/* Question */}
           <div
             key={currentQuestionIndex}
-            className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 
+            className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.002] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 
               ${isExiting
                 ? slideDirection === "right"
                   ? "animate-slideOutLeft"
@@ -1585,6 +1599,7 @@ const QuizPage: React.FC = () => {
                     setTimeout(() => {
                       setCurrentQuestionIndex(index);
                       setIsExiting(false);
+                      setSlideDirection("none");
                     }, 200);
                   }}
                   className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center p-0 lg:p-2 rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm snap-center
