@@ -137,9 +137,34 @@ export function parseDocsContent(
     // Inject newline trước "Câu n:"
     .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
 
-    // Keywords đặc biệt
-    // Keywords đặc biệt
-    .replace(/([^\n])\s*(result:|group:|{ |^{|}$| }|}$)/gm, '$1\n$2')
+    // FIX: Tách ngoặc nhọn ra dòng riêng để nhận diện composite block
+    // CRITICAL: Must split { and } to separate lines to properly detect composite blocks
+    // Split content before { and put { on new line (but not LaTeX commands)
+    .replace(/([^\n\s\\])\s*\{/g, '$1\n{')
+    // Split content after { onto next line (but preserve LaTeX braces)
+    // Only split if { is not part of LaTeX command (no backslash before it)
+    .replace(/([^\\])\{([^\n\s])/g, '$1{\n$2')
+    // Handle { at start of line (must be on its own line)
+    .replace(/^\s*\{([^\n\s])/gm, '{\n$1')
+    // Split content before } onto previous line (but preserve LaTeX braces)
+    // CRITICAL: Must split } BEFORE result: to ensure result: is inside composite block
+    .replace(/([^\n\s])\s*\}([^\\])/g, '$1\n}$2')
+    // Split } from content after it (must be on its own line)
+    // CRITICAL: This must come BEFORE result: normalization
+    .replace(/\}([^\n\s])/g, '}\n$1')
+
+    // Keywords đặc biệt (result:, group:)
+    // FIX: Ensure result: and group: are always on their own line
+    // CRITICAL: Must split result: BEFORE normalizing braces, and ensure it's on its own line
+    // First, handle specific patterns (Câu, Options) to avoid conflicts
+    .replace(/(Câu\s+\d+:\s*[^\n]+?)\s*(result:|group:)/gi, '$1\n$2')
+    .replace(/([A-Z]\.\s*[^\n]+?)\s*(result:|group:)/g, '$1\n$2')
+    // Then handle punctuation followed by result: (no space)
+    .replace(/([?!.])(result:|group:)/gi, '$1\n$2')
+    // Finally, handle general case: any character followed by result: (with or without space)
+    // CRITICAL: This must come AFTER brace normalization to avoid conflicts
+    .replace(/([^\n])(\s*)(result:|group:)/gm, '$1\n$3')
+    
     // Remove image placeholder tags
     .replace(/<hình ảnh>/g, "");
   
@@ -218,19 +243,78 @@ export function parseDocsContent(
     currentCorrectAnswers = [];
   };
 
+  // Helper function to count braces while ignoring LaTeX commands
+  const countBracesIgnoringLatex = (text: string): { open: number, close: number } => {
+    let open = 0;
+    let close = 0;
+    let i = 0;
+    
+    while (i < text.length) {
+      // Skip LaTeX commands (backslash followed by letters)
+      if (text[i] === '\\' && i + 1 < text.length && /[a-zA-Z]/.test(text[i + 1])) {
+        // Skip the command name
+        i++;
+        while (i < text.length && /[a-zA-Z]/.test(text[i])) {
+          i++;
+        }
+        // Skip any following braces (they're part of the LaTeX command, not structure)
+        while (i < text.length && /[\s{]/.test(text[i])) {
+          if (text[i] === '{') {
+            // Find matching } for this LaTeX argument
+            let depth = 1;
+            i++;
+            while (i < text.length && depth > 0) {
+              if (text[i] === '\\') {
+                i += 2; // Skip escaped char
+              } else if (text[i] === '{') {
+                depth++;
+                i++;
+              } else if (text[i] === '}') {
+                depth--;
+                i++;
+              } else {
+                i++;
+              }
+            }
+          } else {
+            i++;
+          }
+        }
+      } else if (text[i] === '{') {
+        open++;
+        i++;
+      } else if (text[i] === '}') {
+        close++;
+        i++;
+      } else {
+        i++;
+      }
+    }
+    
+    return { open, close };
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // --- COMPOSITE BLOCK HANDLING ---
     if (isCollectingComposite) {
-      // Check for braces to handle nesting (simple counter)
-      const openCount = (line.match(/{/g) || []).length;
-      const closeCount = (line.match(/}/g) || []).length;
-      
-      compositeBraceCount += openCount - closeCount;
+      // CRITICAL: Count braces while ignoring LaTeX to avoid false closing
+      const braces = countBracesIgnoringLatex(line);
+      compositeBraceCount += braces.open - braces.close;
 
       if (compositeBraceCount <= 0) {
         // End of composite block
+        // CRITICAL: Before ending, check if line contains result: or other content before }
+        // If line has content before }, add it to buffer first
+        const closingBraceIndex = line.indexOf('}');
+        if (closingBraceIndex > 0) {
+          const beforeBrace = line.substring(0, closingBraceIndex).trim();
+          if (beforeBrace) {
+            compositeBuffer.push(beforeBrace);
+          }
+        }
+        
         isCollectingComposite = false;
         
         // Recursively parse buffer
@@ -248,9 +332,36 @@ export function parseDocsContent(
     }
 
     // Check start of Composite Block
-    if (line === "{" && currentQuestion.question) {
+    // CRITICAL FIX: Only match standalone "{", not LaTeX like "\frac{1}{2}"
+    // After normalization, { should be on its own line or at start
+    const trimmedLine = line.trim();
+    
+    // Check if this is a composite block start
+    // Must have: currentQuestion.question exists, not already collecting, and line starts with {
+    const isStandaloneBrace = trimmedLine === '{' || trimmedLine === '{ ';
+    const hasBraceAtStart = trimmedLine.startsWith('{') && !trimmedLine.match(/^\\[a-zA-Z]+\{/);
+    const shouldStartComposite = (isStandaloneBrace || hasBraceAtStart) && currentQuestion.question && !isCollectingComposite;
+    
+    if (shouldStartComposite) {
         isCollectingComposite = true;
-        compositeBraceCount = 1;
+        const braceIndex = line.indexOf('{');
+        const afterBrace = line.substring(braceIndex + 1).trim();
+        
+        // Count braces in this line using LaTeX-aware counter
+        const braces = countBracesIgnoringLatex(line);
+        compositeBraceCount = braces.open - braces.close;
+        
+        // If there's content after {, add it to buffer (but don't add if it's just })
+        if (afterBrace && afterBrace !== '}') {
+            compositeBuffer.push(afterBrace);
+        }
+        
+        // If braces are balanced on same line (e.g., "{}"), don't start composite mode
+        if (compositeBraceCount <= 0) {
+            isCollectingComposite = false;
+            compositeBraceCount = 0;
+            compositeBuffer = [];
+        }
         continue;
     }
 
@@ -361,7 +472,8 @@ export function parseDocsContent(
       // 2. Question (Câu n:)
       if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) return true;
       // 3. Keywords (result:, group:)
-      if (line.match(/^(result|group):/i)) return true;
+      // CRITICAL: Match with optional whitespace before colon
+      if (line.match(/^(result|group)\s*:/i)) return true;
       // 4. Structural ({, })
       if (line === "{" || line === "}") return true;
       // 5. Options (*A., A.)
@@ -372,7 +484,8 @@ export function parseDocsContent(
 
     // Helper to accumulate multi-line content
     const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
-      let content = lines[startIdx].replace(/^(result|group):/i, '').trim();
+      // CRITICAL: Match result: or group: with optional whitespace before colon
+      let content = lines[startIdx].replace(/^(result|group)\s*:/i, '').trim();
       let nextIdx = startIdx + 1;
       
       while (nextIdx < lines.length) {
@@ -389,7 +502,8 @@ export function parseDocsContent(
     };
 
     // 4. Fill-in / Drag Result (case-insensitive & multi-line)
-    if (line.match(/^result:/i)) {
+    const resultMatch = line.match(/^result\s*:/i);
+    if (resultMatch) {
       const { content, nextIdx } = accumulateLines(i);
       i = nextIdx; // Update loop index
 
@@ -410,7 +524,7 @@ export function parseDocsContent(
         } catch (e) {
            // console.warn("Failed to parse result array", e);
            // Fallback to text
-           currentCorrectAnswers.push(content);
+           currentCorrectAnswers = [content];
            currentQuestion.type = 'text';
         }
       } 
@@ -422,26 +536,21 @@ export function parseDocsContent(
         
         if (matches && matches.length > 0) {
            const answers = matches.map(m => m.replace(/^"|"$/g, ''));
-           // Allow accumulating if multiple result lines exist (support legacy multi-line too?)
-           // But spec says "result: "A", "B"" is one line.
-           // However, let's just append to be safe or overwrite?
-           // Logic: If we found quotes, these ARE the answers for this line.
-           
-           // If we already have answers, push?
-           // Let's stick to: push all found.
-           answers.forEach(a => currentCorrectAnswers.push(a));
+           // CRITICAL: Always set answers for text type (don't append if type was different)
+           // This ensures correctAnswers is properly set for composite sub-questions
+           currentCorrectAnswers = answers;
            currentQuestion.type = 'text';
         } else {
            // Quotes exist but maybe empty ""? or bad format
            // Fallback to raw content
-           currentCorrectAnswers.push(content);
+           currentCorrectAnswers = [content];
            currentQuestion.type = 'text';
         }
       } else {
         // Simple text result (Unquoted, legacy)
         // Check for CSV without quotes? No, user specified quotes.
         // Treat whole line as one answer if no quotes found.
-        currentCorrectAnswers.push(content);
+        currentCorrectAnswers = [content];
         currentQuestion.type = 'text';
       }
       continue;
@@ -530,8 +639,42 @@ export function parseDocsContent(
       }
       
     } else if (currentQuestion.question) {
-      // Append to question
-      currentQuestion.question += " " + line;
+      // FIX: Don't append to question if line contains { (likely start of composite block)
+      // This prevents content like "{Câu 1: ..." from being appended to the parent question
+      // Check if line contains { that's not part of LaTeX command
+      const trimmedLine = line.trim();
+      const hasCompositeBrace = trimmedLine.includes('{') && !trimmedLine.match(/\\[a-zA-Z]+\{/);
+      
+      if (hasCompositeBrace) {
+        // This looks like a composite block start, don't append to question
+        // Instead, trigger composite block handling
+        const braceIndex = line.indexOf('{');
+        const beforeBrace = line.substring(0, braceIndex).trim();
+        const afterBrace = line.substring(braceIndex + 1).trim();
+        
+        // If there's content before {, it might be part of the question, but we should stop here
+        // and start composite mode. However, if { is at the start, we're good.
+        // For safety, if there's content before {, we might want to append it to question first
+        // But actually, if normalization worked, { should be on its own line
+        // So if we see content before {, it means normalization didn't work, and we should
+        // not append anything to question
+        
+        isCollectingComposite = true;
+        const braces = countBracesIgnoringLatex(line);
+        compositeBraceCount = braces.open - braces.close;
+        
+        if (afterBrace && afterBrace !== '}') {
+            compositeBuffer.push(afterBrace);
+        }
+        
+        if (compositeBraceCount <= 0) {
+            isCollectingComposite = false;
+            compositeBraceCount = 0;
+        }
+      } else {
+        // Append to question
+        currentQuestion.question += " " + line;
+      }
     }
   }
 

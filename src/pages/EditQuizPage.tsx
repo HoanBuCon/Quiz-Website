@@ -118,7 +118,7 @@ const ImageUpload: React.FC<{
         onImageUpload(imageUrl);
       } catch (error) {
         toast.dismiss();
-        // console.error("Upload error:", error);
+        console.error("Upload error:", error);
         toast.error("Lỗi khi upload ảnh: " + (error as Error).message);
       }
     };
@@ -141,7 +141,7 @@ const ImageUpload: React.FC<{
             return;
           }
         } catch (e) {
-          // console.error('Failed to parse assigned source:', e);
+          console.error('Failed to parse assigned source:', e);
         }
       }
 
@@ -727,13 +727,13 @@ const EditQuizPage: React.FC = () => {
     questionId: string;
     optionText?: string;
   }) => {
-    // console.log('handleRemoveImageFromSource called with:', source);
+    console.log('handleRemoveImageFromSource called with:', source);
 
     // ATOMIC UPDATE: Remove image from questions and update content together
     setQuestions(prev => {
-      // console.log('Current questions count:', prev.length);
+      console.log('Current questions count:', prev.length);
       const foundQuestion = prev.find(q => q.id === source.questionId);
-      // console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
+      console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
 
       const updated = prev.map(q => {
         if (q.id !== source.questionId) return q;
@@ -747,7 +747,7 @@ const EditQuizPage: React.FC = () => {
 
         if (source.sourceType === 'question') {
           // Remove question image
-          // console.log('Removing question image from question:', q.id);
+          console.log('Removing question image from question:', q.id);
           updatedQ.questionImage = undefined;
           updatedQ.questionImageId = undefined;
 
@@ -757,7 +757,7 @@ const EditQuizPage: React.FC = () => {
           }
         } else if (source.sourceType === 'option' && source.optionText) {
           // Remove option image
-          // console.log('Removing option image:', source.optionText, 'from question:', q.id);
+          console.log('Removing option image:', source.optionText, 'from question:', q.id);
           const newOptionImages = { ...updatedQ.optionImages };
           const newOptionImageIds = { ...updatedQ.optionImageIds };
           delete newOptionImages[source.optionText];
@@ -779,7 +779,7 @@ const EditQuizPage: React.FC = () => {
           editedQuestionsMapRef.current.set(q.id, cachedUpdated);
         }
 
-        // console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
+        console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
         return updatedQ;
       });
 
@@ -923,11 +923,11 @@ const EditQuizPage: React.FC = () => {
       const allImages = { ...initialMap, ...prev.pastedImagesMap };
 
       // log debug to investigate why images aren't returning
-      // console.log("DEBUG: handlePreviewEdit Check", {
-      //   totalImagesInMap: Object.keys(allImages).length,
-      //   idsInContent: Array.from(imageIdsInContent),
-      //   sampleMapKeys: Object.keys(allImages).slice(0, 5)
-      // });
+      console.log("DEBUG: handlePreviewEdit Check", {
+        totalImagesInMap: Object.keys(allImages).length,
+        idsInContent: Array.from(imageIdsInContent),
+        sampleMapKeys: Object.keys(allImages).slice(0, 5)
+      });
 
       // 1. Identify all "Used IDs"
       // Since we now enforce Unique IDs for every image instance, we just check ID presence.
@@ -944,10 +944,10 @@ const EditQuizPage: React.FC = () => {
         newUnassigned.push({ id, data });
       });
 
-      // console.log("DEBUG: Auto-Restore Result (ID-Based)", {
-      //   usedIdsCount: usedIds.size,
-      //   newUnassignedCount: newUnassigned.length
-      // });
+      console.log("DEBUG: Auto-Restore Result (ID-Based)", {
+        usedIdsCount: usedIds.size,
+        newUnassignedCount: newUnassigned.length
+      });
 
       return {
         ...prev,
@@ -979,11 +979,11 @@ const EditQuizPage: React.FC = () => {
       const allImages = { ...initialMap, ...prev.pastedImagesMap };
       const newUnassigned: import('../types').ExtractedImage[] = [];
 
-      // console.log("DEBUG: syncUnassignedFromContent", {
-      //   foundIds: Array.from(usedIds),
-      //   mapKeys: Object.keys(allImages).length,
-      //   sampleMapKey: Object.keys(allImages)[0]
-      // });
+      console.log("DEBUG: syncUnassignedFromContent", {
+        foundIds: Array.from(usedIds),
+        mapKeys: Object.keys(allImages).length,
+        sampleMapKey: Object.keys(allImages)[0]
+      });
 
       Object.entries(allImages).forEach(([id, data]) => {
         if (!usedIds.has(id)) {
@@ -1049,14 +1049,39 @@ const EditQuizPage: React.FC = () => {
     normalizedContent = normalizedContent
       // Inject newline trước "Câu n:"
       .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
-      // Keywords đặc biệt
-      // Keywords đặc biệt
-      .replace(/([^\n])\s*(result:|group:|^{|}$)/gm, '$1\n$2')
+      
+      // FIX: Tách ngoặc nhọn ra dòng riêng để nhận diện composite block (giống docsParser.ts)
+      // Split content before { and put { on new line
+      .replace(/([^\n\s\\])\s*\{/g, '$1\n{')
+      // Split content after { onto next line (but preserve LaTeX braces)
+      // Only split if { is not part of LaTeX command (no backslash before it)
+      .replace(/([^\\])\{([^\n\s])/g, '$1{\n$2')
+      // Handle { at start of line (must be on its own line)
+      .replace(/^\s*\{([^\n\s])/gm, '{\n$1')
+      // Split content before } onto previous line (but preserve LaTeX braces)
+      .replace(/([^\n\s])\s*\}([^\\])/g, '$1\n}$2')
+      // Split } from content after it (must be on its own line)
+      .replace(/\}([^\n\s])/g, '}\n$1')
+      
+      // Keywords đặc biệt (result:, group:)
+      // FIX: Ensure result: and group: are always on their own line
+      // This is critical for parsing composite blocks correctly, especially in composite questions
+      // CRITICAL: Must split result: BEFORE normalizing braces, and ensure it's on its own line
+      // First, handle specific patterns (Câu, Options) to avoid conflicts
+      .replace(/(Câu\s+\d+:\s*[^\n]+?)\s*(result:|group:)/gi, '$1\n$2')
+      .replace(/([A-Z]\.\s*[^\n]+?)\s*(result:|group:)/g, '$1\n$2')
+      // Then handle punctuation followed by result: (no space)
+      .replace(/([?!.])(result:|group:)/gi, '$1\n$2')
+      // Finally, handle general case: any character followed by result: (with or without space)
+      // CRITICAL: This must come AFTER brace normalization to avoid conflicts
+      .replace(/([^\n])(\s*)(result:|group:)/gm, '$1\n$3')
       // Remove image placeholder tags
       .replace(/<hình ảnh>/g, "");
 
     // FIX: Normalize LaTeX braces - remove whitespace/newlines inside braces
     // This fixes {n } → {n} and {n\n} → {n} after image drop
+    // BUT: Only normalize LaTeX braces, NOT structural braces for composite blocks
+    // Since we already split structural braces to separate lines, we can safely normalize
     normalizedContent = normalizedContent.replace(/\{\s+/g, '{');
     normalizedContent = normalizedContent.replace(/\s+\}/g, '}');
 
@@ -1229,16 +1254,75 @@ const EditQuizPage: React.FC = () => {
 
       if (!line) continue; // Skip line if it only contained the image markers
 
+      // Helper function to count braces while ignoring LaTeX commands (giống docsParser.ts)
+      const countBracesIgnoringLatex = (text: string): { open: number, close: number } => {
+        let open = 0;
+        let close = 0;
+        let i = 0;
+        
+        while (i < text.length) {
+          // Skip LaTeX commands (backslash followed by letters)
+          if (text[i] === '\\' && i + 1 < text.length && /[a-zA-Z]/.test(text[i + 1])) {
+            // Skip the command name
+            i++;
+            while (i < text.length && /[a-zA-Z]/.test(text[i])) {
+              i++;
+            }
+            // Skip any following braces (they're part of the LaTeX command, not structure)
+            while (i < text.length && /[\s{]/.test(text[i])) {
+              if (text[i] === '{') {
+                // Find matching } for this LaTeX argument
+                let depth = 1;
+                i++;
+                while (i < text.length && depth > 0) {
+                  if (text[i] === '\\') {
+                    i += 2; // Skip escaped char
+                  } else if (text[i] === '{') {
+                    depth++;
+                    i++;
+                  } else if (text[i] === '}') {
+                    depth--;
+                    i++;
+                  } else {
+                    i++;
+                  }
+                }
+              } else {
+                i++;
+              }
+            }
+          } else if (text[i] === '{') {
+            open++;
+            i++;
+          } else if (text[i] === '}') {
+            close++;
+            i++;
+          } else {
+            i++;
+          }
+        }
+        
+        return { open, close };
+      };
+
       // --- COMPOSITE BLOCK HANDLING ---
       if (isCollectingComposite) {
-        // Check for braces to handle nesting (simple counter)
-        const openCount = (line.match(/{/g) || []).length;
-        const closeCount = (line.match(/}/g) || []).length;
-
-        compositeBraceCount += openCount - closeCount;
+        // CRITICAL: Count braces while ignoring LaTeX to avoid false closing (giống docsParser.ts)
+        const braces = countBracesIgnoringLatex(line);
+        compositeBraceCount += braces.open - braces.close;
 
         if (compositeBraceCount <= 0) {
           // End of composite block
+          // CRITICAL: Before ending, check if line contains result: or other content before }
+          // If line has content before }, add it to buffer first
+          const closingBraceIndex = line.indexOf('}');
+          if (closingBraceIndex > 0) {
+            const beforeBrace = line.substring(0, closingBraceIndex).trim();
+            if (beforeBrace) {
+              compositeBuffer.push(beforeBrace);
+            }
+          }
+          
           isCollectingComposite = false;
 
           // Recursively parse buffer
@@ -1255,10 +1339,37 @@ const EditQuizPage: React.FC = () => {
         continue;
       }
 
-      // Check start of Composite Block
-      if (line === "{" && currentQuestion.question) {
+      // Check start of Composite Block (giống docsParser.ts)
+      // CRITICAL FIX: Only match standalone "{", not LaTeX like "\frac{1}{2}"
+      // After normalization, { should be on its own line or at start
+      const trimmedLine = line.trim();
+      
+      // Check if this is a composite block start
+      // Must have: currentQuestion.question exists, not already collecting, and line starts with {
+      const isStandaloneBrace = trimmedLine === '{' || trimmedLine === '{ ';
+      const hasBraceAtStart = trimmedLine.startsWith('{') && !trimmedLine.match(/^\\[a-zA-Z]+\{/);
+      const shouldStartComposite = (isStandaloneBrace || hasBraceAtStart) && currentQuestion.question && !isCollectingComposite;
+      
+      if (shouldStartComposite) {
         isCollectingComposite = true;
-        compositeBraceCount = 1;
+        const braceIndex = line.indexOf('{');
+        const afterBrace = line.substring(braceIndex + 1).trim();
+        
+        // Count braces in this line using LaTeX-aware counter
+        const braces = countBracesIgnoringLatex(line);
+        compositeBraceCount = braces.open - braces.close;
+        
+        // If there's content after {, add it to buffer (but don't add if it's just })
+        if (afterBrace && afterBrace !== '}') {
+          compositeBuffer.push(afterBrace);
+        }
+        
+        // If braces are balanced on same line (e.g., "{}"), don't start composite mode
+        if (compositeBraceCount <= 0) {
+          isCollectingComposite = false;
+          compositeBraceCount = 0;
+          compositeBuffer = [];
+        }
         continue;
       }
 
@@ -1410,7 +1521,8 @@ const EditQuizPage: React.FC = () => {
         // 2. Question (Câu n:)
         if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) return true;
         // 3. Keywords (result:, group:)
-        if (line.match(/^(result|group):/i)) return true;
+        // CRITICAL: Match with optional whitespace before colon
+        if (line.match(/^(result|group)\s*:/i)) return true;
         // 4. Structural ({, })
         if (line === "{" || line === "}") return true;
         // 5. Options (*A., A., $A.)
@@ -1420,7 +1532,8 @@ const EditQuizPage: React.FC = () => {
       };
 
       const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
-        let content = lines[startIdx].replace(/^(result|group):/i, '').trim();
+        // CRITICAL: Match result: or group: with optional whitespace before colon
+        let content = lines[startIdx].replace(/^(result|group)\s*:/i, '').trim();
         let nextIdx = startIdx + 1;
 
         while (nextIdx < lines.length) {
@@ -1436,9 +1549,16 @@ const EditQuizPage: React.FC = () => {
       };
 
       // 4. Fill-in / Drag Result (result: ...)
-      if (line.match(/^result:/i)) {
+      // CRITICAL: Check for result: with case-insensitive match and allow optional whitespace
+      const resultMatch = line.match(/^result\s*:/i);
+      if (resultMatch) {
         const { content, nextIdx } = accumulateLines(i);
         i = nextIdx; // Update loop index
+
+        // CRITICAL: Ensure currentCorrectAnswers is always an array for text type
+        if (!Array.isArray(currentCorrectAnswers)) {
+          currentCorrectAnswers = [];
+        }
 
         // Check if array -> Drag Items
         if (content.startsWith("[") && content.endsWith("]")) {
@@ -1455,14 +1575,10 @@ const EditQuizPage: React.FC = () => {
               targets: [] // will be filled by group:
             };
           } catch (e) {
-            // console.warn("Failed to parse result array", e);
+            console.warn("Failed to parse result array", e);
             // Fallback to text
-            if (currentQuestion.type === 'text' && Array.isArray(currentCorrectAnswers)) {
-              (currentCorrectAnswers as string[]).push(content);
-            } else {
-              currentCorrectAnswers = [content];
-              currentQuestion.type = 'text';
-            }
+            currentCorrectAnswers = [content];
+            currentQuestion.type = 'text';
           }
         }
         // Check for quoted multiple answers: "A", "B" (Comma separated quoted strings)
@@ -1473,31 +1589,19 @@ const EditQuizPage: React.FC = () => {
           if (matches && matches.length > 0) {
             const answers = matches.map(m => m.replace(/^"|"$/g, ''));
 
-            // Logic: Append these answers
-            if (currentQuestion.type === 'text' && Array.isArray(currentCorrectAnswers)) {
-              answers.forEach(a => (currentCorrectAnswers as string[]).push(a));
-            } else {
-              currentCorrectAnswers = answers;
-              currentQuestion.type = 'text';
-            }
+            // CRITICAL: Always set answers for text type (don't append if type was different)
+            currentCorrectAnswers = answers;
+            currentQuestion.type = 'text';
           } else {
             // Quotes exist but parsing failed? Fallback
-            if (currentQuestion.type === 'text' && Array.isArray(currentCorrectAnswers)) {
-              (currentCorrectAnswers as string[]).push(content);
-            } else {
-              currentCorrectAnswers = [content];
-              currentQuestion.type = 'text';
-            }
+            currentCorrectAnswers = [content];
+            currentQuestion.type = 'text';
           }
         } else {
           // Simple text result (Unquoted, legacy)
           // Treat whole line as one answer
-          if (currentQuestion.type === 'text' && Array.isArray(currentCorrectAnswers)) {
-            (currentCorrectAnswers as string[]).push(content);
-          } else {
-            currentCorrectAnswers = [content];
-            currentQuestion.type = 'text';
-          }
+          currentCorrectAnswers = [content];
+          currentQuestion.type = 'text';
         }
         continue;
       }
@@ -1527,7 +1631,7 @@ const EditQuizPage: React.FC = () => {
               mapping[item] = targetId;
             });
           } catch (e) {
-            // console.warn("Error parsing group items", e);
+            console.warn("Error parsing group items", e);
           }
         }
 
@@ -1632,12 +1736,12 @@ const EditQuizPage: React.FC = () => {
           const token = getToken();
           const url = await ImagesAPI.upload(file, token!);
           q.questionImage = url;
-          // console.log(`✓ Uploaded questionImage for Q${i + 1}: ${url}`);
+          console.log(`✓ Uploaded questionImage for Q${i + 1}: ${url}`);
         } catch (error) {
-          // console.error(
-          //   `✗ Failed to upload questionImage for Q${i + 1}:`,
-          //   error
-          // );
+          console.error(
+            `✗ Failed to upload questionImage for Q${i + 1}:`,
+            error
+          );
           toast.error(`Ảnh câu hỏi ${i + 1} lỗi upload. Vui lòng thử lại!`);
         }
       }
@@ -1657,14 +1761,14 @@ const EditQuizPage: React.FC = () => {
                 const token = getToken();
                 const url = await ImagesAPI.upload(file, token!);
                 newOptionImages[j] = url;
-                // console.log(
-                //   `✓ Uploaded optionImage for Q${i + 1} option ${j}: ${url}`
-                // );
+                console.log(
+                  `✓ Uploaded optionImage for Q${i + 1} option ${j}: ${url}`
+                );
               } catch (error) {
-                // console.error(
-                //   `✗ Failed to upload optionImage for Q${i + 1} option ${j}:`,
-                //   error
-                // );
+                console.error(
+                  `✗ Failed to upload optionImage for Q${i + 1} option ${j}:`,
+                  error
+                );
                 newOptionImages[j] = img; // Keep original on error
               }
             } else {
@@ -1685,14 +1789,14 @@ const EditQuizPage: React.FC = () => {
                 const token = getToken();
                 const url = await ImagesAPI.upload(file, token!);
                 newOptionImages[key] = url;
-                // console.log(
-                //   `✓ Uploaded optionImage for Q${i + 1} "${key}": ${url}`
-                // );
+                console.log(
+                  `✓ Uploaded optionImage for Q${i + 1} "${key}": ${url}`
+                );
               } catch (error) {
-                // console.error(
-                //   `✗ Failed to upload optionImage for Q${i + 1} "${key}":`,
-                //   error
-                // );
+                console.error(
+                  `✗ Failed to upload optionImage for Q${i + 1} "${key}":`,
+                  error
+                );
                 newOptionImages[key] = img; // Keep original on error
                 toast.error(`Ảnh đáp án "${key}" (câu ${i + 1}) lỗi upload.`);
               }
@@ -1946,9 +2050,9 @@ const EditQuizPage: React.FC = () => {
       }
 
       // Upload all base64 images first and replace with URLs
-      // console.log("Uploading images before publishing...");
+      console.log("Uploading images before publishing...");
       const questionsWithUrls = await uploadImagesInQuestions(cleanedQuestions);
-      // console.log("All images uploaded successfully!");
+      console.log("All images uploaded successfully!");
 
       // Nếu có token, ưu tiên lưu về backend
       const { getToken } = await import("../utils/auth");
@@ -2035,7 +2139,7 @@ const EditQuizPage: React.FC = () => {
 
       alert("Vui lòng đăng nhập để xuất bản quiz.");
     } catch (error) {
-      // console.error("Error publishing quiz:", error);
+      console.error("Error publishing quiz:", error);
       toast.error("Có lỗi xảy ra khi xuất bản");
     } finally {
       setIsPublishing(false);
@@ -2050,10 +2154,10 @@ const EditQuizPage: React.FC = () => {
   };
 
   useEffect(() => {
-    // console.log("EditQuizPage: received state", state);
+    console.log("EditQuizPage: received state", state);
 
     if (!state) {
-      // console.log("No state provided, redirecting");
+      console.log("No state provided, redirecting");
       toast.error("Không có thông tin quiz");
       navigate("/create");
       return;
@@ -2064,7 +2168,7 @@ const EditQuizPage: React.FC = () => {
       state.fileName === "Quiz thủ công" &&
       (!state.questions || state.questions.length === 0)
     ) {
-      // console.log("Manual quiz - initializing empty questions");
+      console.log("Manual quiz - initializing empty questions");
       setQuestions([]);
       setQuizTitle("Quiz thủ công");
       setQuizDescription("Bài trắc nghiệm tạo thủ công");
@@ -2074,7 +2178,7 @@ const EditQuizPage: React.FC = () => {
 
     // Với file upload - cần có câu hỏi
     if (!state?.questions || state.questions.length === 0) {
-      // console.log("No questions found, redirecting");
+      console.log("No questions found, redirecting");
       toast.error("Không có câu hỏi nào được tải lên");
       navigate("/create");
       return;
@@ -2206,12 +2310,12 @@ const EditQuizPage: React.FC = () => {
     // This handles the "Editor Reload" case where we want to preserve the exact gallery state
     // instead of recalculating (which might resurrect ghost images).
     if (state.unassignedImages && Array.isArray(state.unassignedImages)) {
-      // console.log("Restoring unassignedImages from state:", state.unassignedImages.length);
+      console.log("Restoring unassignedImages from state:", state.unassignedImages.length);
       initialUnassignedImages = state.unassignedImages;
       // Optional: We could validate these against content just to be safe, 
       // but trusting state prevents "Ghosts".
     } else {
-      // console.log("Calculating unassignedImages from initialImagesMap.");
+      console.log("Calculating unassignedImages from initialImagesMap.");
       // Fallback: Calculate from initial map (for new imports logic remains same)
       Object.entries(initialImagesMap).forEach(([id, data]) => {
         // If ID is found in content tags, it is assigned.
@@ -2323,7 +2427,7 @@ const EditQuizPage: React.FC = () => {
       try {
         localStorage.setItem("quiz_edit_progress", JSON.stringify(dataToSave));
       } catch (error) {
-        // console.warn("Failed to save progress to localStorage:", error);
+        console.warn("Failed to save progress to localStorage:", error);
         if (error instanceof DOMException && error.name === "QuotaExceededError") {
           // Provide feedback but don't spam toasts on every keystroke save
           // Maybe set internal flag that "saving failed"
@@ -2354,7 +2458,7 @@ const EditQuizPage: React.FC = () => {
     updatedQuestion: Partial<QuestionWithImages>,
     options?: { exitEditMode?: boolean }
   ) => {
-    // console.log("Saving question:", questionId, updatedQuestion); // Debug log
+    console.log("Saving question:", questionId, updatedQuestion); // Debug log
 
     // FIX: Register new images (from GUI upload/paste) into pastedImagesMap immediately
     // ensuring generatePreviewContent can produce [IMAGE:id] tags and QuizPreview can render them.
@@ -2431,13 +2535,13 @@ const EditQuizPage: React.FC = () => {
           // Cập nhật map với dữ liệu đã lưu
           editedQuestionsMapRef.current.set(questionId, result);
 
-          // console.log("Question after save:", result); // Debug log
+          console.log("Question after save:", result); // Debug log
           return result;
         }
         return q;
       });
 
-      // console.log("Updated questions array:", updated); // Debug log
+      console.log("Updated questions array:", updated); // Debug log
       if (options?.exitEditMode ?? true) {
         setIsEditing(null);
       }
@@ -2503,17 +2607,24 @@ const EditQuizPage: React.FC = () => {
         if (imgId) {
           content += `[IMAGE:${imgId}]\n`;
         } else {
-          // console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
+          console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
         }
       }
 
       if (q.type === "text") {
-        // Format: result: <answer>
+        // Format: result: "answer1", "answer2", ... (giống docsParser.ts)
         const answers = Array.isArray(q.correctAnswers)
           ? (q.correctAnswers as string[]).filter((a) => a.trim())
           : [];
         if (answers.length > 0) {
-          content += `result: ${answers[0]}\n`;
+          if (answers.length === 1) {
+            // Single answer - can be unquoted or quoted
+            content += `result: "${answers[0]}"\n`;
+          } else {
+            // Multiple answers - must be quoted and comma-separated
+            const quotedAnswers = answers.map(a => `"${a}"`).join(", ");
+            content += `result: ${quotedAnswers}\n`;
+          }
         }
       } else if (q.type === "composite") {
         // Format: { ... sub-questions ... }
@@ -2533,7 +2644,15 @@ const EditQuizPage: React.FC = () => {
                 ? (subQ.correctAnswers as string[]).filter((a) => a.trim())
                 : [];
               if (answers.length > 0) {
-                content += `result: ${answers[0]}\n`;
+                // Format: result: "answer1", "answer2", ... (giống docsParser.ts)
+                if (answers.length === 1) {
+                  // Single answer - can be unquoted or quoted
+                  content += `result: "${answers[0]}"\n`;
+                } else {
+                  // Multiple answers - must be quoted and comma-separated
+                  const quotedAnswers = answers.map(a => `"${a}"`).join(", ");
+                  content += `result: ${quotedAnswers}\n`;
+                }
               }
             } else if (Array.isArray(subQ.options)) {
               (subQ.options as string[]).forEach((opt, optIdx) => {
@@ -2931,7 +3050,7 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      // console.log("Edited question before save:", editedQuestion); // Debug log
+      console.log("Edited question before save:", editedQuestion); // Debug log
 
       if (editedQuestion.type === "text") {
         // Đối với câu hỏi text, đảm bảo có ít nhất một đáp án đúng
@@ -2949,7 +3068,7 @@ const EditQuizPage: React.FC = () => {
           correctAnswers: validAnswers, // Chỉ lưu các đáp án có nội dung
         };
 
-        // console.log("Saving text question with data:", updatedData); // Debug log
+        console.log("Saving text question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       } else if (editedQuestion.type === "drag") {
@@ -3046,7 +3165,7 @@ const EditQuizPage: React.FC = () => {
           subQuestions: subQuestions,
         };
 
-        // console.log("Saving composite question with data:", updatedData); // Debug log
+        console.log("Saving composite question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       } else {
@@ -3077,7 +3196,7 @@ const EditQuizPage: React.FC = () => {
           correctAnswers: filteredCorrectAnswers,
         };
 
-        // console.log("Saving multiple choice question with data:", updatedData); // Debug log
+        console.log("Saving multiple choice question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       }
@@ -3416,7 +3535,7 @@ const EditQuizPage: React.FC = () => {
                                 const reader = new FileReader();
                                 reader.onload = (e) => {
                                   const result = e.target?.result as string;
-                                  handleQuestionImageUpload(result);
+                              handleQuestionImageUpload(result);
                                   toast.success("Đã dán ảnh từ clipboard!");
                                 };
                                 reader.readAsDataURL(blob);
@@ -4746,7 +4865,7 @@ const EditQuizPage: React.FC = () => {
               optionImageIds: newOptionImageIds
             };
 
-            handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
+          handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
             toast.success("Đã di chuyển ảnh!");
             return;
           }
@@ -4763,7 +4882,7 @@ const EditQuizPage: React.FC = () => {
           }
           return;
         } catch (error) {
-          // console.error('Failed to parse assigned source:', error);
+          console.error('Failed to parse assigned source:', error);
         }
       }
 
@@ -4818,7 +4937,7 @@ const EditQuizPage: React.FC = () => {
         }
       }
 
-      handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
+          handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
       toast.success("Đã cập nhật ảnh!");
     };
 
@@ -5011,10 +5130,10 @@ const EditQuizPage: React.FC = () => {
                     setPreviewContent(prev => prev.replace(new RegExp(imageTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''));
                   }
                   handleRestoreToGallery(question.questionImage!, question.questionImageId);
-                  handleQuestionSave(question.id, {
+          handleQuestionSave(question.id, {
                     questionImage: undefined,
                     questionImageId: undefined
-                  }, { exitEditMode: false });
+          }, { exitEditMode: false });
                 }}
                 className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-lg z-10"
                 title="Gỡ ảnh về kho"
@@ -5222,16 +5341,26 @@ const EditQuizPage: React.FC = () => {
                       (subQ.correctAnswers as string[]).filter((ans: string) =>
                         ans?.trim()
                       ).length > 0 ? (
-                      <span className="text-green-800 dark:text-green-300 font-medium">
+                      <div className="mt-1">
                         {(subQ.correctAnswers as string[])
                           .filter((ans: string) => ans?.trim())
-                          .map((ans, i) => <MathText key={i} text={ans} className="inline-block mr-1" />)}
-                      </span>
+                          .map((answer: string, index: number) => (
+                            <span
+                              key={index}
+                              className="inline-block bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 px-2 py-1 rounded text-sm mr-2 mb-1"
+                            >
+                              "{answer.trim()}"
+                            </span>
+                          ))}
+                      </div>
                     ) : (
-                      <span className="text-red-600 dark:text-red-400 font-medium">
-                        Chưa có đáp án
+                      <span className="font-medium text-red-600 dark:text-red-400">
+                        Chưa có đáp án - Vui lòng chỉnh sửa để thêm đáp án
                       </span>
                     )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Học sinh chỉ cần nhập một trong các đáp án trên
+                    </p>
                   </div>
                 )}
 
