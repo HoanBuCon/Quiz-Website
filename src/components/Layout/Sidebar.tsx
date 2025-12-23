@@ -192,7 +192,7 @@ const Sidebar: React.FC = () => {
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center relative">
                             <FaCommentDots className="w-5 h-5" />
                             {unreadCount > 0 && (
-                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border border-blue-900 dark:border-gray-800">
+                                <span className="absolute -top-2 -right-2.5 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center border border-blue-900 dark:border-gray-800">
                                     {unreadCount > 99 ? '99+' : unreadCount}
                                 </span>
                             )}
@@ -251,7 +251,7 @@ const Sidebar: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex-1 min-w-0 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out whitespace-nowrap delay-75">
+                        <div className="flex-1 min-w-0 pr-7 opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out whitespace-nowrap delay-75">
                             <p className="text-sm font-medium text-white dark:text-gray-200 truncate">
                                 {userName || "Tài khoản"}
                             </p>

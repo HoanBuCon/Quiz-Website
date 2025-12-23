@@ -818,7 +818,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
 
 
       {/* Floating button */}
-      {!open && (!hideOnDesktop || vw < 1280) && (
+      {!open && (!hideOnDesktop || vw < 1280) && vw >= 1024 && (
         <button
           ref={bubbleRef}
           onPointerDown={handlePointerDown}

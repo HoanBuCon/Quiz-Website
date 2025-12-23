@@ -346,7 +346,7 @@ const Header: React.FC = () => {
                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                       {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
                     </div>
-                    <span className="hidden sm:inline">{userName || "Tài khoản"}</span>
+                    <span className="hidden sm:inline truncate max-w-[150px]">{userName || "Tài khoản"}</span>
                   </button>
 
                   {/* Dropdown Menu */}
