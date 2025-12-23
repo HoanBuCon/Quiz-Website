@@ -74,7 +74,7 @@ const QuizPage: React.FC = () => {
   const minimapRef = React.useRef<HTMLDivElement>(null);
   const mainContentRef = React.useRef<HTMLDivElement>(null);
   const navLockRef = React.useRef(false); // Lock synchronous navigation to prevent spamming
-  const animationTimeoutsRef = React.useRef<number[]>([]); // Track animation timeouts để skip khi bấm nhanh
+  const lastKeyPressRef = React.useRef<number>(0); // Track last keypress timestamp để tránh spam
   const SCROLL_OFFSET = 120; // Khoảng cách bù trừ khi scroll tới câu hỏi
   // Minimap bubble (mobile list) state
   const [miniBubbleOpen, setMiniBubbleOpen] = useState(false);
@@ -442,12 +442,22 @@ const QuizPage: React.FC = () => {
       switch (e.key) {
         case "ArrowLeft":
           e.preventDefault();
-          handlePrevQuestion(); // Bỏ check !isExiting để skip logic bên trong hoạt động
+          // Throttle: chỉ xử lý nếu đã qua ít nhất 300ms từ lần bấm cuối
+          const nowLeft = Date.now();
+          if (!isExiting && nowLeft - lastKeyPressRef.current >= 300) {
+            lastKeyPressRef.current = nowLeft;
+            handlePrevQuestion();
+          }
           break;
 
         case "ArrowRight":
           e.preventDefault();
-          handleNextQuestion(); // Bỏ check !isExiting để skip logic bên trong hoạt động
+          // Throttle: chỉ xử lý nếu đã qua ít nhất 300ms từ lần bấm cuối
+          const nowRight = Date.now();
+          if (!isExiting && nowRight - lastKeyPressRef.current >= 300) {
+            lastKeyPressRef.current = nowRight;
+            handleNextQuestion();
+          }
           break;
 
         case "ArrowUp":
@@ -883,82 +893,53 @@ const QuizPage: React.FC = () => {
     return ca.some((ans) => norm(ans) === norm(value));
   };
 
-  // Helper: Clear animations khi bấm nhanh liên tiếp
-  const clearAnimations = () => {
-    // Clear tất cả pending timeouts
-    animationTimeoutsRef.current.forEach(id => clearTimeout(id));
-    animationTimeoutsRef.current = [];
-  };
+
 
   // Navigate to next/previous question
   // Navigate to next/previous question
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0 && !isExiting) {
-      // Nếu đang lock (đang có animation), skip animation và nhả nội dung ngay
-      if (navLockRef.current) {
-        clearAnimations();
-        setCurrentQuestionIndex((prev) => prev - 1);
-        setIsExiting(false);
-        setSlideDirection("none");
-        navLockRef.current = false;
-        return;
-      }
-
       navLockRef.current = true;
       setSlideDirection("left"); // Hướng đi về (Prev) -> Slide In Left (sau đó). Out sẽ là Right.
       // Logic:
       // Prev: Old slides out to Right -> New slides in from Left
 
       setIsExiting(true);
-      const timeout1 = window.setTimeout(() => {
+      setTimeout(() => {
         setCurrentQuestionIndex((prev) => prev - 1);
         setIsExiting(false);
         // Unlock ngay sau khi đổi index (cho phép bấm tiếp)
-        const timeout2 = window.setTimeout(() => {
+        setTimeout(() => {
           navLockRef.current = false;
         }, 150); // 150ms - cân bằng giữa tốc độ và độ mượt
         // Reset slideDirection sau khi slideIn hoàn thành
-        const timeout3 = window.setTimeout(() => {
+        setTimeout(() => {
           setSlideDirection("none");
         }, 400); // 400ms khớp với slideIn animation duration
-        animationTimeoutsRef.current.push(timeout2, timeout3);
       }, 300); // 300ms khớp với slideOut animation duration
-      animationTimeoutsRef.current.push(timeout1);
     }
   };
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1 && !isExiting) {
-      // Nếu đang lock (đang có animation), skip animation và nhả nội dung ngay
-      if (navLockRef.current) {
-        clearAnimations();
-        setCurrentQuestionIndex((prev) => prev + 1);
-        setIsExiting(false);
-        setSlideDirection("none");
-        navLockRef.current = false;
-        return;
-      }
-
       navLockRef.current = true;
       setSlideDirection("right"); // Hướng đi tới (Next) -> Slide In Right. Out sẽ là Left.
       // Logic:
       // Next: Old slides out to Left -> New slides in from Right
 
       setIsExiting(true);
-      const timeout1 = window.setTimeout(() => {
+      setTimeout(() => {
         setCurrentQuestionIndex((prev) => prev + 1);
         setIsExiting(false);
         // Unlock ngay sau khi đổi index (cho phép bấm tiếp)
-        const timeout2 = window.setTimeout(() => {
+        setTimeout(() => {
           navLockRef.current = false;
         }, 150); // 150ms - cân bằng giữa tốc độ và độ mượt
         // Reset slideDirection sau khi slideIn hoàn thành
-        const timeout3 = window.setTimeout(() => {
+        setTimeout(() => {
           setSlideDirection("none");
         }, 400); // 400ms khớp với slideIn animation duration
-        animationTimeoutsRef.current.push(timeout2, timeout3);
       }, 300); // 300ms khớp với slideOut animation duration
-      animationTimeoutsRef.current.push(timeout1);
     }
   };
 
