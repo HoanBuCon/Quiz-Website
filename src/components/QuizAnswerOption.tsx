@@ -141,7 +141,7 @@ const QuizAnswerOption: React.FC<QuizAnswerOptionProps> = ({
             onKeyDown={(e) => {
                 if (e.key === "Enter") e.preventDefault();
             }}
-            className={`allow-selection group/answer ${base} ${computedClassName} flex ${layoutMode === "row" ? "flex-col sm:flex-row sm:flex-wrap sm:items-start" : "flex-col"
+            className={`allow-selection group/answer ${base} ${computedClassName} flex ${layoutMode === "row" ? "flex-col sm:flex-row sm:flex-wrap !items-start" : "flex-col"
                 } gap-3`}
         >
             <div className={`flex flex-col gap-3 ${layoutMode === "row" ? "w-full sm:flex-1 sm:min-w-[55%]" : "w-full text-left"}`}>
@@ -206,7 +206,7 @@ const QuizAnswerOption: React.FC<QuizAnswerOptionProps> = ({
                     alt={`Option ${String.fromCharCode(65 + index)}`}
                     onLoad={handleImageLoad}
                     className={`${layoutMode === "row"
-                        ? "w-auto max-h-[400px] min-w-[69px] min-h-[69px] sm:h-auto sm:max-w-[50%] sm:ml-auto sm:self-center"
+                        ? "w-auto max-h-[400px] min-w-[69px] min-h-[69px] self-center sm:h-auto sm:max-w-[50%] sm:ml-auto sm:self-center"
                         : "w-auto max-h-[400px] min-h-[69px] self-center sm:self-end"
                         } rounded-lg border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in`}
                     onClick={(e) => {
