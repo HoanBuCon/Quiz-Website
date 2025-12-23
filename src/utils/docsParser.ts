@@ -116,6 +116,135 @@ function generateId(): string {
   return `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+/**
+ * Helper function to protect LaTeX and mathematical expressions before text normalization
+ * Extracts LaTeX/math content and replaces it with placeholders
+ * This prevents LaTeX braces from being split during normalization
+ * CRITICAL: Preserves original format, does NOT normalize
+ */
+function protectLatexExpressions(text: string): { text: string; protectedExpressions: string[] } {
+  const protectedExpressions: string[] = [];
+  let result = text;
+
+  // Protect display math $$...$$
+  result = result.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
+    const index = protectedExpressions.length;
+    // CRITICAL: Keep original format, only replace newlines with spaces for protection
+    protectedExpressions.push(match.replace(/\n/g, ' '));
+    return `__LATEX_PROTECTED_${index}__`;
+  });
+
+  // Protect inline math $...$
+  result = result.replace(/\$[^$\n]+\$/g, (match) => {
+    const index = protectedExpressions.length;
+    // CRITICAL: Keep original format
+    protectedExpressions.push(match.replace(/\n/g, ' '));
+    return `__LATEX_PROTECTED_${index}__`;
+  });
+
+  // Helper to check if a brace group is part of a composite block
+  // Composite blocks typically start with { followed by "Câu" or whitespace + "Câu"
+  const isCompositeBlockStart = (text: string, braceIndex: number): boolean => {
+    // Check if this is a standalone { at start of line or after whitespace
+    const beforeBrace = text.substring(Math.max(0, braceIndex - 50), braceIndex).trim();
+    const afterBrace = text.substring(braceIndex + 1, Math.min(text.length, braceIndex + 20)).trim();
+    
+    // If { is at start of line or after newline/whitespace, and followed by "Câu", it's composite
+    if (beforeBrace === '' || beforeBrace.endsWith('\n')) {
+      if (afterBrace.match(/^\s*Câu\s*\d*:?/i)) {
+        return true;
+      }
+    }
+    
+    // If { is preceded by whitespace and followed by "Câu", it's composite
+    if (beforeBrace.match(/\s$/) && afterBrace.match(/^\s*Câu\s*\d*:?/i)) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // Protect ALL mathematical expressions with braces (not just LaTeX commands)
+  // This includes: s^{2}, x_{i}, \overline{x\vphantom{b}}, etc.
+  let i = 0;
+  while (i < result.length) {
+    if (result[i] === '{') {
+      const braceStart = i;
+      
+      // Check if this is a composite block start - if so, skip it
+      if (isCompositeBlockStart(result, i)) {
+        i++;
+        continue;
+      }
+      
+      // Match the brace group
+      let braceCount = 1;
+      i++; // skip opening brace
+      
+      while (i < result.length && braceCount > 0) {
+        if (result[i] === '\\' && i + 1 < result.length) {
+          // Skip escaped characters
+          i += 2;
+        } else if (result[i] === '{') {
+          braceCount++;
+          i++;
+        } else if (result[i] === '}') {
+          braceCount--;
+          i++;
+        } else {
+          i++;
+        }
+      }
+      
+      // If braces matched, protect this expression
+      if (braceCount === 0) {
+        const braceEnd = i;
+        const mathExpr = result.substring(braceStart, braceEnd);
+        
+        // Only protect if it looks like a mathematical expression
+        // (contains numbers, math operators, LaTeX commands, or is part of a larger math context)
+        const beforeExpr = result.substring(Math.max(0, braceStart - 10), braceStart);
+        const afterExpr = result.substring(braceEnd, Math.min(result.length, braceEnd + 10));
+        
+        // Check if this is likely a math expression:
+        // - Contains LaTeX commands (backslash)
+        // - Contains numbers or math operators
+        // - Preceded by math operators, letters, or LaTeX commands
+        // - Followed by math operators, letters, or LaTeX commands
+        const isMathExpr = 
+          mathExpr.includes('\\') || // Contains LaTeX
+          /[0-9+\-*/^_=<>]/.test(mathExpr) || // Contains numbers or operators
+          /[a-zA-Z0-9_^]/.test(beforeExpr.slice(-1)) || // Preceded by letter/number
+          /[a-zA-Z0-9_^=]/.test(afterExpr.charAt(0)); // Followed by letter/number/operator
+        
+        if (isMathExpr) {
+          const index = protectedExpressions.length;
+          // CRITICAL: Keep original format, only replace newlines with spaces for protection
+          protectedExpressions.push(mathExpr.replace(/\n/g, ' '));
+          result = result.substring(0, braceStart) + `__LATEX_PROTECTED_${index}__` + result.substring(braceEnd);
+          i = braceStart + `__LATEX_PROTECTED_${index}__`.length;
+          continue;
+        }
+      }
+    } else {
+      i++;
+    }
+  }
+
+  return { text: result, protectedExpressions };
+}
+
+/**
+ * Helper function to restore protected LaTeX expressions
+ */
+function restoreLatexExpressions(text: string, protectedExpressions: string[]): string {
+  let result = text;
+  protectedExpressions.forEach((latex, index) => {
+    result = result.replace(`__LATEX_PROTECTED_${index}__`, latex);
+  });
+  return result;
+}
+
 export function parseDocsContent(
   content: string,
   extractedImages?: import('../types').ExtractedImage[]
@@ -127,13 +256,16 @@ export function parseDocsContent(
     .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
     .replace(/[\u2018\u2019]/g, "'"); // Smart single quotes
 
+  // CRITICAL: Protect LaTeX expressions BEFORE normalization to prevent breaking LaTeX braces
+  const { text: protectedText, protectedExpressions: latexExpressions } = protectLatexExpressions(normalizedContent);
+
   // Heuristic: Inject newlines before potential headers/options to handle merged lines
   // 1. Inject before "Câu <n>:" or "Câu : " if preceded by whitespace or non-newline
   // 2. Inject before "*A." (starred) even if NO whitespace (aggressive split)
   // 3. Inject before "A." (non-starred) ONLY if preceded by whitespace (avoid false positives)
   // 4. Inject before "result:", "group:", "{", "}"
   
-  normalizedContent = normalizedContent
+  normalizedContent = protectedText
     // Inject newline trước "Câu n:"
     .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
 
@@ -170,8 +302,12 @@ export function parseDocsContent(
   
   // FIX: Normalize LaTeX braces - remove whitespace/newlines inside braces
   // This fixes {n } → {n} and {n\n} → {n}
+  // NOTE: This only affects structural braces, LaTeX is already protected
   normalizedContent = normalizedContent.replace(/\{\s+/g, '{');
   normalizedContent = normalizedContent.replace(/\s+\}/g, '}');
+  
+  // CRITICAL: Restore LaTeX expressions AFTER normalization
+  normalizedContent = restoreLatexExpressions(normalizedContent, latexExpressions);
 
   const questions: ParsedQuestion[] = [];
   const lines = normalizedContent

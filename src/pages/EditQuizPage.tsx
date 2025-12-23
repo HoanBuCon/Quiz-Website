@@ -1035,6 +1035,116 @@ const EditQuizPage: React.FC = () => {
     }
   }, [previewContent, pastedImagesMap]);
 
+  // Helper function to protect LaTeX and mathematical expressions before text normalization
+  // CRITICAL: Preserves original format, does NOT normalize
+  const protectLatexExpressions = (text: string): { text: string; protectedExpressions: string[] } => {
+    const protectedExpressions: string[] = [];
+    let result = text;
+
+    // Protect display math $$...$$
+    result = result.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
+      const index = protectedExpressions.length;
+      // CRITICAL: Keep original format, only replace newlines with spaces for protection
+      protectedExpressions.push(match.replace(/\n/g, ' '));
+      return `__LATEX_PROTECTED_${index}__`;
+    });
+
+    // Protect inline math $...$
+    result = result.replace(/\$[^$\n]+\$/g, (match) => {
+      const index = protectedExpressions.length;
+      // CRITICAL: Keep original format
+      protectedExpressions.push(match.replace(/\n/g, ' '));
+      return `__LATEX_PROTECTED_${index}__`;
+    });
+
+    // Helper to check if a brace group is part of a composite block
+    const isCompositeBlockStart = (text: string, braceIndex: number): boolean => {
+      const beforeBrace = text.substring(Math.max(0, braceIndex - 50), braceIndex).trim();
+      const afterBrace = text.substring(braceIndex + 1, Math.min(text.length, braceIndex + 20)).trim();
+      
+      if (beforeBrace === '' || beforeBrace.endsWith('\n')) {
+        if (afterBrace.match(/^\s*Câu\s*\d*:?/i)) {
+          return true;
+        }
+      }
+      
+      if (beforeBrace.match(/\s$/) && afterBrace.match(/^\s*Câu\s*\d*:?/i)) {
+        return true;
+      }
+      
+      return false;
+    };
+
+    // Protect ALL mathematical expressions with braces (not just LaTeX commands)
+    let i = 0;
+    while (i < result.length) {
+      if (result[i] === '{') {
+        const braceStart = i;
+        
+        // Check if this is a composite block start - if so, skip it
+        if (isCompositeBlockStart(result, i)) {
+          i++;
+          continue;
+        }
+        
+        // Match the brace group
+        let braceCount = 1;
+        i++; // skip opening brace
+        
+        while (i < result.length && braceCount > 0) {
+          if (result[i] === '\\' && i + 1 < result.length) {
+            i += 2;
+          } else if (result[i] === '{') {
+            braceCount++;
+            i++;
+          } else if (result[i] === '}') {
+            braceCount--;
+            i++;
+          } else {
+            i++;
+          }
+        }
+        
+        // If braces matched, protect this expression
+        if (braceCount === 0) {
+          const braceEnd = i;
+          const mathExpr = result.substring(braceStart, braceEnd);
+          
+          const beforeExpr = result.substring(Math.max(0, braceStart - 10), braceStart);
+          const afterExpr = result.substring(braceEnd, Math.min(result.length, braceEnd + 10));
+          
+          const isMathExpr = 
+            mathExpr.includes('\\') ||
+            /[0-9+\-*/^_=<>]/.test(mathExpr) ||
+            /[a-zA-Z0-9_^]/.test(beforeExpr.slice(-1)) ||
+            /[a-zA-Z0-9_^=]/.test(afterExpr.charAt(0));
+        
+          if (isMathExpr) {
+            const index = protectedExpressions.length;
+            // CRITICAL: Keep original format, only replace newlines with spaces for protection
+            protectedExpressions.push(mathExpr.replace(/\n/g, ' '));
+            result = result.substring(0, braceStart) + `__LATEX_PROTECTED_${index}__` + result.substring(braceEnd);
+            i = braceStart + `__LATEX_PROTECTED_${index}__`.length;
+            continue;
+          }
+        }
+      } else {
+        i++;
+      }
+    }
+
+    return { text: result, protectedExpressions };
+  };
+
+  // Helper function to restore protected LaTeX expressions
+  const restoreLatexExpressions = (text: string, protectedExpressions: string[]): string => {
+    let result = text;
+    protectedExpressions.forEach((latex, index) => {
+      result = result.replace(`__LATEX_PROTECTED_${index}__`, latex);
+    });
+    return result;
+  };
+
   // Hàm parse nội dung text thành questions
   // SỬ DỤNG GIỐNG HỆT LOGIC CỦA docsParser.parseDocsContent
   const parseEditedContent = (content: string): QuestionWithImages[] => {
@@ -1045,8 +1155,11 @@ const EditQuizPage: React.FC = () => {
       .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
       .replace(/[\u2018\u2019]/g, "'"); // Smart single quotes
 
+    // CRITICAL: Protect LaTeX expressions BEFORE normalization to prevent breaking LaTeX braces
+    const { text: protectedText, protectedExpressions: latexExpressions } = protectLatexExpressions(normalizedContent);
+
     // Heuristic: Inject newlines trước một số patterns
-    normalizedContent = normalizedContent
+    normalizedContent = protectedText
       // Inject newline trước "Câu n:"
       .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
       
@@ -1080,10 +1193,12 @@ const EditQuizPage: React.FC = () => {
 
     // FIX: Normalize LaTeX braces - remove whitespace/newlines inside braces
     // This fixes {n } → {n} and {n\n} → {n} after image drop
-    // BUT: Only normalize LaTeX braces, NOT structural braces for composite blocks
-    // Since we already split structural braces to separate lines, we can safely normalize
+    // NOTE: This only affects structural braces, LaTeX is already protected
     normalizedContent = normalizedContent.replace(/\{\s+/g, '{');
     normalizedContent = normalizedContent.replace(/\s+\}/g, '}');
+    
+    // CRITICAL: Restore LaTeX expressions AFTER normalization
+    normalizedContent = restoreLatexExpressions(normalizedContent, latexExpressions);
 
     const lines = normalizedContent
       .split("\n")
