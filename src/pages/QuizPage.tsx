@@ -1756,7 +1756,7 @@ const QuizPage: React.FC = () => {
                     <FaLayerGroup className="w-3.5 h-3.5" />
                   )}
                   <span className="font-medium text-[11px] h-[14px] leading-[14px] flex items-center">
-                    {displayMode === "single" ? "Từng câu" : "Danh sách"}
+                    {displayMode === "single" ? "Định dạng: Từng câu" : "Định dạng: Danh sách"}
                   </span>
                 </button>
                 {/* Nút chuyển đổi chế độ cho màn hình < 1024px */}
@@ -1772,7 +1772,7 @@ const QuizPage: React.FC = () => {
                   >
                     <svg className="w-3.5 h-3.5 flex-shrink-0 block leading-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}> <polyline points="23 4 23 10 17 10" strokeLinecap="round" strokeLinejoin="round" /> <polyline points="1 20 1 14 7 14" strokeLinecap="round" strokeLinejoin="round" /> <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" strokeLinecap="round" strokeLinejoin="round" /> </svg>
                     <span className="font-medium text-[11px] h-[14px] leading-[14px] flex items-center">
-                      {uiMode === "instant" ? "Định dạng: Xem ngay" : "Định dạng: Mặc định"}
+                      {uiMode === "instant" ? "Chế độ: Xem ngay" : "Chế độ: Mặc định"}
                     </span>
                   </button>
                 </div>
@@ -1928,8 +1928,8 @@ const QuizPage: React.FC = () => {
             )}
             <span className="font-medium text-sm">
               {displayMode === "single"
-                ? "Chế độ: Từng câu"
-                : "Chế độ: Danh sách"}
+                ? "Định dạng: Từng câu"
+                : "Định dạng: Danh sách"}
             </span>
           </button>
         )
@@ -1968,8 +1968,8 @@ const QuizPage: React.FC = () => {
             </svg>
             <span className="font-medium text-sm">
               {uiMode === "instant"
-                ? "Định dạng: Xem ngay"
-                : "Định dạng: Mặc định"}
+                ? "Chế độ: Xem ngay"
+                : "Chế độ: Mặc định"}
             </span>
           </button>
         )
