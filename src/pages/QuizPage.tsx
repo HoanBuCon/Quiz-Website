@@ -1865,7 +1865,7 @@ const QuizPage: React.FC = () => {
                         }, 400); // 400ms khớp với slideIn animation duration
                       }, 300); // 300ms khớp với slideOut animation duration
                     }}
-                    className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center p-0 lg:p-2 rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm snap-center
+                    className={`flex-shrink-0 !w-10 !h-10 !min-w-[2.5rem] !min-h-[2.5rem] lg:!w-auto lg:!h-auto flex items-center justify-center p-0 lg:p-2 rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm snap-center !transform-none
                     ${index === currentQuestionIndex
                         ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
                         : uiMode === "instant" && isQuestionWrong(question)
@@ -2481,7 +2481,7 @@ function MobileMinimapBubble({
       <button
         ref={bubbleRef}
         onPointerDown={handlePointerDown}
-        className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white ${isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110 transition-all'
+        className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white ${isDragging ? 'cursor-grabbing' : 'cursor-grab transition-all'
           } ${bubbleOpen ? 'opacity-0 pointer-events-none' : ''}`}
         aria-label="Mở minimap"
         style={{
@@ -2568,7 +2568,7 @@ function MobileMinimapBubble({
                 if (isExiting) return;
                 onSelect(index, question.id);
               }}
-              className={`w-full h-10 flex items-center !justify-center text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm p-0
+              className={`w-full !h-10 !min-h-[2.5rem] flex items-center !justify-center text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm p-0 !transform-none
                   ${index === currentQuestionIndex
                   ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
                   : uiMode === "instant" && isQuestionWrong(question)
