@@ -2136,7 +2136,7 @@ const QuizPage: React.FC = () => {
             onClick={() =>
               setUiMode((prev) => (prev === "default" ? "instant" : "default"))
             }
-            className="hidden lg:flex fixed bottom-36 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
+            className="hidden lg:flex fixed bottom-20 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
             title="Chuyển đổi chế độ"
           >
             <svg
@@ -2176,7 +2176,7 @@ const QuizPage: React.FC = () => {
             onClick={() =>
               setDisplayMode((prev) => (prev === "single" ? "list" : "single"))
             }
-            className="hidden lg:flex fixed bottom-24 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
+            className="hidden lg:flex fixed bottom-6 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
             title="Chuyển đổi hiển thị"
           >
             {displayMode === "single" ? (
