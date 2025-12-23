@@ -101,6 +101,30 @@ const Sidebar: React.FC = () => {
         };
     }, []);
 
+    const [isChatOpen, setIsChatOpen] = useState(false);
+
+    // Listen for chat unread count and open status
+    useEffect(() => {
+        const handleUnreadUpdate = (e: any) => {
+            setUnreadCount(e.detail?.count || 0);
+        };
+        const handleChatStatus = (e: any) => {
+            setIsChatOpen(e.detail?.open || false);
+        };
+
+        // Initial load
+        const stored = localStorage.getItem('chat_unread_count');
+        if (stored) setUnreadCount(parseInt(stored, 10));
+
+        window.addEventListener('chat:unread', handleUnreadUpdate);
+        window.addEventListener('chat:status', handleChatStatus); // Listen for status
+
+        return () => {
+            window.removeEventListener('chat:unread', handleUnreadUpdate);
+            window.removeEventListener('chat:status', handleChatStatus);
+        };
+    }, []);
+
     const handleLogout = () => {
         clearToken();
         setIsLoggedIn(false);
@@ -209,7 +233,7 @@ const Sidebar: React.FC = () => {
                             onMouseLeave={handleMouseLeave}
                             className={`flex items-center gap-3 pl-4 pr-3 h-12 w-full rounded-xl transition-all duration-0 ease-out group relative overflow-hidden font-medium
                                 ${active
-                                    ? "text-blue-700 dark:text-blue-400"
+                                    ? "subpixel-antialiased text-blue-700 dark:text-blue-400"
                                     : "hover:duration-500 text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner"
                                 }
                             `}
@@ -239,7 +263,12 @@ const Sidebar: React.FC = () => {
                     {/* Chat Toggle */}
                     <button
                         onClick={toggleChat}
-                        className="flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
+                        className={`flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden font-medium
+                            ${isChatOpen
+                                ? "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/30 dark:to-blue-900/30 dark:bg-blue-900/20 text-blue-900 dark:text-blue-400"
+                                : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
+                            }
+                        `}
                         title="Chat"
                     >
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center relative">
@@ -257,7 +286,7 @@ const Sidebar: React.FC = () => {
                     {/* Music Toggle */}
                     <button
                         onClick={toggleMusicPlayer}
-                        className={`flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden
+                        className={`flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden font-medium
                             ${showMusicPlayer
                                 ? "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/30 dark:to-blue-900/30 dark:bg-blue-900/20 text-blue-900 dark:text-blue-400"
                                 : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
@@ -276,7 +305,7 @@ const Sidebar: React.FC = () => {
                     {/* Theme Toggle */}
                     <button
                         onClick={toggleTheme}
-                        className="flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-yellow-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
+                        className="flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-yellow-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 font-medium"
                         title="Toggle Theme"
                     >
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">

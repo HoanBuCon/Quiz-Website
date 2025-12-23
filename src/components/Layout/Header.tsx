@@ -264,7 +264,7 @@ const Header: React.FC = () => {
                       border border-transparent outline-none ring-0 focus:outline-none focus:ring-0
                       transition-colors transition-shadow duration-300 ease-out overflow-hidden
                       ${active
-                        ? `nav-item-active ${isDarkMode
+                        ? `nav-item-active subpixel-antialiased ${isDarkMode
                           ? "text-primary-300"
                           : "text-blue-800"
                         }`
@@ -476,12 +476,13 @@ const Header: React.FC = () => {
             </div>
           </div>
         </div>
-      </header>
+      </header >
 
       {/* Mobile Navigation Menu */}
-      <div
+      < div
         className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 shadow-lg transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
-          }`}
+          }`
+        }
       >
         <div className="max-w-screen-2xl mx-auto">
           <div className="py-4 px-4 sm:px-6 lg:px-8 space-y-2">
@@ -569,15 +570,17 @@ const Header: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       {/* Mobile menu overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="nav:hidden fixed inset-0 z-30 bg-black/20 dark:bg-black/40"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
+      {
+        isMobileMenuOpen && (
+          <div
+            className="nav:hidden fixed inset-0 z-30 bg-black/20 dark:bg-black/40"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )
+      }
     </>
   );
 };

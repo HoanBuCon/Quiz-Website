@@ -54,7 +54,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
   // --- 1. STATE & REF (UI) ---
   const [open, setOpen] = useState(false);
   const openRef = useRef<boolean>(false);
-  useEffect(() => { openRef.current = open; }, [open]);
+  useEffect(() => {
+    openRef.current = open;
+    window.dispatchEvent(new CustomEvent("chat:status", { detail: { open } }));
+  }, [open]);
   const [unread, setUnread] = useState<number>(0);
 
   // Auth Token
