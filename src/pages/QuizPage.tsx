@@ -1914,6 +1914,22 @@ const QuizPage: React.FC = () => {
             )}
             <div className="flex items-center justify-between mb-3 sm:mb-4 lg:hidden">
               <div className="flex items-center gap-2 ml-auto w-full justify-between lg:hidden h-auto">
+                <div className="minimap-toggle-wrap block lg:hidden ml-0 self-stretch h-auto md:h-auto">
+                  <button
+                    onClick={() =>
+                      setUiMode((prev) =>
+                        prev === "default" ? "instant" : "default"
+                      )
+                    }
+                    className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
+                    title="Chuyển đổi chế độ"
+                  >
+                    <svg className="w-3.5 h-3.5 flex-shrink-0 block leading-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}> <polyline points="23 4 23 10 17 10" strokeLinecap="round" strokeLinejoin="round" /> <polyline points="1 20 1 14 7 14" strokeLinecap="round" strokeLinejoin="round" /> <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" strokeLinecap="round" strokeLinejoin="round" /> </svg>
+                    <span className="font-medium text-[11px] h-[14px] leading-[14px] flex items-center">
+                      {uiMode === "instant" ? "Chế độ: Xem ngay" : "Chế độ: Mặc định"}
+                    </span>
+                  </button>
+                </div>
                 <button
                   onClick={() =>
                     setDisplayMode((prev) => (prev === "single" ? "list" : "single"))
@@ -1930,23 +1946,6 @@ const QuizPage: React.FC = () => {
                     {displayMode === "single" ? "Định dạng: Từng câu" : "Định dạng: Danh sách"}
                   </span>
                 </button>
-                {/* Nút chuyển đổi chế độ cho màn hình < 1024px */}
-                <div className="minimap-toggle-wrap block lg:hidden ml-0 self-stretch h-auto md:h-auto">
-                  <button
-                    onClick={() =>
-                      setUiMode((prev) =>
-                        prev === "default" ? "instant" : "default"
-                      )
-                    }
-                    className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
-                    title="Chuyển đổi định dạng"
-                  >
-                    <svg className="w-3.5 h-3.5 flex-shrink-0 block leading-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}> <polyline points="23 4 23 10 17 10" strokeLinecap="round" strokeLinejoin="round" /> <polyline points="1 20 1 14 7 14" strokeLinecap="round" strokeLinejoin="round" /> <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" strokeLinecap="round" strokeLinejoin="round" /> </svg>
-                    <span className="font-medium text-[11px] h-[14px] leading-[14px] flex items-center">
-                      {uiMode === "instant" ? "Chế độ: Xem ngay" : "Chế độ: Mặc định"}
-                    </span>
-                  </button>
-                </div>
               </div>
             </div>
             {displayMode === "list" && !isLarge ? (
@@ -2091,32 +2090,10 @@ const QuizPage: React.FC = () => {
         isLarge && (
           <button
             onClick={() =>
-              setDisplayMode((prev) => (prev === "single" ? "list" : "single"))
-            }
-            className="hidden lg:flex fixed bottom-36 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
-            title="Chuyển đổi hiển thị"
-          >
-            {displayMode === "single" ? (
-              <FaList className="w-4 h-4" />
-            ) : (
-              <FaLayerGroup className="w-4 h-4" />
-            )}
-            <span className="font-medium text-sm">
-              {displayMode === "single"
-                ? "Định dạng: Từng câu"
-                : "Định dạng: Danh sách"}
-            </span>
-          </button>
-        )
-      }
-      {
-        isLarge && (
-          <button
-            onClick={() =>
               setUiMode((prev) => (prev === "default" ? "instant" : "default"))
             }
-            className="hidden lg:flex fixed bottom-24 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
-            title="Chuyển đổi định dạng"
+            className="hidden lg:flex fixed bottom-36 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
+            title="Chuyển đổi chế độ"
           >
             <svg
               className="w-4 h-4"
@@ -2145,6 +2122,28 @@ const QuizPage: React.FC = () => {
               {uiMode === "instant"
                 ? "Chế độ: Xem ngay"
                 : "Chế độ: Mặc định"}
+            </span>
+          </button>
+        )
+      }
+      {
+        isLarge && (
+          <button
+            onClick={() =>
+              setDisplayMode((prev) => (prev === "single" ? "list" : "single"))
+            }
+            className="hidden lg:flex fixed bottom-24 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
+            title="Chuyển đổi hiển thị"
+          >
+            {displayMode === "single" ? (
+              <FaList className="w-4 h-4" />
+            ) : (
+              <FaLayerGroup className="w-4 h-4" />
+            )}
+            <span className="font-medium text-sm">
+              {displayMode === "single"
+                ? "Định dạng: Từng câu"
+                : "Định dạng: Danh sách"}
             </span>
           </button>
         )
@@ -2730,6 +2729,14 @@ function MobileMinimapBubble({
         {/* Control Buttons (Format & Mode) */}
         <div className="grid grid-cols-2 gap-2 mb-3">
           <button
+            onClick={() => setUiMode(uiMode === "default" ? "instant" : "default")}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium border border-gray-200 dark:border-gray-700"
+          >
+            <FaRegHandPointer className="w-3 h-3" />
+            <span>{uiMode === "instant" ? "Xem ngay" : "Mặc định"}</span>
+          </button>
+
+          <button
             onClick={() => {
               if (displayMode === "list") {
                 setDisplayMode("single");
@@ -2742,14 +2749,6 @@ function MobileMinimapBubble({
           >
             <FaList className="w-3 h-3" />
             <span>{displayMode === "single" ? "Từng câu" : "Danh sách"}</span>
-          </button>
-
-          <button
-            onClick={() => setUiMode(uiMode === "default" ? "instant" : "default")}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium border border-gray-200 dark:border-gray-700"
-          >
-            <FaRegHandPointer className="w-3 h-3" />
-            <span>{uiMode === "instant" ? "Xem ngay" : "Mặc định"}</span>
           </button>
         </div>
 
