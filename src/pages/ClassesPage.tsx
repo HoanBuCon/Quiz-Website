@@ -2574,7 +2574,7 @@ const ClassesPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only (Statistics + Guidance) */}
-        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
+        <div className="hidden xl:block xl:w-[30%] xl:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-4 space-y-6">
             {/* Stats Card */}
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
