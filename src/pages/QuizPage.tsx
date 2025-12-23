@@ -76,6 +76,8 @@ const QuizPage: React.FC = () => {
   const navLockRef = React.useRef(false); // Lock synchronous navigation to prevent spamming
   const lastKeyPressRef = React.useRef<number>(0); // Track last keypress timestamp để tránh spam
   const SCROLL_OFFSET = 120; // Khoảng cách bù trừ khi scroll tới câu hỏi
+  // Set tracking visible elements for robust scroll sync
+  const visibleElemsRef = React.useRef<Set<Element>>(new Set());
   // Minimap bubble (mobile list) state
   const [miniBubbleOpen, setMiniBubbleOpen] = useState(false);
   const [miniBubblePos, setMiniBubblePos] = useState<{ x: number; y: number }>(() => {
@@ -372,38 +374,109 @@ const QuizPage: React.FC = () => {
   ]);
 
   // Sync scroll position with currentQuestionIndex in List mode
+  // Sync scroll position with currentQuestionIndex in List mode
   useEffect(() => {
     if (displayMode !== "list") return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find the entry with the highest intersection ratio
-        const visibleEntry = entries.reduce((prev, current) => {
-          return (prev.intersectionRatio > current.intersectionRatio) ? prev : current;
-        });
+    // Helper to calculate best candidate
+    const determineActiveQuestion = () => {
+      const visible = Array.from(visibleElemsRef.current);
+      if (visible.length === 0) return;
 
-        if (visibleEntry.isIntersecting && visibleEntry.intersectionRatio > 0.1) {
-          const indexAttr = visibleEntry.target.getAttribute("data-question-index");
-          if (indexAttr !== null) {
-            const index = Number(indexAttr);
-            if (!isNaN(index) && index !== currentQuestionIndex) {
-              setCurrentQuestionIndex(index);
-            }
+      const viewportCenter = window.innerHeight / 2;
+      let minDistance = Infinity;
+      let bestCandidate: Element | null = null;
+
+      for (const el of visible) {
+        const rect = el.getBoundingClientRect();
+        // Calculate distance from element center to viewport center
+        const elementCenter = rect.top + rect.height / 2;
+        const dist = Math.abs(elementCenter - viewportCenter);
+
+        // Check if element covers the center line specifically (robust for long content)
+        const coversCenter = rect.top <= viewportCenter && rect.bottom >= viewportCenter;
+
+        if (coversCenter) {
+          // If covering center, it's the winner immediately (or pick closest center among covering? Usually only 1 covers center unless weird overlap)
+          // Actually, if a question is super long, center might be far, but it covers the screen.
+          // Priority: specific coverage of center line > distance of centers
+          bestCandidate = el;
+          break;
+        }
+
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestCandidate = el;
+        }
+      }
+
+      if (bestCandidate) {
+        const indexAttr = bestCandidate.getAttribute("data-question-index");
+        if (indexAttr !== null) {
+          const index = Number(indexAttr);
+          if (!isNaN(index)) {
+            setCurrentQuestionIndex((curr) => (curr !== index ? index : curr));
           }
         }
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            visibleElemsRef.current.add(entry.target);
+          } else {
+            visibleElemsRef.current.delete(entry.target);
+          }
+        });
+
+        determineActiveQuestion();
       },
       {
-        root: null, // viewport
-        rootMargin: "-20% 0px -20% 0px", // Trigger when question is in middle 60% of screen
-        threshold: [0, 0.1, 0.5, 1.0],
+        root: null,
+        // Trigger as soon as a bit is visible, but we rely on bounding box math for decision
+        threshold: 0,
+        rootMargin: "0px 0px 0px 0px",
       }
     );
 
     const questionCards = document.querySelectorAll("[data-question-index]");
     questionCards.forEach((card) => observer.observe(card));
 
+    // Also listen to scroll/resize to update "closest to center" dynamically while scrolling
+    // IntersectionObserver only fires on cross threshold. We want continous update if possible?
+    // Actually, IntersectionObserver with multiple thresholds is okay, but explicit scroll listener is smoother for "center" logic
+    // but expensive.
+    // Let's stick to IntersectionObserver updates first. To make it smooth for long questions, 
+    // simply processing on intersection change might NOT be enough if the large question stays 
+    // intersecting while we scroll past its center.
+    // HYBRID: Use IO to maintain "Candidate Set", use Scroll Listener (throttled) to pick winner.
+
+    const handleScroll = () => {
+      if (visibleElemsRef.current.size > 0) determineActiveQuestion();
+    };
+
+    // Throttled scroll listener
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+
     return () => {
       observer.disconnect();
+      visibleElemsRef.current.clear();
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
   }, [displayMode, questions]); // Re-run when switching modes or questions change
 
