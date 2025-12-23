@@ -238,7 +238,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav ref={navRef} className="hidden nav:flex flex-1 max-w-2xl mx-4 justify-between relative">
+            <nav ref={navRef} className="hidden nav:flex flex-1 max-w-2xl mx-12 justify-between relative">
               {/* Highlight nền trượt (luôn nằm dưới các nút) */}
               <div
                 className={`absolute top-0 bottom-0 rounded-lg transition-all duration-500 ease-out z-0
@@ -262,7 +262,7 @@ const Header: React.FC = () => {
                     onMouseLeave={handleMouseLeave}
                     className={`relative z-10 nav-item group px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2
                       border border-transparent outline-none ring-0 focus:outline-none focus:ring-0
-                      transition-colors transition-shadow duration-300 ease-out overflow-hidden
+                      transition-all duration-0 ${!active ? "hover:duration-700" : ""} ease-out overflow-hidden
                       ${active
                         ? `nav-item-active subpixel-antialiased ${isDarkMode
                           ? "text-primary-300"
