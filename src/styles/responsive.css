@@ -424,7 +424,7 @@
   }
 
   /* Fix button alignment in mobile menu - override justify-content: center */
-  button[class*="text-red-"].w-full {
+  .mobile-nav button[class*="text-red-"].w-full {
     justify-content: flex-start !important;
   }
 }

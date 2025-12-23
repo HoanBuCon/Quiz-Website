@@ -1869,7 +1869,7 @@ const QuizPage: React.FC = () => {
                     ${index === currentQuestionIndex
                         ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
                         : uiMode === "instant" && isQuestionWrong(question)
-                          ? "bg-red-600 text-white font-medium border border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
+                          ? "bg-red-600 text-white font-medium border-red-600 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
                           : markedQuestions.includes(question.id)
                             ? "bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20"
                             : isQuestionAnswered(question)
@@ -2568,11 +2568,11 @@ function MobileMinimapBubble({
                 if (isExiting) return;
                 onSelect(index, question.id);
               }}
-              className={`w-full h-10 flex items-center justify-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm
+              className={`w-full h-10 flex items-center !justify-center text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm p-0
                   ${index === currentQuestionIndex
                   ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
                   : uiMode === "instant" && isQuestionWrong(question)
-                    ? "bg-red-600 text-white font-medium border border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
+                    ? "bg-red-600 text-white font-medium border-red-600 shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:shadow-md dark:shadow-red-600/20"
                     : markedQuestions.includes(question.id)
                       ? "bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20"
                       : isQuestionAnswered(question)

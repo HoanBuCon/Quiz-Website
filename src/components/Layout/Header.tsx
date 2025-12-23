@@ -479,8 +479,8 @@ const Header: React.FC = () => {
       </header >
 
       {/* Mobile Navigation Menu */}
-      < div
-        className={`nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 shadow-lg transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
+      <div
+        className={`mobile-nav nav:hidden fixed top-16 left-0 right-0 z-40 bg-white dark:bg-slate-900 shadow-lg transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? "translate-y-0" : "-translate-y-full"
           }`
         }
       >
@@ -532,9 +532,9 @@ const Header: React.FC = () => {
                   <Link
                     to="/profile"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all duration-200"
                   >
-                    <FaUser className="w-4 h-4 mr-2" />
+                    <FaUser className="w-4 h-4" />
                     <span>Hồ sơ cá nhân</span>
                   </Link>
 
@@ -543,9 +543,9 @@ const Header: React.FC = () => {
                       handleLogout();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 flex items-center"
+                    className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 flex items-center gap-3"
                   >
-                    <FaSignOutAlt className="w-4 h-4 mr-2" />
+                    <FaSignOutAlt className="w-4 h-4" />
                     <span>Đăng xuất</span>
                   </button>
                 </div>
