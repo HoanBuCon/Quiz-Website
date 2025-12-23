@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
 import { useData } from "../../context/DataContext";
@@ -24,6 +24,11 @@ const Sidebar: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
     const [userName, setUserName] = useState<string | null>(null);
     const [unreadCount, setUnreadCount] = useState(0);
+    const navRef = useRef<HTMLDivElement | null>(null);
+    const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+    const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({
+        opacity: 0,
+    });
 
     // Listen for chat unread count
     useEffect(() => {
@@ -119,6 +124,30 @@ const Sidebar: React.FC = () => {
         return location.pathname.startsWith(path);
     };
 
+    // Cập nhật vị trí thanh nền active để tạo hiệu ứng transition mượt
+    useEffect(() => {
+        if (!navRef.current) return;
+        const activeIndex = navItems.findIndex((item) => isActive(item.path));
+        if (activeIndex === -1) {
+            setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
+            return;
+        }
+        const activeEl = itemRefs.current[activeIndex];
+        if (!activeEl) {
+            setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
+            return;
+        }
+        const navRect = navRef.current.getBoundingClientRect();
+        const itemRect = activeEl.getBoundingClientRect();
+        const top = itemRect.top - navRect.top;
+        const height = itemRect.height;
+        setIndicatorStyle({
+            top,
+            height,
+            opacity: 1,
+        });
+    }, [location.pathname]);
+
     return (
         <aside
             className="group/sidebar fixed xl:static inset-y-0 left-0 z-40 bg-gradient-to-b from-blue-900 to-blue-600 dark:from-[#1a1e3a] dark:to-[#1a1e3a] dark:bg-[#1a1e3a] shadow-xl transition-all duration-300 ease-in-out flex flex-col w-20 hover:w-64"
@@ -144,20 +173,32 @@ const Sidebar: React.FC = () => {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 py-6 px-3 space-y-2 overflow-hidden group-hover/sidebar:overflow-y-auto overflow-x-hidden custom-scrollbar">
-                {navItems.map((item) => {
+            <nav
+                ref={navRef}
+                className="flex-1 py-6 px-3 space-y-2 overflow-hidden group-hover/sidebar:overflow-y-auto overflow-x-hidden custom-scrollbar relative"
+            >
+                {/* Thanh nền active trượt mượt giữa các item + bar dọc bên phải */}
+                <div
+                    className="absolute left-3 right-3 rounded-xl bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/40 dark:to-blue-800/40 pointer-events-none transition-all duration-300 ease-out border-r-4 border-transparent group-hover/sidebar:border-blue-600/80 dark:group-hover/sidebar:border-blue-400/80 shadow-sm"
+                    style={{ ...indicatorStyle, willChange: "top, height" }}
+                />
+
+                {navItems.map((item, index) => {
                     const active = isActive(item.path);
                     const Icon = item.icon;
                     return (
                         <Link
                             key={item.path}
+                            ref={(el) => {
+                                itemRefs.current[index] = el;
+                            }}
                             to={item.path}
                             onMouseEnter={handleMouseEnter}
                             onMouseLeave={handleMouseLeave}
-                            className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out group relative overflow-hidden border-r-4
+                            className={`flex items-center gap-3 pl-4 pr-3 h-12 w-full rounded-xl transition-all duration-500 ease-out group relative overflow-hidden font-medium
                                 ${active
-                                    ? "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/40 dark:to-blue-800/40 text-blue-900 dark:text-blue-400 font-medium shadow-sm border-transparent group-hover/sidebar:border-blue-600 dark:group-hover/sidebar:border-blue-400"
-                                    : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner border-transparent"
+                                    ? "text-blue-700 dark:text-blue-400"
+                                    : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner"
                                 }
                             `}
                         >
@@ -186,7 +227,7 @@ const Sidebar: React.FC = () => {
                     {/* Chat Toggle */}
                     <button
                         onClick={toggleChat}
-                        className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
+                        className="flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
                         title="Chat"
                     >
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center relative">
@@ -204,7 +245,7 @@ const Sidebar: React.FC = () => {
                     {/* Music Toggle */}
                     <button
                         onClick={toggleMusicPlayer}
-                        className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden
+                        className={`flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden
                             ${showMusicPlayer
                                 ? "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 dark:from-blue-900/30 dark:to-blue-900/30 dark:bg-blue-900/20 text-blue-900 dark:text-blue-400"
                                 : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
@@ -223,7 +264,7 @@ const Sidebar: React.FC = () => {
                     {/* Theme Toggle */}
                     <button
                         onClick={toggleTheme}
-                        className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-yellow-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
+                        className="flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl transition-all duration-500 ease-out w-full group relative overflow-hidden text-blue-100 dark:text-yellow-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50"
                         title="Toggle Theme"
                     >
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
@@ -271,7 +312,7 @@ const Sidebar: React.FC = () => {
                 ) : (
                     <Link
                         to="/login"
-                        className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl bg-white text-blue-700 hover:bg-blue-50 transition-all shadow-sm w-full overflow-hidden"
+                        className="flex items-center gap-3 pl-4 pr-3 h-12 rounded-xl bg-white text-blue-700 hover:bg-blue-50 transition-all shadow-sm w-full overflow-hidden"
                     >
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center">
                             <FaUser className="w-4 h-4" />
