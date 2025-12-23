@@ -322,6 +322,91 @@ const QuizPage: React.FC = () => {
     };
   }, []);
 
+  // Tự động lưu progress mỗi khi state thay đổi
+  useEffect(() => {
+    // Chỉ lưu khi đã có dữ liệu cơ bản
+    if (loading || !quizId || questions.length === 0) return;
+
+    // Không lưu nếu đang nộp bài
+    if (isSubmitting) return;
+
+    // Không lưu nếu ở chế độ default (chưa nộp)
+    // if (uiMode === 'default') return; // Thử nghiệm: Vẫn cho lưu ở default để F5 không mất bài
+
+    const stateToSave = {
+      quizId,
+      quizTitle,
+      className,
+      questions,
+      // originalQuestions, // Không cần lưu double
+      effectiveQuizId,
+      userAnswers,
+      currentQuestionIndex,
+      attemptId,
+      uiMode,
+      shuffleMode,
+      displayMode,
+      selectedUiMode,
+      revealed: Array.from(revealed),
+      elapsed,
+      timestamp: Date.now(),
+    };
+
+    localStorage.setItem(QUIZ_PROGRESS_KEY, JSON.stringify(stateToSave));
+  }, [
+    loading,
+    quizId,
+    questions,
+    originalQuestions,
+    effectiveQuizId,
+    userAnswers,
+    currentQuestionIndex,
+    attemptId,
+    uiMode,
+    shuffleMode,
+    displayMode,
+    selectedUiMode,
+    revealed,
+    elapsed, // Đã bao gồm elapsed để lưu thời gian làm bài
+    isSubmitting
+  ]);
+
+  // Sync scroll position with currentQuestionIndex in List mode
+  useEffect(() => {
+    if (displayMode !== "list") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Find the entry with the highest intersection ratio
+        const visibleEntry = entries.reduce((prev, current) => {
+          return (prev.intersectionRatio > current.intersectionRatio) ? prev : current;
+        });
+
+        if (visibleEntry.isIntersecting && visibleEntry.intersectionRatio > 0.1) {
+          const indexAttr = visibleEntry.target.getAttribute("data-question-index");
+          if (indexAttr !== null) {
+            const index = Number(indexAttr);
+            if (!isNaN(index) && index !== currentQuestionIndex) {
+              setCurrentQuestionIndex(index);
+            }
+          }
+        }
+      },
+      {
+        root: null, // viewport
+        rootMargin: "-20% 0px -20% 0px", // Trigger when question is in middle 60% of screen
+        threshold: [0, 0.1, 0.5, 1.0],
+      }
+    );
+
+    const questionCards = document.querySelectorAll("[data-question-index]");
+    questionCards.forEach((card) => observer.observe(card));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [displayMode, questions]); // Re-run when switching modes or questions change
+
   // Hỏi người dùng chọn định dạng khi vào trang
   useEffect(() => {
     // Chỉ hiển thị sau khi loading xong và có câu hỏi hợp lệ
@@ -1091,6 +1176,7 @@ const QuizPage: React.FC = () => {
       <div
         key={isList ? q.id : idx}
         id={`q-${q.id}`}
+        data-question-index={idx}
         className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.002] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 ${animClass}`}
       >
         {/* Question number */}
