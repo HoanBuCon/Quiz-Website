@@ -85,6 +85,8 @@ const QuizPage: React.FC = () => {
   const SCROLL_OFFSET = 120; // Khoảng cách bù trừ khi scroll tới câu hỏi
   // Set tracking visible elements for robust scroll sync
   const visibleElemsRef = React.useRef<Set<Element>>(new Set());
+  // Track hovered/focused question for List Mode Enter key action
+  const hoveredQuestionIdRef = React.useRef<string | null>(null);
   // Minimap bubble (mobile list) state
   const [miniBubbleOpen, setMiniBubbleOpen] = useState(false);
   const [miniBubblePos, setMiniBubblePos] = useState<{ x: number; y: number }>(() => {
@@ -569,6 +571,35 @@ const QuizPage: React.FC = () => {
       }
     }
   }, [currentQuestionIndex]);
+
+  // ======================
+  // List Mode Specific Shortcuts
+  // ======================
+  useEffect(() => {
+    if (displayMode !== "list" || uiMode !== "instant") return;
+
+    const handleListModeKeyDown = (e: KeyboardEvent) => {
+      // Only handle Enter
+      if (e.key === "Enter" && hoveredQuestionIdRef.current) {
+        const qId = hoveredQuestionIdRef.current;
+        const q = questions.find((item) => item.id === qId);
+
+        if (
+          q &&
+          ["multiple", "text", "drag", "composite"].includes(q.type)
+        ) {
+          // Use capture phase to prevent button activation
+          e.stopPropagation();
+          e.preventDefault();
+          markRevealed(qId);
+        }
+      }
+    };
+
+    // Use capture: true to intercept before React/Button handlers
+    window.addEventListener("keydown", handleListModeKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", handleListModeKeyDown, { capture: true });
+  }, [displayMode, uiMode, questions]);
 
   // ======================
   // Keyboard Navigation (arrow keys + Enter)
@@ -1262,7 +1293,20 @@ const QuizPage: React.FC = () => {
         key={isList ? q.id : idx}
         id={`q-${q.id}`}
         data-question-index={idx}
-        className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.002] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 ${animClass}`}
+        className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.002] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 ${animClass} outline-none`}
+        tabIndex={isList ? 0 : -1}
+        onMouseEnter={() => (hoveredQuestionIdRef.current = q.id)}
+        onMouseLeave={() => {
+          if (hoveredQuestionIdRef.current === q.id) {
+            hoveredQuestionIdRef.current = null;
+          }
+        }}
+        onFocus={() => (hoveredQuestionIdRef.current = q.id)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget) && hoveredQuestionIdRef.current === q.id) {
+            hoveredQuestionIdRef.current = null;
+          }
+        }}
       >
         {/* Question number */}
         <div className="flex flex-row justify-between items-start mb-4 gap-3 sm:gap-4">
