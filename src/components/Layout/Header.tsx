@@ -498,7 +498,7 @@ const Header: React.FC = () => {
               >
                 <span className="flex items-center gap-3">
                   <FaCommentDots className="w-4 h-4" />
-                  <span>Đại Liêm Gúp</span>
+                  <span>Nhóm Chat</span>
                 </span>
                 {chatUnread > 0 && (
                   <span className="min-w-6 h-6 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md">
