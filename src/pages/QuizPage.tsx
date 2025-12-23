@@ -1829,6 +1829,9 @@ const QuizPage: React.FC = () => {
                 elapsed={elapsed}
                 formatElapsed={formatElapsed}
                 handleSubmit={handleSubmit}
+                displayMode={displayMode}
+                setDisplayMode={setDisplayMode}
+                setUiMode={setUiMode}
               />
             ) : (
               <div
@@ -2326,6 +2329,9 @@ function MobileMinimapBubble({
   elapsed,
   formatElapsed,
   handleSubmit,
+  displayMode,
+  setDisplayMode,
+  setUiMode,
 }: {
   questions: Question[];
   currentQuestionIndex: number;
@@ -2343,6 +2349,9 @@ function MobileMinimapBubble({
   elapsed: number;
   formatElapsed: (sec: number) => string;
   handleSubmit: () => void;
+  displayMode: "single" | "list";
+  setDisplayMode: (mode: "single" | "list") => void;
+  setUiMode: (mode: "default" | "instant") => void;
 }) {
   const bubbleRef = React.useRef<HTMLButtonElement>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -2552,6 +2561,32 @@ function MobileMinimapBubble({
               }}
             />
           </div>
+        </div>
+
+        {/* Control Buttons (Format & Mode) */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <button
+            onClick={() => {
+              if (displayMode === "list") {
+                setDisplayMode("single");
+                setBubbleOpen(false); // Close minimap and effectively hide it as per logic
+              } else {
+                setDisplayMode("list");
+              }
+            }}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium border border-gray-200 dark:border-gray-700"
+          >
+            <FaList className="w-3 h-3" />
+            <span>{displayMode === "single" ? "Từng câu" : "Danh sách"}</span>
+          </button>
+
+          <button
+            onClick={() => setUiMode(uiMode === "default" ? "instant" : "default")}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium border border-gray-200 dark:border-gray-700"
+          >
+            <FaRegHandPointer className="w-3 h-3" />
+            <span>{uiMode === "instant" ? "Xem ngay" : "Mặc định"}</span>
+          </button>
         </div>
 
         {/* Question Grid with custom thin scrollbar */}
