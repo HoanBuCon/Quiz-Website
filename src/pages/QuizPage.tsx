@@ -4,8 +4,11 @@ import {
   FaRegHandPointer,
   FaSitemap,
   FaRegClock,
+  FaList,
+  FaLayerGroup,
 } from "react-icons/fa";
 import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import QuizAnswerOption from "../components/QuizAnswerOption";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import MathText from "../components/MathText";
@@ -40,6 +43,8 @@ const QuizPage: React.FC = () => {
   const [showModeChooser, setShowModeChooser] = useState<boolean>(false);
   // Shuffle mode: null (chưa chọn) | 'none' (không trộn) | 'random' (trộn ngẫu nhiên)
   const [shuffleMode, setShuffleMode] = useState<null | "none" | "random">(null);
+  // Display mode: 'single' (từng câu) | 'list' (danh sách)
+  const [displayMode, setDisplayMode] = useState<"single" | "list">("single");
   // Theo dõi xem người dùng đã chọn ui mode chưa
   const [selectedUiMode, setSelectedUiMode] = useState<"default" | "instant" | null>(null);
   // State để chặn auto-save khi đang nộp bài
@@ -67,7 +72,43 @@ const QuizPage: React.FC = () => {
 
   // Ref cho minimap container để xử lý scroll
   const minimapRef = React.useRef<HTMLDivElement>(null);
+  const mainContentRef = React.useRef<HTMLDivElement>(null);
   const navLockRef = React.useRef(false); // Lock synchronous navigation to prevent spamming
+  const SCROLL_OFFSET = 120; // Khoảng cách bù trừ khi scroll tới câu hỏi
+  // Minimap bubble (mobile list) state
+  const [miniBubbleOpen, setMiniBubbleOpen] = useState(false);
+  const [miniBubblePos, setMiniBubblePos] = useState<{ x: number; y: number }>(() => {
+    const w = typeof window !== "undefined" ? window.innerWidth : 390;
+    const h = typeof window !== "undefined" ? window.innerHeight : 800;
+    return { x: Math.max(12, w - 76), y: Math.max(12, h - 140) };
+  });
+
+  const getScrollableParent = (el: HTMLElement | null): HTMLElement | null => {
+    let cur: HTMLElement | null = el;
+    while (cur) {
+      const style = window.getComputedStyle(cur);
+      const overflowY = style.overflowY;
+      const canScroll =
+        (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+        cur.scrollHeight > cur.clientHeight + 4;
+      if (canScroll) return cur;
+      cur = cur.parentElement;
+    }
+    return null;
+  };
+
+  // Tìm câu hỏi (kể cả sub-question) theo id
+  const findQuestionById = (qid: string): { question: Question | null; parent?: Question | null } => {
+    for (const q of questions) {
+      if (q.id === qid) return { question: q, parent: null };
+      if (q.type === "composite" && (q as any).subQuestions) {
+        for (const sub of (q as any).subQuestions as Question[]) {
+          if (sub.id === qid) return { question: sub, parent: q };
+        }
+      }
+    }
+    return { question: null, parent: null };
+  };
 
   // Hàm trộn mảng (Fisher-Yates shuffle)
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -184,6 +225,7 @@ const QuizPage: React.FC = () => {
                 setAttemptId(saved.attemptId);
                 setUiMode(saved.uiMode || "default");
                 setShuffleMode(saved.shuffleMode || null);
+                setDisplayMode(saved.displayMode || "single");
                 setSelectedUiMode(saved.selectedUiMode || null);
                 if (saved.revealed) {
                   setRevealed(new Set(saved.revealed));
@@ -294,6 +336,22 @@ const QuizPage: React.FC = () => {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Clamp minimap bubble khi thay đổi kích thước
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+    const onResize = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      setMiniBubblePos((p) => ({
+        x: clamp(p.x, 8, w - 64),
+        y: clamp(p.y, 8, h - 64),
+      }));
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   // Save progress effect
   // Save progress effect (Debounced)
   useEffect(() => {
@@ -310,6 +368,7 @@ const QuizPage: React.FC = () => {
           attemptId,
           uiMode,
           shuffleMode,
+          displayMode,
           selectedUiMode,
           revealed: Array.from(revealed),
           elapsed, // Save current elapsed
@@ -320,7 +379,7 @@ const QuizPage: React.FC = () => {
       }, 500); // Debounce 500ms
       return () => clearTimeout(timer);
     }
-  }, [quizId, quizTitle, className, questions, userAnswers, currentQuestionIndex, attemptId, uiMode, shuffleMode, selectedUiMode, revealed, elapsed, effectiveQuizId, loading, isSubmitting]);
+  }, [quizId, quizTitle, className, questions, userAnswers, currentQuestionIndex, attemptId, uiMode, shuffleMode, displayMode, selectedUiMode, revealed, elapsed, effectiveQuizId, loading, isSubmitting]);
 
   // Reset focus khi chuyển câu hỏi & Auto scroll minimap
   useEffect(() => {
@@ -347,6 +406,7 @@ const QuizPage: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Nếu đang hiển thị mode chooser thì bỏ qua
       if (showModeChooser) return;
+      if (displayMode === "list") return; // Disable keys in list mode
 
       const currentQuestion = questions[currentQuestionIndex];
       if (!currentQuestion) return;
@@ -618,22 +678,20 @@ const QuizPage: React.FC = () => {
     answer: string,
     questionType?: "single" | "multiple" | "text"
   ) => {
-    const currentQuestion = questions[currentQuestionIndex];
+    const resolved = findQuestionById(questionId);
+    const targetQuestion = resolved.question || questions[currentQuestionIndex];
+    const parentQuestion = resolved.parent || null;
+    if (!targetQuestion) return;
 
-    // Xác định type: ưu tiên questionType được truyền vào (cho sub-question), fallback về currentQuestion.type
-    const typeToCheck = questionType || currentQuestion.type;
+    // Xác định type: ưu tiên questionType được truyền vào (cho sub-question), fallback về targetQuestion.type
+    const typeToCheck = questionType || targetQuestion.type;
 
     // Nếu đang ở chế độ instant và câu hỏi đã reveal (khoá), không cho chọn lại
     if (uiMode === "instant") {
       // Khoá top-level khi đã reveal
       if (revealed.has(questionId)) return;
       // Trong composite: nếu đang chọn câu con và parent đã reveal thì không cho chọn
-      if (
-        currentQuestion.type === "composite" &&
-        questionId !== currentQuestion.id &&
-        revealed.has(currentQuestion.id)
-      )
-        return;
+      if (parentQuestion && revealed.has(parentQuestion.id)) return;
     }
 
     setUserAnswers((prev) => {
@@ -662,11 +720,11 @@ const QuizPage: React.FC = () => {
 
     // Ở chế độ instant: Single (top-level) sẽ reveal và khoá ngay sau khi chọn lần đầu
     if (uiMode === "instant") {
-      const isTopLevel = questionId === currentQuestion.id;
+      const isTopLevel = !parentQuestion;
       if (
         isTopLevel &&
         typeToCheck === "single" &&
-        currentQuestion.type === "single"
+        targetQuestion.type === "single"
       ) {
         markRevealed(questionId);
       }
@@ -862,6 +920,44 @@ const QuizPage: React.FC = () => {
     }
   };
 
+  // Scroll tới câu hỏi trong chế độ danh sách
+  const scrollToQuestion = (qid: string) => {
+    const container = mainContentRef.current;
+    const target =
+      (container?.querySelector?.(`#q-${qid}`) as HTMLElement | null) ||
+      document.getElementById(`q-${qid}`);
+    if (!target) return;
+
+    const scrollFn = () => {
+      const isDesktop =
+        typeof window !== "undefined" &&
+        window.matchMedia("(min-width: 1280px)").matches;
+
+      const scrollableParent = getScrollableParent(container || target.parentElement);
+      if (isDesktop && scrollableParent) {
+        const containerRect = scrollableParent.getBoundingClientRect();
+        const elementRect = target.getBoundingClientRect();
+        const currentScroll = scrollableParent.scrollTop;
+        const offset = 16; // chừa khoảng trống nhỏ trong container
+        const top =
+          currentScroll +
+          (elementRect.top - containerRect.top) -
+          offset;
+        scrollableParent.scrollTo({ top, behavior: "smooth" });
+        return;
+      }
+
+      // Fallback: cuộn theo window
+      const rect = target.getBoundingClientRect();
+      const top = (window.pageYOffset || window.scrollY || 0) + rect.top - SCROLL_OFFSET;
+      window.scrollTo({ top, behavior: "smooth" });
+    };
+
+    // Thực thi ngay và fallback frame kế tiếp để đảm bảo layout ổn định
+    scrollFn();
+    requestAnimationFrame(scrollFn);
+  };
+
   // Submit answers
   const handleSubmit = async () => {
     if (window.confirm("Bạn có chắc chắn muốn nộp bài?")) {
@@ -925,7 +1021,6 @@ const QuizPage: React.FC = () => {
     const Spinner = require("../components/Spinner").default;
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 flex items-center justify-center">
-        <Spinner size={48} />
       </div>
     );
   }
@@ -933,7 +1028,7 @@ const QuizPage: React.FC = () => {
   const currentQuestion = questions[currentQuestionIndex];
 
   // Guard clause: Check if currentQuestion exists
-  if (!currentQuestion) {
+  if (questions.length === 0 || (!currentQuestion && displayMode !== 'list')) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="card p-6 text-center">
@@ -947,515 +1042,520 @@ const QuizPage: React.FC = () => {
       </div>
     );
   }
+  // Render question card helper
+  const renderQuestionCard = (q: Question, idx: number, isList: boolean) => {
+    // Only apply animations in single mode
+    const animClass = !isList && isExiting
+      ? slideDirection === "right"
+        ? "animate-slideOutLeft"
+        : slideDirection === "left"
+          ? "animate-slideOutRight"
+          : ""
+      : !isList && slideDirection === "right"
+        ? "animate-slideInRight"
+        : !isList && slideDirection === "left"
+          ? "animate-slideInLeft"
+          : "";
 
-  return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      {/* Top headers row: left = title+timer, right = submit button */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr,20rem] gap-4 lg:gap-8 mb-4 sm:mb-6 items-stretch">
-        {/* Left header: Title + Timer */}
-        <div className="flex h-full flex-row items-center justify-between gap-2 min-w-0">
-          <h1 className="flex-1 min-w-0 truncate text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {quizTitle}
-          </h1>
-          <div className="flex items-center gap-2 px-3 rounded-lg bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 w-fit h-full self-stretch shrink-0 whitespace-nowrap">
-            <FaRegClock className="w-4 h-4 shrink-0" />
-            <span className="text-sm font-share-tech-mono tabular-nums tracking-[0.15em]">
-              {formatElapsed(elapsed)}
+    // Check if confirm is needed
+    const showConfirm = uiMode === "instant" &&
+      (q.type === "multiple" ||
+        q.type === "text" ||
+        q.type === "drag" ||
+        q.type === "composite");
+
+    return (
+      <div
+        key={isList ? q.id : idx}
+        id={`q-${q.id}`}
+        className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.002] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 ${animClass}`}
+      >
+        {/* Question number */}
+        <div className="flex flex-row justify-between items-start mb-4 gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              Câu {idx + 1}/{questions.length}
+            </span>
+            <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              {q.type === "single"
+                ? "Chọn một đáp án"
+                : q.type === "multiple"
+                  ? "Chọn nhiều đáp án"
+                  : q.type === "drag"
+                    ? "Kéo thả đáp án vào nhóm tương ứng"
+                    : q.type === "composite"
+                      ? "Câu hỏi gồm nhiều câu hỏi con"
+                      : "Điền đáp án"}
             </span>
           </div>
-        </div>
-        {/* Right header: Submit button (no wrapper div) */}
-        <div className="flex w-full">
           <button
-            onClick={handleSubmit}
-            className="btn-primary h-full w-full text-sm sm:text-base inline-flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <span>Nộp bài</span>
-          </button>
-        </div>
-      </div>
-      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
-        {/* Left Section - Main Content */}
-        <div className="flex-1 min-w-0 order-2 lg:order-1">
-          {/* Question */}
-          {/* Question */}
-          <div
-            key={currentQuestionIndex}
-            className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.002] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 
-              ${isExiting
-                ? slideDirection === "right"
-                  ? "animate-slideOutLeft"
-                  : slideDirection === "left"
-                    ? "animate-slideOutRight"
-                    : ""
-                : slideDirection === "right"
-                  ? "animate-slideInRight"
-                  : slideDirection === "left"
-                    ? "animate-slideInLeft"
-                    : ""
+            onClick={() => {
+              setMarkedQuestions((prev) =>
+                prev.includes(q.id)
+                  ? prev.filter((id) => id !== q.id)
+                  : [...prev, q.id]
+              );
+            }}
+            className={`prevent-selection text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight transition-colors w-auto md:w-fit max-w-[120px] md:max-w-none overflow-hidden text-ellipsis whitespace-nowrap min-h-[1.75rem] max-h-[1.75rem] md:min-h-[2rem] md:max-h-[2rem] flex items-center shrink-0 ${markedQuestions.includes(q.id)
+              ? "bg-yellow-500 text-white hover:bg-yellow-600"
+              : "bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600"
               }`}
           >
-            {/* Question number */}
-            <div className="flex flex-row justify-between items-start mb-4 gap-3 sm:gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                  Câu {currentQuestionIndex + 1}/{questions.length} {/*(ID:{" "}
-          {currentQuestion.id})*/}
-                </span>
-                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                  {currentQuestion.type === "single"
-                    ? "Chọn một đáp án"
-                    : currentQuestion.type === "multiple"
-                      ? "Chọn nhiều đáp án"
-                      : currentQuestion.type === "drag"
-                        ? "Kéo thả đáp án vào nhóm tương ứng"
-                        : currentQuestion.type === "composite"
-                          ? "Câu hỏi gồm nhiều câu hỏi con"
-                          : "Điền đáp án"}
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  setMarkedQuestions((prev) =>
-                    prev.includes(currentQuestion.id)
-                      ? prev.filter((id) => id !== currentQuestion.id)
-                      : [...prev, currentQuestion.id]
-                  );
+            {markedQuestions.includes(q.id)
+              ? "Đã đánh dấu"
+              : "Xem lại câu này"}
+          </button>
+        </div>
+
+        {/* Question text */}
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 whitespace-pre-wrap break-words">
+          <MathText text={q.question} />
+        </h2>
+        {/* Question image nếu có */}
+        {
+          q.questionImage && (
+            <div className="mb-4 sm:mb-6">
+              <img
+                src={q.questionImage}
+                alt="Question"
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  const { naturalWidth, naturalHeight } = img;
+                  const ratio = naturalWidth / naturalHeight;
+
+                  // If ratio > 4/3, it's a wide landscape image
+                  if (ratio > 4 / 3) {
+                    setQuestionImageLayout("landscape");
+                  } else {
+                    setQuestionImageLayout("portrait");
+                  }
                 }}
-                className={`prevent-selection text-[11px] md:text-sm px-2 md:px-3 py-1 rounded-full leading-tight transition-colors w-auto md:w-fit max-w-[120px] md:max-w-none overflow-hidden text-ellipsis whitespace-nowrap min-h-[1.75rem] max-h-[1.75rem] md:min-h-[2rem] md:max-h-[2rem] flex items-center shrink-0 ${markedQuestions.includes(currentQuestion.id)
-                  ? "bg-yellow-500 text-white hover:bg-yellow-600"
-                  : "bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                  }`}
-              >
-                {markedQuestions.includes(currentQuestion.id)
-                  ? "Đã đánh dấu"
-                  : "Xem lại câu này"}
-              </button>
+                className={`w-auto h-auto max-w-full max-h-[400px] ${questionImageLayout === "landscape" ? "min-h-[100px]" : ""} rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in mx-auto`}
+                onClick={() => setViewingImage(q.questionImage!)}
+              />
             </div>
+          )
+        }
 
-            {/* Question text */}
-            {/* Question text */}
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 whitespace-pre-wrap break-words">
-              <MathText text={currentQuestion.question} />
-            </h2>
-            {/* Question image nếu có */}
-            {
-              currentQuestion.questionImage && (
-                <div className="mb-4 sm:mb-6">
-                  <img
-                    src={currentQuestion.questionImage}
-                    alt="Question"
-                    onLoad={(e) => {
-                      const img = e.currentTarget;
-                      const { naturalWidth, naturalHeight } = img;
-                      const ratio = naturalWidth / naturalHeight;
+        {/* Divider */}
+        <div className="w-full flex items-center my-4 sm:my-6">
+          <div className="flex-1 border-t border-gray-400 dark:border-gray-600"></div>
+          <span className="px-3 flex items-center justify-center">
+            {q.type === "single" ||
+              q.type === "multiple" ? (
+              <FaRegDotCircle className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+            ) : q.type === "text" ? (
+              <FaRegEdit className="w-5 h-5 text-green-500 dark:text-green-400" />
+            ) : q.type === "drag" ? (
+              <FaRegHandPointer className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+            ) : q.type === "composite" ? (
+              <FaSitemap className="w-5 h-5 text-orange-500 dark:text-orange-400" />
+            ) : (
+              <FaRegEdit className="w-5 h-5 text-green-500 dark:text-green-400" />
+            )}
+          </span>
+          <div className="flex-1 border-t border-gray-400 dark:border-gray-600"></div>
+        </div>
 
-                      // If ratio > 4/3, it's a wide landscape image
-                      if (ratio > 4 / 3) {
-                        setQuestionImageLayout("landscape");
-                      } else {
-                        setQuestionImageLayout("portrait");
+        {/* Answer options */}
+        <div className="space-y-2 sm:space-y-3">
+          {q.type === "text" && (
+            <div className="space-y-2">
+              {(() => {
+                // Định nghĩa các style state (Trạng thái)
+                const stateCorrect = "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
+                const stateWrong = "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                const stateNormal = "border-gray-400 dark:border-gray-600";
+
+                // Định nghĩa các style focus (Trỏ)
+                const focusCorrect = "border-green-600 shadow-[0_0_18px_rgba(22,163,74,0.7)] dark:border-green-500 dark:shadow-[0_0_18px_rgba(34,197,94,0.7)]";
+                const focusWrong = "border-red-700 shadow-[0_0_18px_rgba(185,28,28,0.7)] dark:border-red-500 dark:shadow-[0_0_18px_rgba(239,68,68,0.7)]";
+                const focusNormal = "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
+
+                const isFocused = focusedOption === 0;
+                const revealed = isRevealed(q.id);
+                const isCorrect = isTextAnswerCorrect(q, (getCurrentAnswer(q.id)[0] as string) || "");
+
+                let computedClassName = "";
+                if (isFocused) {
+                  if (revealed) {
+                    computedClassName = isCorrect ? `${stateCorrect} ${focusCorrect}` : `${stateWrong} ${focusWrong}`;
+                  } else {
+                    computedClassName = `${stateNormal} ${focusNormal}`;
+                  }
+                } else {
+                  computedClassName = revealed ? (isCorrect ? stateCorrect : stateWrong) : stateNormal;
+                }
+
+                return (
+                  <input
+                    type="text"
+                    data-question-id={q.id}
+                    disabled={revealed}
+                    className={`w-full p-3 rounded-lg text-sm sm:text-base transition-colors duration-200 dark:bg-gray-700 dark:text-gray-100 border ${computedClassName}`}
+                    placeholder="Nhập câu trả lời của bạn"
+                    value={
+                      (getCurrentAnswer(q.id)[0] || "") as string
+                    }
+                    onChange={(e) =>
+                      handleAnswerSelect(q.id, e.target.value)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (uiMode === 'instant' && !revealed) {
+                          markRevealed(q.id);
+                        }
                       }
                     }}
-                    className={`w-auto h-auto max-w-full max-h-[400px] ${questionImageLayout === "landscape" ? "min-h-[100px]" : ""} rounded-lg shadow border border-gray-200 dark:border-gray-600 object-contain cursor-zoom-in mx-auto`}
-                    onClick={() => setViewingImage(currentQuestion.questionImage!)}
                   />
-                </div>
-              )
-            }
-
-            {/* Divider */}
-            <div className="w-full flex items-center my-4 sm:my-6">
-              <div className="flex-1 border-t border-gray-400 dark:border-gray-600"></div>
-              <span className="px-3 flex items-center justify-center">
-                {currentQuestion.type === "single" ||
-                  currentQuestion.type === "multiple" ? (
-                  <FaRegDotCircle className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-                ) : currentQuestion.type === "text" ? (
-                  <FaRegEdit className="w-5 h-5 text-green-500 dark:text-green-400" />
-                ) : currentQuestion.type === "drag" ? (
-                  <FaRegHandPointer className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                ) : currentQuestion.type === "composite" ? (
-                  <FaSitemap className="w-5 h-5 text-orange-500 dark:text-orange-400" />
-                ) : (
-                  <FaRegEdit className="w-5 h-5 text-green-500 dark:text-green-400" />
-                )}
-              </span>
-              <div className="flex-1 border-t border-gray-400 dark:border-gray-600"></div>
-            </div>
-
-            {/* Answer options */}
-            <div className="space-y-2 sm:space-y-3">
-              {currentQuestion.type === "text" && (
-                <div className="space-y-2">
-                  {/* === BẮT ĐẦU SỬA MỤC 1 === */}
-                  {(() => {
-                    // Định nghĩa các style state (Trạng thái)
-                    const stateCorrect = "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
-                    const stateWrong = "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
-                    const stateNormal = "border-gray-400 dark:border-gray-600";
-
-                    // Định nghĩa các style focus (Trỏ)
-                    const focusCorrect = "border-green-600 shadow-[0_0_18px_rgba(22,163,74,0.7)] dark:border-green-500 dark:shadow-[0_0_18px_rgba(34,197,94,0.7)]";
-                    const focusWrong = "border-red-700 shadow-[0_0_18px_rgba(185,28,28,0.7)] dark:border-red-500 dark:shadow-[0_0_18px_rgba(239,68,68,0.7)]";
-                    const focusNormal = "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
-
-                    const isFocused = focusedOption === 0;
-                    const revealed = isRevealed(currentQuestion.id);
-                    const isCorrect = isTextAnswerCorrect(currentQuestion, (getCurrentAnswer(currentQuestion.id)[0] as string) || "");
-
-                    let computedClassName = "";
-                    if (isFocused) {
-                      if (revealed) {
-                        computedClassName = isCorrect ? `${stateCorrect} ${focusCorrect}` : `${stateWrong} ${focusWrong}`;
-                      } else {
-                        // Khi focus mà chưa reveal, dùng stateNormal (chỉ border) + focusNormal
-                        computedClassName = `${stateNormal} ${focusNormal}`;
-                      }
-                    } else {
-                      // Khi không focus
-                      computedClassName = revealed ? (isCorrect ? stateCorrect : stateWrong) : stateNormal;
-                    }
-
-                    return (
-                      <input
-                        type="text"
-                        data-question-id={currentQuestion.id}
-                        disabled={revealed}
-                        className={`w-full p-3 rounded-lg text-sm sm:text-base transition-colors duration-200 dark:bg-gray-700 dark:text-gray-100 border ${computedClassName}`}
-                        placeholder="Nhập câu trả lời của bạn"
-                        value={
-                          (getCurrentAnswer(currentQuestion.id)[0] || "") as string
-                        }
-                        onChange={(e) =>
-                          handleAnswerSelect(currentQuestion.id, e.target.value)
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (uiMode === 'instant' && !revealed) {
-                              markRevealed(currentQuestion.id);
-                            }
-                          }
-                        }}
-                      />
-                    );
-                  })()}
-                  {/* === KẾT THÚC SỬA MỤC 1 === */}
-                  {uiMode === "instant" && isRevealed(currentQuestion.id) && (
-                    <TextRevealPanel
-                      question={currentQuestion}
-                      userValue={
-                        (getCurrentAnswer(currentQuestion.id)[0] as string) ||
-                        ""
-                      }
-                    />
-                  )}
-                </div>
-              )}
-              {currentQuestion.type !== "text" &&
-                currentQuestion.type !== "drag" &&
-                currentQuestion.type !== "composite" &&
-                Array.isArray(currentQuestion.options) && (
-                  <div className="space-y-2 sm:space-y-3">
-                    {currentQuestion.options.map((option, index) => {
-                      const optionImage =
-                        currentQuestion.optionImages &&
-                        currentQuestion.optionImages[option];
-                      const selected = getCurrentAnswer(currentQuestion.id);
-                      const shouldReveal = isChoiceReveal(
-                        currentQuestion,
-                        selected
-                      );
-                      const isCorrect =
-                        getCorrectAnswers(currentQuestion).includes(option);
-                      const isChosen = selected.includes(option);
-                      const locked =
-                        uiMode === "instant" &&
-                        revealed.has(currentQuestion.id);
-                      const isFocused = focusedOption === index;
-
-                      return (
-                        <QuizAnswerOption
-                          key={index}
-                          option={option}
-                          index={index}
-                          optionImage={optionImage}
-                          selected={isChosen}
-                          correct={isCorrect}
-                          shouldReveal={shouldReveal}
-                          focused={isFocused}
-                          disabled={locked}
-                          onSelect={() =>
-                            handleAnswerSelect(currentQuestion.id, option)
-                          }
-                          onViewImage={(src: string) => setViewingImage(src)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              {currentQuestion.type === "drag" && (
-                <DragDropQuestion
-                  key={currentQuestion.id}
-                  question={currentQuestion}
-                  value={
-                    (userAnswers.find(
-                      (a) => a.questionId === currentQuestion.id
-                    )?.answers?.[0] as any) || {}
+                );
+              })()}
+              {uiMode === "instant" && isRevealed(q.id) && (
+                <TextRevealPanel
+                  question={q}
+                  userValue={
+                    (getCurrentAnswer(q.id)[0] as string) ||
+                    ""
                   }
-                  onChange={(mapping) => {
-                    setUserAnswers((prev) => {
-                      const existing = prev.find(
-                        (a) => a.questionId === currentQuestion.id
-                      );
-                      if (!existing)
-                        return [
-                          ...prev,
-                          {
-                            questionId: currentQuestion.id,
-                            answers: [mapping as any],
-                          },
-                        ];
-                      return prev.map((a) =>
-                        a.questionId === currentQuestion.id
-                          ? { ...a, answers: [mapping as any] }
-                          : a
-                      );
-                    });
-                  }}
-                  reveal={isRevealed(currentQuestion.id)}
-                  correctMapping={(currentQuestion.correctAnswers as any) || {}}
                 />
               )}
-              {currentQuestion.type === "composite" &&
-                Array.isArray((currentQuestion as any).subQuestions) && (
-                  <div className="space-y-4">
-                    {(currentQuestion as any).subQuestions.map(
-                      (sub: Question, idx: number) => {
-                        const parentRevealed = isRevealed(currentQuestion.id);
-                        return (
-                          <div
-                            key={sub.id}
-                            className="border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30 transition-colors duration-200"
-                          >
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                Câu hỏi con {idx + 1}
-                              </span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                                {sub.type === "text"
-                                  ? "Tự luận"
-                                  : sub.type === "single"
-                                    ? "Chọn 1"
-                                    : "Chọn nhiều"}
-                              </span>
-                            </div>
-                            <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
-                              <MathText text={sub.question} />
-                            </div>
-                            {sub.type === "text" && (
-                              <div className="space-y-2">
-                                {/* === BẮT ĐẦU SỬA MỤC 3 === */}
-                                {(() => {
-                                  // Định nghĩa các style state
-                                  const stateCorrect = "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
-                                  const stateWrong = "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
-                                  const stateNormal = "border-gray-400"; // class gốc
+            </div>
+          )}
+          {q.type !== "text" &&
+            q.type !== "drag" &&
+            q.type !== "composite" &&
+            Array.isArray(q.options) && (
+              <div className="space-y-2 sm:space-y-3">
+                {q.options.map((option, index) => {
+                  const optionImage =
+                    q.optionImages &&
+                    q.optionImages[option];
+                  const selected = getCurrentAnswer(q.id);
+                  const shouldReveal = isChoiceReveal(
+                    q,
+                    selected
+                  );
+                  const isCorrect =
+                    getCorrectAnswers(q).includes(option);
+                  const isChosen = selected.includes(option);
+                  const locked =
+                    uiMode === "instant" &&
+                    revealed.has(q.id);
+                  const isFocused = focusedOption === index;
 
-                                  // Định nghĩa các style focus (Trỏ)
-                                  const focusCorrect = "border-green-600 shadow-[0_0_18px_rgba(22,163,74,0.7)] dark:border-green-500 dark:shadow-[0_0_18px_rgba(34,197,94,0.7)]";
-                                  const focusWrong = "border-red-700 shadow-[0_0_18px_rgba(185,28,28,0.7)] dark:border-red-500 dark:shadow-[0_0_18px_rgba(239,68,68,0.7)]";
-                                  const focusNormal = "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
+                  return (
+                    <QuizAnswerOption
+                      key={index}
+                      option={option}
+                      index={index}
+                      optionImage={optionImage}
+                      selected={isChosen}
+                      correct={isCorrect}
+                      shouldReveal={shouldReveal}
+                      focused={isFocused}
+                      disabled={locked}
+                      onSelect={() =>
+                        handleAnswerSelect(q.id, option)
+                      }
+                      onViewImage={(src: string) => setViewingImage(src)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          {q.type === "drag" && (
+            <DragDropQuestion
+              key={q.id}
+              question={q}
+              value={
+                (userAnswers.find(
+                  (a) => a.questionId === q.id
+                )?.answers?.[0] as any) || {}
+              }
+              onChange={(mapping) => {
+                setUserAnswers((prev) => {
+                  const existing = prev.find(
+                    (a) => a.questionId === q.id
+                  );
+                  if (!existing)
+                    return [
+                      ...prev,
+                      {
+                        questionId: q.id,
+                        answers: [mapping as any],
+                      },
+                    ];
+                  return prev.map((a) =>
+                    a.questionId === q.id
+                      ? { ...a, answers: [mapping as any] }
+                      : a
+                  );
+                });
+              }}
+              reveal={isRevealed(q.id)}
+              correctMapping={(q.correctAnswers as any) || {}}
+            />
+          )}
+          {q.type === "composite" &&
+            Array.isArray((q as any).subQuestions) && (
+              <div className="space-y-4">
+                {(q as any).subQuestions.map(
+                  (sub: Question, idx: number) => {
+                    const parentRevealed = isRevealed(q.id);
+                    return (
+                      <div
+                        key={sub.id}
+                        className="border border-gray-400 rounded-lg p-4 bg-gray-200/40 dark:border-gray-600 dark:bg-gray-900/30 transition-colors duration-200"
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Câu hỏi con {idx + 1}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            {sub.type === "text"
+                              ? "Tự luận"
+                              : sub.type === "single"
+                                ? "Chọn 1"
+                                : "Chọn nhiều"}
+                          </span>
+                        </div>
+                        <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
+                          <MathText text={sub.question} />
+                        </div>
+                        {sub.type === "text" && (
+                          <div className="space-y-2">
+                            {(() => {
+                              // Định nghĩa các style state
+                              const stateCorrect = "border-green-600 bg-green-500 text-white dark:bg-green-900/40 dark:text-green-100 dark:border-green-500";
+                              const stateWrong = "border-red-700 bg-red-600 text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500";
+                              const stateNormal = "border-gray-400"; // class gốc
 
-                                  // Tính globalIndex để xác định focus
-                                  const isFocused = (() => {
-                                    const subs = (currentQuestion as any).subQuestions || [];
-                                    let cumulative = 0;
-                                    for (let i = 0; i < idx; i++) {
-                                      const prevSub = subs[i];
-                                      cumulative += prevSub.type === "text"
-                                        ? 1
-                                        : (Array.isArray(prevSub.options) ? prevSub.options.length : 0);
-                                    }
-                                    return focusedOption === cumulative;
-                                  })();
+                              // Định nghĩa các style focus (Trỏ)
+                              const focusCorrect = "border-green-600 shadow-[0_0_18px_rgba(22,163,74,0.7)] dark:border-green-500 dark:shadow-[0_0_18px_rgba(34,197,94,0.7)]";
+                              const focusWrong = "border-red-700 shadow-[0_0_18px_rgba(185,28,28,0.7)] dark:border-red-500 dark:shadow-[0_0_18px_rgba(239,68,68,0.7)]";
+                              const focusNormal = "border-indigo-400 shadow-[0_0_18px_rgba(99,102,241,1)] dark:border-white dark:shadow-[0_0_18px_rgba(255,255,255,0.5)]";
 
-                                  const revealed = parentRevealed;
-                                  const isCorrect = isTextAnswerCorrect(sub, (getCurrentAnswer(sub.id)[0] as string) || "");
-
-                                  let computedClassName = "";
-                                  if (isFocused) {
-                                    if (revealed) {
-                                      computedClassName = isCorrect ? `${stateCorrect} ${focusCorrect}` : `${stateWrong} ${focusWrong}`;
-                                    } else {
-                                      computedClassName = `${stateNormal} ${focusNormal}`;
-                                    }
-                                  } else {
-                                    computedClassName = revealed ? (isCorrect ? stateCorrect : stateWrong) : stateNormal;
-                                  }
-
-                                  return (
-                                    <input
-                                      type="text"
-                                      data-question-id={sub.id}
-                                      disabled={revealed}
-                                      className={`w-full p-3 rounded-lg bg-white text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white border ${computedClassName}`}
-                                      placeholder="Nhập câu trả lời của bạn"
-                                      value={
-                                        (getCurrentAnswer(sub.id)[0] ||
-                                          "") as string
-                                      }
-                                      onChange={(e) =>
-                                        handleAnswerSelect(
-                                          sub.id,
-                                          e.target.value,
-                                          "text"
-                                        )
-                                      }
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          e.preventDefault();
-                                          if (uiMode === 'instant' && !parentRevealed) {
-                                            markRevealed(currentQuestion.id);
-                                          }
-                                        }
-                                      }}
-                                    />
-                                  );
-                                })()}
-                                {/* === KẾT THÚC SỬA MỤC 3 === */}
-                                {uiMode === "instant" && parentRevealed && (
-                                  <TextRevealPanel
-                                    question={sub}
-                                    userValue={
-                                      (getCurrentAnswer(sub.id)[0] as string) ||
-                                      ""
-                                    }
-                                  />
-                                )}
-                              </div>
-                            )}
-                            {sub.type !== "text" &&
-                              sub.type !== "drag" &&
-                              Array.isArray(sub.options) && (
-                                <div className="space-y-2">
-                                  {sub.options.map((opt, oidx) => {
-                                    const selected = getCurrentAnswer(sub.id);
-                                    const shouldReveal = isChoiceReveal(
-                                      sub,
-                                      selected,
-                                      parentRevealed
-                                    );
-                                    const isCorrect = (
-                                      Array.isArray(sub.correctAnswers)
-                                        ? (sub.correctAnswers as string[])
-                                        : []
-                                    ).includes(opt);
-                                    const isChosen = selected.includes(opt);
-
-                                    // THÊM: Tính toán globalIndex để xác định focus
-                                    const globalIndex = (() => {
-                                      const subs =
-                                        (currentQuestion as any).subQuestions ||
-                                        [];
-                                      let cumulative = 0;
-                                      // Cộng dồn số options của các sub-question trước đó
-                                      for (let i = 0; i < idx; i++) {
-                                        const prevSub = subs[i];
-                                        cumulative +=
-                                          prevSub.type === "text"
-                                            ? 1
-                                            : Array.isArray(prevSub.options)
-                                              ? prevSub.options.length
-                                              : 0;
-                                      }
-                                      // Cộng thêm index của option hiện tại trong sub-question này
-                                      return cumulative + oidx;
-                                    })();
-
-                                    // THÊM: Kiểm tra xem option này có đang được focus không
-                                    const isFocused =
-                                      focusedOption === globalIndex;
-
-                                    return (
-                                      <QuizAnswerOption
-                                        key={oidx}
-                                        option={opt}
-                                        index={oidx}
-                                        optionImage={(sub.optionImages || {})[opt]}
-                                        selected={isChosen}
-                                        correct={isCorrect}
-                                        shouldReveal={shouldReveal}
-                                        focused={isFocused}
-                                        disabled={parentRevealed}
-                                        onSelect={() =>
-                                          handleAnswerSelect(
-                                            sub.id,
-                                            opt,
-                                            sub.type as "single" | "multiple"
-                                          )
-                                        }
-                                        onViewImage={(src: string) =>
-                                          setViewingImage(src)
-                                        }
-                                      />
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            {sub.type === "drag" && (
-                              <DragDropQuestion
-                                key={sub.id}
-                                question={sub}
-                                value={
-                                  (userAnswers.find(
-                                    (a) => a.questionId === sub.id
-                                  )?.answers?.[0] as any) || {}
+                              // Tính globalIndex để xác định focus
+                              const isFocused = (() => {
+                                const subs = (q as any).subQuestions || [];
+                                let cumulative = 0;
+                                for (let i = 0; i < idx; i++) {
+                                  const prevSub = subs[i];
+                                  cumulative += prevSub.type === "text"
+                                    ? 1
+                                    : (Array.isArray(prevSub.options) ? prevSub.options.length : 0);
                                 }
-                                onChange={(mapping) => {
-                                  setUserAnswers((prev) => {
-                                    const existing = prev.find(
-                                      (a) => a.questionId === sub.id
-                                    );
-                                    if (!existing)
-                                      return [
-                                        ...prev,
-                                        {
-                                          questionId: sub.id,
-                                          answers: [mapping as any],
-                                        },
-                                      ];
-                                    return prev.map((a) =>
-                                      a.questionId === sub.id
-                                        ? { ...a, answers: [mapping as any] }
-                                        : a
-                                    );
-                                  });
-                                }}
-                                reveal={parentRevealed}
-                                correctMapping={
-                                  (sub.correctAnswers as any) || {}
+                                return focusedOption === cumulative;
+                              })();
+
+                              const revealed = parentRevealed;
+                              const isCorrect = isTextAnswerCorrect(sub, (getCurrentAnswer(sub.id)[0] as string) || "");
+
+                              let computedClassName = "";
+                              if (isFocused) {
+                                if (revealed) {
+                                  computedClassName = isCorrect ? `${stateCorrect} ${focusCorrect}` : `${stateWrong} ${focusWrong}`;
+                                } else {
+                                  computedClassName = `${stateNormal} ${focusNormal}`;
+                                }
+                              } else {
+                                computedClassName = revealed ? (isCorrect ? stateCorrect : stateWrong) : stateNormal;
+                              }
+
+                              return (
+                                <input
+                                  type="text"
+                                  data-question-id={sub.id}
+                                  disabled={revealed}
+                                  className={`w-full p-3 rounded-lg bg-white text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white border ${computedClassName}`}
+                                  placeholder="Nhập câu trả lời của bạn"
+                                  value={
+                                    (getCurrentAnswer(sub.id)[0] ||
+                                      "") as string
+                                  }
+                                  onChange={(e) =>
+                                    handleAnswerSelect(
+                                      sub.id,
+                                      e.target.value,
+                                      "text"
+                                    )
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      if (uiMode === 'instant' && !parentRevealed) {
+                                        markRevealed(q.id);
+                                      }
+                                    }
+                                  }}
+                                />
+                              );
+                            })()}
+                            {uiMode === "instant" && parentRevealed && (
+                              <TextRevealPanel
+                                question={sub}
+                                userValue={
+                                  (getCurrentAnswer(sub.id)[0] as string) ||
+                                  ""
                                 }
                               />
                             )}
                           </div>
-                        );
-                      }
-                    )}
-                  </div>
-                )}
-            </div>
-          </div >
+                        )}
+                        {sub.type !== "text" &&
+                          sub.type !== "drag" &&
+                          Array.isArray(sub.options) && (
+                            <div className="space-y-2">
+                              {sub.options.map((opt, oidx) => {
+                                const selected = getCurrentAnswer(sub.id);
+                                const shouldReveal = isChoiceReveal(
+                                  sub,
+                                  selected,
+                                  parentRevealed
+                                );
+                                const isCorrect = (
+                                  Array.isArray(sub.correctAnswers)
+                                    ? (sub.correctAnswers as string[])
+                                    : []
+                                ).includes(opt);
+                                const isChosen = selected.includes(opt);
 
+                                // THÊM: Tính toán globalIndex để xác định focus
+                                const globalIndex = (() => {
+                                  const subs =
+                                    (q as any).subQuestions ||
+                                    [];
+                                  let cumulative = 0;
+                                  // Cộng dồn số options của các sub-question trước đó
+                                  for (let i = 0; i < idx; i++) {
+                                    const prevSub = subs[i];
+                                    cumulative +=
+                                      prevSub.type === "text"
+                                        ? 1
+                                        : Array.isArray(prevSub.options)
+                                          ? prevSub.options.length
+                                          : 0;
+                                  }
+                                  // Cộng thêm index của option hiện tại trong sub-question này
+                                  return cumulative + oidx;
+                                })();
+
+                                // THÊM: Kiểm tra xem option này có đang được focus không
+                                const isFocused =
+                                  focusedOption === globalIndex;
+
+                                return (
+                                  <QuizAnswerOption
+                                    key={oidx}
+                                    option={opt}
+                                    index={oidx}
+                                    optionImage={(sub.optionImages || {})[opt]}
+                                    selected={isChosen}
+                                    correct={isCorrect}
+                                    shouldReveal={shouldReveal}
+                                    focused={isFocused}
+                                    disabled={parentRevealed}
+                                    onSelect={() =>
+                                      handleAnswerSelect(
+                                        sub.id,
+                                        opt,
+                                        sub.type as "single" | "multiple"
+                                      )
+                                    }
+                                    onViewImage={(src: string) =>
+                                      setViewingImage(src)
+                                    }
+                                  />
+                                );
+                              })}
+                            </div>
+                          )}
+                        {sub.type === "drag" && (
+                          <DragDropQuestion
+                            key={sub.id}
+                            question={sub}
+                            value={
+                              (userAnswers.find(
+                                (a) => a.questionId === sub.id
+                              )?.answers?.[0] as any) || {}
+                            }
+                            onChange={(mapping) => {
+                              setUserAnswers((prev) => {
+                                const existing = prev.find(
+                                  (a) => a.questionId === sub.id
+                                );
+                                if (!existing)
+                                  return [
+                                    ...prev,
+                                    {
+                                      questionId: sub.id,
+                                      answers: [mapping as any],
+                                    },
+                                  ];
+                                return prev.map((a) =>
+                                  a.questionId === sub.id
+                                    ? { ...a, answers: [mapping as any] }
+                                    : a
+                                );
+                              });
+                            }}
+                            reveal={parentRevealed}
+                            correctMapping={
+                              (sub.correctAnswers as any) || {}
+                            }
+                          />
+                        )}
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            )}
+        </div>
+
+        {/* Inline Confirm Button for List Mode/Instant */}
+        {isList && showConfirm && (
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={() => markRevealed(q.id)}
+              disabled={isRevealed(q.id)}
+              className={`
+                    text-base sm:text-lg px-4 py-2 sm:px-5 sm:py-2 min-w-[110px]
+                    rounded-lg font-medium border-2
+                    border-blue-500 dark:border-blue-400
+                    bg-gray-50 dark:bg-blue-900/40
+                    text-blue-600 dark:text-blue-300
+                    hover:bg-blue-50 dark:hover:bg-blue-800/60
+                    hover:text-blue-700 dark:hover:text-blue-200
+                    hover:shadow-md hover:shadow-blue-400/25 dark:hover:shadow-blue-900/40
+                    transition-all duration-200
+                    disabled:opacity-60 disabled:cursor-not-allowed
+                  `}
+            >
+              Xác nhận
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Left Section - Main Content
+  const renderMainContent = () => (
+    <div
+      className="flex-1 min-w-0 order-2 lg:order-1 space-y-8"
+      ref={mainContentRef}
+    >
+      {displayMode === "list" ? (
+        questions.map((q, i) => renderQuestionCard(q, i, true))
+      ) : (
+        <>
+          {renderQuestionCard(currentQuestion, currentQuestionIndex, false)}
           {/* Navigation buttons */}
-          < div className="mt-4 sm:mt-6 w-full grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-stretch" >
+          <div className="mt-4 sm:mt-6 w-full grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-stretch">
             {/* Confirm (instant mode) - first row full width on mobile */}
-            {
-              uiMode === "instant" &&
+            {uiMode === "instant" &&
               (currentQuestion.type === "multiple" ||
                 currentQuestion.type === "text" ||
                 currentQuestion.type === "drag" ||
@@ -1483,8 +1583,7 @@ const QuizPage: React.FC = () => {
                 >
                   Xác nhận
                 </button>
-              )
-            }
+              )}
 
             {/* Prev - second row, left on mobile; first on desktop */}
             <button
@@ -1529,129 +1628,252 @@ const QuizPage: React.FC = () => {
                 />
               </svg>
             </button>
-          </div >
-        </div >
+          </div>
+        </>
+      )}
+    </div>
+  );
 
-        {/* Right Section - Sidebar */}
-        < div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2" >
-          <div className="card p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-4 lg:hidden">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Danh sách câu hỏi
-              </h3>
-              {/* Nút chuyển đổi chế độ cho màn hình < 1024px */}
-              <div className="minimap-toggle-wrap block lg:hidden ml-2 self-stretch h-auto md:h-auto">
-                <button
-                  onClick={() =>
-                    setUiMode((prev) =>
-                      prev === "default" ? "instant" : "default"
-                    )
-                  }
-                  className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
-                  title="Chuyển đổi định dạng"
-                >
-                  <svg
-                    className="w-3.5 h-3.5 flex-shrink-0 block leading-none"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                  >
-                    <polyline
-                      points="23 4 23 10 17 10"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <polyline
-                      points="1 20 1 14 7 14"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="font-medium text-[11px] h-[14px] leading-[14px] flex items-center">
-                    {uiMode === "instant"
-                      ? "Định dạng: Xem ngay"
-                      : "Định dạng: Mặc định"}
-                  </span>
-                </button>
-              </div>
-            </div>
-            <div
-              ref={minimapRef}
-              className="flex overflow-x-auto snap-x no-scrollbar gap-2 p-4 -m-4 lg:m-0 lg:p-0 lg:pb-0 lg:grid lg:grid-cols-5 lg:overflow-visible"
-            >
-              {questions.map((question, index) => (
-                <button
-                  key={question.id}
-                  onClick={() => {
-                    if (isExiting) return;
-                    if (index === currentQuestionIndex) return;
 
-                    if (index > currentQuestionIndex) setSlideDirection("right");
-                    else if (index < currentQuestionIndex) setSlideDirection("left");
-
-                    setIsExiting(true);
-                    setTimeout(() => {
-                      setCurrentQuestionIndex(index);
-                      setIsExiting(false);
-                      setSlideDirection("none");
-                    }, 200);
-                  }}
-                  className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center p-0 lg:p-2 rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm snap-center
-                    ${index === currentQuestionIndex
-                      ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
-                      : uiMode === "instant" && isQuestionWrong(question)
-                        ? "bg-red-600 text-white font-medium border border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
-                        : markedQuestions.includes(question.id)
-                          ? "bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20"
-                          : isQuestionAnswered(question)
-                            ? "bg-green-500 text-white font-medium border-green-500 shadow-md shadow-green-500/20 dark:text-green-400 dark:bg-green-900/20 dark:shadow-md dark:shadow-green-500/20"
-                            : "bg-gray-100 text-gray-800 border-gray-100 hover:bg-gray-200 hover:border-gray-200 hover:shadow-md hover:shadow-gray-400/15 dark:border-gray-600 dark:text-gray-400 dark:bg-gray-800 dark:hover:border-gray-500 dark:hover:shadow-md dark:hover:shadow-gray-400/20"
-                    }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
+  return (
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Top headers row: ẩn ở chế độ danh sách vì đã gom xuống minimap */}
+      {displayMode !== "list" && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,20rem] gap-4 lg:gap-8 mb-4 sm:mb-6 items-stretch">
+          {/* Left header: Title + Timer */}
+          <div className="flex h-full flex-row items-center justify-between gap-2 min-w-0">
+            <h1 className="flex-1 min-w-0 truncate text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+              {quizTitle}
+            </h1>
+            <div className="flex items-center gap-2 px-3 rounded-lg bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 w-fit h-full self-stretch shrink-0 whitespace-nowrap">
+              <FaRegClock className="w-4 h-4 shrink-0" />
+              <span className="text-sm font-share-tech-mono tabular-nums tracking-[0.15em]">
+                {formatElapsed(elapsed)}
+              </span>
             </div>
           </div>
-        </div >
-      </div >
-
-      {/* Progress bar */}
-      < div className="mt-6 sm:mt-8" >
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            Tiến độ làm bài:{" "}
-            {questions.filter((q) => isQuestionAnswered(q)).length}/
-            {questions.length} câu
-          </span>
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            {Math.round(
-              (questions.filter((q) => isQuestionAnswered(q)).length /
-                questions.length) *
-              100
+          {/* Right header: Submit button (no wrapper div) */}
+          <div className="flex w-full">
+            <button
+              onClick={handleSubmit}
+              className="btn-primary h-full w-full text-sm sm:text-base inline-flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Nộp bài</span>
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+        {renderMainContent()}
+        {/* Right Section - Sidebar */}
+        <div className={`w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2 ${displayMode === "list" ? "lg:sticky lg:top-4 self-start" : ""}`}>
+          <div className={`card p-4 sm:p-6 ${displayMode === "list" ? "lg:max-h-[calc(100vh-32px)] lg:overflow-y-auto" : ""}`}>
+            {displayMode === "list" && (
+              <div className="mb-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      {quizTitle}
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mt-1">
+                      <FaRegClock className="w-4 h-4" />
+                      <span className="font-share-tech-mono tabular-nums tracking-[0.15em]">
+                        {formatElapsed(elapsed)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSubmit}
+                    className="btn-primary h-10 px-4 text-sm inline-flex items-center gap-2 shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Nộp bài</span>
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    <span>
+                      Tiến độ: {questions.filter((q) => isQuestionAnswered(q)).length}/{questions.length} câu
+                    </span>
+                    <span>
+                      {Math.round(
+                        (questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                    <div
+                      className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${(questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             )}
-            %
-          </span>
+            <div className="flex items-center justify-between mb-3 sm:mb-4 lg:hidden">
+              <div className="flex items-center gap-2 ml-auto w-full justify-between lg:hidden h-auto">
+                <button
+                  onClick={() =>
+                    setDisplayMode((prev) => (prev === "single" ? "list" : "single"))
+                  }
+                  className="inline-flex items-center justify-center gap-1 h-full min-h-full py-1 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
+                  title="Chuyển đổi hiển thị"
+                >
+                  {displayMode === "single" ? (
+                    <FaList className="w-3.5 h-3.5" />
+                  ) : (
+                    <FaLayerGroup className="w-3.5 h-3.5" />
+                  )}
+                  <span className="font-medium text-[11px] h-[14px] leading-[14px] flex items-center">
+                    {displayMode === "single" ? "Từng câu" : "Danh sách"}
+                  </span>
+                </button>
+                {/* Nút chuyển đổi chế độ cho màn hình < 1024px */}
+                <div className="minimap-toggle-wrap block lg:hidden ml-0 self-stretch h-auto md:h-auto">
+                  <button
+                    onClick={() =>
+                      setUiMode((prev) =>
+                        prev === "default" ? "instant" : "default"
+                      )
+                    }
+                    className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
+                    title="Chuyển đổi định dạng"
+                  >
+                    <svg className="w-3.5 h-3.5 flex-shrink-0 block leading-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}> <polyline points="23 4 23 10 17 10" strokeLinecap="round" strokeLinejoin="round" /> <polyline points="1 20 1 14 7 14" strokeLinecap="round" strokeLinejoin="round" /> <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" strokeLinecap="round" strokeLinejoin="round" /> </svg>
+                    <span className="font-medium text-[11px] h-[14px] leading-[14px] flex items-center">
+                      {uiMode === "instant" ? "Định dạng: Xem ngay" : "Định dạng: Mặc định"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            {displayMode === "list" && !isLarge ? (
+              <MemoizedMobileMinimapBubble
+                questions={questions}
+                currentQuestionIndex={currentQuestionIndex}
+                onSelect={(idx: number, id: string) => {
+                  setCurrentQuestionIndex(idx);
+                  scrollToQuestion(id);
+                  setMiniBubbleOpen(false);
+                }}
+                isQuestionAnswered={isQuestionAnswered}
+                isQuestionWrong={isQuestionWrong}
+                uiMode={uiMode}
+                markedQuestions={markedQuestions}
+                bubbleOpen={miniBubbleOpen}
+                setBubbleOpen={setMiniBubbleOpen}
+                bubblePos={miniBubblePos}
+                setBubblePos={setMiniBubblePos}
+                isExiting={isExiting}
+                quizTitle={quizTitle}
+                elapsed={elapsed}
+                formatElapsed={formatElapsed}
+                handleSubmit={handleSubmit}
+              />
+            ) : (
+              <div
+                ref={minimapRef}
+                className="flex overflow-x-auto snap-x no-scrollbar gap-2 p-4 -m-4 lg:m-0 lg:p-0 lg:pb-0 lg:grid lg:grid-cols-5 lg:overflow-visible"
+              >
+                {questions.map((question, index) => (
+                  <button
+                    key={question.id}
+                    onClick={() => {
+                      if (displayMode === "list") {
+                        setCurrentQuestionIndex(index);
+                        scrollToQuestion(question.id);
+                        return;
+                      }
+                      if (isExiting) return;
+                      if (index === currentQuestionIndex) return;
+
+                      if (index > currentQuestionIndex) setSlideDirection("right");
+                      else if (index < currentQuestionIndex) setSlideDirection("left");
+
+                      setIsExiting(true);
+                      setTimeout(() => {
+                        setCurrentQuestionIndex(index);
+                        setIsExiting(false);
+                        setSlideDirection("none");
+                      }, 200);
+                    }}
+                    className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center p-0 lg:p-2 rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm snap-center
+                    ${index === currentQuestionIndex
+                        ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
+                        : uiMode === "instant" && isQuestionWrong(question)
+                          ? "bg-red-600 text-white font-medium border border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
+                          : markedQuestions.includes(question.id)
+                            ? "bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20"
+                            : isQuestionAnswered(question)
+                              ? "bg-green-500 text-white font-medium border-green-500 shadow-md shadow-green-500/20 dark:text-green-400 dark:bg-green-900/20 dark:shadow-md dark:shadow-green-500/20"
+                              : "bg-gray-100 text-gray-800 border-gray-100 hover:bg-gray-200 hover:border-gray-200 hover:shadow-md hover:shadow-gray-400/15 dark:border-gray-600 dark:text-gray-400 dark:bg-gray-800 dark:hover:border-gray-500 dark:hover:shadow-md dark:hover:shadow-gray-400/20"
+                      }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-          <div
-            className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
-            style={{
-              width: `${(questions.filter((q) => isQuestionAnswered(q)).length /
-                questions.length) *
+      </div>
+
+      {/* Progress bar - chỉ hiển thị ngoài sidebar khi không ở chế độ danh sách */}
+      {displayMode !== "list" && (
+        <div className="mt-6 sm:mt-8">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              Tiến độ làm bài: {questions.filter((q) => isQuestionAnswered(q)).length}/{questions.length} câu
+            </span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {Math.round(
+                (questions.filter((q) => isQuestionAnswered(q)).length / questions.length) *
                 100
-                }%`,
-            }}
-          ></div>
+              )}
+              %
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+            <div
+              className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
+              style={{
+                width: `${(questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100}%`,
+              }}
+            ></div>
+          </div>
         </div>
-      </div >
+      )}
       {/* Floating switch mode button for >=1024px - chỉ render khi viewport >= 1024px */}
+      {
+        isLarge && (
+          <button
+            onClick={() =>
+              setDisplayMode((prev) => (prev === "single" ? "list" : "single"))
+            }
+            className="hidden lg:flex fixed bottom-36 right-6 z-40 items-center gap-2 px-4 py-2 rounded-full shadow-lg border transition-all duration-200 bg-white/90 dark:bg-gray-800/80 backdrop-blur border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800"
+            title="Chuyển đổi hiển thị"
+          >
+            {displayMode === "single" ? (
+              <FaList className="w-4 h-4" />
+            ) : (
+              <FaLayerGroup className="w-4 h-4" />
+            )}
+            <span className="font-medium text-sm">
+              {displayMode === "single"
+                ? "Chế độ: Từng câu"
+                : "Chế độ: Danh sách"}
+            </span>
+          </button>
+        )
+      }
       {
         isLarge && (
           <button
@@ -2008,9 +2230,322 @@ const QuizPage: React.FC = () => {
           />
         )
       }
+      {/* Nút nộp cho chế độ danh sách (hiển thị cuối trang, không cố định viewport) */}
+      {displayMode === "list" && (
+        <div className="lg:hidden mt-8">
+          <button
+            onClick={handleSubmit}
+            className="btn-primary w-full shadow-lg text-base sm:text-lg flex items-center justify-center gap-2 py-3"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Nộp bài
+          </button>
+        </div>
+      )}
     </div >
   );
 };
+
+// Minimap dạng bong bóng cho chế độ danh sách trên mobile
+function MobileMinimapBubble({
+  questions,
+  currentQuestionIndex,
+  onSelect,
+  isQuestionAnswered,
+  isQuestionWrong,
+  uiMode,
+  markedQuestions,
+  bubbleOpen,
+  setBubbleOpen,
+  bubblePos,
+  setBubblePos,
+  isExiting,
+  quizTitle,
+  elapsed,
+  formatElapsed,
+  handleSubmit,
+}: {
+  questions: Question[];
+  currentQuestionIndex: number;
+  onSelect: (idx: number, id: string) => void;
+  isQuestionAnswered: (q: Question) => boolean;
+  isQuestionWrong: (q: Question) => boolean;
+  uiMode: "default" | "instant";
+  markedQuestions: string[];
+  bubbleOpen: boolean;
+  setBubbleOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  bubblePos: { x: number; y: number };
+  setBubblePos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
+  isExiting: boolean;
+  quizTitle: string;
+  elapsed: number;
+  formatElapsed: (sec: number) => string;
+  handleSubmit: () => void;
+}) {
+  const bubbleRef = React.useRef<HTMLButtonElement>(null);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const pendingPosRef = React.useRef<{ x: number; y: number } | null>(null);
+
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  // Viewport dimensions
+  const [vw, setVw] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 390));
+  const [vh, setVh] = useState(() => (typeof window !== 'undefined' ? window.innerHeight : 800));
+  const isMobile = vw < 1024;
+
+  useEffect(() => {
+    const onResize = () => {
+      setVw(window.innerWidth);
+      setVh(window.innerHeight);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const btnSize = 56;
+  const panelWidth = Math.min(vw - 24, 460);
+  const panelHeight = Math.min(vh - 80, 800); // Expand to nearly fill viewport
+  const gap = 12;
+
+  // Clamp button position when viewport changes
+  useEffect(() => {
+    setBubblePos(p => ({
+      x: clamp(p.x, 8, vw - btnSize - 8),
+      y: clamp(p.y, 8, vh - btnSize - 8)
+    }));
+  }, [vw, vh, btnSize]);
+
+  // Sync transform during drag to prevent double bubble on re-render
+  useEffect(() => {
+    if (bubbleRef.current && pendingPosRef.current) {
+      const { x, y } = pendingPosRef.current;
+      bubbleRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    }
+  });
+
+  // Panel positioning (similar to ChatBox)
+  const getPanelPos = () => {
+    if (isMobile) {
+      return { x: (vw - panelWidth) / 2, y: 40 };
+    }
+
+    // Desktop: position panel relative to button
+    let panelX = bubblePos.x - panelWidth - gap;
+    // Flip if overflow
+    if (panelX < 8) {
+      panelX = bubblePos.x + btnSize + gap;
+    }
+    if (panelX + panelWidth > vw - 8) {
+      panelX = vw - panelWidth - 8;
+    }
+
+    let panelY = bubblePos.y;
+    panelY = clamp(panelY, 8, vh - panelHeight - 8);
+
+    return { x: panelX, y: panelY };
+  };
+
+  // Drag logic (matching ChatBox exactly)
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPos = { ...bubblePos };
+    let moved = false;
+    let frameQueued = false;
+    let nextX = startPos.x;
+    let nextY = startPos.y;
+
+    setIsDragging(true);
+
+    const applyTransform = () => {
+      frameQueued = false;
+      pendingPosRef.current = { x: nextX, y: nextY };
+      if (bubbleRef.current) {
+        bubbleRef.current.style.transform = `translate3d(${nextX}px, ${nextY}px, 0)`;
+      }
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      if (!moved && Math.hypot(dx, dy) > 3) moved = true;
+      nextX = clamp(startPos.x + dx, 8, vw - btnSize - 8);
+      nextY = clamp(startPos.y + dy, 8, vh - btnSize - 8);
+      if (!frameQueued) {
+        frameQueued = true;
+        requestAnimationFrame(applyTransform);
+      }
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      setIsDragging(false);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      const latest = pendingPosRef.current ?? startPos;
+      pendingPosRef.current = null;
+      if (moved) {
+        setBubblePos(latest);
+      } else {
+        // Click without drag: toggle
+        setBubbleOpen((prev: boolean) => !prev);
+      }
+    };
+
+    try { (e.currentTarget as any).setPointerCapture?.(e.pointerId); } catch { }
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerup", onUp, { passive: true });
+    window.addEventListener("pointercancel", onUp, { passive: true });
+  };
+
+  const panelPos = getPanelPos();
+
+  const content = (
+    <>
+      {/* Backdrop (for both mobile and desktop to prevent click-through) */}
+      {bubbleOpen && (
+        <div
+          className={`fixed inset-0 ${isMobile ? 'bg-black/30 backdrop-blur-sm' : 'bg-black/5'}`}
+          style={{ zIndex: 9997 }}
+          onClick={() => setBubbleOpen(false)}
+        />
+      )}
+
+      {/* Floating button (matching ChatBox z-index: 9999) */}
+      <button
+        ref={bubbleRef}
+        onPointerDown={handlePointerDown}
+        className={`flex items-center justify-center rounded-full shadow-2xl bg-gradient-to-br from-primary-500 to-primary-700 text-white ${isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab hover:scale-110 transition-all'
+          } ${bubbleOpen ? 'opacity-0 pointer-events-none' : ''}`}
+        aria-label="Mở minimap"
+        style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          width: `${btnSize}px`,
+          height: `${btnSize}px`,
+          transform: `translate3d(${bubblePos.x}px, ${bubblePos.y}px, 0)`,
+          zIndex: 9999,
+          touchAction: 'none',
+          userSelect: 'none',
+          willChange: 'transform'
+        }}
+      >
+        <FaLayerGroup className="w-6 h-6" />
+      </button>
+
+      {/* Panel (matching ChatBox z-index: 9998) */}
+      <div
+        ref={panelRef}
+        className={`card p-4 sm:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col ${bubbleOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          width: `${panelWidth}px`,
+          height: `${panelHeight}px`,
+          transform: `translate3d(${panelPos.x}px, ${panelPos.y}px, 0) ${bubbleOpen ? '' : 'scale(0.95)'}`,
+          transition: isDragging ? 'none' : 'opacity 200ms ease-in-out, transform 200ms ease-in-out',
+          zIndex: 9998,
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        {/* Header: Quiz Title + Close */}
+        <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+          <div className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate flex-1 mr-2">{quizTitle}</div>
+          <button
+            onClick={() => setBubbleOpen(false)}
+            className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100 flex-shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Stats: Timer + Progress */}
+        <div className="mb-3 space-y-2">
+          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <FaRegClock className="w-3.5 h-3.5" />
+              <span className="font-share-tech-mono">{formatElapsed(elapsed)}</span>
+            </div>
+            <div>
+              <span className="font-medium">{questions.filter(isQuestionAnswered).length}</span>
+              <span className="text-gray-500 dark:text-gray-500">/</span>
+              <span>{questions.length}</span>
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div
+              className="bg-primary-600 h-1.5 rounded-full transition-all duration-300"
+              style={{
+                width: `${(questions.filter(isQuestionAnswered).length / questions.length) * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Question Grid with custom thin scrollbar */}
+        <div
+          className="grid gap-2 overflow-y-auto custom-thin-scrollbar flex-1 mb-3"
+          style={{
+            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+          }}
+        >
+          {questions.map((question, index) => (
+            <button
+              key={question.id}
+              onClick={() => {
+                if (isExiting) return;
+                onSelect(index, question.id);
+              }}
+              className={`w-full h-10 flex items-center justify-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm
+                  ${index === currentQuestionIndex
+                  ? "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 dark:text-primary-400 dark:bg-primary-900/20 dark:shadow-lg dark:shadow-primary-500/25"
+                  : uiMode === "instant" && isQuestionWrong(question)
+                    ? "bg-red-600 text-white font-medium border border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
+                    : markedQuestions.includes(question.id)
+                      ? "bg-yellow-500 text-white font-medium border-yellow-500 shadow-md shadow-yellow-500/20 dark:text-yellow-400 dark:bg-yellow-900/20 dark:shadow-md dark:shadow-yellow-500/20"
+                      : isQuestionAnswered(question)
+                        ? "bg-green-500 text-white font-medium border-green-500 shadow-md shadow-green-500/20 dark:text-green-400 dark:bg-green-900/20 dark:shadow-md dark:shadow-green-500/20"
+                        : "bg-gray-100 text-gray-800 border-gray-100 hover:bg-gray-200 hover:border-gray-200 hover:shadow-md hover:shadow-gray-400/15 dark:border-gray-600 dark:text-gray-400 dark:bg-gray-800 dark:hover:border-gray-500 dark:hover:shadow-md dark:hover:shadow-gray-400/20"
+                }`}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+
+        {/* Footer: Submit Button */}
+        <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={handleSubmit}
+            className="w-full btn-primary flex items-center justify-center gap-2 py-2.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Nộp bài
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
+  return createPortal(content, document.body);
+}
+
+// Wrap with React.memo to prevent unnecessary re-renders that cause double bubbles
+const MemoizedMobileMinimapBubble = React.memo(MobileMinimapBubble);
 
 const TextRevealPanel: React.FC<{ question: Question; userValue: string }> = ({
   question,
