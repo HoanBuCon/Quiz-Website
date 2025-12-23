@@ -13,7 +13,7 @@ const QuizResumer: React.FC = () => {
 
     useEffect(() => {
         // Avoid showing if already on the relevant pages
-        if (location.pathname.startsWith("/quiz/") || location.pathname.startsWith("/edit-quiz")) {
+        if (location.pathname.startsWith("/quiz/") || location.pathname.startsWith("/edit-quiz") || location.pathname.startsWith("/results/")) {
             setShowModal(false);
             return;
         }

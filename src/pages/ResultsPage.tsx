@@ -60,6 +60,11 @@ const ResultsPage: React.FC = () => {
     };
   }, [computeScrollState]);
 
+  // Clean up any lingering quiz progress
+  useEffect(() => {
+    localStorage.removeItem("quiz_progress");
+  }, []);
+
   // Recompute after content loads so the bottom button appears immediately
   useEffect(() => {
     if (loading) return;
@@ -393,9 +398,9 @@ const ResultsPage: React.FC = () => {
       </div>
 
       {/* Layout 2 cột: Trái = kết quả, Phải = minimap */}
-      <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Trái: kết quả chi tiết */}
-        <div className="flex-1 min-w-0 order-2 xl:order-1">
+        <div className="flex-1 min-w-0 order-2 lg:order-1">
           {/* Chi tiết từng câu hỏi */}
           <div className="space-y-6">
             {displayQuestions.map((q: any, qIndex: number) => {
@@ -935,14 +940,9 @@ const ResultsPage: React.FC = () => {
         </div>
 
         {/* Phải: minimap */}
-        <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2 lg:self-start lg:sticky lg:top-24">
+        <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2 lg:self-start sticky top-20 xl:top-4 z-30">
           <div className="card p-4 sm:p-6 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Danh sách câu hỏi
-              </h3>
-            </div>
-            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-1 sm:gap-2">
+            <div className="flex overflow-x-auto snap-x no-scrollbar gap-2 p-4 -m-4 lg:m-0 lg:p-0 lg:grid lg:grid-cols-5 lg:gap-2">
               {displayQuestions.map((q: any, index: number) => {
                 const wrong = isQuestionWrongForResult(q);
                 return (
@@ -960,7 +960,7 @@ const ResultsPage: React.FC = () => {
                         });
                       }
                     }}
-                    className={`p-1 sm:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm ${wrong
+                    className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center snap-center p-0 lg:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm ${wrong
                       ? "bg-red-600 text-white font-medium border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
                       : "bg-green-500 text-white font-medium border-green-500 shadow-md shadow-green-500/20 dark:text-green-400 dark:bg-green-900/20 dark:shadow-md dark:shadow-green-500/20"
                       }`}
