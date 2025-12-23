@@ -18,6 +18,7 @@ import ImageModal from "../components/ImageModal";
 
 // Component trang làm bài trắc nghiệm
 const QUIZ_PROGRESS_KEY = "quiz_progress";
+const QUIZ_VIEW_MODE_KEY = "quiz_view_mode_pref";
 
 const QuizPage: React.FC = () => {
   const { quizId } = useParams<{ quizId: string }>();
@@ -44,7 +45,13 @@ const QuizPage: React.FC = () => {
   // Shuffle mode: null (chưa chọn) | 'none' (không trộn) | 'random' (trộn ngẫu nhiên)
   const [shuffleMode, setShuffleMode] = useState<null | "none" | "random">(null);
   // Display mode: 'single' (từng câu) | 'list' (danh sách)
-  const [displayMode, setDisplayMode] = useState<"single" | "list">("single");
+  const [displayMode, setDisplayMode] = useState<"single" | "list">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(QUIZ_VIEW_MODE_KEY);
+      return (saved === "single" || saved === "list") ? saved : "single";
+    }
+    return "single";
+  });
   // Theo dõi xem người dùng đã chọn ui mode chưa
   const [selectedUiMode, setSelectedUiMode] = useState<"default" | "instant" | null>(null);
   // State để chặn auto-save khi đang nộp bài
@@ -228,7 +235,7 @@ const QuizPage: React.FC = () => {
                 setAttemptId(saved.attemptId);
                 setUiMode(saved.uiMode || "default");
                 setShuffleMode(saved.shuffleMode || null);
-                setDisplayMode(saved.displayMode || "single");
+                // displayMode is now managed globally via QUIZ_VIEW_MODE_KEY
                 setSelectedUiMode(saved.selectedUiMode || null);
                 if (saved.revealed) {
                   setRevealed(new Set(saved.revealed));
@@ -487,6 +494,11 @@ const QuizPage: React.FC = () => {
       setShowModeChooser(true);
     }
   }, [loading, questions.length]);
+
+  // Persist displayMode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(QUIZ_VIEW_MODE_KEY, displayMode);
+  }, [displayMode]);
 
   // Lắng nghe thay đổi kích thước màn hình để quyết định có render floating toggle hay không
   useEffect(() => {
@@ -1939,6 +1951,7 @@ const QuizPage: React.FC = () => {
             </div>
             {displayMode === "list" && !isLarge ? (
               <MemoizedMobileMinimapBubble
+                key="mobile-minimap-bubble"
                 questions={questions}
                 currentQuestionIndex={currentQuestionIndex}
                 onSelect={(idx: number, id: string) => {
@@ -2538,14 +2551,6 @@ function MobileMinimapBubble({
   const panelHeight = Math.min(vh - 80, 800); // Expand to nearly fill viewport
   const gap = 12;
 
-  // Clamp button position when viewport changes
-  useEffect(() => {
-    setBubblePos(p => ({
-      x: clamp(p.x, 8, vw - btnSize - 8),
-      y: clamp(p.y, 8, vh - btnSize - 8)
-    }));
-  }, [vw, vh, btnSize]);
-
   // Sync transform during drag to prevent double bubble on re-render
   useEffect(() => {
     if (bubbleRef.current && pendingPosRef.current) {
@@ -2678,7 +2683,7 @@ function MobileMinimapBubble({
           left: 0,
           top: 0,
           width: `${panelWidth}px`,
-          height: `${panelHeight}px`,
+          maxHeight: `${panelHeight}px`,
           transform: `translate3d(${panelPos.x}px, ${panelPos.y}px, 0) ${bubbleOpen ? '' : 'scale(0.95)'}`,
           transition: isDragging ? 'none' : 'opacity 200ms ease-in-out, transform 200ms ease-in-out',
           zIndex: 9998,
@@ -2750,7 +2755,7 @@ function MobileMinimapBubble({
 
         {/* Question Grid with custom thin scrollbar */}
         <div
-          className="grid gap-2 overflow-y-auto custom-thin-scrollbar flex-1 mb-3"
+          className="grid gap-2 overflow-y-auto custom-thin-scrollbar flex-1 mb-3 content-start"
           style={{
             gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
           }}
