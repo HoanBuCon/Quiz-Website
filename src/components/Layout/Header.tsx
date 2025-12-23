@@ -224,8 +224,8 @@ const Header: React.FC = () => {
               <div
                 className={`absolute top-0 bottom-0 rounded-lg transition-all duration-500 ease-out z-0
                   ${isDarkMode
-                    ? "bg-gradient-to-r from-primary-900/40 to-primary-700/40"
-                    : "bg-transparent" /* để light mode giữ màu nền nút cũ (tránh đè màu) */
+                    ? "bg-gradient-to-r from-primary-900/50 to-primary-800/50 border-l-[3px] border-blue-500 shadow-sm shadow-primary-700/20"
+                    : "bg-gradient-to-r from-white/85 via-blue-100/95 to-blue-50/95 border-l-[3px] border-blue-600 shadow-md"
                   }
                 `}
                 style={highlightStyle}
@@ -245,9 +245,9 @@ const Header: React.FC = () => {
                       border border-transparent outline-none ring-0 focus:outline-none focus:ring-0
                       transition-colors transition-shadow duration-300 ease-out overflow-hidden
                       ${active
-                        ? `${isDarkMode
-                          ? "bg-gradient-to-r from-primary-900/50 to-primary-800/50 text-primary-300 shadow-sm border border-primary-700/30 shadow-primary-700/20"
-                          : "header-nav-active border-0 shadow-md" /* KHÔI PHỤC màu lightmode cũ */
+                        ? `nav-item-active ${isDarkMode
+                          ? "text-primary-300"
+                          : "text-blue-800"
                         }`
                         : "text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0"
                       }`}
