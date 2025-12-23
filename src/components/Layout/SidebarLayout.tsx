@@ -11,44 +11,52 @@ interface SidebarLayoutProps {
 }
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, noPadding = false }) => {
-    // State to track if height is small (< 600px)
-    const [isSmallHeight, setIsSmallHeight] = useState(false);
+    // Combined state to track layout mode
+    // Desktop Layout active if Width >= 1280px AND Height >= 620px
+    const [isDesktopMode, setIsDesktopMode] = useState<boolean>(() => {
+        if (typeof window !== "undefined") {
+            return window.innerWidth >= 1280 && window.innerHeight >= 620;
+        }
+        return false;
+    });
 
     useEffect(() => {
-        const checkHeight = () => {
-            setIsSmallHeight(window.innerHeight < 620);
+        const checkLayout = () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            setIsDesktopMode(width >= 1280 && height >= 620);
         };
 
         // Check initially
-        checkHeight();
+        checkLayout();
 
         // Listen for resize
-        window.addEventListener('resize', checkHeight);
-        return () => window.removeEventListener('resize', checkHeight);
+        window.addEventListener('resize', checkLayout);
+        return () => window.removeEventListener('resize', checkLayout);
     }, []);
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans">
-            {/* Mobile/Tablet Layout (< 1280px OR Height < 600px) - Uses Old Header/Footer */}
-            {/* If isSmallHeight is true, we force this block to show by removing xl:hidden (making it flex always) */}
-            <div className={`${isSmallHeight ? 'flex' : 'xl:hidden flex'} flex-col min-h-screen`}>
-                <Header />
-                <main className="flex-1 pt-16">
-                    {children}
-                </main>
-                <Footer />
-            </div>
-
-            {/* Desktop Layout (>= 1280px AND Height >= 600px) - App-like Layout */}
-            {/* If isSmallHeight is true, we force this block to hide regardless of width */}
-            <div className={`${isSmallHeight ? 'hidden' : 'hidden xl:flex'} h-screen overflow-hidden`}>
-                <Sidebar />
-                <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
-                    <div className={`flex-1 overflow-y-auto ${noPadding ? '' : 'p-8'} custom-scrollbar`}>
+            {!isDesktopMode ? (
+                /* Mobile/Tablet Layout */
+                <div className="flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-1 pt-16">
                         {children}
-                    </div>
-                </main>
-            </div>
+                    </main>
+                    <Footer />
+                </div>
+            ) : (
+                /* Desktop Layout */
+                <div className="flex h-screen overflow-hidden">
+                    <Sidebar />
+                    <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-gray-50 dark:bg-gray-900">
+                        <div className={`flex-1 overflow-y-auto ${noPadding ? '' : 'p-8'} custom-scrollbar`}>
+                            {children}
+                        </div>
+                    </main>
+                </div>
+            )}
 
             {/* Global Components */}
             <ChatBox hideOnDesktop={true} />
