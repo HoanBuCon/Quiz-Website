@@ -136,12 +136,14 @@ const QuizAnswerOption: React.FC<QuizAnswerOptionProps> = ({
 
     return (
         <button
-            disabled={disabled}
-            onClick={onSelect}
+            aria-disabled={disabled}
+            onClick={(e) => {
+                if (!disabled) onSelect();
+            }}
             onKeyDown={(e) => {
                 if (e.key === "Enter") e.preventDefault();
             }}
-            className={`allow-selection group/answer ${base} ${computedClassName} flex ${layoutMode === "row" ? "flex-col sm:flex-row sm:flex-wrap !items-start" : "flex-col"
+            className={`allow-selection group/answer ${base.replace('disabled:cursor-not-allowed', '')} ${disabled ? 'cursor-not-allowed' : ''} ${computedClassName} flex ${layoutMode === "row" ? "flex-col sm:flex-row sm:flex-wrap !items-start" : "flex-col"
                 } gap-3`}
         >
             <div className={`flex flex-col gap-3 ${layoutMode === "row" ? "w-full sm:flex-1 sm:min-w-[55%]" : "w-full text-left"}`}>
