@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { Quiz, Question } from "../types";
 import MathText from "../components/MathText";
+import ImageModal from "../components/ImageModal";
 
 interface QuizResult {
   quizId: string;
@@ -27,6 +28,7 @@ const ResultsPage: React.FC = () => {
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(false);
   const [canScroll, setCanScroll] = useState(true);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   // Shared measurement function to avoid duplication
   const computeScrollState = useCallback(() => {
@@ -427,7 +429,8 @@ const ResultsPage: React.FC = () => {
                         <img
                           src={q.questionImage}
                           alt="Question"
-                          className="max-w-full max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 mb-4"
+                          className="max-w-full max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 mb-4 cursor-zoom-in"
+                          onClick={() => setViewingImage(q.questionImage!)}
                         />
                       )}
                     </div>
@@ -473,7 +476,8 @@ const ResultsPage: React.FC = () => {
                                 <img
                                   src={subQ.questionImage}
                                   alt="Question"
-                                  className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                                  className="max-w-full max-h-48 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-zoom-in"
+                                  onClick={() => setViewingImage(subQ.questionImage!)}
                                 />
                               </div>
                             )}
@@ -572,7 +576,8 @@ const ResultsPage: React.FC = () => {
                                               <img
                                                 src={subQ.optionImages[option]}
                                                 alt={`Option ${String.fromCharCode(65 + optIndex)}`}
-                                                className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                                                className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-zoom-in"
+                                                onClick={() => setViewingImage(subQ.optionImages![option])}
                                               />
                                             </div>
                                           )}
@@ -636,7 +641,8 @@ const ResultsPage: React.FC = () => {
                       <img
                         src={(q as any).questionImage}
                         alt="Question"
-                        className="max-w-full max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                        className="max-w-full max-h-64 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-zoom-in"
+                        onClick={() => setViewingImage((q as any).questionImage!)}
                       />
                     </div>
                   )}
@@ -758,7 +764,8 @@ const ResultsPage: React.FC = () => {
                                         <img
                                           src={(q as any).optionImages[item.label]}
                                           alt={`Item ${item.label}`}
-                                          className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                                          className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-zoom-in"
+                                          onClick={() => setViewingImage((q as any).optionImages[item.label])}
                                         />
                                       </div>
                                     )}
@@ -877,7 +884,8 @@ const ResultsPage: React.FC = () => {
                                     <img
                                       src={(q as any).optionImages[option]}
                                       alt={`Option ${String.fromCharCode(65 + optionIndex)}`}
-                                      className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600"
+                                      className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-zoom-in"
+                                      onClick={() => setViewingImage((q as any).optionImages[option])}
                                     />
                                   </div>
                                 )}
@@ -947,6 +955,7 @@ const ResultsPage: React.FC = () => {
                 const wrong = isQuestionWrongForResult(q);
                 return (
                   <button
+                    type="button"
                     key={q.id}
                     onClick={() => {
                       const el = document.getElementById(`q-${q.id}`);
@@ -960,7 +969,7 @@ const ResultsPage: React.FC = () => {
                         });
                       }
                     }}
-                    className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center snap-center p-0 lg:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm ${wrong
+                    className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center snap-center p-0 lg:p-2 text-center rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm cursor-pointer ${wrong
                       ? "bg-red-600 text-white font-medium border-transparent shadow-md shadow-red-600/20 dark:bg-red-900/40 dark:text-red-400 dark:border-red-500"
                       : "bg-green-500 text-white font-medium border-green-500 shadow-md shadow-green-500/20 dark:text-green-400 dark:bg-green-900/20 dark:shadow-md dark:shadow-green-500/20"
                       }`}
@@ -975,6 +984,15 @@ const ResultsPage: React.FC = () => {
       </div>
 
       {/* Floating scroll buttons */}
+      {/* Image viewer modal */}
+      {viewingImage && (
+        <ImageModal
+          imageUrl={viewingImage}
+          isOpen={!!viewingImage}
+          onClose={() => setViewingImage(null)}
+        />
+      )}
+
       {canScroll && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-40">
           {!atTop && !atBottom && (
