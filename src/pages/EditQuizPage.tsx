@@ -727,13 +727,13 @@ const EditQuizPage: React.FC = () => {
     questionId: string;
     optionText?: string;
   }) => {
-    console.log('handleRemoveImageFromSource called with:', source);
+    // console.log('handleRemoveImageFromSource called with:', source);
 
     // ATOMIC UPDATE: Remove image from questions and update content together
     setQuestions(prev => {
-      console.log('Current questions count:', prev.length);
+      // console.log('Current questions count:', prev.length);
       const foundQuestion = prev.find(q => q.id === source.questionId);
-      console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
+      // console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
 
       const updated = prev.map(q => {
         if (q.id !== source.questionId) return q;
@@ -747,7 +747,7 @@ const EditQuizPage: React.FC = () => {
 
         if (source.sourceType === 'question') {
           // Remove question image
-          console.log('Removing question image from question:', q.id);
+          // console.log('Removing question image from question:', q.id);
           updatedQ.questionImage = undefined;
           updatedQ.questionImageId = undefined;
 
@@ -757,7 +757,7 @@ const EditQuizPage: React.FC = () => {
           }
         } else if (source.sourceType === 'option' && source.optionText) {
           // Remove option image
-          console.log('Removing option image:', source.optionText, 'from question:', q.id);
+          // console.log('Removing option image:', source.optionText, 'from question:', q.id);
           const newOptionImages = { ...updatedQ.optionImages };
           const newOptionImageIds = { ...updatedQ.optionImageIds };
           delete newOptionImages[source.optionText];
@@ -779,7 +779,7 @@ const EditQuizPage: React.FC = () => {
           editedQuestionsMapRef.current.set(q.id, cachedUpdated);
         }
 
-        console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
+        // console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
         return updatedQ;
       });
 
@@ -923,11 +923,11 @@ const EditQuizPage: React.FC = () => {
       const allImages = { ...initialMap, ...prev.pastedImagesMap };
 
       // log debug to investigate why images aren't returning
-      console.log("DEBUG: handlePreviewEdit Check", {
-        totalImagesInMap: Object.keys(allImages).length,
-        idsInContent: Array.from(imageIdsInContent),
-        sampleMapKeys: Object.keys(allImages).slice(0, 5)
-      });
+      // console.log("DEBUG: handlePreviewEdit Check", {
+      //   totalImagesInMap: Object.keys(allImages).length,
+      //   idsInContent: Array.from(imageIdsInContent),
+      //   sampleMapKeys: Object.keys(allImages).slice(0, 5)
+      // });
 
       // 1. Identify all "Used IDs"
       // Since we now enforce Unique IDs for every image instance, we just check ID presence.
@@ -944,10 +944,10 @@ const EditQuizPage: React.FC = () => {
         newUnassigned.push({ id, data });
       });
 
-      console.log("DEBUG: Auto-Restore Result (ID-Based)", {
-        usedIdsCount: usedIds.size,
-        newUnassignedCount: newUnassigned.length
-      });
+      // console.log("DEBUG: Auto-Restore Result (ID-Based)", {
+      //   usedIdsCount: usedIds.size,
+      //   newUnassignedCount: newUnassigned.length
+      // });
 
       return {
         ...prev,
@@ -979,11 +979,11 @@ const EditQuizPage: React.FC = () => {
       const allImages = { ...initialMap, ...prev.pastedImagesMap };
       const newUnassigned: import('../types').ExtractedImage[] = [];
 
-      console.log("DEBUG: syncUnassignedFromContent", {
-        foundIds: Array.from(usedIds),
-        mapKeys: Object.keys(allImages).length,
-        sampleMapKey: Object.keys(allImages)[0]
-      });
+      // console.log("DEBUG: syncUnassignedFromContent", {
+      //   foundIds: Array.from(usedIds),
+      //   mapKeys: Object.keys(allImages).length,
+      //   sampleMapKey: Object.keys(allImages)[0]
+      // });
 
       Object.entries(allImages).forEach(([id, data]) => {
         if (!usedIds.has(id)) {
@@ -2931,7 +2931,7 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      console.log("Edited question before save:", editedQuestion); // Debug log
+      // console.log("Edited question before save:", editedQuestion); // Debug log
 
       if (editedQuestion.type === "text") {
         // Đối với câu hỏi text, đảm bảo có ít nhất một đáp án đúng
@@ -2949,7 +2949,7 @@ const EditQuizPage: React.FC = () => {
           correctAnswers: validAnswers, // Chỉ lưu các đáp án có nội dung
         };
 
-        console.log("Saving text question with data:", updatedData); // Debug log
+        // console.log("Saving text question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       } else if (editedQuestion.type === "drag") {
@@ -3046,7 +3046,7 @@ const EditQuizPage: React.FC = () => {
           subQuestions: subQuestions,
         };
 
-        console.log("Saving composite question with data:", updatedData); // Debug log
+        // console.log("Saving composite question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       } else {
@@ -3077,7 +3077,7 @@ const EditQuizPage: React.FC = () => {
           correctAnswers: filteredCorrectAnswers,
         };
 
-        console.log("Saving multiple choice question with data:", updatedData); // Debug log
+        // console.log("Saving multiple choice question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       }
@@ -3416,7 +3416,7 @@ const EditQuizPage: React.FC = () => {
                                 const reader = new FileReader();
                                 reader.onload = (e) => {
                                   const result = e.target?.result as string;
-                              handleQuestionImageUpload(result);
+                                  handleQuestionImageUpload(result);
                                   toast.success("Đã dán ảnh từ clipboard!");
                                 };
                                 reader.readAsDataURL(blob);
@@ -4746,7 +4746,7 @@ const EditQuizPage: React.FC = () => {
               optionImageIds: newOptionImageIds
             };
 
-          handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
+            handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
             toast.success("Đã di chuyển ảnh!");
             return;
           }
@@ -4818,7 +4818,7 @@ const EditQuizPage: React.FC = () => {
         }
       }
 
-          handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
+      handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
       toast.success("Đã cập nhật ảnh!");
     };
 
@@ -5011,10 +5011,10 @@ const EditQuizPage: React.FC = () => {
                     setPreviewContent(prev => prev.replace(new RegExp(imageTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''));
                   }
                   handleRestoreToGallery(question.questionImage!, question.questionImageId);
-          handleQuestionSave(question.id, {
+                  handleQuestionSave(question.id, {
                     questionImage: undefined,
                     questionImageId: undefined
-          }, { exitEditMode: false });
+                  }, { exitEditMode: false });
                 }}
                 className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-lg z-10"
                 title="Gỡ ảnh về kho"

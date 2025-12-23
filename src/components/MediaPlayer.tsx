@@ -88,10 +88,10 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const [isVolumeOpen, setIsVolumeOpen] = useState(false);
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
   // Nếu được truyền displayTracks/displayIndices thì dùng để hiển thị dropdown theo hàng đợi
-  
+
   // Playlist props (optional): playlists, selectedPlaylistIndex, onChangePlaylist
   // Nếu không truyền, component vẫn hoạt động bình thường với tracks hiện tại
-  
+
   // Helper function để lấy track name chính xác
   const getCurrentTrackName = (trackIndex = currentTrackIndex) => {
     return tracks[trackIndex]?.name || currentTrack?.name || 'Unknown Track';
@@ -122,27 +122,27 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     // Ngăn event bubbling
     e.stopPropagation();
     e.preventDefault();
-    
+
     if (!audioRef.current) return;
-    
+
     if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-        showToast("Paused", <FaPause style={{ color: "#f39c12" }} />);
+      audioRef.current.pause();
+      setIsPlaying(false);
+      showToast("Paused", <FaPause style={{ color: "#f39c12" }} />);
     } else {
-        audioRef.current.play().then(() => {
+      audioRef.current.play().then(() => {
         setIsPlaying(true);
         setIsStopped(false);
         // Sử dụng trực tiếp currentTrack.name thay vì getCurrentTrackName()
         showToast(`Playing: ${currentTrack?.name || tracks[currentTrackIndex]?.name || 'Unknown Track'}`, <FaPlay style={{ color: "#27ae60" }} />);
-        }).catch(console.error);
+      }).catch(console.error);
     }
   };
 
   const stop = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     if (!audioRef.current) return;
     audioRef.current.pause();
     audioRef.current.currentTime = 0;
@@ -150,7 +150,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     setIsStopped(true);
     setShowPlayerBox(false);
     // Đồng bộ tắt nút Music trên Header
-    try { setShowMusicPlayer(false); } catch {}
+    try { setShowMusicPlayer(false); } catch { }
     showToast("Stopped", <FaStop style={{ color: "#e74c3c" }} />);
   };
 
@@ -158,42 +158,42 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     if (!audioRef.current || isChangingTrack) return;
 
     setIsChangingTrack(true);
-    
+
     try {
-      console.log('Local change track to:', tracks[index].name);
-      
+      // console.log('Local change track to:', tracks[index].name);
+
       // Dừng audio hiện tại
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      
+
       // Đợi một chút
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Cập nhật track index trước
       setCurrentTrackIndex(index);
-      
+
       // Thiết lập source mới
       audioRef.current.src = tracks[index].src;
-      
+
       // Load và play
       audioRef.current.load();
-      
+
       // Đảm bảo autoplay
       const playPromise = audioRef.current.play();
-      
+
       if (playPromise !== undefined) {
         await playPromise;
-        console.log('Track played successfully');
-        
+        // console.log('Track played successfully');
+
         setIsPlaying(true);
         setIsStopped(false);
         // Sử dụng trực tiếp tên track từ tracks[index] thay vì getCurrentTrackName
         showToast(`Playing: ${tracks[index]?.name || 'Unknown Track'}`, <FaPlay style={{ color: "#27ae60" }} />);
       }
-      
+
     } catch (error) {
       console.error("Failed to change track:", error);
-      
+
       // Retry mechanism
       setTimeout(async () => {
         try {
@@ -216,9 +216,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const next = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     if (isChangingTrack) return;
-    
+
     if (isRandom) {
       if (changeTrackFromParent) {
         changeTrackFromParent(undefined, false, 'next');
@@ -239,9 +239,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const prev = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     if (isChangingTrack) return;
-    
+
     if (isRandom) {
       if (changeTrackFromParent) {
         changeTrackFromParent(undefined, false, 'prev');
@@ -262,7 +262,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const toggleRandom = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     setIsRandom((prev) => !prev);
     showToast(!isRandom ? "Random ON" : "Random OFF", <FaRandom />);
   };
@@ -270,28 +270,28 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const handleLoopModeChange = (mode: LoopMode, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     setLoopMode(mode);
     setShowLoopOptions(false);
-    
+
     // Cập nhật thuộc tính loop của audio element
     if (audioRef.current) {
       audioRef.current.loop = mode === "track";
     }
-    
+
     showToast(`Loop mode: ${mode === "track" ? "Track" : "Queue"}`, <FaSync />);
   };
 
   const toggleLoopOptions = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
     setShowLoopOptions((prev) => !prev);
   };
 
   const seekAudio = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
-    
+
     if (!audioRef.current || isChangingTrack) return;
     const percent = parseFloat(e.target.value);
     const newTime = (percent / 100) * audioRef.current.duration;
@@ -368,10 +368,10 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 setIsVolumeOpen((prev) => !prev);
               }}
               onBlur={() => {
-              if (!isDraggingVolume) {
-                setTimeout(() => setIsVolumeOpen(false), 100);
-              }
-            }}
+                if (!isDraggingVolume) {
+                  setTimeout(() => setIsVolumeOpen(false), 100);
+                }
+              }}
               title="Volume Control"
             >
               <FaVolumeUp />
@@ -397,7 +397,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
             )}
           </div>
         </div>
-        
+
         {/* Main Controls - Center */}
         <div className="main-controls">
           <div className="control-row">
@@ -450,7 +450,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
             </div>
           </div>
         </div>
-        
+
         {/* Track Selector - Right Side */}
         {Array.isArray(tracks) && tracks.length > 0 && (
           <div className="track-control">
