@@ -125,27 +125,39 @@ const Sidebar: React.FC = () => {
     };
 
     // Cập nhật vị trí thanh nền active để tạo hiệu ứng transition mượt
+    // Cập nhật vị trí thanh nền active để tạo hiệu ứng transition mượt
     useEffect(() => {
-        if (!navRef.current) return;
-        const activeIndex = navItems.findIndex((item) => isActive(item.path));
-        if (activeIndex === -1) {
-            setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
-            return;
-        }
-        const activeEl = itemRefs.current[activeIndex];
-        if (!activeEl) {
-            setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
-            return;
-        }
-        const navRect = navRef.current.getBoundingClientRect();
-        const itemRect = activeEl.getBoundingClientRect();
-        const top = itemRect.top - navRect.top;
-        const height = itemRect.height;
-        setIndicatorStyle({
-            top,
-            height,
-            opacity: 1,
-        });
+        const updateIndicator = () => {
+            if (!navRef.current) return;
+            const activeIndex = navItems.findIndex((item) => isActive(item.path));
+            if (activeIndex === -1) {
+                setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
+                return;
+            }
+            const activeEl = itemRefs.current[activeIndex];
+            if (!activeEl) {
+                setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
+                return;
+            }
+            const navRect = navRef.current.getBoundingClientRect();
+            const itemRect = activeEl.getBoundingClientRect();
+            const top = itemRect.top - navRect.top;
+            const height = itemRect.height;
+
+            // Chỉ update nếu có kích thước
+            if (height > 0 && navRect.height > 0) {
+                setIndicatorStyle({
+                    top,
+                    height,
+                    opacity: 1,
+                    // Nếu cần tắt transition khi resize có thể thêm logic ở đây
+                });
+            }
+        };
+
+        updateIndicator();
+        window.addEventListener("resize", updateIndicator);
+        return () => window.removeEventListener("resize", updateIndicator);
     }, [location.pathname]);
 
     return (

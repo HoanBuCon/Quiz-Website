@@ -175,22 +175,41 @@ const Header: React.FC = () => {
 
   // Hiệu ứng highlight trượt giữa các nút nav
   useEffect(() => {
-    const navEl = navRef.current;
-    if (!navEl) return;
+    const updateHighlight = () => {
+      const navEl = navRef.current;
+      if (!navEl) return;
 
-    const activeLink = navEl.querySelector(".nav-item-active");
-    if (activeLink) {
-      const rect = (activeLink as HTMLElement).getBoundingClientRect();
-      const parentRect = navEl.getBoundingClientRect();
+      const activeLink = navEl.querySelector(".nav-item-active");
+      if (activeLink) {
+        const rect = (activeLink as HTMLElement).getBoundingClientRect();
+        const parentRect = navEl.getBoundingClientRect();
 
-      setHighlightStyle({
-        transform: `translateX(${rect.left - parentRect.left}px)`,
-        width: `${rect.width}px`,
-        opacity: 1,
-      });
-    } else {
-      setHighlightStyle({ opacity: 0 });
-    }
+        // Chỉ cập nhật nếu element thực sự hiển thị (width > 0)
+        if (rect.width > 0 && parentRect.width > 0) {
+          setHighlightStyle({
+            transform: `translateX(${rect.left - parentRect.left}px)`,
+            width: `${rect.width}px`,
+            opacity: 1,
+            transition: 'none' // Tắt transition khi rename/resize để tránh lag
+          });
+          // Bật lại transition sau khi set xong (để frame sau mới có effect) - hoặc đơn giản là để CSS lo
+          // Tuy nhiên để đơn giản và mượt, ta cứ set position.
+          // Để tránh animation chạy loạn khi resize, ta có thể tạm tắt transition hoặc chấp nhận nó trượt về vị trí mới.
+          // Ở đây ta giữ logic đơn giản: set tọa độ.
+          setHighlightStyle(prev => ({
+            transform: `translateX(${rect.left - parentRect.left}px)`,
+            width: `${rect.width}px`,
+            opacity: 1,
+          }));
+        }
+      } else {
+        setHighlightStyle({ opacity: 0 });
+      }
+    };
+
+    updateHighlight();
+    window.addEventListener("resize", updateHighlight);
+    return () => window.removeEventListener("resize", updateHighlight);
   }, [location.pathname]);
 
   return (
