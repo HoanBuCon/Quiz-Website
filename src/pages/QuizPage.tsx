@@ -74,6 +74,7 @@ const QuizPage: React.FC = () => {
   const minimapRef = React.useRef<HTMLDivElement>(null);
   const mainContentRef = React.useRef<HTMLDivElement>(null);
   const navLockRef = React.useRef(false); // Lock synchronous navigation to prevent spamming
+  const animationTimeoutsRef = React.useRef<number[]>([]); // Track animation timeouts để skip khi bấm nhanh
   const SCROLL_OFFSET = 120; // Khoảng cách bù trừ khi scroll tới câu hỏi
   // Minimap bubble (mobile list) state
   const [miniBubbleOpen, setMiniBubbleOpen] = useState(false);
@@ -441,12 +442,12 @@ const QuizPage: React.FC = () => {
       switch (e.key) {
         case "ArrowLeft":
           e.preventDefault();
-          if (!isExiting) handlePrevQuestion();
+          handlePrevQuestion(); // Bỏ check !isExiting để skip logic bên trong hoạt động
           break;
 
         case "ArrowRight":
           e.preventDefault();
-          if (!isExiting) handleNextQuestion();
+          handleNextQuestion(); // Bỏ check !isExiting để skip logic bên trong hoạt động
           break;
 
         case "ArrowUp":
@@ -882,41 +883,82 @@ const QuizPage: React.FC = () => {
     return ca.some((ans) => norm(ans) === norm(value));
   };
 
+  // Helper: Clear animations khi bấm nhanh liên tiếp
+  const clearAnimations = () => {
+    // Clear tất cả pending timeouts
+    animationTimeoutsRef.current.forEach(id => clearTimeout(id));
+    animationTimeoutsRef.current = [];
+  };
+
   // Navigate to next/previous question
   // Navigate to next/previous question
   const handlePrevQuestion = () => {
     if (currentQuestionIndex > 0 && !isExiting) {
-      if (navLockRef.current) return;
+      // Nếu đang lock (đang có animation), skip animation và nhả nội dung ngay
+      if (navLockRef.current) {
+        clearAnimations();
+        setCurrentQuestionIndex((prev) => prev - 1);
+        setIsExiting(false);
+        setSlideDirection("none");
+        navLockRef.current = false;
+        return;
+      }
+
       navLockRef.current = true;
       setSlideDirection("left"); // Hướng đi về (Prev) -> Slide In Left (sau đó). Out sẽ là Right.
       // Logic:
       // Prev: Old slides out to Right -> New slides in from Left
 
       setIsExiting(true);
-      setTimeout(() => {
+      const timeout1 = window.setTimeout(() => {
         setCurrentQuestionIndex((prev) => prev - 1);
         setIsExiting(false);
-        navLockRef.current = false;
-        setSlideDirection("none");
-      }, 200); // 200ms khớp với animation duration
+        // Unlock ngay sau khi đổi index (cho phép bấm tiếp)
+        const timeout2 = window.setTimeout(() => {
+          navLockRef.current = false;
+        }, 150); // 150ms - cân bằng giữa tốc độ và độ mượt
+        // Reset slideDirection sau khi slideIn hoàn thành
+        const timeout3 = window.setTimeout(() => {
+          setSlideDirection("none");
+        }, 400); // 400ms khớp với slideIn animation duration
+        animationTimeoutsRef.current.push(timeout2, timeout3);
+      }, 300); // 300ms khớp với slideOut animation duration
+      animationTimeoutsRef.current.push(timeout1);
     }
   };
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1 && !isExiting) {
-      if (navLockRef.current) return;
+      // Nếu đang lock (đang có animation), skip animation và nhả nội dung ngay
+      if (navLockRef.current) {
+        clearAnimations();
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setIsExiting(false);
+        setSlideDirection("none");
+        navLockRef.current = false;
+        return;
+      }
+
       navLockRef.current = true;
       setSlideDirection("right"); // Hướng đi tới (Next) -> Slide In Right. Out sẽ là Left.
       // Logic:
       // Next: Old slides out to Left -> New slides in from Right
 
       setIsExiting(true);
-      setTimeout(() => {
+      const timeout1 = window.setTimeout(() => {
         setCurrentQuestionIndex((prev) => prev + 1);
         setIsExiting(false);
-        navLockRef.current = false;
-        setSlideDirection("none");
-      }, 200);
+        // Unlock ngay sau khi đổi index (cho phép bấm tiếp)
+        const timeout2 = window.setTimeout(() => {
+          navLockRef.current = false;
+        }, 150); // 150ms - cân bằng giữa tốc độ và độ mượt
+        // Reset slideDirection sau khi slideIn hoàn thành
+        const timeout3 = window.setTimeout(() => {
+          setSlideDirection("none");
+        }, 400); // 400ms khớp với slideIn animation duration
+        animationTimeoutsRef.current.push(timeout2, timeout3);
+      }, 300); // 300ms khớp với slideOut animation duration
+      animationTimeoutsRef.current.push(timeout1);
     }
   };
 
@@ -1760,9 +1802,38 @@ const QuizPage: React.FC = () => {
                 questions={questions}
                 currentQuestionIndex={currentQuestionIndex}
                 onSelect={(idx: number, id: string) => {
-                  setCurrentQuestionIndex(idx);
-                  scrollToQuestion(id);
-                  setMiniBubbleOpen(false);
+                  if (displayMode === "list") {
+                    setCurrentQuestionIndex(idx);
+                    scrollToQuestion(id);
+                    setMiniBubbleOpen(false);
+                    return;
+                  }
+
+                  // Single mode: apply slide animation
+                  if (isExiting) return;
+                  if (idx === currentQuestionIndex) {
+                    setMiniBubbleOpen(false);
+                    return;
+                  }
+
+                  if (idx > currentQuestionIndex) setSlideDirection("right");
+                  else if (idx < currentQuestionIndex) setSlideDirection("left");
+
+                  navLockRef.current = true;
+                  setIsExiting(true);
+                  setTimeout(() => {
+                    setCurrentQuestionIndex(idx);
+                    setIsExiting(false);
+                    setMiniBubbleOpen(false);
+                    // Unlock ngay sau khi đổi index (cho phép bấm tiếp)
+                    setTimeout(() => {
+                      navLockRef.current = false;
+                    }, 150); // 150ms - cân bằng giữa tốc độ và độ mượt
+                    // Reset slideDirection sau khi slideIn hoàn thành
+                    setTimeout(() => {
+                      setSlideDirection("none");
+                    }, 400); // 400ms khớp với slideIn animation duration
+                  }, 300); // 300ms khớp với slideOut animation duration
                 }}
                 isQuestionAnswered={isQuestionAnswered}
                 isQuestionWrong={isQuestionWrong}
@@ -1798,12 +1869,20 @@ const QuizPage: React.FC = () => {
                       if (index > currentQuestionIndex) setSlideDirection("right");
                       else if (index < currentQuestionIndex) setSlideDirection("left");
 
+                      navLockRef.current = true;
                       setIsExiting(true);
                       setTimeout(() => {
                         setCurrentQuestionIndex(index);
                         setIsExiting(false);
-                        setSlideDirection("none");
-                      }, 200);
+                        // Unlock ngay sau khi đổi index (cho phép bấm tiếp)
+                        setTimeout(() => {
+                          navLockRef.current = false;
+                        }, 150); // 150ms - cân bằng giữa tốc độ và độ mượt
+                        // Reset slideDirection sau khi slideIn hoàn thành
+                        setTimeout(() => {
+                          setSlideDirection("none");
+                        }, 400); // 400ms khớp với slideIn animation duration
+                      }, 300); // 300ms khớp với slideOut animation duration
                     }}
                     className={`flex-shrink-0 w-10 h-10 lg:w-auto lg:h-auto flex items-center justify-center p-0 lg:p-2 rounded-lg transition-all duration-200 border-2 text-xs sm:text-sm snap-center
                     ${index === currentQuestionIndex

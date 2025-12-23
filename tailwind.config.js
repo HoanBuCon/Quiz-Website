@@ -48,9 +48,53 @@ module.exports = {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
         },
+        slideInLeft: {
+          "0%": { 
+            transform: "translateX(-100%) scale(0.95)",
+            opacity: "0"
+          },
+          "100%": { 
+            transform: "translateX(0) scale(1)",
+            opacity: "1"
+          },
+        },
+        slideInRight: {
+          "0%": { 
+            transform: "translateX(100%) scale(0.95)",
+            opacity: "0"
+          },
+          "100%": { 
+            transform: "translateX(0) scale(1)",
+            opacity: "1"
+          },
+        },
+        slideOutLeft: {
+          "0%": { 
+            transform: "translateX(0) scale(1)",
+            opacity: "1"
+          },
+          "100%": { 
+            transform: "translateX(-100%) scale(0.95)",
+            opacity: "0"
+          },
+        },
+        slideOutRight: {
+          "0%": { 
+            transform: "translateX(0) scale(1)",
+            opacity: "1"
+          },
+          "100%": { 
+            transform: "translateX(100%) scale(0.95)",
+            opacity: "0"
+          },
+        },
       },
       animation: {
         shimmer: "shimmer 2.5s linear infinite",
+        slideInLeft: "slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        slideInRight: "slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        slideOutLeft: "slideOutLeft 0.3s cubic-bezier(0.4, 0, 1, 1)",
+        slideOutRight: "slideOutRight 0.3s cubic-bezier(0.4, 0, 1, 1)",
       },
     },
   },
