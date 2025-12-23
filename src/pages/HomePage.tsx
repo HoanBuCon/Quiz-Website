@@ -534,7 +534,7 @@ const HomePage: React.FC = () => {
 
         {/* Right Section - Sidebar */}
         <div className="w-full xl:w-[30%] xl:flex-shrink-0 order-1 xl:order-2">
-          <div className="xl:sticky xl:top-20">
+          <div className="xl:sticky xl:top-4">
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-3">

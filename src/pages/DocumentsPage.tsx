@@ -1130,7 +1130,7 @@ const DocumentsPage: React.FC = () => {
 
         {/* Right Section - Desktop Only */}
         <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
-          <div className="lg:sticky lg:top-20 space-y-6">
+          <div className="lg:sticky lg:top-4 space-y-6">
             {/* Stats Card */}
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
               <div className="text-center mb-6">
