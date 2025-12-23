@@ -16,7 +16,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, noPadding = fal
 
     useEffect(() => {
         const checkHeight = () => {
-            setIsSmallHeight(window.innerHeight < 600);
+            setIsSmallHeight(window.innerHeight < 620);
         };
 
         // Check initially
