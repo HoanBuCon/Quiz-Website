@@ -195,10 +195,10 @@ const Sidebar: React.FC = () => {
                             to={item.path}
                             onMouseEnter={handleMouseEnter}
                             onMouseLeave={handleMouseLeave}
-                            className={`flex items-center gap-3 pl-4 pr-3 h-12 w-full rounded-xl transition-all duration-500 ease-out group relative overflow-hidden font-medium
+                            className={`flex items-center gap-3 pl-4 pr-3 h-12 w-full rounded-xl transition-all duration-0 ease-out group relative overflow-hidden font-medium
                                 ${active
                                     ? "text-blue-700 dark:text-blue-400"
-                                    : "text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner"
+                                    : "hover:duration-500 text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner"
                                 }
                             `}
                         >
