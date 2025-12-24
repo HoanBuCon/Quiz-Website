@@ -503,9 +503,9 @@ const CreateClassPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="xl:w-[70%] min-w-0 order-1">
+        <div className="lg:w-[70%] min-w-0 order-1">
 
 
           {/* Block các thẻ tạo lớp/quiz/upload */}

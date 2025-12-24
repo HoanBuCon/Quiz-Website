@@ -697,10 +697,10 @@ const DocumentsPage: React.FC = () => {
       </div>
 
 
-      {/* Mobile Right Section - Kho tài liệu (chỉ hiển thị Kho tài liệu ở đây) */}
-      <div className="xl:hidden mb-6 space-y-6">
-        {/* Kho tài liệu học tập - Mobile */}
-        <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+      {/* Mobile/Tablet Right Section - Kho tài liệu & Thống kê (View < 1280px) */}
+      <div className="xl:hidden mb-6 space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6">
+        {/* Kho tài liệu học tập */}
+        <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 h-full">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-3">
               <svg
@@ -780,6 +780,80 @@ const DocumentsPage: React.FC = () => {
                   Click để chuyển đến trang →
                 </div>
               </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Thống kê tài liệu - Tablet Only (1024px - 1280px) */}
+        <div className="hidden lg:block h-full card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
+              <svg
+                className="w-6 h-6 text-purple-600 dark:text-purple-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+              Thống kê tài liệu
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Tổng quan tài liệu của bạn
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Số lượng tài liệu
+              </span>
+              <span className="text-lg font-bold text-gray-900 dark:text-white">
+                {documents.length}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Tài liệu mới nhất
+              </span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                {documents.length > 0
+                  ? formatDate(documents[0].uploadedAt)
+                  : "N/A"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Tổng dung lượng
+              </span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                {formatFileSize(
+                  documents.reduce((total, doc) => total + doc.size, 0)
+                )}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+              <span className="text-sm text-green-700 dark:text-green-400">
+                Lớp đã tạo
+              </span>
+              <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                {totalClasses}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <span className="text-sm text-blue-700 dark:text-blue-400">
+                Bài kiểm tra
+              </span>
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                {totalQuizzes}
+              </span>
             </div>
           </div>
         </div>
@@ -1128,8 +1202,8 @@ const DocumentsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Section - Desktop Only */}
-        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
+        {/* Right Section - Desktop Only (XL and above) */}
+        <div className="hidden xl:block xl:w-[30%] lg:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-4 space-y-6">
             {/* Stats Card */}
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
