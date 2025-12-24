@@ -865,7 +865,7 @@ const DocumentsPage: React.FC = () => {
 
 
           {/* Upload Area */}
-          <div className="card p-6 lg:p-8 mb-6">
+          <div className="card p-6 lg:p-8 mb-6 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500 transition-all duration-300">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
                 <svg
@@ -992,8 +992,8 @@ const DocumentsPage: React.FC = () => {
                     ${selectedIds.has(doc.id)
                       ? "bg-blue-50 dark:bg-blue-900/10 border-blue-500 ring-1 ring-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:shadow-xl hover:scale-[1.01]"
                       : selectedIds.size > 0
-                        ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-xl hover:scale-[1.01] border-l-stone-400 dark:border-l-gray-600"
-                        : "hover:shadow-xl hover:scale-[1.01] border-l-stone-400 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500"
+                        ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-xl hover:scale-[1.01] border-l-gray-300 dark:border-l-gray-600"
+                        : "hover:shadow-xl hover:scale-[1.01] border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500"
                     }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">

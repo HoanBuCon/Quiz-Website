@@ -1038,8 +1038,15 @@ const ClassesPage: React.FC = () => {
                 return (
                   <div
                     key={classRoom.id}
-                    className={`group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 relative ${openDropdown === classRoom.id ? "z-50" : "z-0"
-                      }`}
+                    className={`
+                      group relative card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300
+                      border-l-4 border-l-gray-300 dark:border-l-gray-600
+                      hover:border-l-primary-500 dark:hover:border-l-primary-500
+                      ${openDropdown === classRoom.id
+                        ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50"
+                        : "hover:scale-[1.005]"
+                      }
+                    `}
                   >
                     {/* Desktop Layout - flex ngang */}
                     <div className="hidden sm:flex justify-between items-start mb-4">

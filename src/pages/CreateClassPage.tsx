@@ -512,7 +512,7 @@ const CreateClassPage: React.FC = () => {
           <div className="relative">
             {/* Class Selection/Creation Section */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="p-6 space-y-6">
@@ -679,7 +679,7 @@ const CreateClassPage: React.FC = () => {
 
             {/* Manual Quiz Creation */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="p-6">
@@ -816,7 +816,7 @@ const CreateClassPage: React.FC = () => {
 
             {/* Upload Area */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="p-6">

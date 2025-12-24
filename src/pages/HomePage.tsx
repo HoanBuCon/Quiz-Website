@@ -305,7 +305,7 @@ const HomePage: React.FC = () => {
               {publicClasses.map((classRoom) => (
                 <div
                   key={classRoom.id}
-                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-stone-400 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500"
+                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500"
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">
                     <div className="flex-1">
@@ -535,7 +535,7 @@ const HomePage: React.FC = () => {
         {/* Right Section - Sidebar */}
         <div className="w-full lg:w-[30%] lg:flex-shrink-0 order-1 lg:order-2">
           <div className="lg:sticky lg:top-4">
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-0">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-3">
                   <svg
