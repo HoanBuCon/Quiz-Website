@@ -221,7 +221,7 @@ const ProfilePage: React.FC = () => {
         return new Date(dateString).toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: 'long',
-            day: 'numeric'
+            day: '2-digit'
         });
     };
 

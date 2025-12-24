@@ -1032,7 +1032,7 @@ const DocumentsPage: React.FC = () => {
                         <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                           <span>{formatFileSize(doc.size)}</span>
                           <span>•</span>
-                          <span>Tải lên: {formatDate(doc.uploadedAt)}</span>
+                          <span>Tải lên: {formatDate(doc.uploadedAt, true)}</span>
                           <span>•</span>
                           <span className="uppercase">{doc.type}</span>
                         </div>
