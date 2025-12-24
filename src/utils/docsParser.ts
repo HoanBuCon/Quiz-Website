@@ -150,6 +150,32 @@ function protectLatexExpressions(text: string): { text: string; protectedExpress
     const beforeBrace = text.substring(Math.max(0, braceIndex - 100), braceIndex);
     const afterBrace = text.substring(braceIndex + 1, Math.min(text.length, braceIndex + 200));
     
+    // CRITICAL: First check for MATH OPERATORS immediately before brace
+    // This catches subscript/superscript patterns like u_{0}, x^{2}
+    // Check the character immediately before { (handle both "_{" and "_ {")
+    const trimmedBefore = beforeBrace.trimEnd();
+    const lastCharBeforeWhitespace = trimmedBefore.slice(-1);
+    
+    // If preceded by _ or ^ (subscript/superscript), this is DEFINITELY math, not composite
+    if (lastCharBeforeWhitespace === '_' || lastCharBeforeWhitespace === '^') {
+      return false; // NOT a composite block - protect this as math
+    }
+    
+    // If preceded by = (assignment/set notation like T ={H,E}), check content inside braces
+    // Set notation typically has letters/symbols like {H,E}, {I,N,K}
+    if (lastCharBeforeWhitespace === '=') {
+      // Check if content looks like a set (letters, numbers, commas)
+      const contentPreview = afterBrace.substring(0, 50);
+      const closingBraceIdx = contentPreview.indexOf('}');
+      if (closingBraceIdx > 0) {
+        const setContent = contentPreview.substring(0, closingBraceIdx);
+        // If set content is simple (letters, numbers, commas, spaces), it's math notation
+        if (/^[\w\s,]+$/.test(setContent)) {
+          return false; // NOT a composite block - protect this as math
+        }
+      }
+    }
+
     // Check if { is at start of line or after newline
     const isAtLineStart = braceIndex === 0 || beforeBrace.endsWith('\n');
     
@@ -770,37 +796,13 @@ export function parseDocsContent(
 
     // 6. Generic Content (Continuation)
     // If line didn't match any specific block start, it might be a continuation of the previous block
-    // (e.g. multi-line question text, or text split by image markers)
     
     if (currentOptions.length > 0) {
       // Append to the last option
-      // Use space separator for continuity (Word wrap) or newline?
-      // wordParser.ts cleanText joins lines with \n. But cleanWordText trims them.
-      // Usually space is safer for flow, unless it's a list. 
-      // Let's use space.
       const lastIdx = currentOptions.length - 1;
       currentOptions[lastIdx] += " " + line;
       
-      // If this option was correct, update the correct answers list
-      // Note: This is tricky because correctAnswers stores the value string.
-      // We need to find the old value and update it.
-      // But we just modified currentOptions[lastIdx].
-      // The OLD value is not easily available unless we stored it.
-      // A simple heuristic: If the option was just added, it might be at the end of correctAnswers?
-      // Or we iterate to find a partial match?
-      
-      // Better: we don't support multi-line text for correct answer checking perfectly here without refactor.
-      // BUT for "Single/Multiple" choice, the exact string match matters.
-      // If we change the option text, we MUST change the correct answer text.
-      
-      // Let's rely on the fact that if we are extending an option, it's likely the ONE we just processed?
-      // No, we could be lines down.
-      
-      // Attempt to resync: 
-      // If we can't easily resync, the user might need to re-select correct answer in editor.
-      // But let's try:
-      // We know `line` was appended. So `currentOptions[lastIdx]` ends with `line`.
-      // The old value was `currentOptions[lastIdx]` minus ` " " + line`.
+      // Attempt to resync correct answers if we modified an option that was correct
       const newVal = currentOptions[lastIdx];
       const oldVal = newVal.substring(0, newVal.length - (line.length + 1));
       
@@ -808,27 +810,31 @@ export function parseDocsContent(
       if (caIdx !== -1) {
         currentCorrectAnswers[caIdx] = newVal;
       }
-      
     } else if (currentQuestion.question) {
-      // FIX: Don't append to question if line contains { (likely start of composite block)
-      // This prevents content like "{Câu 1: ..." from being appended to the parent question
-      // Check if line contains { that's not part of LaTeX command
+      // FIX: Don't append to question if line is TRULY a composite block start
+      // But DO append if it's just a math expression with braces
       const trimmedLine = line.trim();
-      const hasCompositeBrace = trimmedLine.includes('{') && !trimmedLine.match(/\\[a-zA-Z]+\{/);
       
-      if (hasCompositeBrace) {
-        // This looks like a composite block start, don't append to question
-        // Instead, trigger composite block handling
+      // Check if the line contains { that's part of a math expression (NOT composite)
+      // Math patterns: _{0}, ^{2}, ={H,E}, \frac{}, etc.
+      const hasMathBrace = 
+        trimmedLine.match(/[_^]\s*\{/) ||     // Subscript or superscript
+        trimmedLine.match(/=\s*\{/) ||         // Set notation like T ={H,E}
+        trimmedLine.match(/\\\w+\{/) ||        // LaTeX commands like \frac{
+        trimmedLine.match(/\{[^{}]*\}/);       // Simple balanced braces with content (not multi-line)
+      
+      // Line is a composite block only if:
+      // 1. It starts with { (standalone brace)
+      // 2. OR it starts with { followed by "Câu" 
+      // AND it doesn't look like math
+      const isCompositeStart = 
+        (trimmedLine === '{' || trimmedLine.startsWith('{')) && 
+        !hasMathBrace;
+      
+      if (isCompositeStart) {
+        // This looks like a composite block start, trigger composite mode
         const braceIndex = line.indexOf('{');
-        const beforeBrace = line.substring(0, braceIndex).trim();
         const afterBrace = line.substring(braceIndex + 1).trim();
-        
-        // If there's content before {, it might be part of the question, but we should stop here
-        // and start composite mode. However, if { is at the start, we're good.
-        // For safety, if there's content before {, we might want to append it to question first
-        // But actually, if normalization worked, { should be on its own line
-        // So if we see content before {, it means normalization didn't work, and we should
-        // not append anything to question
         
         isCollectingComposite = true;
         const braces = countBracesIgnoringLatex(line);
@@ -841,10 +847,12 @@ export function parseDocsContent(
         if (compositeBraceCount <= 0) {
             isCollectingComposite = false;
             compositeBraceCount = 0;
+            compositeBuffer = [];
         }
       } else {
-        // Append to question
-        currentQuestion.question += " " + line;
+        // Append to question (including lines with math braces)
+        // Use newline to preserve original formatting
+        currentQuestion.question += "\n" + line;
       }
     }
   }

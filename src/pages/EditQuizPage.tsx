@@ -1066,6 +1066,32 @@ const EditQuizPage: React.FC = () => {
       const beforeBrace = text.substring(Math.max(0, braceIndex - 100), braceIndex);
       const afterBrace = text.substring(braceIndex + 1, Math.min(text.length, braceIndex + 200));
 
+      // CRITICAL: First check for MATH OPERATORS immediately before brace
+      // This catches subscript/superscript patterns like u_{0}, x^{2}
+      // Check the character immediately before { (handle both "_{" and "_ {")
+      const trimmedBefore = beforeBrace.trimEnd();
+      const lastCharBeforeWhitespace = trimmedBefore.slice(-1);
+
+      // If preceded by _ or ^ (subscript/superscript), this is DEFINITELY math, not composite
+      if (lastCharBeforeWhitespace === '_' || lastCharBeforeWhitespace === '^') {
+        return false; // NOT a composite block - protect this as math
+      }
+
+      // If preceded by = (assignment/set notation like T ={H,E}), check content inside braces
+      // Set notation typically has letters/symbols like {H,E}, {I,N,K}
+      if (lastCharBeforeWhitespace === '=') {
+        // Check if content looks like a set (letters, numbers, commas)
+        const contentPreview = afterBrace.substring(0, 50);
+        const closingBraceIdx = contentPreview.indexOf('}');
+        if (closingBraceIdx > 0) {
+          const setContent = contentPreview.substring(0, closingBraceIdx);
+          // If set content is simple (letters, numbers, commas, spaces), it's math notation
+          if (/^[\w\s,]+$/.test(setContent)) {
+            return false; // NOT a composite block - protect this as math
+          }
+        }
+      }
+
       // Check if { is at start of line or after newline
       const isAtLineStart = braceIndex === 0 || beforeBrace.endsWith('\n');
 

@@ -52,11 +52,31 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
         // Find all Math elements (m:oMath)
         // We use getElementsByTagNameNS if possible, or just tag name with prefix
         // Browsers might require namespaces, but "m:oMath" usually works in simple XML parse
-        let mathNodes = Array.from(doc.getElementsByTagName("m:oMath"));
+        // Find all Math elements (m:oMath and m:oMathPara)
+        // Use getElementsByTagName("*") and check localName to be robust against namespace prefixes
+        const allElements = Array.from(doc.getElementsByTagName("*"));
+        let mathNodes: Element[] = [];
         
-        // Also handle m:oMathPara (paragraph math), typically contains m:oMath
-        // If we process m:oMath, we usually cover what's inside m:oMathPara.
-        // However, we might want to ensure newlines for paragraphs.
+        allElements.forEach(el => {
+          const name = el.nodeName.toLowerCase();
+          const local = el.localName ? el.localName.toLowerCase() : "";
+          
+          if (local === "omath" || local === "omathpara" || 
+              name.endsWith(":omath") || name === "omath" ||
+              name.endsWith(":omathpara") || name === "omathpara") {
+             mathNodes.push(el);
+          }
+        });
+        
+        // Filter: If we have oMathPara, we prefer to process that as the unit.
+        // If oMath is inside oMathPara, we should skip it if we process parent.
+        // Actually, if we process bottom-up or top-down?
+        // If we process oMathPara, we convert it to text. The child oMath is gone.
+        // So validation "if (node.parentNode)" inside loop is good enough.
+        
+        // However, we want to prioritize oMathPara if it exists to preserve paragraph structure logic?
+        // Let's just sort by depth or just process and check attachment.
+
         
         let modified = false;
 
@@ -64,6 +84,22 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
           // console.log(`Found ${mathNodes.length} math formulas. Converting to LaTeX...`);
           
           mathNodes.forEach((node) => {
+            // FIX: Check if node is still connected to document
+            let isConnected = false;
+            if (doc.contains && typeof doc.contains === 'function') {
+                isConnected = doc.contains(node);
+            } else {
+                let parent = node.parentNode;
+                while (parent) {
+                    if (parent === doc) {
+                        isConnected = true;
+                        break;
+                    }
+                    parent = parent.parentNode;
+                }
+            }
+            if (!isConnected) return;
+
             try {
               let latex = convertOMMLToLatex(node);
               if (latex) {
@@ -89,8 +125,35 @@ export async function parseWordFile(file: File): Promise<WordParseResult> {
                 
                 run.appendChild(textNode);
                 
-                // Replace the math node with the text run
-                node.parentNode?.replaceChild(run, node);
+                // Identify the target node to replace (unwrap AlternateContent/oMathPara)
+                let targetNode: Node = node;
+                let currentParent = node.parentNode;
+                
+                // Traverse up to find the outermost container specific to this math equation
+                // We want to replace the whole AlternateContent block if present
+                while (currentParent) {
+                  const tag = (currentParent as Element).localName;
+                  if (tag === 'oMathPara' || tag === 'Choice' || tag === 'AlternateContent') {
+                    targetNode = currentParent;
+                    currentParent = currentParent.parentNode;
+                  } else {
+                    // Stop if we hit a standard document element (p, r, body, etc.)
+                    break;
+                  }
+                }
+
+                // Check if we are replacing a block-level element directly in the body
+                const parentTag = (targetNode.parentNode as Element)?.localName;
+                if (parentTag === 'body' || parentTag === 'tc') { // body or table cell
+                   // Wrap in paragraph if it's at block level
+                   const para = doc.createElement("w:p");
+                   para.appendChild(run);
+                   targetNode.parentNode?.replaceChild(para, targetNode);
+                } else {
+                   // Inline replacement
+                   targetNode.parentNode?.replaceChild(run, targetNode);
+                }
+                
                 modified = true;
               }
             } catch (err) {
