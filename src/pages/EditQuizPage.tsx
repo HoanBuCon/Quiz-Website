@@ -1065,36 +1065,36 @@ const EditQuizPage: React.FC = () => {
       // Get context around the brace
       const beforeBrace = text.substring(Math.max(0, braceIndex - 100), braceIndex);
       const afterBrace = text.substring(braceIndex + 1, Math.min(text.length, braceIndex + 200));
-      
+
       // Check if { is at start of line or after newline
       const isAtLineStart = braceIndex === 0 || beforeBrace.endsWith('\n');
-      
+
       // Check if { is preceded by whitespace only (no content before it on same line)
       const lastNewlineIndex = beforeBrace.lastIndexOf('\n');
-      const lineBeforeBrace = lastNewlineIndex >= 0 
-        ? beforeBrace.substring(lastNewlineIndex + 1) 
+      const lineBeforeBrace = lastNewlineIndex >= 0
+        ? beforeBrace.substring(lastNewlineIndex + 1)
         : beforeBrace;
       const isAfterWhitespaceOnly = /^\s*$/.test(lineBeforeBrace);
-      
+
       // Check if followed by "Câu" (with optional number and colon) - can be immediately or after whitespace/newline
       const hasCauAfter = /^\s*Câu\s*\d*:?/i.test(afterBrace);
-      
+
       // Check if followed by newline then "Câu" (common pattern after normalization)
       // Look for newline followed by optional whitespace and "Câu"
       const hasCauOnNextLine = /[\n\r]\s*Câu\s*\d*:?/i.test(afterBrace);
-      
+
       // Composite block if:
       // 1. At line start AND followed by "Câu" (immediately or on next line)
       // 2. After whitespace only AND followed by "Câu"
       if ((isAtLineStart || isAfterWhitespaceOnly) && (hasCauAfter || hasCauOnNextLine)) {
         return true;
       }
-      
+
       // Also check if this looks like a structural brace (not math)
       // If it's on its own line or after whitespace, and NOT preceded by math characters
       const lastCharBeforeBrace = lineBeforeBrace.slice(-1);
       const isNotMathContext = !/[a-zA-Z0-9_^=+\-*/]/.test(lastCharBeforeBrace);
-      
+
       // CRITICAL: If it's at line start or after whitespace only, and not in math context,
       // it's likely a structural brace (composite block), not a math expression
       // We err on the side of NOT protecting it, so the parser can handle it as composite
@@ -1102,16 +1102,16 @@ const EditQuizPage: React.FC = () => {
       if ((isAtLineStart || isAfterWhitespaceOnly) && isNotMathContext) {
         // Additional check: if afterBrace doesn't contain math operators immediately, it's likely composite
         const firstFewChars = afterBrace.substring(0, 10).trim();
-        const looksLikeMathStart = /^[0-9+\-*/^_=<>]/.test(firstFewChars) || 
-                                    firstFewChars.startsWith('\\') ||
-                                    /^[a-zA-Z]\{/.test(firstFewChars);
-        
+        const looksLikeMathStart = /^[0-9+\-*/^_=<>]/.test(firstFewChars) ||
+          firstFewChars.startsWith('\\') ||
+          /^[a-zA-Z]\{/.test(firstFewChars);
+
         if (!looksLikeMathStart) {
           // This looks like a structural brace, don't protect it as LaTeX
           return true;
         }
       }
-      
+
       return false;
     };
 
@@ -1120,17 +1120,17 @@ const EditQuizPage: React.FC = () => {
     while (i < result.length) {
       if (result[i] === '{') {
         const braceStart = i;
-        
+
         // Check if this is a composite block start - if so, skip it
         if (isCompositeBlockStart(result, i)) {
           i++;
           continue;
         }
-        
+
         // Match the brace group
         let braceCount = 1;
         i++; // skip opening brace
-        
+
         while (i < result.length && braceCount > 0) {
           if (result[i] === '\\' && i + 1 < result.length) {
             i += 2;
@@ -1144,21 +1144,21 @@ const EditQuizPage: React.FC = () => {
             i++;
           }
         }
-        
+
         // If braces matched, protect this expression
         if (braceCount === 0) {
           const braceEnd = i;
           const mathExpr = result.substring(braceStart, braceEnd);
-          
+
           const beforeExpr = result.substring(Math.max(0, braceStart - 10), braceStart);
           const afterExpr = result.substring(braceEnd, Math.min(result.length, braceEnd + 10));
-          
-          const isMathExpr = 
+
+          const isMathExpr =
             mathExpr.includes('\\') ||
             /[0-9+\-*/^_=<>]/.test(mathExpr) ||
             /[a-zA-Z0-9_^]/.test(beforeExpr.slice(-1)) ||
             /[a-zA-Z0-9_^=]/.test(afterExpr.charAt(0));
-        
+
           if (isMathExpr) {
             const index = protectedExpressions.length;
             // CRITICAL: Keep original format, only replace newlines with spaces for protection
@@ -1202,7 +1202,7 @@ const EditQuizPage: React.FC = () => {
     normalizedContent = protectedText
       // Inject newline trước "Câu n:"
       .replace(/([^\n])\s+(Câu\s+\d+|Câu\s*:)/gi, '$1\n$2')
-      
+
       // FIX: Tách ngoặc nhọn ra dòng riêng để nhận diện composite block (giống docsParser.ts)
       // Split content before { and put { on new line
       .replace(/([^\n\s\\])\s*\{/g, '$1\n{')
@@ -1215,7 +1215,7 @@ const EditQuizPage: React.FC = () => {
       .replace(/([^\n\s])\s*\}([^\\])/g, '$1\n}$2')
       // Split } from content after it (must be on its own line)
       .replace(/\}([^\n\s])/g, '}\n$1')
-      
+
       // Keywords đặc biệt (result:, group:)
       // FIX: Ensure result: and group: are always on their own line
       // This is critical for parsing composite blocks correctly, especially in composite questions
@@ -1236,7 +1236,7 @@ const EditQuizPage: React.FC = () => {
     // NOTE: This only affects structural braces, LaTeX is already protected
     normalizedContent = normalizedContent.replace(/\{\s+/g, '{');
     normalizedContent = normalizedContent.replace(/\s+\}/g, '}');
-    
+
     // CRITICAL: Restore LaTeX expressions AFTER normalization
     normalizedContent = restoreLatexExpressions(normalizedContent, latexExpressions);
 
@@ -1352,8 +1352,8 @@ const EditQuizPage: React.FC = () => {
 
       // 3. Options Detection (Hoist regex)
       // FIX: Allow optional '$' prefix for math context (e.g. $A. content)
-      const optionRegex = /([$]?)([*]?)([A-E])\.\s*/g;
-      const hasOptions = /([$]?)([*]?)([A-E])\.\s*/.test(line);
+      const optionRegex = /([$]?)([*]?)([A-Z])\.\s*/g;
+      const hasOptions = /([$]?)([*]?)([A-Z])\.\s*/.test(line);
 
       // CHECK FOR IMAGE MARKER [IMAGE:id]
       // FIX: Only run global extraction if NO options are detected on this line.
@@ -1414,7 +1414,7 @@ const EditQuizPage: React.FC = () => {
         let open = 0;
         let close = 0;
         let i = 0;
-        
+
         while (i < text.length) {
           // Skip LaTeX commands (backslash followed by letters)
           if (text[i] === '\\' && i + 1 < text.length && /[a-zA-Z]/.test(text[i + 1])) {
@@ -1456,7 +1456,7 @@ const EditQuizPage: React.FC = () => {
             i++;
           }
         }
-        
+
         return { open, close };
       };
 
@@ -1477,7 +1477,7 @@ const EditQuizPage: React.FC = () => {
               compositeBuffer.push(beforeBrace);
             }
           }
-          
+
           isCollectingComposite = false;
 
           // Recursively parse buffer
@@ -1498,27 +1498,27 @@ const EditQuizPage: React.FC = () => {
       // CRITICAL FIX: Only match standalone "{", not LaTeX like "\frac{1}{2}"
       // After normalization, { should be on its own line or at start
       const trimmedLine = line.trim();
-      
+
       // Check if this is a composite block start
       // Must have: currentQuestion.question exists, not already collecting, and line starts with {
       const isStandaloneBrace = trimmedLine === '{' || trimmedLine === '{ ';
       const hasBraceAtStart = trimmedLine.startsWith('{') && !trimmedLine.match(/^\\[a-zA-Z]+\{/);
       const shouldStartComposite = (isStandaloneBrace || hasBraceAtStart) && currentQuestion.question && !isCollectingComposite;
-      
+
       if (shouldStartComposite) {
         isCollectingComposite = true;
         const braceIndex = line.indexOf('{');
         const afterBrace = line.substring(braceIndex + 1).trim();
-        
+
         // Count braces in this line using LaTeX-aware counter
         const braces = countBracesIgnoringLatex(line);
         compositeBraceCount = braces.open - braces.close;
-        
+
         // If there's content after {, add it to buffer (but don't add if it's just })
         if (afterBrace && afterBrace !== '}') {
           compositeBuffer.push(afterBrace);
         }
-        
+
         // If braces are balanced on same line (e.g., "{}"), don't start composite mode
         if (compositeBraceCount <= 0) {
           isCollectingComposite = false;
@@ -3699,7 +3699,7 @@ const EditQuizPage: React.FC = () => {
                                 const reader = new FileReader();
                                 reader.onload = (e) => {
                                   const result = e.target?.result as string;
-                              handleQuestionImageUpload(result);
+                                  handleQuestionImageUpload(result);
                                   toast.success("Đã dán ảnh từ clipboard!");
                                 };
                                 reader.readAsDataURL(blob);
@@ -5029,7 +5029,7 @@ const EditQuizPage: React.FC = () => {
               optionImageIds: newOptionImageIds
             };
 
-          handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
+            handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
             toast.success("Đã di chuyển ảnh!");
             return;
           }
@@ -5101,7 +5101,7 @@ const EditQuizPage: React.FC = () => {
         }
       }
 
-          handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
+      handleQuestionSave(question.id, updatedDiff, { exitEditMode: true });
       toast.success("Đã cập nhật ảnh!");
     };
 
@@ -5294,10 +5294,10 @@ const EditQuizPage: React.FC = () => {
                     setPreviewContent(prev => prev.replace(new RegExp(imageTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ''));
                   }
                   handleRestoreToGallery(question.questionImage!, question.questionImageId);
-          handleQuestionSave(question.id, {
+                  handleQuestionSave(question.id, {
                     questionImage: undefined,
                     questionImageId: undefined
-          }, { exitEditMode: false });
+                  }, { exitEditMode: false });
                 }}
                 className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-lg z-10"
                 title="Gỡ ảnh về kho"
@@ -5628,12 +5628,12 @@ const EditQuizPage: React.FC = () => {
                   const correctMapping = question.correctAnswers && typeof question.correctAnswers === 'object' && !Array.isArray(question.correctAnswers)
                     ? (question.correctAnswers as Record<string, string>)
                     : {};
-                  
+
                   // Tìm các items thuộc target này
                   const targetItems = question.options && typeof question.options === 'object' && !Array.isArray(question.options) && (question.options as any).items
                     ? ((question.options as any).items as Array<{ id: string; label: string }>).filter(
-                        (item) => correctMapping[item.id] === target.id
-                      )
+                      (item) => correctMapping[item.id] === target.id
+                    )
                     : [];
 
                   return (
@@ -5683,14 +5683,14 @@ const EditQuizPage: React.FC = () => {
               </div>
             )}
 
-            {(!question.options || typeof question.options !== 'object' || Array.isArray(question.options) || 
+            {(!question.options || typeof question.options !== 'object' || Array.isArray(question.options) ||
               !(question.options as any).items || !Array.isArray((question.options as any).items) || (question.options as any).items.length === 0) && (
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                  Chưa có kho đáp án - Vui lòng chỉnh sửa để thêm đáp án
-                </span>
-              </div>
-            )}
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                    Chưa có kho đáp án - Vui lòng chỉnh sửa để thêm đáp án
+                  </span>
+                </div>
+              )}
           </div>
         )}
 
