@@ -1155,8 +1155,8 @@ const EditQuizPage: React.FC = () => {
 
           const isMathExpr =
             mathExpr.includes('\\') ||
-            /[0-9+\-*/^_=<>]/.test(mathExpr) ||
-            /[a-zA-Z0-9_^]/.test(beforeExpr.slice(-1)) ||
+            /[0-9+\-*/^_=<>,\.]/.test(mathExpr) ||
+            /[a-zA-Z0-9_^=]/.test(beforeExpr.slice(-1)) ||
             /[a-zA-Z0-9_^=]/.test(afterExpr.charAt(0));
 
           if (isMathExpr) {

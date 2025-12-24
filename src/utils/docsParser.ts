@@ -248,8 +248,8 @@ function protectLatexExpressions(text: string): { text: string; protectedExpress
         // - Followed by math operators, letters, or LaTeX commands
         const isMathExpr = 
           mathExpr.includes('\\') || // Contains LaTeX
-          /[0-9+\-*/^_=<>]/.test(mathExpr) || // Contains numbers or operators
-          /[a-zA-Z0-9_^]/.test(beforeExpr.slice(-1)) || // Preceded by letter/number
+          /[0-9+\-*/^_=<>,\.]/.test(mathExpr) || // Contains numbers or operators (added comma and dot)
+          /[a-zA-Z0-9_^=]/.test(beforeExpr.slice(-1)) || // Preceded by letter/number/equals
           /[a-zA-Z0-9_^=]/.test(afterExpr.charAt(0)); // Followed by letter/number/operator
         
         if (isMathExpr) {
