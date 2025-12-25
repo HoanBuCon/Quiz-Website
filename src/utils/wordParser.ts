@@ -600,18 +600,6 @@ function cleanWordText(text: string): string {
     .replace(/^[•·▪▫◦‣⁃]\s*/gm, "")
     // Relaxed number removal to avoid stripping math lines starting with numbers
     .replace(/^[1-9]\.\s*/gm, "")
-
-    // --- KEYWORD NORMALIZATION (Matches docsParser.ts) ---
-    // Ensure result:, group:, explanation: are always on their own line
-    // 1. Handle specific patterns (Câu, Options) to avoid conflicts
-    .replace(/(Câu\s+\d+:\s*[^\n]+?)\s*(result:|group:|explanation:|Giải thích:)/gi, '$1\n$2')
-    .replace(/([A-Z]\.\s*[^\n]+?)\s*(result:|group:|explanation:|Giải thích:)/g, '$1\n$2')
-    // 2. Handle punctuation followed by keywords (no space)
-    .replace(/([?!.])(result:|group:|explanation:|Giải thích:)/gi, '$1\n$2')
-    // 3. General case: any character followed by keywords
-    .replace(/([^\n])(\s*)(result:|group:|explanation:|Giải thích:)/gm, '$1\n$3')
-    // -----------------------------------------------------
-
     // Chuẩn hóa khoảng trắng trong dòng (không loại bỏ dòng trống)
     .replace(/[ \t]+/g, " ")
     // Loại bỏ khoảng trắng ở đầu và cuối dòng
