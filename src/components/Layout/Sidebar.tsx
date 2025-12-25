@@ -344,7 +344,7 @@ const Sidebar: React.FC = () => {
 
                         <button
                             onClick={handleLogout}
-                            className="text-blue-200 dark:text-gray-400 hover:text-red-300 dark:hover:text-red-500 transition-colors opacity-0 group-hover/sidebar:opacity-100 flex-shrink-0 absolute right-2"
+                            className="text-blue-200 dark:text-gray-400 hover:text-red-300 dark:hover:text-red-500 transition-all duration-300 ease-in opacity-0 group-hover/sidebar:opacity-100 flex-shrink-0 absolute right-4 text-xl"
                             title="Đăng xuất"
                         >
                             <FaSignOutAlt />
