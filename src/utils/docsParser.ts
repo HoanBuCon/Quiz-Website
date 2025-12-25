@@ -274,7 +274,7 @@ function protectLatexExpressions(text: string): { text: string; protectedExpress
         // - Followed by math operators, letters, or LaTeX commands
         const isMathExpr = 
           mathExpr.includes('\\') || // Contains LaTeX
-          /[0-9+\-*/^_=<>.]/.test(mathExpr) || // Contains numbers or operators (added comma and dot)
+          /[0-9+\-*/^_=<>,\.]/.test(mathExpr) || // Contains numbers or operators (added comma and dot)
           /[a-zA-Z0-9_^=]/.test(beforeExpr.slice(-1)) || // Preceded by letter/number/equals
           /[a-zA-Z0-9_^=]/.test(afterExpr.charAt(0)); // Followed by letter/number/operator
         
@@ -350,13 +350,13 @@ export function parseDocsContent(
     // FIX: Ensure result: and group: are always on their own line
     // CRITICAL: Must split result: BEFORE normalizing braces, and ensure it's on its own line
     // First, handle specific patterns (Câu, Options) to avoid conflicts
-    .replace(/(Câu\s+\d+:\s*[^\n]+?)\s*(result:|group:|explanation:|Giải thích:)/gi, '$1\n$2')
-    .replace(/([A-Z]\.\s*[^\n]+?)\s*(result:|group:|explanation:|Giải thích:)/g, '$1\n$2')
+    .replace(/(Câu\s+\d+:\s*[^\n]+?)\s*(result:|group:)/gi, '$1\n$2')
+    .replace(/([A-Z]\.\s*[^\n]+?)\s*(result:|group:)/g, '$1\n$2')
     // Then handle punctuation followed by result: (no space)
-    .replace(/([?!.])(result:|group:|explanation:|Giải thích:)/gi, '$1\n$2')
+    .replace(/([?!.])(result:|group:)/gi, '$1\n$2')
     // Finally, handle general case: any character followed by result: (with or without space)
     // CRITICAL: This must come AFTER brace normalization to avoid conflicts
-    .replace(/([^\n])(\s*)(result:|group:|explanation:|Giải thích:)/gm, '$1\n$3')
+    .replace(/([^\n])(\s*)(result:|group:)/gm, '$1\n$3')
     
     // Remove image placeholder tags
     .replace(/<hình ảnh>/g, "");
@@ -662,37 +662,18 @@ export function parseDocsContent(
       continue;
     }
 
-    // Helper to check if an explanation starting at `idx` is valid (not followed by options)
-    const isValidExplanation = (line: string, idx: number) => {
-        // Look ahead to ensure no Options come after this block until next Question/EOF
-        for (let k = idx + 1; k < lines.length; k++) {
-            const nextL = lines[k];
-            // If new Question/ID -> Valid end
-            if (nextL.startsWith("ID:") || nextL.match(/^Câu\s+\d+|Câu\s*:/i) || (nextL.startsWith("Câu") && nextL.includes(":"))) return true;
-            if (nextL === "{" || nextL === "}") return true; 
-
-            // If Option -> INVALID explanation (it's likely text inside an option)
-            if (nextL.match(/^[*]?\s*[A-Z]\.\s*/)) return false; 
-        }
-        return true; // EOF -> Valid
-    };
-
     // Helper to check if a line is a start of a new semantic block
-    const isNewBlock = (line: string, idx: number) => {
+    const isNewBlock = (line: string) => {
       // 1. ID
       if (line.startsWith("ID:")) return true;
+      // 2. Question (Câu n:)
+      if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) return true;
       // 3. Keywords (result:, group:)
       // CRITICAL: Match with optional whitespace before colon
       if (line.match(/^(result|group)\s*:/i)) return true;
-      
-      // 4. Explanation: ONLY if valid (lookahead check)
-      if (line.match(/^(explanation|Giải thích)\s*:/i)) {
-          return isValidExplanation(line, idx);
-      }
-
-      // 5. Structural ({, })
+      // 4. Structural ({, })
       if (line === "{" || line === "}") return true;
-      // 6. Options (*A., A.)
+      // 5. Options (*A., A.)
       if (line.match(/^[*]?\s*[A-Z]\.\s*/)) return true;
       
       return false;
@@ -700,13 +681,13 @@ export function parseDocsContent(
 
     // Helper to accumulate multi-line content
     const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
-      // CRITICAL: Match result: or group: or explanation: with optional whitespace before colon
-      let content = lines[startIdx].replace(/^(result|group|explanation|Giải thích)\s*:/i, '').trim();
+      // CRITICAL: Match result: or group: with optional whitespace before colon
+      let content = lines[startIdx].replace(/^(result|group)\s*:/i, '').trim();
       let nextIdx = startIdx + 1;
       
       while (nextIdx < lines.length) {
         const nextLine = lines[nextIdx];
-        if (isNewBlock(nextLine, nextIdx)) {
+        if (isNewBlock(nextLine)) {
           break;
         }
         content += " " + nextLine; // Join with space (or newline if needed, but space usually allows JSON parsing)
@@ -813,16 +794,7 @@ export function parseDocsContent(
       continue;
     }
 
-    // 6. Explanation (explanation: / Giải thích:) - Case-insensitive & multi-line
-    if (line.match(/^(explanation|Giải thích)\s*:/i) && isValidExplanation(line, i)) {
-      const { content, nextIdx } = accumulateLines(i);
-      i = nextIdx; // Update loop index
-      
-      currentQuestion.explanation = content;
-      continue;
-    }
-
-    // 7. Generic Content (Continuation)
+    // 6. Generic Content (Continuation)
     // If line didn't match any specific block start, it might be a continuation of the previous block
     
     if (currentOptions.length > 0) {

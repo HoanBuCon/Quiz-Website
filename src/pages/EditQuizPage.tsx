@@ -118,7 +118,7 @@ const ImageUpload: React.FC<{
         onImageUpload(imageUrl);
       } catch (error) {
         toast.dismiss();
-        // console.error("Upload error:", error);
+        console.error("Upload error:", error);
         toast.error("Lỗi khi upload ảnh: " + (error as Error).message);
       }
     };
@@ -141,7 +141,7 @@ const ImageUpload: React.FC<{
             return;
           }
         } catch (e) {
-          // console.error('Failed to parse assigned source:', e);
+          console.error('Failed to parse assigned source:', e);
         }
       }
 
@@ -729,13 +729,13 @@ const EditQuizPage: React.FC = () => {
     questionId: string;
     optionText?: string;
   }) => {
-    // console.log('handleRemoveImageFromSource called with:', source);
+    console.log('handleRemoveImageFromSource called with:', source);
 
     // ATOMIC UPDATE: Remove image from questions and update content together
     setQuestions(prev => {
-      // console.log('Current questions count:', prev.length);
+      console.log('Current questions count:', prev.length);
       const foundQuestion = prev.find(q => q.id === source.questionId);
-      // console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
+      console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
 
       const updated = prev.map(q => {
         if (q.id !== source.questionId) return q;
@@ -749,7 +749,7 @@ const EditQuizPage: React.FC = () => {
 
         if (source.sourceType === 'question') {
           // Remove question image
-          // console.log('Removing question image from question:', q.id);
+          console.log('Removing question image from question:', q.id);
           updatedQ.questionImage = undefined;
           updatedQ.questionImageId = undefined;
 
@@ -759,7 +759,7 @@ const EditQuizPage: React.FC = () => {
           }
         } else if (source.sourceType === 'option' && source.optionText) {
           // Remove option image
-          // console.log('Removing option image:', source.optionText, 'from question:', q.id);
+          console.log('Removing option image:', source.optionText, 'from question:', q.id);
           const newOptionImages = { ...updatedQ.optionImages };
           const newOptionImageIds = { ...updatedQ.optionImageIds };
           delete newOptionImages[source.optionText];
@@ -781,7 +781,7 @@ const EditQuizPage: React.FC = () => {
           editedQuestionsMapRef.current.set(q.id, cachedUpdated);
         }
 
-        // console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
+        console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
         return updatedQ;
       });
 
@@ -946,11 +946,10 @@ const EditQuizPage: React.FC = () => {
         newUnassigned.push({ id, data });
       });
 
-      console.log("DEBUG: Auto-Restore Result (ID-Based)",
-        {
-          usedIdsCount: usedIds.size,
-          newUnassignedCount: newUnassigned.length
-        });
+      console.log("DEBUG: Auto-Restore Result (ID-Based)", {
+        usedIdsCount: usedIds.size,
+        newUnassignedCount: newUnassigned.length
+      });
 
       return {
         ...prev,
@@ -1695,23 +1694,9 @@ const EditQuizPage: React.FC = () => {
         }
         continue;
       }
-      // Helper to check if an explanation starting at `idx` is valid (not followed by options)
-      const isValidExplanation = (line: string, idx: number) => {
-        // Look ahead to ensure no Options come after this block until next Question/EOF
-        for (let k = idx + 1; k < lines.length; k++) {
-          const nextL = lines[k];
-          // If new Question/ID -> Valid end
-          if (nextL.startsWith("ID:") || nextL.match(/^Câu\s+\d+|Câu\s*:/i) || (nextL.startsWith("Câu") && nextL.includes(":"))) return true;
-          if (nextL === "{" || nextL === "}") return true;
-
-          // If Option -> INVALID explanation (it's likely text inside an option)
-          if (nextL.match(/^[$]?[*]?\s*[A-Z]\.\s*/)) return false;
-        }
-        return true; // EOF -> Valid
-      };
 
       // --- HELPER FOR MULTI-LINE ---
-      const isNewBlock = (line: string, idx: number) => {
+      const isNewBlock = (line: string) => {
         // 1. ID
         if (line.startsWith("ID:")) return true;
         // 2. Question (Câu n:)
@@ -1719,28 +1704,22 @@ const EditQuizPage: React.FC = () => {
         // 3. Keywords (result:, group:)
         // CRITICAL: Match with optional whitespace before colon
         if (line.match(/^(result|group)\s*:/i)) return true;
-
-        // 4. Explanation: ONLY if valid (lookahead check)
-        if (line.match(/^(explanation|Giải thích)\s*:/i)) {
-          return isValidExplanation(line, idx);
-        }
-
-        // 5. Structural ({, })
+        // 4. Structural ({, })
         if (line === "{" || line === "}") return true;
-        // 6. Options (*A., A., $A.)
+        // 5. Options (*A., A., $A.)
         if (line.match(/^[$]?[*]?\s*[A-Z]\.\s*/)) return true;
 
         return false;
       };
 
       const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
-        // CRITICAL: Match result: or group: or explanation: with optional whitespace before colon
-        let content = lines[startIdx].replace(/^(result|group|explanation|Giải thích)\s*:/i, '').trim();
+        // CRITICAL: Match result: or group: with optional whitespace before colon
+        let content = lines[startIdx].replace(/^(result|group)\s*:/i, '').trim();
         let nextIdx = startIdx + 1;
 
         while (nextIdx < lines.length) {
           const nextLine = lines[nextIdx];
-          if (isNewBlock(nextLine, nextIdx)) {
+          if (isNewBlock(nextLine)) {
             break;
           }
           content += " " + nextLine;
@@ -1848,16 +1827,7 @@ const EditQuizPage: React.FC = () => {
         continue;
       }
 
-      // 6. Explanation (explanation: / Giải thích:)
-      if (line.match(/^(explanation|Giải thích)\s*:/i) && isValidExplanation(line, i)) {
-        const { content, nextIdx } = accumulateLines(i);
-        i = nextIdx; // Update loop index
-
-        currentQuestion.explanation = content;
-        continue;
-      }
-
-      // 7. Fallback: Multiline / Continuation
+      // 6. Fallback: Multiline / Continuation
       // If line didn't match any marker, assume it belongs to the previous context
       if (currentOptions.length > 0) {
         // Append to last option
@@ -2831,11 +2801,6 @@ const EditQuizPage: React.FC = () => {
         }
       }
 
-      // Add explanation if exists
-      if (q.explanation) {
-        content += `explanation: ${q.explanation}\n`;
-      }
-
       if (q.type === "text") {
         // Format: result: "answer1", "answer2", ... (giống docsParser.ts)
         const answers = Array.isArray(q.correctAnswers)
@@ -2861,9 +2826,6 @@ const EditQuizPage: React.FC = () => {
               // FIX: Prioritize explicit ID
               const imgId = (subQ as any).questionImageId || findImageIdByData((subQ as any).questionImage, overrideMap);
               if (imgId) content += `\n[IMAGE:${imgId}]`;
-            }
-            if (subQ.explanation) {
-              content += `\nexplanation: ${subQ.explanation}`;
             }
             content += "\n";
 
