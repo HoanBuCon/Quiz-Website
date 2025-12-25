@@ -22,12 +22,13 @@ console.log(`
  CHỨC NĂNG QUẢN TRỊ HỆ THỐNG
 =============================
 1. Xóa tài khoản người dùng
-2. Xóa tin nhắn người dùng
-3. Quản lý quiz và lớp học của người dùng
-4. Quản lý nội dung Public (Class/Quiz)
+2. Đổi tên người dùng
+3. Xóa tin nhắn người dùng
+4. Quản lý quiz và lớp học của người dùng
+5. Quản lý nội dung Public (Class/Quiz)
 `);
 
-rl.question("Nhập lựa chọn (1/2/3/4): ", async (choice) => {
+rl.question("Nhập lựa chọn (1/2/3/4/5): ", async (choice) => {
   try {
     switch (choice.trim()) {
       // ==================================================
@@ -63,10 +64,46 @@ rl.question("Nhập lựa chọn (1/2/3/4): ", async (choice) => {
         break;
       }
 
+      
       // ==================================================
-      // 2. XÓA TIN NHẮN NGƯỜI DÙNG
+      // 2. ĐỔI TÊN NGƯỜI DÙNG
       // ==================================================
       case "2": {
+        rl.question("Nhập email hoặc username cần đổi tên: ", async (input) => {
+          const user = await queryOne(
+            "SELECT * FROM User WHERE email = ? OR name = ? LIMIT 1",
+            [input.trim(), input.trim()]
+          );
+
+          if (!user) {
+            console.log("❌ Không tìm thấy người dùng.");
+            rl.close();
+            await close();
+            return;
+          }
+
+          console.log(`👤 Người dùng hiện tại: ${user.name} (${user.email})`);
+          rl.question("Nhập tên hiển thị mới (để trống để hủy): ", async (newName) => {
+            if (!newName.trim()) {
+              console.log("❎ Đã hủy thao tác.");
+              rl.close();
+              await close();
+              return;
+            }
+
+            await query("UPDATE User SET name = ? WHERE id = ?", [newName.trim(), user.id]);
+            console.log(`✅ Đã đổi tên thành công thành: ${newName.trim()}`);
+            rl.close();
+            await close();
+          });
+        });
+        break;
+      }
+
+      // ==================================================
+      // 3. XÓA TIN NHẮN NGƯỜI DÙNG
+      // ==================================================
+      case "3": {
         rl.question("Nhập email hoặc username của người dùng cần xóa tin nhắn: ", async (input) => {
           const user = await queryOne(
             "SELECT * FROM User WHERE email = ? OR name = ? LIMIT 1",
@@ -196,23 +233,23 @@ c. Xóa toàn bộ tin nhắn
       }
 
       // ==================================================
-      // 3. QUẢN LÝ QUIZ / CLASS CỦA NGƯỜI DÙNG
+      // 4. QUẢN LÝ QUIZ / CLASS CỦA NGƯỜI DÙNG
       // ==================================================
-      case "3": {
+      case "4": {
         await handleUserQuizClass();
         break;
       }
 
       // ==================================================
-      // 4. QUẢN LÝ NỘI DUNG PUBLIC (CLASS / QUIZ)
+      // 5. QUẢN LÝ NỘI DUNG PUBLIC (CLASS / QUIZ)
       // ==================================================
-      case "4": {
+      case "5": {
         await handlePublicContent();
         break;
       }
 
       default:
-        console.log("❌ Lựa chọn không hợp lệ. Vui lòng chọn 1, 2, 3 hoặc 4.");
+        console.log("❌ Lựa chọn không hợp lệ. Vui lòng chọn 1, 2, 3, 4 hoặc 5.");
         rl.close();
         await close();
         break;

@@ -14,13 +14,15 @@ const InputField = ({
   placeholder,
   value,
   onChange,
-  icon
+  icon,
+  maxLength
 }: {
   type: string,
   placeholder: string,
   value: string,
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
-  icon: React.ReactNode
+  icon: React.ReactNode,
+  maxLength?: number
 }) => {
   const [showPassword, setShowPassword] = React.useState(false);
   const isPassword = type === 'password';
@@ -36,6 +38,7 @@ const InputField = ({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        maxLength={maxLength}
       />
       {isPassword && (
         <button
@@ -600,6 +603,7 @@ const MaintenancePage: React.FC = () => {
                         placeholder="Tên tài khoản"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
+                        maxLength={30}
                         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.95 2-2.5 2H10" /></svg>}
                       />
 
