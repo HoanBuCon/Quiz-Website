@@ -305,7 +305,7 @@ const HomePage: React.FC = () => {
               {publicClasses.map((classRoom, index) => (
                 <div
                   key={classRoom.id}
-                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-200 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn anim-delay-100"
+                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn anim-delay-100"
                   style={{ animationDelay: `${(index % 5) * 0.1}s` }}
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">

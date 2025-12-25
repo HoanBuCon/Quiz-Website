@@ -1039,7 +1039,7 @@ const ClassesPage: React.FC = () => {
                   <div
                     key={classRoom.id}
                     className={`
-                      group relative card p-4 sm:p-6 hover:shadow-2xl transition-all duration-200
+                      group relative card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300
                       border-l-4 border-l-gray-300 dark:border-l-gray-600
                       hover:border-l-primary-500 dark:hover:border-l-primary-500
                       ${openDropdown === classRoom.id
