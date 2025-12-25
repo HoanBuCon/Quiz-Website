@@ -865,7 +865,7 @@ const DocumentsPage: React.FC = () => {
 
 
           {/* Upload Area */}
-          <div className="card p-6 lg:p-8 mb-6 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500 transition-all duration-300 animate-slideUpIn anim-delay-100">
+          <div className="card p-6 lg:p-8 mb-6 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500 hover:-translate-y-[1px] transition-all duration-300 animate-slideUpIn anim-delay-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
                 <svg

@@ -162,16 +162,16 @@
 }
 
 .animate-slideDownIn {
-  animation: slideDownIn 0.6s ease-in-out both;
+  animation: slideDownIn 0.6s ease-in-out backwards;
 }
 
 .animate-slideLeftIn {
-  animation: slideLeftIn 0.8s ease-in-out both; /* Slightly slower for side content */
+  animation: slideLeftIn 0.8s ease-in-out backwards; /* Slightly slower for side content */
 }
 
 
 .animate-slideUpIn {
-  animation: slideUpIn 0.8s ease-in-out both;
+  animation: slideUpIn 0.8s ease-in-out backwards;
 }
 
 /* Animation Delays */
@@ -539,12 +539,10 @@ code {
   .card {
     @apply bg-white dark:bg-gray-800 rounded-lg;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
   }
   
   .card:hover {
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    transform: translateY(-1px);
   }
   
   .input-field {
