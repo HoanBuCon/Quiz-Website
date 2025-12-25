@@ -24,7 +24,7 @@
 }
 
 .animate-slideUp {
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);  
 }
 
 .animate-shimmer {
@@ -237,6 +237,16 @@ html, body {
 /* Baseline cursor and selection behavior */
 body {
   cursor: default; /* default arrow for most elements */
+}
+
+/* Remove default password eye in Edge/IE and other browsers */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+input::-webkit-password-reveal-button {
+  display: none;
+  -webkit-appearance: none;
 }
 
 /* Do not allow text selection by default */
