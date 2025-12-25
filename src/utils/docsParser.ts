@@ -675,7 +675,18 @@ export function parseDocsContent(
       // CRITICAL: Match with optional whitespace before colon
       if (line.match(/^(result|group)\s*:/i)) return true;
       // 4. Structural ({, })
+      // FIX: Use same logic as shouldStartComposite to detect composite braces
+      // If it starts with { and doesn't look like math, it's a new block
       if (line === "{" || line === "}") return true;
+      
+      const hasMathBrace = 
+        line.match(/[_^]\s*\{/) ||     // Subscript or superscript
+        line.match(/=\s*\{/) ||         // Set notation like T ={H,E}
+        line.match(/\\\w+\{/) ||        // LaTeX commands like \frac{
+        line.match(/\{[^{}]*\}/);       // Simple balanced braces with content (not multi-line)
+        
+      if (line.startsWith("{") && !hasMathBrace) return true;
+      
       // 5. Options (*A., A.)
       if (line.match(/^[*]?\s*[A-Z]\.\s*/)) return true;
       // 6. Explanation

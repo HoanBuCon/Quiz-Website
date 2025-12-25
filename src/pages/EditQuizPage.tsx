@@ -1710,6 +1710,18 @@ const EditQuizPage: React.FC = () => {
         if (line.match(/^(result|group)\s*:/i)) return true;
         // 4. Structural ({, })
         if (line === "{" || line === "}") return true;
+
+        // FIX: Enhanced Check (Matches docsParser.ts)
+        // Detect opening brace that is explicitly structural (Composite Start),
+        // filtering out braces that are likely part of Math/LaTeX expressions.
+        const hasMathBrace =
+          line.match(/[_^]\s*\{/) ||      // Subscript or superscript (e.g., u_{0})
+          line.match(/=\s*\{/) ||         // Set notation (e.g., T ={H,E})
+          line.match(/\\\w+\{/) ||        // LaTeX commands (e.g., \frac{...)
+          line.match(/\{[^{}]*\}/);       // Inline balanced braces (e.g., {a,b})
+
+        // If line starts with { and doesn't look like math, treat as block start
+        if (line.startsWith("{") && !hasMathBrace) return true;
         // 5. Options (*A., A., $A.)
         if (line.match(/^[$]?[*]?\s*[A-Z]\.\s*/)) return true;
         // 6. Explanation
@@ -2863,6 +2875,10 @@ const EditQuizPage: React.FC = () => {
                   content += `result: ${quotedAnswers}\n`;
                 }
               }
+              // Append Sub-Question Explanation
+              if (subQ.explanation) {
+                content += `Giải thích: ${subQ.explanation}\n`;
+              }
             } else if (Array.isArray(subQ.options)) {
               (subQ.options as string[]).forEach((opt, optIdx) => {
                 const isCorrect =
@@ -2880,6 +2896,10 @@ const EditQuizPage: React.FC = () => {
                 }
                 content += "\n";
               });
+              // Append Sub-Question Explanation
+              if (subQ.explanation) {
+                content += `Giải thích: ${subQ.explanation}\n`;
+              }
             }
 
             // Add blank line between sub-questions
@@ -3820,23 +3840,7 @@ const EditQuizPage: React.FC = () => {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Giải thích (tùy chọn)
-            </label>
-            <textarea
-              value={editedQuestion.explanation || ""}
-              onChange={(e) =>
-                setEditedQuestion((prev) => ({
-                  ...prev,
-                  explanation: e.target.value,
-                }))
-              }
-              className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-              rows={2}
-              placeholder="Nhập giải thích cho câu trả lời..."
-            />
-          </div>
+
 
           {editedQuestion.type !== "text" &&
             editedQuestion.type !== "drag" &&
