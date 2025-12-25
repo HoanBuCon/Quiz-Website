@@ -804,7 +804,7 @@ const CreateClassPage: React.FC = () => {
 
             {/* Divider */}
             <div
-              className={`flex items-center my-8 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`flex items-center my-8 animate-slideUpIn delay-300 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-600"></div>
@@ -816,7 +816,7 @@ const CreateClassPage: React.FC = () => {
 
             {/* Upload Area */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn delay-300 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn delay-400 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="p-6">
