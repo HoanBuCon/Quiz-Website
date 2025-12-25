@@ -409,7 +409,7 @@ const CreateClassPage: React.FC = () => {
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Hero Section (Unified) */}
       <div className="mb-8 lg:mb-12">
-        <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl">
+        <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl animate-slideDownIn">
           {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -505,7 +505,7 @@ const CreateClassPage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="lg:w-[70%] min-w-0 order-1">
+        <div className="lg:w-[70%] min-w-0 order-1 animate-slideUpIn">
 
 
           {/* Block các thẻ tạo lớp/quiz/upload */}
@@ -1027,7 +1027,7 @@ const CreateClassPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only, Sticky Sidebar */}
-        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
+        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2 animate-slideLeftIn">
           <div className="lg:sticky lg:top-20 space-y-6">
             {/* Hướng dẫn - Desktop */}
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
