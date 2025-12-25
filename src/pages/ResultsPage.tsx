@@ -615,6 +615,19 @@ const ResultsPage: React.FC = () => {
                         );
                       })}
                     </div>
+
+                    {/* Hiển thị giải thích của câu hỏi mẹ nếu có */}
+                    {showExplanations && q.explanation && (
+                      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <h5 className="font-bold text-blue-900 dark:text-blue-300 mb-2 flex items-center">
+                          <span className="mr-2">💡</span>
+                          Giải thích chi tiết cho nhóm câu hỏi:
+                        </h5>
+                        <div className="text-blue-800 dark:text-blue-200 text-base leading-relaxed">
+                          <MathText text={q.explanation} className="text-blue-800 dark:text-blue-200" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               }
