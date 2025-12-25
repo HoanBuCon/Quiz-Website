@@ -282,6 +282,9 @@ html, body {
 /* Import code fonts for logo */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&family=Fira+Code:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600;700;900&display=swap');
 
+/* Import soft/rounded fonts */
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700;800&display=swap');
+
 /* Baseline cursor and selection behavior */
 body {
   cursor: default; /* default arrow for most elements */

@@ -11,24 +11,40 @@ const HomePage: React.FC = () => {
   const [totalClasses, setTotalClasses] = useState(0);
   const [totalQuizzes, setTotalQuizzes] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [mousePosition1, setMousePosition1] = useState({ x: 0, y: 0 });
+  const [mousePosition2, setMousePosition2] = useState({ x: 0, y: 0 });
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-  // Hàm xử lý di chuyển chuột để tính toán góc xoay
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Hàm xử lý di chuyển chuột cho ảnh 1 (Kho tài liệu)
+  const handleMouseMove1 = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     const mouseX = e.clientX - centerX;
     const mouseY = e.clientY - centerY;
 
-    setMousePosition({ x: mouseX, y: mouseY });
+    setMousePosition1({ x: mouseX, y: mouseY });
   };
 
-  const handleMouseLeave = () => {
-    setMousePosition({ x: 0, y: 0 });
+  const handleMouseLeave1 = () => {
+    setMousePosition1({ x: 0, y: 0 });
+  };
+
+  // Hàm xử lý di chuyển chuột cho ảnh 2 (HoanBuCon)
+  const handleMouseMove2 = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const mouseX = e.clientX - centerX;
+    const mouseY = e.clientY - centerY;
+
+    setMousePosition2({ x: mouseX, y: mouseY });
+  };
+
+  const handleMouseLeave2 = () => {
+    setMousePosition2({ x: 0, y: 0 });
   };
 
   // Fetch public classes data
@@ -572,8 +588,8 @@ const HomePage: React.FC = () => {
               <div className="flex items-center justify-center">
                 <div
                   className="perspective-1000 w-full"
-                  onMouseMove={handleMouseMove}
-                  onMouseLeave={handleMouseLeave}
+                  onMouseMove={handleMouseMove1}
+                  onMouseLeave={handleMouseLeave1}
                 >
                   <a
                     href="https://lms.liemsdai.is-best.net/"
@@ -591,10 +607,10 @@ const HomePage: React.FC = () => {
                       className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
                       style={{
                         maxHeight: 280,
-                        transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1
-                          }deg) rotateX(${-mousePosition.y * 0.1
-                          }deg) translateZ(${Math.abs(mousePosition.x) +
-                            Math.abs(mousePosition.y) >
+                        transform: `perspective(1000px) rotateY(${mousePosition1.x * 0.1
+                          }deg) rotateX(${-mousePosition1.y * 0.1
+                          }deg) translateZ(${Math.abs(mousePosition1.x) +
+                            Math.abs(mousePosition1.y) >
                             0
                             ? "20px"
                             : "0px"
@@ -622,6 +638,77 @@ const HomePage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* About HoanBuCon Card */}
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-0 mt-6 animate-slideLeftIn anim-delay-300">
+              <div className="text-center mb-3">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2" style={{ fontFamily: "'Nunito', sans-serif" }}>
+                  Hoàn Bự Con
+                </h3>
+                <a
+                  href="https://hoanbucon.id.vn/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-sm font-mono text-primary-600 dark:text-primary-400 hover:underline break-all"
+                >
+                  hoanbucon.id.vn
+                </a>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <div
+                  className="perspective-1000 w-full"
+                  onMouseMove={handleMouseMove2}
+                  onMouseLeave={handleMouseLeave2}
+                >
+                  <a
+                    href="https://hoanbucon.id.vn"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative group block"
+                  >
+                    <img
+                      src={
+                        isDarkMode
+                          ? require("../assets/hoanbucon_dark.png")
+                          : require("../assets/hoanbucon_light.png")
+                      }
+                      alt={isDarkMode ? "HoanBuCon_dark" : "HoanBuCon_light"}
+                      className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
+                      style={{
+                        maxHeight: 280,
+                        transform: `perspective(1000px) rotateY(${mousePosition2.x * 0.1
+                          }deg) rotateX(${-mousePosition2.y * 0.1
+                          }deg) translateZ(${Math.abs(mousePosition2.x) +
+                            Math.abs(mousePosition2.y) >
+                            0
+                            ? "20px"
+                            : "0px"
+                          })`,
+                        border: "2px solid transparent",
+                        backgroundImage: isDarkMode
+                          ? "linear-gradient(45deg, #a855f7, #ec4899, #f59e0b, #10b981)"
+                          : "linear-gradient(45deg, #8b5cf6, #d946ef, #f97316, #06b6d4)",
+                        backgroundSize: "400% 400%",
+                        animation: "neonBorder 3s ease-in-out infinite",
+                        backgroundClip: "border-box",
+                        borderRadius: "12px",
+                      }}
+                    />
+                    {/* Tooltip */}
+                    <div
+                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
+                        ? "bg-gray-800 text-white border border-gray-700"
+                        : "bg-white text-gray-900 border border-gray-200"
+                        }`}
+                    >
+                      Click để xem Portfolio →
+                    </div>
+                  </a>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
