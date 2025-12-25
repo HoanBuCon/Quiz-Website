@@ -358,6 +358,9 @@ export function parseDocsContent(
     // CRITICAL: This must come AFTER brace normalization to avoid conflicts
     .replace(/([^\n])(\s*)(result:|group:)/gm, '$1\n$3')
     
+    // FIX: Normalizing 'Explanation' / 'Giải thích' to always start on a new line
+    .replace(/([^\n])\s*(Giải thích:|Explanation:)/gi, '$1\n$2')
+    
     // Remove image placeholder tags
     .replace(/<hình ảnh>/g, "");
   
@@ -675,14 +678,17 @@ export function parseDocsContent(
       if (line === "{" || line === "}") return true;
       // 5. Options (*A., A.)
       if (line.match(/^[*]?\s*[A-Z]\.\s*/)) return true;
+      // 6. Explanation
+      if (line.match(/^(Giải thích|Explanation)\s*:/i)) return true;
       
       return false;
     };
 
     // Helper to accumulate multi-line content
     const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
-      // CRITICAL: Match result: or group: with optional whitespace before colon
-      let content = lines[startIdx].replace(/^(result|group)\s*:/i, '').trim();
+      // CRITICAL: Generalized stripping for result:, group:, Giải thích:, Explanation:
+      // Match starts with keys, optional whitespace, colon, optional whitespace
+      let content = lines[startIdx].replace(/^(result|group|Giải thích|Explanation)\s*:/i, '').trim();
       let nextIdx = startIdx + 1;
       
       while (nextIdx < lines.length) {
@@ -794,7 +800,15 @@ export function parseDocsContent(
       continue;
     }
 
-    // 6. Generic Content (Continuation)
+    // 6. Explanation (case-insensitive & multi-line)
+    if (line.match(/^(Giải thích|Explanation)\s*:/i)) {
+      const { content, nextIdx } = accumulateLines(i);
+      i = nextIdx; // Update loop index
+      currentQuestion.explanation = content;
+      continue;
+    }
+
+    // 7. Generic Content (Continuation)
     // If line didn't match any specific block start, it might be a continuation of the previous block
     
     if (currentOptions.length > 0) {

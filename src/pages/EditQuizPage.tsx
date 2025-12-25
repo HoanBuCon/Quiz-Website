@@ -1254,6 +1254,10 @@ const EditQuizPage: React.FC = () => {
       // Finally, handle general case: any character followed by result: (with or without space)
       // CRITICAL: This must come AFTER brace normalization to avoid conflicts
       .replace(/([^\n])(\s*)(result:|group:)/gm, '$1\n$3')
+
+      // FIX: Normalizing 'Explanation' / 'Giải thích' to always start on a new line
+      .replace(/([^\n])\s*(Giải thích:|Explanation:)/gi, '$1\n$2')
+
       // Remove image placeholder tags
       .replace(/<hình ảnh>/g, "");
 
@@ -1708,13 +1712,15 @@ const EditQuizPage: React.FC = () => {
         if (line === "{" || line === "}") return true;
         // 5. Options (*A., A., $A.)
         if (line.match(/^[$]?[*]?\s*[A-Z]\.\s*/)) return true;
+        // 6. Explanation
+        if (line.match(/^(Giải thích|Explanation)\s*:/i)) return true;
 
         return false;
       };
 
       const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
-        // CRITICAL: Match result: or group: with optional whitespace before colon
-        let content = lines[startIdx].replace(/^(result|group)\s*:/i, '').trim();
+        // CRITICAL: Generalized stripping for result:, group:, Giải thích:, Explanation:
+        let content = lines[startIdx].replace(/^(result|group|Giải thích|Explanation)\s*:/i, '').trim();
         let nextIdx = startIdx + 1;
 
         while (nextIdx < lines.length) {
@@ -1827,7 +1833,15 @@ const EditQuizPage: React.FC = () => {
         continue;
       }
 
-      // 6. Fallback: Multiline / Continuation
+      // 6. Explanation (case-insensitive & multi-line)
+      if (line.match(/^(Giải thích|Explanation)\s*:/i)) {
+        const { content, nextIdx } = accumulateLines(i);
+        i = nextIdx; // Update loop index
+        currentQuestion.explanation = content;
+        continue;
+      }
+
+      // 7. Fallback: Multiline / Continuation
       // If line didn't match any marker, assume it belongs to the previous context
       if (currentOptions.length > 0) {
         // Append to last option
@@ -2799,6 +2813,11 @@ const EditQuizPage: React.FC = () => {
         } else {
           console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
         }
+      }
+
+      // Append Explanation if exists
+      if (q.explanation) {
+        content += `Giải thích: ${q.explanation}\n`;
       }
 
       if (q.type === "text") {
@@ -3799,6 +3818,24 @@ const EditQuizPage: React.FC = () => {
               <option value="drag">Kéo thả vào nhóm</option>
               <option value="composite">Câu hỏi mẹ (nhiều câu con)</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Giải thích (tùy chọn)
+            </label>
+            <textarea
+              value={editedQuestion.explanation || ""}
+              onChange={(e) =>
+                setEditedQuestion((prev) => ({
+                  ...prev,
+                  explanation: e.target.value,
+                }))
+              }
+              className="w-full p-3 border border-stone-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+              rows={2}
+              placeholder="Nhập giải thích cho câu trả lời..."
+            />
           </div>
 
           {editedQuestion.type !== "text" &&
