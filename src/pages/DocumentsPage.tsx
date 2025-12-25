@@ -861,11 +861,11 @@ const DocumentsPage: React.FC = () => {
 
       <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
         {/* Left Section - Main Content */}
-        <div className="xl:w-[70%] min-w-0 order-1 animate-slideUpIn">
+        <div className="xl:w-[70%] min-w-0 order-1">
 
 
           {/* Upload Area */}
-          <div className="card p-6 lg:p-8 mb-6 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500 transition-all duration-300">
+          <div className="card p-6 lg:p-8 mb-6 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500 transition-all duration-300 animate-slideUpIn delay-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
                 <svg
@@ -980,7 +980,7 @@ const DocumentsPage: React.FC = () => {
             <div className="space-y-4">
               {/* Bulk Actions Header */}
               {/* Bulk Actions Header REMOVED - Replaced by FAB */}
-              {documents.map((doc) => (
+              {documents.map((doc, index) => (
                 <div
                   key={doc.id}
                   onClick={() => {
@@ -988,13 +988,14 @@ const DocumentsPage: React.FC = () => {
                       toggleSelection(doc.id);
                     }
                   }}
-                  className={`group card p-4 sm:p-6 transition-all duration-300 border-l-4 
+                  className={`group card p-4 sm:p-6 transition-all duration-300 border-l-4 animate-slideUpIn delay-200
                     ${selectedIds.has(doc.id)
                       ? "bg-blue-50 dark:bg-blue-900/10 border-blue-500 ring-1 ring-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:shadow-xl hover:scale-[1.01]"
                       : selectedIds.size > 0
                         ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-xl hover:scale-[1.01] border-l-gray-300 dark:border-l-gray-600"
                         : "hover:shadow-xl hover:scale-[1.01] border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500"
                     }`}
+                  style={{ animationDelay: `${(index % 5) * 0.1 + 0.2}s` }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">
                     {/* Selection Overlay for entire card click (optional) */}
@@ -1203,10 +1204,10 @@ const DocumentsPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only (XL and above) */}
-        <div className="hidden xl:block xl:w-[30%] lg:flex-shrink-0 order-2 animate-slideLeftIn">
+        <div className="hidden xl:block xl:w-[30%] lg:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-4 space-y-6">
             {/* Stats Card */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn delay-200">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
                   <svg
@@ -1280,7 +1281,7 @@ const DocumentsPage: React.FC = () => {
             </div>
 
             {/* Kho tài liệu học tập */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn delay-300">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-3">
                   <svg

@@ -162,16 +162,32 @@
 }
 
 .animate-slideDownIn {
-  animation: slideDownIn 0.6s ease-in-out forwards;
+  animation: slideDownIn 0.6s ease-in-out both;
 }
 
 .animate-slideLeftIn {
-  animation: slideLeftIn 0.8s ease-in-out forwards; /* Slightly slower for side content */
+  animation: slideLeftIn 0.8s ease-in-out both; /* Slightly slower for side content */
 }
 
+
 .animate-slideUpIn {
-  animation: slideUpIn 0.8s ease-in-out forwards;
+  animation: slideUpIn 0.8s ease-in-out both;
 }
+
+/* Animation Delays */
+.delay-100 {
+  animation-delay: 0.1s;
+}
+.delay-200 {
+  animation-delay: 0.2s;
+}
+.delay-300 {
+  animation-delay: 0.3s;
+}
+.delay-500 {
+  animation-delay: 0.5s;
+}
+
 
 
 

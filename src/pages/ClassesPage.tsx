@@ -987,7 +987,7 @@ const ClassesPage: React.FC = () => {
 
       <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
         {/* Left Section - Main Content */}
-        <div className="xl:w-[70%] min-w-0 order-1 animate-slideUpIn">
+        <div className="xl:w-[70%] min-w-0 order-1">
 
 
           <div className="flex flex-wrap gap-2 mb-6">
@@ -1031,7 +1031,7 @@ const ClassesPage: React.FC = () => {
           ) : classes.length > 0 ? (
             // Danh sách lớp học
             <div className="space-y-4">
-              {classes.map((classRoom: ClassRoom) => {
+              {classes.map((classRoom: ClassRoom, index) => {
                 const validQuizzes = getValidQuizzes(classRoom);
                 const quizCount = validQuizzes.length;
 
@@ -1045,8 +1045,9 @@ const ClassesPage: React.FC = () => {
                       ${openDropdown === classRoom.id
                         ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50"
                         : "hover:scale-[1.005]"
-                      }
+                      } animate-slideUpIn delay-100
                     `}
+                    style={{ animationDelay: `${(index % 5) * 0.1}s` }}
                   >
                     {/* Desktop Layout - flex ngang */}
                     <div className="hidden sm:flex justify-between items-start mb-4">
@@ -2581,10 +2582,10 @@ const ClassesPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only (Statistics + Guidance) */}
-        <div className="hidden xl:block xl:w-[30%] xl:flex-shrink-0 order-2 animate-slideLeftIn">
+        <div className="hidden xl:block xl:w-[30%] xl:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-4 space-y-6">
             {/* Stats Card */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn delay-200">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-3">
                   <svg
@@ -2649,7 +2650,7 @@ const ClassesPage: React.FC = () => {
             </div>
 
             {/* Guidance Card */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn delay-300">
               <div className="text-center mb-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
                   <svg
