@@ -283,7 +283,7 @@ const MaintenancePage: React.FC = () => {
         animation: scanline 2s linear infinite;
       }
       .exit-animation {
-        animation: warpOut 0.8s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+        animation: warpOut 0.8s ease-in-out forwards;
       }
       @keyframes warpOut {
         0% { opacity: 1; transform: scale(1); filter: blur(0px); }
@@ -299,7 +299,7 @@ const MaintenancePage: React.FC = () => {
       {/* Video Background */}
       <video
         ref={videoRef}
-        className="absolute top-0 left-0 w-full h-full object-cover"
+        className={`absolute top-0 left-0 w-full h-full object-cover ${isExiting ? "exit-animation" : ""}`}
         loop
         playsInline
         preload="auto"
@@ -367,9 +367,9 @@ const MaintenancePage: React.FC = () => {
                 className="
                   absolute inset-0 rounded-full pointer-events-none
                   -translate-x-full group-hover:translate-x-full
-                  transition-transform duration-0 group-hover:duration-[1000ms] ease-out
+                  transition-transform duration-[1000ms] ease-out
                   bg-gradient-to-r from-transparent via-white/10 to-transparent
-                  blur-[1px]
+                  blur-[1px] opacity-35
                 "
                 style={{ zIndex: 1 }}
               />
