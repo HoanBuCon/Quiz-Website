@@ -1490,6 +1490,55 @@ const EditQuizPage: React.FC = () => {
         return { open, close };
       };
 
+      // Helper to check if a line is a start of a new semantic block
+      const isNewBlock = (line: string) => {
+        // 1. ID
+        if (line.startsWith("ID:")) return true;
+        // 2. Question (Câu n:)
+        if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) return true;
+        // 3. Keywords (result:, group:)
+        // CRITICAL: Match with optional whitespace before colon
+        if (line.match(/^(result|group)\s*:/i)) return true;
+        // 4. Structural ({, })
+        // FIX: Enhanced Check (Matches docsParser.ts)
+        // Detect opening brace that is explicitly structural (Composite Start),
+        // filtering out braces that are likely part of Math/LaTeX expressions.
+        const hasMathBrace =
+          line.match(/[_^]\s*\{/) ||      // Subscript or superscript (e.g., u_{0})
+          line.match(/=\s*\{/) ||         // Set notation (e.g., T ={H,E})
+          line.match(/\\\w+\{/) ||        // LaTeX commands (e.g., \frac{...)
+          line.match(/\{[^{}]*\}/);       // Inline balanced braces (e.g., {a,b})
+
+        // If line starts with { and doesn't look like math, treat as block start
+        if (line.startsWith("{") && !hasMathBrace) return true;
+
+        // 5. Options (*A., A., $A.)
+        if (line.match(/^[$]?[*]?\s*[A-Z]\.\s*/)) return true;
+        // 6. Explanation
+        if (line.match(/^(Giải thích|Explanation)\s*:/i)) return true;
+
+        return false;
+      };
+
+      // Helper to accumulate multi-line content
+      const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
+        // CRITICAL: Generalized stripping for result:, group:, Giải thích:, Explanation:
+        // Match starts with keys, optional whitespace, colon, optional whitespace
+        let content = lines[startIdx].replace(/^(result|group|Giải thích|Explanation)\s*:/i, '').trim();
+        let nextIdx = startIdx + 1;
+
+        while (nextIdx < lines.length) {
+          const nextLine = lines[nextIdx];
+          if (isNewBlock(nextLine)) {
+            break;
+          }
+          content += " " + nextLine;
+          nextIdx++;
+        }
+
+        return { content: content.trim(), nextIdx: nextIdx - 1 };
+      };
+
       // --- COMPOSITE BLOCK HANDLING ---
       if (isCollectingComposite) {
         // CRITICAL: Count braces while ignoring LaTeX to avoid false closing (giống docsParser.ts)
@@ -1515,6 +1564,27 @@ const EditQuizPage: React.FC = () => {
             const subQs = parseEditedContent(compositeBuffer.join("\n"));
             currentQuestion.subQuestions = subQs;
             currentQuestion.type = "composite";
+
+            // NEW: Check for Post-Block Explanation (after closing bracket)
+            let lookAheadIdx = i + 1;
+            while (lookAheadIdx < lines.length) {
+              const nextLine = lines[lookAheadIdx];
+              if (!nextLine.trim()) {
+                lookAheadIdx++;
+                continue;
+              }
+
+              if (nextLine.match(/^(Giải thích|Explanation)\s*:/i)) {
+                // Found explanation! Parse it.
+                const { content, nextIdx } = accumulateLines(lookAheadIdx);
+                currentQuestion.explanation = content;
+
+                // Advance main loop index to skip parsing this explanation again
+                i = nextIdx;
+              }
+              break; // Stop looking after checking the immediate next semantic block
+            }
+
             flushQuestion();
           }
           compositeBuffer = [];
@@ -1699,53 +1769,8 @@ const EditQuizPage: React.FC = () => {
         continue;
       }
 
-      // --- HELPER FOR MULTI-LINE ---
-      const isNewBlock = (line: string) => {
-        // 1. ID
-        if (line.startsWith("ID:")) return true;
-        // 2. Question (Câu n:)
-        if (line.match(/^Câu\s+\d+|Câu\s*:/i) || (line.startsWith("Câu") && line.includes(":"))) return true;
-        // 3. Keywords (result:, group:)
-        // CRITICAL: Match with optional whitespace before colon
-        if (line.match(/^(result|group)\s*:/i)) return true;
-        // 4. Structural ({, })
-        if (line === "{" || line === "}") return true;
 
-        // FIX: Enhanced Check (Matches docsParser.ts)
-        // Detect opening brace that is explicitly structural (Composite Start),
-        // filtering out braces that are likely part of Math/LaTeX expressions.
-        const hasMathBrace =
-          line.match(/[_^]\s*\{/) ||      // Subscript or superscript (e.g., u_{0})
-          line.match(/=\s*\{/) ||         // Set notation (e.g., T ={H,E})
-          line.match(/\\\w+\{/) ||        // LaTeX commands (e.g., \frac{...)
-          line.match(/\{[^{}]*\}/);       // Inline balanced braces (e.g., {a,b})
 
-        // If line starts with { and doesn't look like math, treat as block start
-        if (line.startsWith("{") && !hasMathBrace) return true;
-        // 5. Options (*A., A., $A.)
-        if (line.match(/^[$]?[*]?\s*[A-Z]\.\s*/)) return true;
-        // 6. Explanation
-        if (line.match(/^(Giải thích|Explanation)\s*:/i)) return true;
-
-        return false;
-      };
-
-      const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
-        // CRITICAL: Generalized stripping for result:, group:, Giải thích:, Explanation:
-        let content = lines[startIdx].replace(/^(result|group|Giải thích|Explanation)\s*:/i, '').trim();
-        let nextIdx = startIdx + 1;
-
-        while (nextIdx < lines.length) {
-          const nextLine = lines[nextIdx];
-          if (isNewBlock(nextLine)) {
-            break;
-          }
-          content += " " + nextLine;
-          nextIdx++;
-        }
-
-        return { content: content.trim(), nextIdx: nextIdx - 1 };
-      };
 
       // 4. Fill-in / Drag Result (result: ...)
       // CRITICAL: Check for result: with case-insensitive match and allow optional whitespace

@@ -1,10 +1,8 @@
 
 import { parseDocsContent } from './src/utils/docsParser';
 
-const input = `ID: q-1766689306384-h8jbfjq4i
+const input = `ID: q-new-test
 Câu 16: Đọc và trả lời các câu hỏi sau
-[IMAGE:img-1766689306364-21]
-Giải thích: True
 {
 Câu 1: What is the main topic?
 *A. Science
@@ -13,7 +11,7 @@ B. Art
 Câu 2: Who is HoanBuCon?
 *A. HoanBuLiem
 *B. HoanLigma
-Giải thích: MMB
+	Giải thích: MMB
 
 Câu 3: HoanBuCon deepstrike?
 *A. Sure
@@ -23,8 +21,9 @@ D. WTF BRO
 
 Câu 4: Who is the author?
 result: "HoanBuCon", "HoanBuLiem", "HoanSigma"
-Giải thích: Do MMB d
-}`;
+	Giải thích: Do MMB
+}
+Giải thích: Hỗ trợ nhận diện giải thích nếu giải thích viết cuối block câu hỏi mẹ, sau dấu đóng ngoặc nhọn`;
 
 console.log("Parsing content...");
 console.log("Input preview: " + input.substring(0, 100) + "...");
