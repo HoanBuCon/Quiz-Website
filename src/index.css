@@ -175,20 +175,21 @@
 }
 
 /* Animation Delays */
-.delay-100 {
+/* Animation Delays - renamed to avoid conflict with Tailwind transition-delay */
+.anim-delay-100 {
   animation-delay: 0.1s;
 }
-.delay-200 {
+.anim-delay-200 {
   animation-delay: 0.2s;
 }
-.delay-300 {
+.anim-delay-300 {
   animation-delay: 0.3s;
 }
-.delay-500 {
-  animation-delay: 0.5s;
-}
-.delay-400 {
+.anim-delay-400 {
   animation-delay: 0.4s;
+}
+.anim-delay-500 {
+  animation-delay: 0.5s;
 }
 
 

@@ -325,7 +325,7 @@ const ProfilePage: React.FC = () => {
 
                 {/* Statistics Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-blue-500 animate-slideUpIn delay-100">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-blue-500 animate-slideUpIn anim-delay-100">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm">Lớp học sở hữu</p>
@@ -335,7 +335,7 @@ const ProfilePage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-green-500 animate-slideUpIn delay-200">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-green-500 animate-slideUpIn anim-delay-200">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm">Quiz đã tạo</p>
@@ -345,7 +345,7 @@ const ProfilePage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-purple-500 animate-slideUpIn delay-300">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-purple-500 animate-slideUpIn anim-delay-300">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm">Quiz đã làm</p>
@@ -355,7 +355,7 @@ const ProfilePage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 animate-slideUpIn delay-400">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-yellow-500 animate-slideUpIn anim-delay-400">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-gray-600 dark:text-gray-400 text-sm">Điểm trung bình</p>
@@ -367,7 +367,7 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 {/* Account Settings */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 animate-slideUpIn delay-300">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 animate-slideUpIn anim-delay-300">
                     <h2 className="text-2xl font-mono font-bold text-gray-900 dark:text-white mb-6">Thông tin tài khoản</h2>
 
                     <div className="space-y-6">
@@ -541,7 +541,7 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 {/* Recent Activity */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 animate-slideUpIn delay-500">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 animate-slideUpIn anim-delay-500">
                     <h2 className="text-2xl font-mono font-bold text-gray-900 dark:text-white mb-6">Lịch sử làm bài</h2>
 
                     {stats.recentSessions.length === 0 ? (

@@ -253,7 +253,7 @@ const HomePage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="lg:w-[70%] order-2 lg:order-1">
+        <div className="lg:w-[70%]">
           <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Lớp học công khai
@@ -305,7 +305,7 @@ const HomePage: React.FC = () => {
               {publicClasses.map((classRoom, index) => (
                 <div
                   key={classRoom.id}
-                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn delay-100"
+                  className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-200 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn anim-delay-100"
                   style={{ animationDelay: `${(index % 5) * 0.1}s` }}
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">
@@ -534,9 +534,9 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Right Section - Sidebar */}
-        <div className="w-full lg:w-[30%] lg:flex-shrink-0 order-1 lg:order-2">
+        <div className="w-full lg:w-[30%] lg:flex-shrink-0">
           <div className="lg:sticky lg:top-4">
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-0 animate-slideLeftIn delay-200">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-0 animate-slideLeftIn anim-delay-200">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 mb-3">
                   <svg

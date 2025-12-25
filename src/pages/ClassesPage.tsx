@@ -1039,13 +1039,13 @@ const ClassesPage: React.FC = () => {
                   <div
                     key={classRoom.id}
                     className={`
-                      group relative card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300
+                      group relative card p-4 sm:p-6 hover:shadow-2xl transition-all duration-200
                       border-l-4 border-l-gray-300 dark:border-l-gray-600
                       hover:border-l-primary-500 dark:hover:border-l-primary-500
                       ${openDropdown === classRoom.id
                         ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50"
                         : "hover:scale-[1.005]"
-                      } animate-slideUpIn delay-100
+                      } animate-slideUpIn anim-delay-100
                     `}
                     style={{ animationDelay: `${(index % 5) * 0.1}s` }}
                   >
@@ -2585,7 +2585,7 @@ const ClassesPage: React.FC = () => {
         <div className="hidden xl:block xl:w-[30%] xl:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-4 space-y-6">
             {/* Stats Card */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn delay-200">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-200">
               <div className="text-center mb-6">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-3">
                   <svg
@@ -2650,7 +2650,7 @@ const ClassesPage: React.FC = () => {
             </div>
 
             {/* Guidance Card */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn delay-300">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-300">
               <div className="text-center mb-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
                   <svg

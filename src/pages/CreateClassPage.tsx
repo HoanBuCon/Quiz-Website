@@ -505,14 +505,14 @@ const CreateClassPage: React.FC = () => {
 
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="lg:w-[70%] min-w-0 order-1">
+        <div className="lg:w-[70%] min-w-0">
 
 
           {/* Block các thẻ tạo lớp/quiz/upload */}
           <div className="relative">
             {/* Class Selection/Creation Section */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 animate-slideUpIn delay-100 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6 hover:shadow-xl transition-all duration-200 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-orange-500 dark:hover:border-l-orange-500 animate-slideUpIn anim-delay-100 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="p-6 space-y-6">
@@ -679,7 +679,7 @@ const CreateClassPage: React.FC = () => {
 
             {/* Manual Quiz Creation */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6 hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn delay-200 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6 hover:shadow-xl transition-all duration-200 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn anim-delay-200 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="p-6">
@@ -804,7 +804,7 @@ const CreateClassPage: React.FC = () => {
 
             {/* Divider */}
             <div
-              className={`flex items-center my-8 animate-slideUpIn delay-300 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`flex items-center my-8 animate-slideUpIn anim-delay-300 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-600"></div>
@@ -816,7 +816,7 @@ const CreateClassPage: React.FC = () => {
 
             {/* Upload Area */}
             <div
-              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn delay-400 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
+              className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-200 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn anim-delay-400 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""
                 }`}
             >
               <div className="p-6">
@@ -1027,10 +1027,10 @@ const CreateClassPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only, Sticky Sidebar */}
-        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
+        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0">
           <div className="lg:sticky lg:top-20 space-y-6">
             {/* Hướng dẫn - Desktop */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn delay-200">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-200">
               <div className="text-center mb-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 mb-3">
                   <svg
@@ -1132,7 +1132,7 @@ const CreateClassPage: React.FC = () => {
             </div>
 
             {/* Preview Format - Desktop */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn delay-300">
+            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-300">
               <div className="text-center mb-4">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
                   <svg
