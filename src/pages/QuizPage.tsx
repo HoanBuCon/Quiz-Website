@@ -6,6 +6,7 @@ import {
   FaRegClock,
   FaList,
   FaLayerGroup,
+  FaTh,
 } from "react-icons/fa";
 import React, { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -1965,7 +1966,7 @@ const QuizPage: React.FC = () => {
                         prev === "default" ? "instant" : "default"
                       )
                     }
-                    className="inline-flex items-center justify-center gap-1 h-full min-h-full py-0 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
+                    className="inline-flex items-center justify-center gap-1 h-full min-h-full py-1 leading-none px-2 rounded-full transition-all duration-200 bg-gray-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap box-border"
                     title="Chuyển đổi chế độ"
                   >
                     <svg className="w-3.5 h-3.5 flex-shrink-0 block leading-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}> <polyline points="23 4 23 10 17 10" strokeLinecap="round" strokeLinejoin="round" /> <polyline points="1 20 1 14 7 14" strokeLinecap="round" strokeLinejoin="round" /> <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" strokeLinecap="round" strokeLinejoin="round" /> </svg>
@@ -2713,7 +2714,7 @@ function MobileMinimapBubble({
           willChange: 'transform'
         }}
       >
-        <FaLayerGroup className="w-6 h-6" />
+        <FaTh className="w-6 h-6" />
       </button>
 
       {/* Panel (matching ChatBox z-index: 9998) */}
@@ -2776,7 +2777,7 @@ function MobileMinimapBubble({
             onClick={() => setUiMode(uiMode === "default" ? "instant" : "default")}
             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium border border-gray-200 dark:border-gray-700"
           >
-            <FaRegHandPointer className="w-3 h-3" />
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><polyline points="23 4 23 10 17 10" strokeLinecap="round" strokeLinejoin="round" /><polyline points="1 20 1 14 7 14" strokeLinecap="round" strokeLinejoin="round" /><path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" strokeLinecap="round" strokeLinejoin="round" /></svg>
             <span>{uiMode === "instant" ? "Xem ngay" : "Mặc định"}</span>
           </button>
 
