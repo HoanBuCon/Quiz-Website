@@ -416,4 +416,13 @@ export const AuthAPI = {
     }),
 };
 
+export const StatsAPI = {
+  getOwnerClasses: (token: string) => 
+    apiRequest<any[]>(`/stats/owner/classes`, { token }),
+  getClassQuizzes: (classId: string, token: string) =>
+    apiRequest<any[]>(`/stats/owner/class/${classId}/quizzes`, { token }),
+  getQuizStats: (quizId: string, token: string) =>
+    apiRequest<any>(`/stats/owner/quiz/${quizId}/stats`, { token }),
+};
+
 export type {};

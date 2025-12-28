@@ -18,6 +18,10 @@ interface QuizResult {
   totalQuestions: number;
   timeSpent: number;
   completedAt: Date;
+  quizSnapshot?: {
+    quizTitle: string;
+    questions: Question[];
+  };
 }
 
 const ResultsPage: React.FC = () => {
@@ -108,25 +112,37 @@ const ResultsPage: React.FC = () => {
           return;
         }
         const { SessionsAPI, QuizzesAPI } = await import("../utils/api");
-        const sessions = await SessionsAPI.byQuiz(quizId, token);
-        if (!sessions || sessions.length === 0) {
+
+        // Determine which session to load
+        // 1. From state (history navigation)
+        // 2. Or latest session (default)
+        let targetSession: any = null;
+        if (location.state?.sessionId) {
+          targetSession = await SessionsAPI.getOne(location.state.sessionId, token);
+        } else {
+          const sessions = await SessionsAPI.byQuiz(quizId, token);
+          if (sessions && sessions.length > 0) {
+            targetSession = await SessionsAPI.getOne(sessions[0].id, token);
+          }
+        }
+
+        if (!targetSession) {
           navigate("/");
           return;
         }
-        const latestMeta = sessions[0];
-        // Fetch full session (includes answers)
-        const latest = await SessionsAPI.getOne(latestMeta.id, token);
+
         // Fetch full quiz (includes questions)
         const fullQuiz = await QuizzesAPI.getById(quizId, token);
         setQuiz(fullQuiz);
         setResult({
-          quizId: latest.quizId,
+          quizId: targetSession.quizId,
           quizTitle: fullQuiz?.title || "",
-          userAnswers: latest.answers || {},
-          score: latest.score,
-          totalQuestions: latest.totalQuestions,
-          timeSpent: latest.timeSpent,
-          completedAt: new Date(latest.completedAt),
+          userAnswers: targetSession.answers || {},
+          score: targetSession.score,
+          totalQuestions: targetSession.totalQuestions,
+          timeSpent: targetSession.timeSpent,
+          completedAt: new Date(targetSession.completedAt),
+          quizSnapshot: targetSession.quizSnapshot,
         });
       } catch (e) {
         // console.error("Failed to load results:", e);
@@ -134,7 +150,7 @@ const ResultsPage: React.FC = () => {
         setLoading(false);
       }
     })();
-  }, [quizId, navigate]);
+  }, [quizId, navigate, location.state]);
 
   const findQuiz = (_id: string) => {
     // Deprecated: logic thay thế bằng gọi backend
@@ -225,6 +241,12 @@ const ResultsPage: React.FC = () => {
 
   // xác định thứ tự câu hỏi giống trang làm bài
   const displayQuestions: Question[] = useMemo(() => {
+    // Priority 1: Snapshot questions (exact state at submission)
+    if (result && (result as any).quizSnapshot && Array.isArray((result as any).quizSnapshot.questions)) {
+      return (result as any).quizSnapshot.questions;
+    }
+
+    // Priority 2: Standard quiz loading
     if (!quiz) return [] as any;
     const fromState = Array.isArray(passedOrder) ? passedOrder : undefined;
     let fromStorage: string[] | undefined;
@@ -244,7 +266,7 @@ const ResultsPage: React.FC = () => {
       (q: Question) => !order.includes(q.id)
     );
     return [...arr, ...extras];
-  }, [quiz, passedOrder, quizId]);
+  }, [quiz, passedOrder, quizId, result]);
 
   const isQuestionWrongForResult = (q: any): boolean => {
     if (!result) return false;

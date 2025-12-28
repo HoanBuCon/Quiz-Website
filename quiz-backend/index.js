@@ -204,6 +204,7 @@ app.use(`${BASE_PATH}/images`, imagesRouter);
 app.use(`${BASE_PATH}/chat`, chatRouter);
 app.use(`${BASE_PATH}/profile`, profileRouter);
 app.use(`${BASE_PATH}/documents`, documentsRouter);
+app.use(`${BASE_PATH}/stats`, require('./routes/stats'));
 
 // ====== 404 handler (GIỮ NGUYÊN) ======
 app.use((req, res) => {

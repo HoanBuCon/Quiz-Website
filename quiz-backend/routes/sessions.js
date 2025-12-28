@@ -110,9 +110,27 @@ router.post('/submit', authRequired, async (req, res) => {
   const sessionId = generateCuid();
   const now = formatDateForMySQL();
   
+  // Create snapshot of the quiz (questions with correct answers at this point in time)
+  // We use leafQuestions because that's what we scored, but for a full UI reproduction we might want the original structure.
+  // However, leafQuestions contains all info needed to reconstruct a view if we handle it right.
+  // Better: Store the 'allQs' but perhaps structured? 
+  // Requirement says: "Save full content... same as displayed in ResultPage".
+  // ResultsPage currently uses nested structure. Let's save the RAW nested structure that the frontend expects?
+  // Or just save the flat list 'allQs' and let frontend re-nest it (ResultPage does re-nesting if needed, but it usually takes 'quiz' object).
+  // Let's safe the full 'quiz' object state + questions.
+  
+  // Re-fetch clean questions just to be sure we have everything (though allQs is fine).
+  // Let's format 'allQs' into the structure the frontend expects if possible, OR just save 'allQs' as a list and 'quiz' metadata.
+  // Simple approach: Save 'questions' list.
+  
+  const snapshotData = {
+    quizTitle: quiz.title,
+    questions: allQs // This includes options, correctAnswers, etc.
+  };
+
   await query(
-    'INSERT INTO QuizSession (id, quizId, userId, score, totalQuestions, timeSpent, answers, startedAt, completedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [sessionId, quiz.id, req.user.id, score, leafQuestions.length, Number(timeSpent || 0), JSON.stringify(userAnswers), now, now]
+    'INSERT INTO QuizSession (id, quizId, userId, score, totalQuestions, timeSpent, answers, quizSnapshot, startedAt, completedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [sessionId, quiz.id, req.user.id, score, leafQuestions.length, Number(timeSpent || 0), JSON.stringify(userAnswers), JSON.stringify(snapshotData), now, now]
   );
 
   // If an attemptId was provided, link it to this session and mark endedAt
@@ -189,12 +207,21 @@ router.get('/:id', authRequired, async (req, res) => {
   const id = req.params.id;
   
   const session = await queryOne('SELECT * FROM QuizSession WHERE id = ?', [id]);
-  if (!session || session.userId !== req.user.id) {
+  if (!session) {
     return res.status(404).json({ message: 'Not found' });
+  }
+
+  // Check access: User owning the session OR Owner of the quiz
+  if (session.userId !== req.user.id) {
+    const quiz = await queryOne('SELECT ownerId FROM Quiz WHERE id = ?', [session.quizId]);
+    if (!quiz || quiz.ownerId !== req.user.id) {
+      return res.status(404).json({ message: 'Not found' });
+    }
   }
   
   // Parse JSON field
   session.answers = parseJSON(session.answers);
+  session.quizSnapshot = parseJSON(session.quizSnapshot);
   
   res.json(session);
 });

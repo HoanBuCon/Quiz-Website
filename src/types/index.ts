@@ -64,6 +64,10 @@ export interface QuizSession {
   score?: number;
   totalQuestions: number;
   completedAt?: Date;
+  quizSnapshot?: {
+    quizTitle: string;
+    questions: Question[];
+  };
 }
 
 export interface UploadedFile {

@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS `QuizSession` (
   `answers` JSON NOT NULL,
   `startedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   `completedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `quizSnapshot` JSON DEFAULT NULL,
   `quizId` VARCHAR(191) NOT NULL,
   `userId` VARCHAR(191) NOT NULL,
   INDEX `idx_session_quizId` (`quizId`),
