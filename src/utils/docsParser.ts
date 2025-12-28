@@ -526,6 +526,12 @@ export function parseDocsContent(
 
     // Helper to accumulate multi-line content
     const accumulateLines = (startIdx: number): { content: string, nextIdx: number } => {
+      // Determine separator based on the block type
+      // Explanations should preserve newlines, others (result, group) use space for JSON/compactness
+      const startLine = lines[startIdx];
+      const isExplanation = /^(Giải thích|Explanation)\s*:/i.test(startLine);
+      const separator = isExplanation ? '\n' : ' ';
+
       // CRITICAL: Generalized stripping for result:, group:, Giải thích:, Explanation:
       // Match starts with keys, optional whitespace, colon, optional whitespace
       let content = lines[startIdx].replace(/^(result|group|Giải thích|Explanation)\s*:/i, '').trim();
@@ -536,7 +542,7 @@ export function parseDocsContent(
         if (isNewBlock(nextLine)) {
           break;
         }
-        content += " " + nextLine; // Join with space (or newline if needed, but space usually allows JSON parsing)
+        content += separator + nextLine; // Use correct separator
         nextIdx++;
       }
       
