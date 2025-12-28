@@ -81,13 +81,8 @@ const ProfilePage: React.FC = () => {
 
     useEffect(() => {
         loadProfileData();
+        loadMyClasses(); // Preload classes data upfront
     }, []);
-
-    useEffect(() => {
-        if (activeTab === 'management' && myClasses.length === 0) {
-            loadMyClasses();
-        }
-    }, [activeTab]);
 
     useEffect(() => {
         if (selectedClassId) {
@@ -287,7 +282,7 @@ const ProfilePage: React.FC = () => {
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 opacity-30 bg-gradient-to-r from-transparent via-white/65 to-transparent blur-[3px] animate-[shimmer_3s_ease-in-out_infinite] [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)] mix-blend-overlay rounded-2xl pointer-events-none"></div>
 
-                    <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-8">
+                    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
                         <div className="flex flex-col sm:flex-row items-center gap-8">
                             <div className="relative group/avatar">
                                 <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-500"></div>
@@ -300,7 +295,7 @@ const ProfilePage: React.FC = () => {
 
                             <div className="text-center sm:text-left space-y-3">
                                 <div>
-                                    <h1 className="text-2xl sm:text-4xl font-mono font-bold text-white mb-2 tracking-tight drop-shadow-md" style={{ fontFamily: "consolas" }}>
+                                    <h1 className="inline-block text-2xl sm:text-4xl font-bold mb-2 tracking-tight drop-shadow-md logo-text" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                                         {profile.name || 'User'}
                                     </h1>
                                     <div className="flex items-center justify-center sm:justify-start gap-3 text-blue-100 font-mono text-sm">
@@ -328,7 +323,7 @@ const ProfilePage: React.FC = () => {
                         {/* Stats Grid in Banner */}
                         {/* Stats Grid in Banner */}
                         {/* Stats Grid in Banner - ClassesPage Style */}
-                        <div className="grid grid-cols-2 gap-3 w-full max-w-2xl xl:w-auto">
+                        <div className="grid grid-cols-2 gap-3 w-full max-w-2xl lg:w-auto xl:w-auto">
                             {[
                                 { label: 'Lớp học', value: stats.classesOwned, icon: FaGraduationCap },
                                 { label: 'Quiz đã tạo', value: stats.quizzesOwned, icon: FaClipboardList },
@@ -377,8 +372,8 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Navigation Tabs - Clean Segmented Style */}
-            <div className="flex justify-center mb-10">
-                <div className="inline-flex p-1 gap-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl">
+            <div className="flex justify-center mb-10 px-4">
+                <div className="flex flex-wrap justify-center p-1 gap-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl">
                     {[
                         { id: 'overview', label: 'Tổng quan', icon: FaUser },
                         { id: 'history', label: 'Lịch sử', icon: FaHistory },
@@ -388,7 +383,7 @@ const ProfilePage: React.FC = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`
-                                relative flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300
+                                relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300
                                 ${activeTab === tab.id
                                     ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-lg shadow-blue-500/10'
                                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/30'
@@ -425,16 +420,24 @@ const ProfilePage: React.FC = () => {
                 .dark .gradient-row-divider::after {
                     background: linear-gradient(to right, transparent, rgba(55, 65, 81, 0.5), transparent);
                 }
+                /* Smooth tab content transitions */
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .tab-content {
+                    animation: fadeIn 0.3s ease-out;
+                }
             `}</style>
-            <div className="min-h-[500px] animate-slideUpIn">
+            <div className="min-h-[500px]">
                 {activeTab === 'overview' && (
-                    <div className="space-y-8">
+                    <div className="space-y-8 tab-content">
                         {/* Settings Form */}
                         {/* Settings Form - Premium Redesign */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
                             {/* Header removed for cleaner look, integrated into spacing */}
 
-                            <div className="p-8 sm:p-10 space-y-10">
+                            <div className="p-4 sm:p-8 md:p-10 space-y-8 sm:space-y-10">
                                 {/* Section Header: Personal Info */}
                                 <div>
                                     <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-6">
@@ -472,7 +475,7 @@ const ProfilePage: React.FC = () => {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="text-lg font-bold text-gray-900 dark:text-white font-mono border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
+                                                <div className="text-lg font-bold text-gray-900 dark:text-white border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
                                                     {profile.name}
                                                 </div>
                                             )}
@@ -658,7 +661,7 @@ const ProfilePage: React.FC = () => {
                 )}
 
                 {activeTab === 'history' && (
-                    <div className="space-y-6">
+                    <div className="space-y-6 tab-content">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sm:p-8">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                                 <FaHistory className="text-blue-500" /> Lịch sử làm bài
@@ -727,7 +730,7 @@ const ProfilePage: React.FC = () => {
                 )}
 
                 {activeTab === 'management' && (
-                    <div className="space-y-8">
+                    <div className="space-y-8 tab-content">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
                             <div className="p-8 sm:p-10">
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
