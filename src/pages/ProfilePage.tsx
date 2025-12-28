@@ -560,7 +560,7 @@ const ProfilePage: React.FC = () => {
                                                 </div>
 
                                                 <button
-                                                    onClick={() => navigate(`/quiz/${session.quizId}/result`, { state: { sessionId: session.id } })}
+                                                    onClick={() => navigate(`/results/${session.quizId}`, { state: { sessionId: session.id } })}
                                                     className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
                                                 >
                                                     Xem lại <FaArrowRight />
@@ -698,7 +698,7 @@ const ProfilePage: React.FC = () => {
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full transition-transform"></div>
                                         <p className="text-gray-500 dark:text-gray-400 font-medium z-10 relative">Tổng lượt làm bài</p>
                                         <p className="text-4xl font-bold text-gray-900 dark:text-white mt-2 group-hover:text-blue-600 transition-colors z-10 relative">{quizDetails.stats.totalAttempts}</p>
-                                        <FaClipboardList className="absolute bottom-6 right-6 text-4xl text-blue-500/20 z-10" />
+                                        <FaClipboardList className="absolute top-6 right-6 text-4xl text-blue-500/20 z-10" />
                                     </div>
 
                                     <div className="relative bg-white border border-gray-200 rounded-xl p-6 text-left transition-shadow duration-300 hover:shadow-lg dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800 dark:border-white/10 dark:ring-1 dark:ring-white/10 overflow-hidden group isolate" style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}>
@@ -708,7 +708,7 @@ const ProfilePage: React.FC = () => {
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full transition-transform"></div>
                                         <p className="text-gray-500 dark:text-gray-400 font-medium z-10 relative">Điểm trung bình</p>
                                         <p className="text-4xl font-bold text-gray-900 dark:text-white mt-2 group-hover:text-green-600 transition-colors z-10 relative">{quizDetails.stats.avgScore.toFixed(1)}%</p>
-                                        <FaTrophy className="absolute bottom-6 right-6 text-4xl text-green-500/20 z-10" />
+                                        <FaTrophy className="absolute top-6 right-6 text-4xl text-green-500/20 z-10" />
                                     </div>
 
                                     <div className="relative bg-white border border-gray-200 rounded-xl p-6 text-left transition-shadow duration-300 hover:shadow-lg dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800 dark:border-white/10 dark:ring-1 dark:ring-white/10 overflow-hidden group isolate" style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}>
@@ -718,7 +718,7 @@ const ProfilePage: React.FC = () => {
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-bl-full transition-transform"></div>
                                         <p className="text-gray-500 dark:text-gray-400 font-medium z-10 relative">Người tham gia</p>
                                         <p className="text-4xl font-bold text-gray-900 dark:text-white mt-2 group-hover:text-purple-600 transition-colors z-10 relative">{quizDetails.stats.uniqueUsers}</p>
-                                        <FaUsers className="absolute bottom-6 right-6 text-4xl text-purple-500/20 z-10" />
+                                        <FaUsers className="absolute top-6 right-6 text-4xl text-purple-500/20 z-10" />
                                     </div>
                                 </div>
 
@@ -751,7 +751,6 @@ const ProfilePage: React.FC = () => {
                                                         <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                                                             <td className="py-4 px-6">
                                                                 <div className="font-bold text-gray-900 dark:text-white">{s.userName}</div>
-                                                                <div className="text-sm text-gray-500">{s.userEmail}</div>
                                                             </td>
                                                             <td className="py-4 px-6">
                                                                 <div className="flex items-center gap-2">
@@ -767,7 +766,7 @@ const ProfilePage: React.FC = () => {
                                                             </td>
                                                             <td className="py-4 px-6 text-right">
                                                                 <button
-                                                                    onClick={() => navigate(`/quiz/${quizDetails.quizId || selectedQuizId}/result`, { state: { sessionId: s.id } })}
+                                                                    onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id } })}
                                                                     className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-semibold hover:underline"
                                                                 >
                                                                     Xem chi tiết

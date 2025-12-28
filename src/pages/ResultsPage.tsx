@@ -145,7 +145,7 @@ const ResultsPage: React.FC = () => {
           quizSnapshot: targetSession.quizSnapshot,
         });
       } catch (e) {
-        // console.error("Failed to load results:", e);
+        console.error("Failed to load results:", e);
       } finally {
         setLoading(false);
       }
@@ -653,6 +653,9 @@ const ResultsPage: React.FC = () => {
                   </div>
                 );
               }
+
+              // Prevent rendering broken composite parents (from flat snapshots)
+              if (q.type === "composite") return null;
 
               // Câu hỏi thông thường (không phải composite)
               const userAnswer = result.userAnswers[q.id] || [];

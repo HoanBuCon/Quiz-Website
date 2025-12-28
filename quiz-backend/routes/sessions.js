@@ -123,9 +123,24 @@ router.post('/submit', authRequired, async (req, res) => {
   // Let's format 'allQs' into the structure the frontend expects if possible, OR just save 'allQs' as a list and 'quiz' metadata.
   // Simple approach: Save 'questions' list.
   
+  // Build nested structure for snapshot to match frontend expectations (QuizzesAPI.getById format)
+  // Re-attach children to parents
+  const snapshotQs = allQs.map(q => ({ ...q })); // Clone to avoid mutation issues
+  const byParentForSnapshot = new Map();
+  for (const q of snapshotQs) {
+    const pid = q.parentId || null;
+    if (!byParentForSnapshot.has(pid)) byParentForSnapshot.set(pid, []);
+    byParentForSnapshot.get(pid).push(q);
+  }
+  
+  const rootSnapshotQs = (byParentForSnapshot.get(null) || []).map(p => ({ 
+    ...p, 
+    subQuestions: (byParentForSnapshot.get(p.id) || []) 
+  }));
+
   const snapshotData = {
     quizTitle: quiz.title,
-    questions: allQs // This includes options, correctAnswers, etc.
+    questions: rootSnapshotQs
   };
 
   await query(
@@ -191,13 +206,29 @@ router.post('/attempt/end', authRequired, async (req, res) => {
 router.get('/by-quiz/:quizId', authRequired, async (req, res) => {
   const quizId = req.params.quizId;
   
-  const sessions = await query(
-    `SELECT id, quizId, score, totalQuestions, timeSpent, startedAt, completedAt
-     FROM QuizSession 
-     WHERE quizId = ? AND userId = ? 
-     ORDER BY completedAt DESC`,
-    [quizId, req.user.id]
-  );
+  const quiz = await queryOne('SELECT ownerId FROM Quiz WHERE id = ?', [quizId]);
+  if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+
+  let sessions;
+  // If owner, show all sessions (limit 50). If student, show only theirs.
+  if (quiz.ownerId === req.user.id) {
+    sessions = await query(
+      `SELECT id, quizId, score, totalQuestions, timeSpent, startedAt, completedAt, userId
+       FROM QuizSession 
+       WHERE quizId = ? 
+       ORDER BY completedAt DESC
+       LIMIT 50`,
+      [quizId]
+    );
+  } else {
+    sessions = await query(
+      `SELECT id, quizId, score, totalQuestions, timeSpent, startedAt, completedAt
+       FROM QuizSession 
+       WHERE quizId = ? AND userId = ? 
+       ORDER BY completedAt DESC`,
+      [quizId, req.user.id]
+    );
+  }
   
   res.json(sessions);
 });
