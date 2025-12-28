@@ -72,6 +72,11 @@ const ProfilePage: React.FC = () => {
     const [savingEmail, setSavingEmail] = useState(false);
     const [savingPassword, setSavingPassword] = useState(false);
 
+    // Password visibility states
+    const [showCurrentPass, setShowCurrentPass] = useState(false);
+    const [showNewPass, setShowNewPass] = useState(false);
+    const [showConfirmPass, setShowConfirmPass] = useState(false);
+
     const API_URL = getApiBaseUrl();
 
     useEffect(() => {
@@ -398,176 +403,251 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Content Area */}
+            <style>{`
+                /* Hide default password toggle in Edge/IE */
+                input::-ms-reveal,
+                input::-ms-clear {
+                    display: none;
+                }
+                /* Gradient row dividers */
+                .gradient-row-divider::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 1px;
+                    background: linear-gradient(to right, transparent, rgb(229, 231, 235), transparent);
+                }
+                .dark .gradient-row-divider::after {
+                    background: linear-gradient(to right, transparent, rgba(55, 65, 81, 0.5), transparent);
+                }
+            `}</style>
             <div className="min-h-[500px] animate-slideUpIn">
                 {activeTab === 'overview' && (
                     <div className="space-y-8">
                         {/* Settings Form */}
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-                            <div className="p-6 sm:p-8 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                                    <FaUser className="text-blue-500" /> Thông tin tài khoản
-                                </h2>
-                                <p className="text-gray-500 dark:text-gray-400 mt-1">Quản lý thông tin cá nhân</p>
-                            </div>
+                        {/* Settings Form - Premium Redesign */}
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+                            {/* Header removed for cleaner look, integrated into spacing */}
 
-                            <div className="p-6 sm:p-8 space-y-8">
-                                {/* Name Section */}
-                                <div className="group">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Tên người dùng</label>
-                                        {!editingName && (
-                                            <button onClick={() => setEditingName(true)} className="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline flex items-center gap-1">
-                                                <FaEdit /> Chỉnh sửa
-                                            </button>
-                                        )}
-                                    </div>
-                                    {editingName ? (
-                                        <div className="flex flex-col sm:flex-row gap-3 animate-fadeIn">
-                                            <input
-                                                value={newName}
-                                                onChange={e => setNewName(e.target.value)}
-                                                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 font-medium dark:text-white"
-                                                autoFocus
-                                                placeholder="Nhập tên hiển thị mới"
-                                            />
-                                            <div className="flex gap-2">
-                                                <button onClick={handleUpdateName} disabled={savingName} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 whitespace-nowrap">
-                                                    {savingName ? 'Lưu...' : 'Lưu'}
-                                                </button>
-                                                <button onClick={() => setEditingName(false)} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-bold transition-all">
-                                                    Hủy
-                                                </button>
+                            <div className="p-8 sm:p-10 space-y-10">
+                                {/* Section Header: Personal Info */}
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-6">
+                                        <FaUser className="text-blue-500" />
+                                        Thông tin cá nhân
+                                    </h2>
+
+                                    <div className="grid gap-8">
+                                        {/* Name Section */}
+                                        <div className="group">
+                                            <div className="flex justify-between items-baseline mb-2">
+                                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tên người dùng</label>
+                                                {!editingName && (
+                                                    <button onClick={() => setEditingName(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
+                                                        <FaEdit /> Chỉnh sửa
+                                                    </button>
+                                                )}
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                                            <p className="text-lg font-bold text-gray-900 dark:text-white font-mono">{profile.name}</p>
-                                        </div>
-                                    )}
-
-                                </div>
-
-                                <div className="h-px bg-gray-100 dark:bg-gray-700"></div>
-
-                                {/* Email Section */}
-                                <div className="group">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Email</label>
-                                        {!editingEmail && (
-                                            <button onClick={() => setEditingEmail(true)} className="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline flex items-center gap-1">
-                                                <FaEdit /> Chỉnh sửa
-                                            </button>
-                                        )}
-                                    </div>
-                                    {editingEmail ? (
-                                        <div className="space-y-4 animate-fadeIn bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-200 dark:border-gray-700">
-                                            <div>
-                                                <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Email Mới</label>
-                                                <input
-                                                    value={newEmail}
-                                                    onChange={e => setNewName(e.target.value)} // Note: logic error in original code? No, original had setNewEmail. Wait, I should correct it. Original was setNewEmail(e.target.value).
-                                                    // Warning: I need to be careful with the handler.
-                                                    // Original: onChange={e => setNewEmail(e.target.value)}
-                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
-                                                    placeholder="example@email.com"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Xác nhận mật khẩu</label>
-                                                <input
-                                                    type="password"
-                                                    value={emailPassword}
-                                                    onChange={e => setEmailPassword(e.target.value)}
-                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
-                                                    placeholder="Nhập mật khẩu để xác nhận"
-                                                />
-                                            </div>
-                                            <div className="flex gap-3 pt-2">
-                                                <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5">
-                                                    {savingEmail ? 'Đang lưu...' : 'Lưu thay đổi'}
-                                                </button>
-                                                <button onClick={() => setEditingEmail(false)} className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-bold transition-all">
-                                                    Hủy
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center gap-3">
-                                            <FaEnvelope className="text-gray-400" />
-                                            <p className="text-lg font-medium text-gray-900 dark:text-white">{profile.email}</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="h-px bg-gray-100 dark:bg-gray-700"></div>
-
-                                {/* Password Section */}
-                                <div className="group">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <label className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Mật khẩu</label>
-                                        {!editingPassword && (
-                                            <button onClick={() => setEditingPassword(true)} className="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline flex items-center gap-1">
-                                                <FaLock /> Đổi mật khẩu
-                                            </button>
-                                        )}
-                                    </div>
-                                    {editingPassword ? (
-                                        <div className="space-y-4 animate-fadeIn bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-200 dark:border-gray-700">
-                                            <div>
-                                                <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Mật khẩu hiện tại</label>
-                                                <input
-                                                    type="password"
-                                                    value={currentPassword}
-                                                    onChange={e => setCurrentPassword(e.target.value)}
-                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
-                                                    placeholder="Nhập mật khẩu hiện tại"
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Mật khẩu mới</label>
+                                            {editingName ? (
+                                                <div className="flex flex-col sm:flex-row gap-3 animate-fadeIn mt-2">
                                                     <input
-                                                        type="password"
-                                                        value={newPassword}
-                                                        onChange={e => setNewPassword(e.target.value)}
-                                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
-                                                        placeholder="Nhập mật khẩu mới"
+                                                        value={newName}
+                                                        onChange={e => setNewName(e.target.value)}
+                                                        className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
+                                                        autoFocus
+                                                        placeholder="Nhập tên hiển thị mới"
                                                     />
+                                                    <div className="flex gap-2">
+                                                        <button onClick={handleUpdateName} disabled={savingName} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap">
+                                                            {savingName ? 'Lưu...' : 'Lưu'}
+                                                        </button>
+                                                        <button onClick={() => setEditingName(false)} className="px-5 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-xl font-bold transition-all">
+                                                            Hủy
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Xác nhận mật khẩu</label>
-                                                    <input
-                                                        type="password"
-                                                        value={confirmPassword}
-                                                        onChange={e => setConfirmPassword(e.target.value)}
-                                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
-                                                        placeholder="Nhập lại mật khẩu mới"
-                                                    />
+                                            ) : (
+                                                <div className="text-lg font-bold text-gray-900 dark:text-white font-mono border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
+                                                    {profile.name}
                                                 </div>
-                                            </div>
-                                            <div className="flex gap-3 pt-2">
-                                                <button onClick={handleChangePassword} disabled={savingPassword} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5">
-                                                    {savingPassword ? 'Đang lưu...' : 'Lưu thay đổi'}
-                                                </button>
-                                                <button onClick={() => setEditingPassword(false)} className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-xl font-bold transition-all">
-                                                    Hủy
-                                                </button>
-                                            </div>
+                                            )}
                                         </div>
-                                    ) : (
-                                        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="flex gap-1">
-                                                    {[...Array(8)].map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-gray-400"></div>)}
-                                                </span>
+
+                                        {/* Email Section */}
+                                        <div className="group">
+                                            <div className="flex justify-between items-baseline mb-2">
+                                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</label>
+                                                {!editingEmail && (
+                                                    <button onClick={() => setEditingEmail(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
+                                                        <FaEdit /> Thay đổi
+                                                    </button>
+                                                )}
                                             </div>
-                                            <span className="text-sm text-gray-500">
-                                                Cập nhật lần cuối: {profile.passwordChangedAt
-                                                    ? new Date(profile.passwordChangedAt).toLocaleDateString('vi-VN')
-                                                    : 'Chưa cập nhật'}
-                                            </span>
+                                            {editingEmail ? (
+                                                <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700/50 animate-fadeIn mt-2 space-y-5">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-gray-500 mb-1.5 block">EMAIL MỚI</label>
+                                                        <input
+                                                            value={newEmail}
+                                                            onChange={e => setNewEmail(e.target.value)}
+                                                            className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
+                                                            placeholder="example@email.com"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-bold text-gray-500 mb-1.5 block">XÁC NHẬN MẬT KHẨU</label>
+                                                        <input
+                                                            type="password"
+                                                            value={emailPassword}
+                                                            onChange={e => setEmailPassword(e.target.value)}
+                                                            className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
+                                                            placeholder="••••••••"
+                                                        />
+                                                    </div>
+                                                    <div className="flex gap-3 pt-2">
+                                                        <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all">
+                                                            {savingEmail ? 'Đang xác thực...' : 'Cập nhật Email'}
+                                                        </button>
+                                                        <button onClick={() => setEditingEmail(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
+                                                            Hủy bỏ
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
+                                                    {profile.email}
+                                                    <span className="bg-green-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">Unverified</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+
+                                        {/* Password Section - Moved here */}
+                                        <div className="group">
+                                            <div className="flex justify-between items-baseline mb-2">
+                                                <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mật khẩu</label>
+                                                {!editingPassword && (
+                                                    <button onClick={() => setEditingPassword(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
+                                                        <FaEdit /> Cập nhật
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {editingPassword ? (
+                                                <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700/50 animate-fadeIn mt-2 space-y-5">
+                                                    <div>
+                                                        <label className="text-xs font-bold text-gray-500 mb-1.5 block">MẬT KHẨU HIỆN TẠI</label>
+                                                        <div className="relative">
+                                                            <input
+                                                                type={showCurrentPass ? "text" : "password"}
+                                                                value={currentPassword}
+                                                                onChange={e => setCurrentPassword(e.target.value)}
+                                                                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white transition-all font-medium pr-10"
+                                                                placeholder="••••••••"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowCurrentPass(!showCurrentPass)}
+                                                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
+                                                                tabIndex={-1}
+                                                            >
+                                                                {showCurrentPass ? (
+                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                    </svg>
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-500 mb-1.5 block">MẬT KHẨU MỚI</label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type={showNewPass ? "text" : "password"}
+                                                                    value={newPassword}
+                                                                    onChange={e => setNewPassword(e.target.value)}
+                                                                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white transition-all font-medium pr-10"
+                                                                    placeholder="Ít nhất 6 ký tự"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setShowNewPass(!showNewPass)}
+                                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
+                                                                    tabIndex={-1}
+                                                                >
+                                                                    {showNewPass ? (
+                                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-500 mb-1.5 block">XÁC NHẬN MỚI</label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type={showConfirmPass ? "text" : "password"}
+                                                                    value={confirmPassword}
+                                                                    onChange={e => setConfirmPassword(e.target.value)}
+                                                                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white transition-all font-medium pr-10"
+                                                                    placeholder="Nhập lại mật khẩu mới"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setShowConfirmPass(!showConfirmPass)}
+                                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
+                                                                    tabIndex={-1}
+                                                                >
+                                                                    {showConfirmPass ? (
+                                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-3 pt-2">
+                                                        <button onClick={handleChangePassword} disabled={savingPassword} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all">
+                                                            {savingPassword ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+                                                        </button>
+                                                        <button onClick={() => setEditingPassword(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
+                                                            Hủy bỏ
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-between py-2 border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
+                                                    <div className="flex items-center gap-1.5">
+                                                        {[...Array(8)].map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></div>)}
+                                                    </div>
+                                                    <span className="text-xs text-gray-400 font-medium">
+                                                        Lần cuối: {profile.passwordChangedAt
+                                                            ? new Date(profile.passwordChangedAt).toLocaleDateString('vi-VN')
+                                                            : 'Chưa cập nhật'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -587,15 +667,14 @@ const ProfilePage: React.FC = () => {
                                     <p className="text-gray-500 dark:text-gray-400 font-medium">Bạn chưa thực hiện bài kiểm tra nào.</p>
                                 </div>
                             ) : (
-                                <div className="grid gap-5">
+                                <div className="grid gap-5 max-h-[65vh] overflow-y-auto custom-scrollbar pr-2 py-4">
                                     {stats.recentSessions.map(session => (
-                                        <div key={session.id} className="group relative bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-900/50 flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
-                                            {/* Decorative side bar */}
-                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        <div key={session.id} className="group relative bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-900/50 flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+                                            {/* Decorative side bar - REMOVED since border-l-4 replaces it */}
 
                                             <div className="flex-1 z-10">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                                    <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-lg text-xs font-medium tracking-wider flex items-center gap-1.5">
                                                         <FaGraduationCap /> {session.className}
                                                     </span>
                                                     <span className="text-gray-300">•</span>
@@ -603,14 +682,14 @@ const ProfilePage: React.FC = () => {
                                                         <FaClock className="text-[10px]" /> {formatDateTime(session.completedAt)}
                                                     </span>
                                                 </div>
-                                                <h3 className="font-bold text-lg dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                <h3 className="font-medium text-lg dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                                     {session.quizTitle}
                                                 </h3>
                                             </div>
 
                                             <div className="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto mt-2 md:mt-0 pt-4 md:pt-0 border-t md:border-0 border-gray-100 dark:border-gray-700 z-10">
                                                 <div className="text-center group-hover:scale-105 transition-transform duration-300">
-                                                    <span className="block text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Điểm số</span>
+                                                    <span className="block text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-1">Điểm số</span>
                                                     <span className="font-mono font-bold text-2xl text-gray-900 dark:text-white">
                                                         {session.score}<span className="text-gray-400 text-sm">/{session.totalQuestions}</span>
                                                     </span>
@@ -646,15 +725,13 @@ const ProfilePage: React.FC = () => {
 
                 {activeTab === 'management' && (
                     <div className="space-y-8">
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-                            <div className="p-6 sm:p-8 bg-gradient-to-r from-blue-50 to-white dark:from-gray-800 dark:to-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                                    <FaChartBar className="text-blue-500" /> Thống kê chi tiết
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+                            <div className="p-8 sm:p-10">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
+                                    <FaChartBar className="text-blue-500" />
+                                    Thống kê chi tiết
                                 </h2>
-                                <p className="text-gray-500 dark:text-gray-400 mt-1">Xem chi tiết kết quả và phân tích bài làm của học viên</p>
-                            </div>
-
-                            <div className="p-6 sm:p-8">
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 italic">Xem chi tiết kết quả và phân tích bài làm của học viên</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Class Custom Dropdown */}
                                     <div>
@@ -815,8 +892,9 @@ const ProfilePage: React.FC = () => {
                                 </div>
 
                                 {/* Results Table */}
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                                    <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                                    <div className="p-6 relative flex justify-between items-center">
+                                        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                         <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
                                             <FaClipboardList className="text-blue-500" /> Kết quả chi tiết
                                             <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">{quizDetails.sessions.length}</span>
@@ -828,25 +906,26 @@ const ProfilePage: React.FC = () => {
                                             Chưa có dữ liệu bài làm nào.
                                         </div>
                                     ) : (
-                                        <div className="overflow-x-auto">
+                                        <div className="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
                                             <table className="w-full text-left border-collapse">
-                                                <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold border-b border-gray-200 dark:border-gray-700">
+                                                <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold relative">
                                                     <tr>
-                                                        <th className="py-4 px-6 rounded-tl-2xl">Học viên</th>
+                                                        <th className="py-4 px-6">Học viên</th>
                                                         <th className="py-4 px-6">Điểm số</th>
                                                         <th className="py-4 px-6">Thời gian</th>
-                                                        <th className="py-4 px-6 text-right rounded-tr-2xl">Thao tác</th>
+                                                        <th className="py-4 px-6 text-right">Thao tác</th>
                                                     </tr>
+                                                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                                 </thead>
-                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                                                <tbody>
                                                     {quizDetails.sessions.map((s: any) => (
-                                                        <tr key={s.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">
+                                                        <tr key={s.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200 relative gradient-row-divider">
                                                             <td className="py-4 px-6 align-middle">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-md">
                                                                         {s.userName.charAt(0).toUpperCase()}
                                                                     </div>
-                                                                    <span className="font-bold text-gray-900 dark:text-white">{s.userName}</span>
+                                                                    <span className="font-medium text-gray-900 dark:text-white">{s.userName}</span>
                                                                 </div>
                                                             </td>
                                                             <td className="py-4 px-6 align-middle">
@@ -882,36 +961,38 @@ const ProfilePage: React.FC = () => {
                                 </div>
 
                                 {/* Access List */}
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                                    <div className="p-6 relative">
+                                        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                         <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
                                             <FaUsers className="text-blue-500" /> Danh sách quyền truy cập
                                         </h3>
                                         <p className="text-sm text-gray-500 mt-1">Những người dùng được cấp quyền truy cập riêng tư</p>
                                     </div>
-                                    <div className="overflow-x-auto">
+                                    <div className="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
                                         <table className="w-full text-left border-collapse">
-                                            <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold border-b border-gray-200 dark:border-gray-700">
+                                            <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold relative">
                                                 <tr>
-                                                    <th className="py-4 px-6 rounded-tl-2xl">Người dùng</th>
+                                                    <th className="py-4 px-6">Người dùng</th>
                                                     <th className="py-4 px-6">Quyền hạn</th>
-                                                    <th className="py-4 px-6 rounded-tr-2xl">Ngày tham gia</th>
+                                                    <th className="py-4 px-6">Ngày tham gia</th>
                                                 </tr>
+                                                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                             </thead>
-                                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                                            <tbody>
                                                 {quizDetails.accessList && quizDetails.accessList.length > 0 ? (
                                                     quizDetails.accessList.map((a: any) => (
-                                                        <tr key={a.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors">
+                                                        <tr key={a.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors relative gradient-row-divider">
                                                             <td className="py-4 px-6">
-                                                                <div className="font-bold text-gray-900 dark:text-white">{a.name}</div>
+                                                                <div className="font-medium text-gray-900 dark:text-white">{a.name}</div>
                                                                 <div className="text-sm text-gray-500">{a.email}</div>
                                                             </td>
                                                             <td className="py-4 px-6">
-                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${a.accessLevel === 'full'
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${a.accessLevel === 'full'
                                                                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                                                                     : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
                                                                     }`}>
-                                                                    {a.accessLevel === 'full' ? 'Làm bài & Xem' : 'Chỉ xem'}
+                                                                    {a.accessLevel === 'full' ? 'Xem & Làm bài' : 'Chỉ xem'}
                                                                 </span>
                                                             </td>
                                                             <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-300 font-mono">
