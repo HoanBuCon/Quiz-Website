@@ -16,6 +16,8 @@ interface QuizPreviewProps {
   onCursorQuestionChange?: (questionId: string | null) => void;
   // Callback when an image is moved from another source (like a question)
   onImageMoved?: (source: any) => void;
+  // Callback when an external image file is dropped into the editor
+  onImageFileDropped?: (imageId: string, imageData: string) => void;
 }
 
 const QuizPreview: React.FC<QuizPreviewProps> = ({
@@ -28,7 +30,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   onUndo,
   onRedo,
   onCursorQuestionChange,
-  onImageMoved
+  onImageMoved,
+  onImageFileDropped
 }) => {
   // Updated generatePreviewText to show real [IMAGE:id] tags instead of placeholder
 
@@ -195,9 +198,12 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
   const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
     // console.log("QuizPreview handleDragOver types:", e.dataTransfer.types);
 
-    // Accept if image/unassigned-id OR image/assigned-source exists
-    if (!e.dataTransfer.types.includes('image/unassigned-id') &&
-      !e.dataTransfer.types.includes('image/assigned-source')) {
+    // Accept if image/unassigned-id OR image/assigned-source OR external Files
+    const hasInternalImage = e.dataTransfer.types.includes('image/unassigned-id') ||
+      e.dataTransfer.types.includes('image/assigned-source');
+    const hasExternalFiles = e.dataTransfer.types.includes('Files');
+
+    if (!hasInternalImage && !hasExternalFiles) {
       // console.log("QuizPreview handleDragOver REJECTED");
       return;
     }
@@ -207,6 +213,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     e.stopPropagation();
 
     // Use 'move' for assigned sources (from one question to another/editor) to avoid duplication
+    // Use 'copy' for external files or unassigned images
     if (e.dataTransfer.types.includes('image/assigned-source')) {
       e.dataTransfer.dropEffect = 'move';
     } else {
@@ -307,10 +314,86 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+  const handleDrop = async (e: React.DragEvent<HTMLTextAreaElement>) => {
     isDraggingOverRef.current = false;
     // console.log("QuizPreview handleDrop triggered");
 
+    // Check for external file drop first
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+
+      // Validate it's an image
+      if (!file.type.startsWith('image/')) {
+        toast.error('Chỉ chấp nhận file ảnh');
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Kích thước ảnh không được vượt quá 5MB');
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      // FIX: Save cursor position BEFORE async operations
+      // After await, e.currentTarget becomes null, causing selectionStart error
+      const textarea = e.currentTarget as HTMLTextAreaElement;
+      const cursorPos = textarea.selectionStart;
+
+      // Upload the file
+      try {
+        toast.loading('Đang upload ảnh...');
+        const { ImagesAPI } = await import('../utils/api');
+        const { getToken } = await import('../utils/auth');
+        const token = getToken();
+        if (!token) {
+          throw new Error('Vui lòng đăng nhập để upload ảnh');
+        }
+
+        const imageUrl = await ImagesAPI.upload(file, token);
+        toast.dismiss();
+        toast.success('Upload ảnh thành công!');
+
+        // Generate unique ID
+        const imageId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+
+        // Notify parent to add to pastedImagesMap
+        if (onImageFileDropped) {
+          onImageFileDropped(imageId, imageUrl);
+        }
+
+        // FIX: Use placeholder position if available (same logic as internal drops)
+        // This ensures dropped images appear at the visual drop zone, not at cursor
+        if (dragPlaceholder) {
+          // Replace placeholder with [IMAGE:id]
+          const before = editableContent.substring(0, dragPlaceholder.start);
+          const after = editableContent.substring(dragPlaceholder.end);
+          const newContent = before + `\n[IMAGE:${imageId}]` + after;
+
+          updateContentWithDebounce(newContent);
+          setDragPlaceholder(null);
+          dragTargetRef.current = null;
+        } else {
+          // Fallback: Insert at saved cursor position if no placeholder
+          const before = editableContent.substring(0, cursorPos);
+          const after = editableContent.substring(cursorPos);
+          const newContent = before + `\n[IMAGE:${imageId}]\n` + after;
+
+          updateContentWithDebounce(newContent);
+        }
+        return;
+      } catch (error) {
+        toast.dismiss();
+        console.error('Upload error:', error);
+        toast.error('Lỗi khi upload ảnh: ' + (error as Error).message);
+        return;
+      }
+    }
+
+    // Handle internal image drops (existing logic)
     let imageId = e.dataTransfer.getData('image/unassigned-id');
 
     // If not unassigned, check for assigned source

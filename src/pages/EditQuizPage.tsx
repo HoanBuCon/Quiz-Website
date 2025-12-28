@@ -397,6 +397,8 @@ const EditQuizPage: React.FC = () => {
   const questionCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   // Flag to prevent infinite loop when syncing questions from content
   const isUpdatingFromQuestionsRef = useRef(false);
+  // Flag to prevent re-parse when updating pastedImagesMap from external file drop
+  const isUpdatingPastedImagesRef = useRef(false);
   // Flag để tắt auto-save khi người dùng hủy hoặc kết thúc chỉnh sửa
   const autoSaveDisabledRef = useRef(false);
 
@@ -1028,6 +1030,13 @@ const EditQuizPage: React.FC = () => {
     // Skip sync if we're updating content from questions (to avoid infinite loop)
     if (isUpdatingFromQuestionsRef.current) {
       isUpdatingFromQuestionsRef.current = false;
+      return;
+    }
+
+    // FIX: Skip sync if we're only updating pastedImagesMap from file drop
+    // This prevents unnecessary re-parse and scroll when adding uploaded images
+    if (isUpdatingPastedImagesRef.current) {
+      isUpdatingPastedImagesRef.current = false;
       return;
     }
 
@@ -2129,6 +2138,19 @@ const EditQuizPage: React.FC = () => {
 
     // Also notify if there is a helper for this
     // handleRemoveImageFromSource(source); // Ensure this exists if we uncomment
+  };
+
+  // Callback when an external image file is dropped into QuizPreview editor
+  const handleImageFileDropped = (imageId: string, imageData: string) => {
+    // FIX: Set flag to prevent useEffect from triggering re-parse
+    // This avoids auto-scroll when adding images to pastedImagesMap
+    isUpdatingPastedImagesRef.current = true;
+
+    // Add the image to pastedImagesMap so it can be tracked and used
+    setPastedImagesMap(prev => ({
+      ...prev,
+      [imageId]: imageData
+    }));
   };
 
   const handleImageDragEnd = (e: React.DragEvent) => {
@@ -5151,15 +5173,53 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      // 3. Check for File Drop
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const result = ev.target?.result as string;
-          saveDroppedImage(result, target);
-        };
-        reader.readAsDataURL(file);
+      // 3. Check for External File Drop
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+
+        // Validate it's an image
+        if (!file.type.startsWith('image/')) {
+          toast.error('Chỉ chấp nhận file ảnh');
+          return;
+        }
+
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error('Kích thước ảnh không được vượt quá 5MB');
+          return;
+        }
+
+        // Upload the file
+        try {
+          toast.loading('Đang upload ảnh...');
+          const { ImagesAPI } = await import('../utils/api');
+          const { getToken } = await import('../utils/auth');
+          const token = getToken();
+          if (!token) {
+            throw new Error('Vui lòng đăng nhập để upload ảnh');
+          }
+
+          const imageUrl = await ImagesAPI.upload(file, token);
+          toast.dismiss();
+          toast.success('Upload ảnh thành công!');
+
+          // Generate unique ID
+          const imageId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+
+          // FIX: Don't add to pastedImagesMap here - saveDroppedImage -> handleQuestionSave
+          // will handle that via processImage(). Adding it here causes duplication in gallery.
+          // The image gets properly managed and won't appear in unassigned images.
+
+          // Save to question (this will add to pastedImagesMap via handleQuestionSave)
+          saveDroppedImage(imageUrl, target, imageId);
+          return;
+        } catch (error) {
+          toast.dismiss();
+          console.error('Upload error:', error);
+          toast.error('Lỗi khi upload ảnh: ' + (error as Error).message);
+          return;
+        }
       }
     };
 
@@ -6064,6 +6124,7 @@ const EditQuizPage: React.FC = () => {
                       onRedo={redo}
                       onCursorQuestionChange={scrollToQuestionPreview}
                       onImageMoved={handleImageMoved}
+                      onImageFileDropped={handleImageFileDropped}
                     />
                   </div>
                 </div>
