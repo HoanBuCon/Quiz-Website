@@ -583,12 +583,12 @@ const CreateClassPage: React.FC = () => {
                     <div className="relative custom-class-dropdown mb-3">
                       <button
                         onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
-                        className={`w-full px-4 py-3 flex items-center justify-center lg:justify-between relative border-2 rounded-lg shadow-sm transition-all duration-200 ${isClassDropdownOpen
+                        className={`w-full px-4 py-3 flex items-center justify-between relative border-2 rounded-lg shadow-sm transition-all duration-200 ${isClassDropdownOpen
                           ? "border-primary-500 ring-2 ring-primary-500"
                           : "border-gray-300 dark:border-gray-600 hover:border-primary-500 dark:hover:border-primary-400"
                           } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                       >
-                        <span className={`block truncate text-center lg:text-left ${!selectedClassId ? "text-gray-500 dark:text-gray-400" : "font-medium"}`}>
+                        <span className={`block truncate text-left ${!selectedClassId ? "text-gray-500 dark:text-gray-400" : "font-medium"}`}>
                           {selectedClassId
                             ? existingClasses.find((c) => c.id === selectedClassId)?.name
                             : "-- Chọn lớp học --"}

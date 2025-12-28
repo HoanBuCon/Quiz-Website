@@ -286,7 +286,7 @@ const ProfilePage: React.FC = () => {
                         <div className="flex flex-col sm:flex-row items-center gap-8">
                             <div className="relative group/avatar">
                                 <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-500"></div>
-                                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md border border-white/20 shadow-2xl overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500">
+                                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-br from-blue-400 to-purple-500 dark:from-gray-500 dark:to-gray-700 shadow-2xl overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500">
                                     <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 flex items-center justify-center text-gray-600 dark:text-gray-200 text-3xl font-mono font-bold shadow-inner">
                                         {profile.name ? profile.name.charAt(0).toUpperCase() : profile.email.charAt(0).toUpperCase()}
                                     </div>
@@ -461,9 +461,10 @@ const ProfilePage: React.FC = () => {
                                                     <input
                                                         value={newName}
                                                         onChange={e => setNewName(e.target.value)}
+                                                        maxLength={30}
                                                         className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
                                                         autoFocus
-                                                        placeholder="Nhập tên hiển thị mới"
+                                                        placeholder="Nhập tên hiển thị mới (tối đa 30 ký tự)"
                                                     />
                                                     <div className="flex gap-2">
                                                         <button onClick={handleUpdateName} disabled={savingName} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap">
@@ -753,14 +754,14 @@ const ProfilePage: React.FC = () => {
                                                 `}
                                                 onClick={() => setOpenDropdown(openDropdown === 'class' ? null : 'class')}
                                             >
-                                                <span className={`font-medium ${selectedClass ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                                                <span className={`flex-1 text-left font-medium ${selectedClass ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
                                                     {selectedClass ? selectedClass.name : '-- Chọn lớp học --'}
                                                 </span>
                                                 <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${openDropdown === 'class' ? 'rotate-180 text-blue-500' : ''}`} />
                                             </button>
 
                                             {openDropdown === 'class' && (
-                                                <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-20 overflow-hidden animate-slideUp">
+                                                <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-20 overflow-hidden animate-slideUp text-left">
                                                     <div className="max-h-60 overflow-y-auto custom-scrollbar">
                                                         {myClasses.length === 0 ? (
                                                             <div className="px-4 py-3 text-gray-500 text-sm">Bạn chưa có lớp học nào</div>
@@ -774,7 +775,7 @@ const ProfilePage: React.FC = () => {
                                                                     }}
                                                                     className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${selectedClassId === c.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
                                                                 >
-                                                                    {c.name}
+                                                                    <span className="text-left">{c.name}</span>
                                                                 </button>
                                                             ))
                                                         )}
@@ -802,14 +803,14 @@ const ProfilePage: React.FC = () => {
                                                 onClick={() => selectedClassId && setOpenDropdown(openDropdown === 'quiz' ? null : 'quiz')}
                                                 disabled={!selectedClassId}
                                             >
-                                                <span className={`font-medium ${selectedQuiz ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                                                <span className={`flex-1 text-left font-medium ${selectedQuiz ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
                                                     {selectedQuiz ? selectedQuiz.title : (!selectedClassId ? '-- Chọn lớp học trước --' : '-- Chọn bài kiểm tra --')}
                                                 </span>
                                                 <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${openDropdown === 'quiz' ? 'rotate-180 text-blue-500' : ''}`} />
                                             </button>
 
                                             {openDropdown === 'quiz' && selectedClassId && (
-                                                <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-20 overflow-hidden animate-slideUp">
+                                                <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-20 overflow-hidden animate-slideUp text-left">
                                                     <div className="max-h-60 overflow-y-auto custom-scrollbar">
                                                         {classQuizzes.length === 0 ? (
                                                             <div className="px-4 py-3 text-gray-500 text-sm">Lớp chưa có quiz nào</div>
@@ -823,7 +824,7 @@ const ProfilePage: React.FC = () => {
                                                                     }}
                                                                     className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${selectedQuizId === q.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
                                                                 >
-                                                                    {q.title}
+                                                                    <span className="text-left">{q.title}</span>
                                                                 </button>
                                                             ))
                                                         )}

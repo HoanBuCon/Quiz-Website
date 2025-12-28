@@ -220,6 +220,13 @@
     min-height: 40px;
   }
 
+  /* Override: Dropdown menu items should be left-aligned, not centered */
+  .custom-dropdown-container button[class*="text-gray-"],
+  .custom-dropdown-container button[class*="text-blue-"] {
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+
   /* Force mobile layout cho trang Lớp học ở tablet */
   .card .hidden.sm\:flex {
     display: none !important;
