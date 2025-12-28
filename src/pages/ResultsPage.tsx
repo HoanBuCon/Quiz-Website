@@ -606,9 +606,9 @@ const ResultsPage: React.FC = () => {
                                 <h6 className="font-medium text-blue-900 dark:text-blue-300 mb-1">
                                   💡 Giải thích:
                                 </h6>
-                                <p className="text-blue-800 dark:text-blue-200">
+                                <div className="text-blue-800 dark:text-blue-200 whitespace-pre-line">
                                   <MathText text={subQ.explanation} className="text-blue-800 dark:text-blue-200" />
-                                </p>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -623,7 +623,7 @@ const ResultsPage: React.FC = () => {
                           <span className="mr-2">💡</span>
                           Giải thích chi tiết cho nhóm câu hỏi:
                         </h5>
-                        <div className="text-blue-800 dark:text-blue-200 text-base leading-relaxed">
+                        <div className="text-blue-800 dark:text-blue-200 text-base leading-relaxed whitespace-pre-line">
                           <MathText text={q.explanation} className="text-blue-800 dark:text-blue-200" />
                         </div>
                       </div>
@@ -927,9 +927,9 @@ const ResultsPage: React.FC = () => {
                       <h5 className="font-medium text-blue-900 dark:text-blue-300 mb-2">
                         💡 Giải thích:
                       </h5>
-                      <p className="text-blue-800 dark:text-blue-200">
+                      <div className="text-blue-800 dark:text-blue-200 whitespace-pre-line">
                         <MathText text={q.explanation} className="text-sm text-blue-700 dark:text-blue-300" />
-                      </p>
+                      </div>
                     </div>
                   )}
                 </div>

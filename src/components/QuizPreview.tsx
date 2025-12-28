@@ -98,12 +98,22 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
               });
             }
 
+            // Add sub-question explanation if exists
+            if (subQ.explanation) {
+              content += `giải thích: ${subQ.explanation}\n`;
+            }
+
             if (subIdx < q.subQuestions!.length - 1) {
               content += '\n';
             }
           });
         }
         content += `}\n`;
+
+        // Add parent composite explanation if exists
+        if (q.explanation) {
+          content += `giải thích: ${q.explanation}\n`;
+        }
       } else if (q.type === 'drag') {
         const dragOptions = q.options as any;
         if (dragOptions && dragOptions.items) {
@@ -162,6 +172,12 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
             }
           });
         }
+      }
+
+      // Add explanation if exists
+      if (q.explanation) {
+        console.log('🔄 generatePreviewText explanation:', JSON.stringify(q.explanation));
+        content += `giải thích: ${q.explanation}\n`;
       }
 
       if (index < questions.length - 1) {
@@ -711,6 +727,13 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
         }
         currentSection = 'option';
 
+      } else if (trimmedLine.match(/^(giải thích|explanation)\s*:/i)) {
+        // Bắt đầu phần giải thích
+        // Lấy nội dung sau dấu ":"
+        const explanationStart = trimmedLine.replace(/^(giải thích|explanation)\s*:/i, '').trim();
+        currentQuestion.explanation = explanationStart;
+        currentSection = 'explanation';
+
       } else if (trimmedLine === '{') {
         // Composite start - logic hiện tại chưa support composite multiline deep editing phức tạp ở đây 
         //(logic cũ cũng chưa thấy handle sâu composite trong parseEditedContent ngoài việc hiển thị).
@@ -728,6 +751,8 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
               currentQuestion.question += '\n';
             } else if (currentSection === 'option' && currentOptions.length > 0) {
               currentOptions[currentOptions.length - 1] += '\n';
+            } else if (currentSection === 'explanation' && currentQuestion.explanation !== undefined) {
+              currentQuestion.explanation += '\n';
             }
           }
         } else {
@@ -781,6 +806,15 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
                 currentCorrectAnswers[foundIdx] = newVal;
               }
             }
+          } else if (currentSection === 'explanation') {
+            // Append vào explanation, giữ nguyên newlines
+            if (currentQuestion.explanation) {
+              currentQuestion.explanation += '\n' + trimmedLine;
+              console.log('📝 Appending to explanation:', JSON.stringify(currentQuestion.explanation));
+            } else {
+              currentQuestion.explanation = trimmedLine;
+              console.log('📝 Starting explanation:', JSON.stringify(currentQuestion.explanation));
+            }
           }
         }
       }
@@ -788,13 +822,15 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
 
     // Lưu câu cuối
     if (currentQuestion.question) {
+      const finalExplanation = currentQuestion.explanation || '';
+      console.log('✅ Final explanation for last question:', JSON.stringify(finalExplanation));
       parsedQuestions.push({
         id: currentQuestion.id || `q-${Date.now()}-${Math.random()}`,
         question: currentQuestion.question.trim(),
         type: isTextQuestion ? 'text' : (currentCorrectAnswers.length > 1 ? 'multiple' : 'single'),
         options: isTextQuestion ? undefined : currentOptions,
         correctAnswers: currentCorrectAnswers,
-        explanation: currentQuestion.explanation || ''
+        explanation: finalExplanation
       } as Question);
     }
 

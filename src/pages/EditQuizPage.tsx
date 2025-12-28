@@ -5686,7 +5686,9 @@ const EditQuizPage: React.FC = () => {
                       Giải thích:{" "}
                     </span>
                     <span className="text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
-                      <MathText text={subQ.explanation} />
+                      <span className="whitespace-pre-line">
+                        <MathText text={subQ.explanation} />
+                      </span>
                     </span>
                   </div>
                 )}
@@ -5848,12 +5850,12 @@ const EditQuizPage: React.FC = () => {
 
         {question.explanation && (
           <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-              Giải thích:{" "}
-            </span>
-            <span className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+            <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
+              Giải thích:
+            </div>
+            <div className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-line">
               <MathText text={question.explanation} />
-            </span>
+            </div>
           </div>
         )}
       </div>

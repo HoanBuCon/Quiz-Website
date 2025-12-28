@@ -327,7 +327,7 @@ const MathText: React.FC<MathTextProps> = ({ text, className = '', block = false
     const parts = text.split(regex);
 
     return (
-        <span className={`math-text-container ${className} ${block ? 'block' : ''}`}>
+        <span className={`math-text-container whitespace-pre-line ${className} ${block ? 'block' : ''}`}>
             {parts.map((part, index) => {
                 if (part.startsWith('$$') && part.endsWith('$$')) {
                     // Block Math
@@ -380,7 +380,8 @@ const MathText: React.FC<MathTextProps> = ({ text, className = '', block = false
                     // If we want "handwritten" style everywhere, we might want to normalize this too?
                     // But that risks upgrading date strings "1/1/2023" to math.
                     // Strict: Only normalize explicit math blocks or valid implicit commands.
-                    return <span key={index}>{part}</span>;
+                    // IMPORTANT: Add whitespace-pre-line to preserve newlines in multiline text (e.g., explanations)
+                    return <span key={index} className="whitespace-pre-line">{part}</span>;
                 }
             })}
         </span>
