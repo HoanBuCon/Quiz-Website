@@ -118,7 +118,7 @@ const ImageUpload: React.FC<{
         onImageUpload(imageUrl);
       } catch (error) {
         toast.dismiss();
-        console.error("Upload error:", error);
+        // console.error("Upload error:", error);
         toast.error("Lỗi khi upload ảnh: " + (error as Error).message);
       }
     };
@@ -141,7 +141,7 @@ const ImageUpload: React.FC<{
             return;
           }
         } catch (e) {
-          console.error('Failed to parse assigned source:', e);
+          // console.error('Failed to parse assigned source:', e);
         }
       }
 
@@ -731,13 +731,13 @@ const EditQuizPage: React.FC = () => {
     questionId: string;
     optionText?: string;
   }) => {
-    console.log('handleRemoveImageFromSource called with:', source);
+    // console.log('handleRemoveImageFromSource called with:', source);
 
     // ATOMIC UPDATE: Remove image from questions and update content together
     setQuestions(prev => {
-      console.log('Current questions count:', prev.length);
+      // console.log('Current questions count:', prev.length);
       const foundQuestion = prev.find(q => q.id === source.questionId);
-      console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
+      // console.log('Found question:', foundQuestion?.id, foundQuestion?.questionImage ? 'has image' : 'no image');
 
       const updated = prev.map(q => {
         if (q.id !== source.questionId) return q;
@@ -751,7 +751,7 @@ const EditQuizPage: React.FC = () => {
 
         if (source.sourceType === 'question') {
           // Remove question image
-          console.log('Removing question image from question:', q.id);
+          // console.log('Removing question image from question:', q.id);
           updatedQ.questionImage = undefined;
           updatedQ.questionImageId = undefined;
 
@@ -761,7 +761,7 @@ const EditQuizPage: React.FC = () => {
           }
         } else if (source.sourceType === 'option' && source.optionText) {
           // Remove option image
-          console.log('Removing option image:', source.optionText, 'from question:', q.id);
+          // console.log('Removing option image:', source.optionText, 'from question:', q.id);
           const newOptionImages = { ...updatedQ.optionImages };
           const newOptionImageIds = { ...updatedQ.optionImageIds };
           delete newOptionImages[source.optionText];
@@ -783,7 +783,7 @@ const EditQuizPage: React.FC = () => {
           editedQuestionsMapRef.current.set(q.id, cachedUpdated);
         }
 
-        console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
+        // console.log('Updated question:', updatedQ.id, updatedQ.questionImage ? 'still has image' : 'image removed');
         return updatedQ;
       });
 
@@ -927,11 +927,11 @@ const EditQuizPage: React.FC = () => {
       const allImages = { ...initialMap, ...prev.pastedImagesMap };
 
       // log debug to investigate why images aren't returning
-      console.log("DEBUG: handlePreviewEdit Check", {
-        totalImagesInMap: Object.keys(allImages).length,
-        idsInContent: Array.from(imageIdsInContent),
-        sampleMapKeys: Object.keys(allImages).slice(0, 5)
-      });
+      // console.log("DEBUG: handlePreviewEdit Check", {
+      //   totalImagesInMap: Object.keys(allImages).length,
+      //   idsInContent: Array.from(imageIdsInContent),
+      //   sampleMapKeys: Object.keys(allImages).slice(0, 5)
+      // });
 
       // 1. Identify all "Used IDs"
       // Since we now enforce Unique IDs for every image instance, we just check ID presence.
@@ -948,10 +948,10 @@ const EditQuizPage: React.FC = () => {
         newUnassigned.push({ id, data });
       });
 
-      console.log("DEBUG: Auto-Restore Result (ID-Based)", {
-        usedIdsCount: usedIds.size,
-        newUnassignedCount: newUnassigned.length
-      });
+      // console.log("DEBUG: Auto-Restore Result (ID-Based)", {
+      //   usedIdsCount: usedIds.size,
+      //   newUnassignedCount: newUnassigned.length
+      // });
 
       return {
         ...prev,
@@ -983,11 +983,11 @@ const EditQuizPage: React.FC = () => {
       const allImages = { ...initialMap, ...prev.pastedImagesMap };
       const newUnassigned: import('../types').ExtractedImage[] = [];
 
-      console.log("DEBUG: syncUnassignedFromContent", {
-        foundIds: Array.from(usedIds),
-        mapKeys: Object.keys(allImages).length,
-        sampleMapKey: Object.keys(allImages)[0]
-      });
+      // console.log("DEBUG: syncUnassignedFromContent", {
+      //   foundIds: Array.from(usedIds),
+      //   mapKeys: Object.keys(allImages).length,
+      //   sampleMapKey: Object.keys(allImages)[0]
+      // });
 
       Object.entries(allImages).forEach(([id, data]) => {
         if (!usedIds.has(id)) {
@@ -1808,7 +1808,7 @@ const EditQuizPage: React.FC = () => {
               targets: [] // will be filled by group:
             };
           } catch (e) {
-            console.warn("Failed to parse result array", e);
+            // console.warn("Failed to parse result array", e);
             // Fallback to text
             currentCorrectAnswers = [content];
             currentQuestion.type = 'text';
@@ -1864,7 +1864,7 @@ const EditQuizPage: React.FC = () => {
               mapping[item] = targetId;
             });
           } catch (e) {
-            console.warn("Error parsing group items", e);
+            // console.warn("Error parsing group items", e);
           }
         }
 
@@ -1977,12 +1977,12 @@ const EditQuizPage: React.FC = () => {
           const token = getToken();
           const url = await ImagesAPI.upload(file, token!);
           q.questionImage = url;
-          console.log(`✓ Uploaded questionImage for Q${i + 1}: ${url}`);
+          // console.log(`✓ Uploaded questionImage for Q${i + 1}: ${url}`);
         } catch (error) {
-          console.error(
-            `✗ Failed to upload questionImage for Q${i + 1}:`,
-            error
-          );
+          // console.error(
+          //   `✗ Failed to upload questionImage for Q${i + 1}:`,
+          //   error
+          // );
           toast.error(`Ảnh câu hỏi ${i + 1} lỗi upload. Vui lòng thử lại!`);
         }
       }
@@ -2002,14 +2002,14 @@ const EditQuizPage: React.FC = () => {
                 const token = getToken();
                 const url = await ImagesAPI.upload(file, token!);
                 newOptionImages[j] = url;
-                console.log(
-                  `✓ Uploaded optionImage for Q${i + 1} option ${j}: ${url}`
-                );
+                // console.log(
+                //   `✓ Uploaded optionImage for Q${i + 1} option ${j}: ${url}`
+                // );
               } catch (error) {
-                console.error(
-                  `✗ Failed to upload optionImage for Q${i + 1} option ${j}:`,
-                  error
-                );
+                // console.error(
+                //   `✗ Failed to upload optionImage for Q${i + 1} option ${j}:`,
+                //   error
+                // );
                 newOptionImages[j] = img; // Keep original on error
               }
             } else {
@@ -2030,14 +2030,14 @@ const EditQuizPage: React.FC = () => {
                 const token = getToken();
                 const url = await ImagesAPI.upload(file, token!);
                 newOptionImages[key] = url;
-                console.log(
-                  `✓ Uploaded optionImage for Q${i + 1} "${key}": ${url}`
-                );
+                // console.log(
+                //   `✓ Uploaded optionImage for Q${i + 1} "${key}": ${url}`
+                // );
               } catch (error) {
-                console.error(
-                  `✗ Failed to upload optionImage for Q${i + 1} "${key}":`,
-                  error
-                );
+                // console.error(
+                //   `✗ Failed to upload optionImage for Q${i + 1} "${key}":`,
+                //   error
+                // );
                 newOptionImages[key] = img; // Keep original on error
                 toast.error(`Ảnh đáp án "${key}" (câu ${i + 1}) lỗi upload.`);
               }
@@ -2306,9 +2306,9 @@ const EditQuizPage: React.FC = () => {
       }
 
       // Upload all base64 images first and replace with URLs
-      console.log("Uploading images before publishing...");
+      // console.log("Uploading images before publishing...");
       const questionsWithUrls = await uploadImagesInQuestions(cleanedQuestions);
-      console.log("All images uploaded successfully!");
+      // console.log("All images uploaded successfully!");
 
       // Nếu có token, ưu tiên lưu về backend
       const { getToken } = await import("../utils/auth");
@@ -2395,7 +2395,7 @@ const EditQuizPage: React.FC = () => {
 
       alert("Vui lòng đăng nhập để xuất bản quiz.");
     } catch (error) {
-      console.error("Error publishing quiz:", error);
+      // console.error("Error publishing quiz:", error);
       toast.error("Có lỗi xảy ra khi xuất bản");
     } finally {
       setIsPublishing(false);
@@ -2416,10 +2416,10 @@ const EditQuizPage: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log("EditQuizPage: received state", state);
+    // console.log("EditQuizPage: received state", state);
 
     if (!state) {
-      console.log("No state provided, redirecting");
+      // console.log("No state provided, redirecting");
       toast.error("Không có thông tin quiz");
       navigate("/create");
       return;
@@ -2430,7 +2430,7 @@ const EditQuizPage: React.FC = () => {
       state.fileName === "Quiz thủ công" &&
       (!state.questions || state.questions.length === 0)
     ) {
-      console.log("Manual quiz - initializing empty questions");
+      // console.log("Manual quiz - initializing empty questions");
       setQuestions([]);
       setQuizTitle("Quiz thủ công");
       setQuizDescription("Bài trắc nghiệm tạo thủ công");
@@ -2440,7 +2440,7 @@ const EditQuizPage: React.FC = () => {
 
     // Với file upload - cần có câu hỏi
     if (!state?.questions || state.questions.length === 0) {
-      console.log("No questions found, redirecting");
+      // console.log("No questions found, redirecting");
       toast.error("Không có câu hỏi nào được tải lên");
       navigate("/create");
       return;
@@ -2572,12 +2572,12 @@ const EditQuizPage: React.FC = () => {
     // This handles the "Editor Reload" case where we want to preserve the exact gallery state
     // instead of recalculating (which might resurrect ghost images).
     if (state.unassignedImages && Array.isArray(state.unassignedImages)) {
-      console.log("Restoring unassignedImages from state:", state.unassignedImages.length);
+      // console.log("Restoring unassignedImages from state:", state.unassignedImages.length);
       initialUnassignedImages = state.unassignedImages;
       // Optional: We could validate these against content just to be safe, 
       // but trusting state prevents "Ghosts".
     } else {
-      console.log("Calculating unassignedImages from initialImagesMap.");
+      // console.log("Calculating unassignedImages from initialImagesMap.");
       // Fallback: Calculate from initial map (for new imports logic remains same)
       Object.entries(initialImagesMap).forEach(([id, data]) => {
         // If ID is found in content tags, it is assigned.
@@ -2690,7 +2690,7 @@ const EditQuizPage: React.FC = () => {
       try {
         localStorage.setItem("quiz_edit_progress", JSON.stringify(dataToSave));
       } catch (error) {
-        console.warn("Failed to save progress to localStorage:", error);
+        // console.warn("Failed to save progress to localStorage:", error);
         if (error instanceof DOMException && error.name === "QuotaExceededError") {
           // Provide feedback but don't spam toasts on every keystroke save
           // Maybe set internal flag that "saving failed"
@@ -2721,7 +2721,7 @@ const EditQuizPage: React.FC = () => {
     updatedQuestion: Partial<QuestionWithImages>,
     options?: { exitEditMode?: boolean }
   ) => {
-    console.log("Saving question:", questionId, updatedQuestion); // Debug log
+    // console.log("Saving question:", questionId, updatedQuestion); // Debug log
 
     // FIX: Register new images (from GUI upload/paste) into pastedImagesMap immediately
     // ensuring generatePreviewContent can produce [IMAGE:id] tags and QuizPreview can render them.
@@ -2798,13 +2798,13 @@ const EditQuizPage: React.FC = () => {
           // Cập nhật map với dữ liệu đã lưu
           editedQuestionsMapRef.current.set(questionId, result);
 
-          console.log("Question after save:", result); // Debug log
+          // console.log("Question after save:", result); // Debug log
           return result;
         }
         return q;
       });
 
-      console.log("Updated questions array:", updated); // Debug log
+      // console.log("Updated questions array:", updated); // Debug log
       if (options?.exitEditMode ?? true) {
         setIsEditing(null);
       }
@@ -2870,7 +2870,7 @@ const EditQuizPage: React.FC = () => {
         if (imgId) {
           content += `[IMAGE:${imgId}]\n`;
         } else {
-          console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
+          // console.warn("generatePreviewContent: Missing ID for question image!", { qId: q.id, hasImage: !!q.questionImage });
         }
       }
 
@@ -3326,7 +3326,7 @@ const EditQuizPage: React.FC = () => {
         return;
       }
 
-      console.log("Edited question before save:", editedQuestion); // Debug log
+      // console.log("Edited question before save:", editedQuestion); // Debug log
 
       if (editedQuestion.type === "text") {
         // Đối với câu hỏi text, đảm bảo có ít nhất một đáp án đúng
@@ -3344,7 +3344,7 @@ const EditQuizPage: React.FC = () => {
           correctAnswers: validAnswers, // Chỉ lưu các đáp án có nội dung
         };
 
-        console.log("Saving text question with data:", updatedData); // Debug log
+        // console.log("Saving text question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       } else if (editedQuestion.type === "drag") {
@@ -3441,7 +3441,7 @@ const EditQuizPage: React.FC = () => {
           subQuestions: subQuestions,
         };
 
-        console.log("Saving composite question with data:", updatedData); // Debug log
+        // console.log("Saving composite question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       } else {
@@ -3472,7 +3472,7 @@ const EditQuizPage: React.FC = () => {
           correctAnswers: filteredCorrectAnswers,
         };
 
-        console.log("Saving multiple choice question with data:", updatedData); // Debug log
+        // console.log("Saving multiple choice question with data:", updatedData); // Debug log
         setScrollAnchor(question.id);
         saveAndFlush(question.id, updatedData);
       }
