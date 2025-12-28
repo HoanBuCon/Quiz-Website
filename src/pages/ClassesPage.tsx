@@ -341,32 +341,11 @@ const ClassesPage: React.FC = () => {
       const { getToken } = await import("../utils/auth");
       const token = getToken();
       if (!token) return;
-      const { SessionsAPI } = await import("../utils/api");
+      const { StatsAPI } = await import("../utils/api");
 
-      let totalDone = 0;
-      let totalPercentage = 0;
-
-      for (const cls of classesToProcess) {
-        const validQuizzes = getValidQuizzes(cls);
-        for (const q of validQuizzes) {
-          const sessions = await SessionsAPI.byQuiz(q.id, token);
-          totalDone += sessions.length || 0;
-          for (const s of sessions) {
-            // Use session's totalQuestions (actual count when quiz was taken)
-            // instead of quiz.questionCount (current metadata which may have changed)
-            const questionCount = s.totalQuestions || 0;
-            if (typeof s.score === "number" && questionCount > 0) {
-              totalPercentage += (s.score / questionCount) * 100;
-            }
-          }
-        }
-      }
-      setStatsCompleted(totalDone);
-      setStatsAverage(
-        totalDone > 0
-          ? Math.round((totalPercentage / totalDone / 10) * 10) / 10
-          : 0
-      );
+      const stats = await StatsAPI.getProfileStats(token);
+      setStatsCompleted(stats.quizzesTaken || 0);
+      setStatsAverage(stats.averageScore || 0);
     } catch (e) {
       // console.error("Stats error", e);
     }
@@ -976,7 +955,7 @@ const ClassesPage: React.FC = () => {
             />
 
             <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-              {statsAverage}
+              {statsAverage}%
             </div>
             <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
               Điểm trung bình
@@ -2643,7 +2622,7 @@ const ClassesPage: React.FC = () => {
                     Điểm trung bình
                   </span>
                   <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {statsAverage}
+                    {statsAverage}%
                   </span>
                 </div>
               </div>

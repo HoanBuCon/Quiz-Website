@@ -76,8 +76,17 @@ router.get('/owner/quiz/:quizId/stats', authRequired, async (req, res) => {
       `SELECT u.id, u.name, u.email, sa.accessLevel, sa.createdAt as joinedAt
        FROM SharedAccess sa
        JOIN User u ON sa.userId = u.id
-       WHERE sa.targetType = 'quiz' AND sa.targetId = ?`,
-      [quizId]
+       WHERE sa.targetType = 'quiz' AND sa.targetId = ?
+       
+       UNION
+       
+       SELECT u.id, u.name, u.email, sa.accessLevel, sa.createdAt as joinedAt
+       FROM SharedAccess sa
+       JOIN User u ON sa.userId = u.id
+       JOIN Quiz q ON q.id = ?
+       WHERE sa.targetType = 'class' AND sa.targetId = q.classId
+       `,
+      [quizId, quizId]
     );
 
     // 2. Get Sessions (Attempts)

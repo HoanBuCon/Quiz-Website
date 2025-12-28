@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', authRequired, async (req, res) => {
   try {
     const user = await queryOne(
-      'SELECT id, email, name, createdAt, lastLoginAt, lastActivityAt FROM User WHERE id = ?',
+      'SELECT id, email, name, createdAt, lastLoginAt, lastActivityAt, passwordChangedAt FROM User WHERE id = ?',
       [req.user.id]
     );
     
@@ -144,8 +144,8 @@ router.put('/password', authRequired, async (req, res) => {
     // Update
     const now = formatDateForMySQL();
     await query(
-      'UPDATE User SET passwordHash = ?, updatedAt = ? WHERE id = ?',
-      [newPasswordHash, now, req.user.id]
+      'UPDATE User SET passwordHash = ?, updatedAt = ?, passwordChangedAt = ? WHERE id = ?',
+      [newPasswordHash, now, now, req.user.id]
     );
     
     res.json({ success: true });

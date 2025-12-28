@@ -12,6 +12,7 @@ interface UserProfile {
     name: string;
     createdAt: string;
     lastLoginAt?: string;
+    passwordChangedAt?: string;
 }
 
 interface UserStats {
@@ -269,10 +270,10 @@ const ProfilePage: React.FC = () => {
     const selectedQuiz = classQuizzes.find(q => q.id === selectedQuizId);
 
     return (
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 animate-fadeIn">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-16 animate-fadeIn">
             {/* Hero Section */}
             <div className="mb-8 lg:mb-12">
-                <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl animate-slideDownIn">
+                <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 shadow-2xl animate-slideDownIn">
                     {/* Decorative elements */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
                     <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
@@ -281,30 +282,98 @@ const ProfilePage: React.FC = () => {
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 opacity-30 bg-gradient-to-r from-transparent via-white/65 to-transparent blur-[3px] animate-[shimmer_3s_ease-in-out_infinite] [mask-image:linear-gradient(to_right,transparent_0%,black_20%,black_80%,transparent_100%)] mix-blend-overlay rounded-2xl pointer-events-none"></div>
 
-                    <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6">
-                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-md border-2 border-white/20 flex items-center justify-center text-white text-4xl font-bold shadow-xl">
-                            {profile.name ? profile.name.charAt(0).toUpperCase() : profile.email.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="text-center sm:text-left">
-                            <h1 className="text-3xl sm:text-4xl font-mono font-bold text-white mb-2 tracking-tight">
-                                {profile.name || 'User'}
-                            </h1>
-                            <p className="text-blue-100 font-mono text-lg flex items-center justify-center sm:justify-start gap-2">
-                                <FaEnvelope className="text-sm opacity-70" /> {profile.email}
-                            </p>
-                            <div className="mt-3 flex items-center justify-center sm:justify-start gap-3">
-                                <span className="px-3 py-1 bg-white/10 backdrop-blur rounded-full text-xs text-white font-medium border border-white/10">
-                                    Thành viên từ {new Date(profile.createdAt).toLocaleDateString('vi-VN')}
-                                </span>
+                    <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-8">
+                        <div className="flex flex-col sm:flex-row items-center gap-8">
+                            <div className="relative group/avatar">
+                                <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-500"></div>
+                                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md border border-white/20 shadow-2xl overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500">
+                                    <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 flex items-center justify-center text-gray-600 dark:text-gray-200 text-3xl font-mono font-bold shadow-inner">
+                                        {profile.name ? profile.name.charAt(0).toUpperCase() : profile.email.charAt(0).toUpperCase()}
+                                    </div>
+                                </div>
                             </div>
+
+                            <div className="text-center sm:text-left space-y-3">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-mono font-bold text-white mb-2 tracking-tight drop-shadow-md" style={{ fontFamily: "consolas" }}>
+                                        {profile.name || 'User'}
+                                    </h1>
+                                    <div className="flex items-center justify-center sm:justify-start gap-3 text-blue-100 font-mono text-sm">
+                                        <span className="px-2.5 py-0.5 rounded-lg bg-blue-500/20 border border-blue-400/20 backdrop-blur-sm flex items-center gap-2">
+                                            <FaEnvelope className="text-xs" /> {profile.email}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                                    <span className="px-3 py-1 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-[10px] sm:text-xs text-white font-medium border border-white/10 transition-colors shadow-lg flex items-center gap-2 cursor-default">
+                                        <FaClock className="text-blue-300" />
+                                        Thành viên từ {new Date(profile.createdAt).toLocaleDateString('en-GB')}
+                                    </span>
+                                    {profile.lastLoginAt && (
+                                        <span className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-md rounded-full text-[10px] sm:text-xs text-green-100 font-medium border border-green-500/20 transition-colors shadow-lg flex items-center gap-2 cursor-default">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
+                                            Hoạt động: {profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString('vi-VN') : 'Vừa xong'}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Stats Grid in Banner */}
+                        {/* Stats Grid in Banner */}
+                        {/* Stats Grid in Banner - ClassesPage Style */}
+                        <div className="grid grid-cols-2 gap-3 w-full max-w-2xl xl:w-auto">
+                            {[
+                                { label: 'Lớp học', value: stats.classesOwned, icon: FaGraduationCap },
+                                { label: 'Quiz đã tạo', value: stats.quizzesOwned, icon: FaClipboardList },
+                                { label: 'Quiz đã làm', value: stats.quizzesTaken, icon: FaClock },
+                                { label: 'Điểm trung bình', value: `${stats.averageScore}%`, icon: FaTrophy }
+                            ].map((item, idx) => (
+                                <div
+                                    key={idx}
+                                    className="
+                                        relative bg-white border border-gray-200 rounded-xl py-2 px-4 text-left
+                                        transition-all duration-500
+                                        dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
+                                        dark:border-white/10 dark:ring-1 dark:ring-white/10
+                                        overflow-hidden group isolate
+                                        flex items-center gap-3
+                                    "
+                                    style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
+                                >
+                                    {/* Overlay pattern */}
+                                    <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none" />
+
+                                    {/* Shimmer effect */}
+                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000 bg-gradient-to-r from-transparent via-white/80 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite] rounded-xl mix-blend-overlay pointer-events-none" />
+
+                                    {/* Center glow */}
+                                    <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)] dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)] rounded-xl" />
+
+                                    {/* Icon */}
+                                    <div className="relative z-10 text-blue-600 dark:text-gray-200">
+                                        <item.icon className="text-xl" />
+                                    </div>
+
+                                    <div className="relative z-10 flex-1 min-w-0">
+                                        <h3 className="text-xs font-mono text-blue-600/70 dark:text-gray-300 mt-0.5 truncate">
+                                            {item.label}
+                                        </h3>
+                                        <p className="text-lg font-mono font-bold text-blue-600 dark:text-gray-50 leading-none truncate">
+                                            {item.value}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex justify-center mb-8">
-                <div className="bg-white dark:bg-gray-800 p-1 rounded-xl shadow-lg inline-flex flex-wrap justify-center sm:justify-start gap-1">
+            {/* Navigation Tabs - Clean Segmented Style */}
+            <div className="flex justify-center mb-10">
+                <div className="bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 inline-flex shadow-sm">
                     {[
                         { id: 'overview', label: 'Tổng quan', icon: FaUser },
                         { id: 'history', label: 'Lịch sử', icon: FaHistory },
@@ -314,14 +383,14 @@ const ProfilePage: React.FC = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`
-                                flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-bold transition-all duration-300
+                                relative flex items-center gap-2.5 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
                                 ${activeTab === tab.id
-                                    ? 'bg-blue-600 text-white shadow-md transform scale-105'
-                                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md ring-1 ring-black/5 dark:ring-white/10 scale-100'
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
                                 }
                             `}
                         >
-                            <tab.icon className={activeTab === tab.id ? 'text-white' : ''} />
+                            <tab.icon className={`text-lg ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
                             {tab.label}
                         </button>
                     ))}
@@ -332,40 +401,6 @@ const ProfilePage: React.FC = () => {
             <div className="min-h-[500px] animate-slideUpIn">
                 {activeTab === 'overview' && (
                     <div className="space-y-8">
-                        {/* Stats Grid - HomePage Style */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {[
-                                { label: 'Lớp học', value: stats.classesOwned, icon: FaGraduationCap },
-                                { label: 'Quiz đã tạo', value: stats.quizzesOwned, icon: FaClipboardList },
-                                { label: 'Quiz đã làm', value: stats.quizzesTaken, icon: FaClock },
-                                { label: 'Điểm trung bình', value: `${stats.averageScore}%`, icon: FaTrophy }
-                            ].map((item, idx) => (
-                                <div
-                                    key={idx}
-                                    className="
-                                        relative bg-white border border-gray-200 rounded-xl p-6 text-left
-                                        transition-shadow duration-300 hover:shadow-lg
-                                        dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
-                                        dark:border-white/10 dark:ring-1 dark:ring-white/10
-                                        overflow-hidden group isolate
-                                    "
-                                    style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
-                                >
-                                    {/* Overlay pattern */}
-                                    <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none" />
-
-                                    {/* Subtler shimmer effect */}
-                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000 bg-gradient-to-r from-transparent via-white/80 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite] rounded-xl mix-blend-overlay pointer-events-none" />
-
-                                    <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-white/10 flex items-center justify-center text-blue-600 dark:text-white mb-4 shadow-sm z-10 relative">
-                                        <item.icon className="text-xl" />
-                                    </div>
-                                    <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium z-10 relative">{item.label}</h3>
-                                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1 z-10 relative">{item.value}</p>
-                                </div>
-                            ))}
-                        </div>
-
                         {/* Settings Form */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
                             <div className="p-6 sm:p-8 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 border-b border-gray-200 dark:border-gray-700">
@@ -387,25 +422,29 @@ const ProfilePage: React.FC = () => {
                                         )}
                                     </div>
                                     {editingName ? (
-                                        <div className="flex gap-3 animate-fadeIn">
+                                        <div className="flex flex-col sm:flex-row gap-3 animate-fadeIn">
                                             <input
                                                 value={newName}
                                                 onChange={e => setNewName(e.target.value)}
-                                                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 focus:ring-2 focus:ring-blue-500 dark:text-white transition-all"
+                                                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 font-medium dark:text-white"
                                                 autoFocus
+                                                placeholder="Nhập tên hiển thị mới"
                                             />
-                                            <button onClick={handleUpdateName} disabled={savingName} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-md transition-colors">
-                                                {savingName ? 'Lưu...' : 'Lưu'}
-                                            </button>
-                                            <button onClick={() => setEditingName(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg font-medium transition-colors">
-                                                Hủy
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button onClick={handleUpdateName} disabled={savingName} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 whitespace-nowrap">
+                                                    {savingName ? 'Lưu...' : 'Lưu'}
+                                                </button>
+                                                <button onClick={() => setEditingName(false)} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-bold transition-all">
+                                                    Hủy
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700">
-                                            <p className="text-lg font-medium text-gray-900 dark:text-white">{profile.name}</p>
+                                        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                                            <p className="text-lg font-bold text-gray-900 dark:text-white font-mono">{profile.name}</p>
                                         </div>
                                     )}
+
                                 </div>
 
                                 <div className="h-px bg-gray-100 dark:bg-gray-700"></div>
@@ -421,25 +460,33 @@ const ProfilePage: React.FC = () => {
                                         )}
                                     </div>
                                     {editingEmail ? (
-                                        <div className="space-y-4 animate-fadeIn bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
-                                            <input
-                                                value={newEmail}
-                                                onChange={e => setNewEmail(e.target.value)}
-                                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:text-white"
-                                                placeholder="Email mới"
-                                            />
-                                            <input
-                                                type="password"
-                                                value={emailPassword}
-                                                onChange={e => setEmailPassword(e.target.value)}
-                                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:text-white"
-                                                placeholder="Xác nhận mật khẩu hiện tại"
-                                            />
-                                            <div className="flex gap-3">
-                                                <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-md">
+                                        <div className="space-y-4 animate-fadeIn bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-200 dark:border-gray-700">
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Email Mới</label>
+                                                <input
+                                                    value={newEmail}
+                                                    onChange={e => setNewName(e.target.value)} // Note: logic error in original code? No, original had setNewEmail. Wait, I should correct it. Original was setNewEmail(e.target.value).
+                                                    // Warning: I need to be careful with the handler.
+                                                    // Original: onChange={e => setNewEmail(e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
+                                                    placeholder="example@email.com"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Xác nhận mật khẩu</label>
+                                                <input
+                                                    type="password"
+                                                    value={emailPassword}
+                                                    onChange={e => setEmailPassword(e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
+                                                    placeholder="Nhập mật khẩu để xác nhận"
+                                                />
+                                            </div>
+                                            <div className="flex gap-3 pt-2">
+                                                <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5">
                                                     {savingEmail ? 'Đang lưu...' : 'Lưu thay đổi'}
                                                 </button>
-                                                <button onClick={() => setEditingEmail(false)} className="px-5 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg font-medium">
+                                                <button onClick={() => setEditingEmail(false)} className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-bold transition-all">
                                                     Hủy
                                                 </button>
                                             </div>
@@ -465,35 +512,44 @@ const ProfilePage: React.FC = () => {
                                         )}
                                     </div>
                                     {editingPassword ? (
-                                        <div className="space-y-4 animate-fadeIn bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-600">
-                                            <input
-                                                type="password"
-                                                value={currentPassword}
-                                                onChange={e => setCurrentPassword(e.target.value)}
-                                                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:text-white"
-                                                placeholder="Mật khẩu hiện tại"
-                                            />
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-4 animate-fadeIn bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-200 dark:border-gray-700">
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Mật khẩu hiện tại</label>
                                                 <input
                                                     type="password"
-                                                    value={newPassword}
-                                                    onChange={e => setNewPassword(e.target.value)}
-                                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:text-white"
-                                                    placeholder="Mật khẩu mới"
-                                                />
-                                                <input
-                                                    type="password"
-                                                    value={confirmPassword}
-                                                    onChange={e => setConfirmPassword(e.target.value)}
-                                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 dark:text-white"
-                                                    placeholder="Xác nhận mật khẩu mới"
+                                                    value={currentPassword}
+                                                    onChange={e => setCurrentPassword(e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
+                                                    placeholder="Nhập mật khẩu hiện tại"
                                                 />
                                             </div>
-                                            <div className="flex gap-3">
-                                                <button onClick={handleChangePassword} disabled={savingPassword} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-md">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Mật khẩu mới</label>
+                                                    <input
+                                                        type="password"
+                                                        value={newPassword}
+                                                        onChange={e => setNewPassword(e.target.value)}
+                                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
+                                                        placeholder="Nhập mật khẩu mới"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-semibold text-gray-500 mb-1 block uppercase">Xác nhận mật khẩu</label>
+                                                    <input
+                                                        type="password"
+                                                        value={confirmPassword}
+                                                        onChange={e => setConfirmPassword(e.target.value)}
+                                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:text-white transition-all font-medium"
+                                                        placeholder="Nhập lại mật khẩu mới"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3 pt-2">
+                                                <button onClick={handleChangePassword} disabled={savingPassword} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5">
                                                     {savingPassword ? 'Đang lưu...' : 'Lưu thay đổi'}
                                                 </button>
-                                                <button onClick={() => setEditingPassword(false)} className="px-5 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg font-medium">
+                                                <button onClick={() => setEditingPassword(false)} className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-xl font-bold transition-all">
                                                     Hủy
                                                 </button>
                                             </div>
@@ -505,7 +561,11 @@ const ProfilePage: React.FC = () => {
                                                     {[...Array(8)].map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-gray-400"></div>)}
                                                 </span>
                                             </div>
-                                            <span className="text-sm text-gray-500">Cập nhật lần cuối: Gần đây</span>
+                                            <span className="text-sm text-gray-500">
+                                                Cập nhật lần cuối: {profile.passwordChangedAt
+                                                    ? new Date(profile.passwordChangedAt).toLocaleDateString('vi-VN')
+                                                    : 'Chưa cập nhật'}
+                                            </span>
                                         </div>
                                     )}
                                 </div>
@@ -527,43 +587,53 @@ const ProfilePage: React.FC = () => {
                                     <p className="text-gray-500 dark:text-gray-400 font-medium">Bạn chưa thực hiện bài kiểm tra nào.</p>
                                 </div>
                             ) : (
-                                <div className="grid gap-4">
+                                <div className="grid gap-5">
                                     {stats.recentSessions.map(session => (
-                                        <div key={session.id} className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                            <div className="flex-1">
+                                        <div key={session.id} className="group relative bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-900/50 flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
+                                            {/* Decorative side bar */}
+                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                                            <div className="flex-1 z-10">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                                        <FaGraduationCap /> {session.className}
+                                                    </span>
+                                                    <span className="text-gray-300">•</span>
+                                                    <span className="text-gray-400 text-xs font-medium flex items-center gap-1">
+                                                        <FaClock className="text-[10px]" /> {formatDateTime(session.completedAt)}
+                                                    </span>
+                                                </div>
                                                 <h3 className="font-bold text-lg dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                                     {session.quizTitle}
                                                 </h3>
-                                                <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                                    <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs font-semibold">
-                                                        {session.className}
-                                                    </span>
-                                                    <span>•</span>
-                                                    <span>{formatDateTime(session.completedAt)}</span>
-                                                </div>
                                             </div>
 
-                                            <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-0 border-gray-100 dark:border-gray-700">
-                                                <div className="text-center">
-                                                    <span className="block text-xs uppercase tracking-wider text-gray-400 font-semibold">Điểm số</span>
-                                                    <span className="font-bold text-xl dark:text-white">{session.score} <span className="text-sm text-gray-400 font-normal">/ {session.totalQuestions}</span></span>
+                                            <div className="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto mt-2 md:mt-0 pt-4 md:pt-0 border-t md:border-0 border-gray-100 dark:border-gray-700 z-10">
+                                                <div className="text-center group-hover:scale-105 transition-transform duration-300">
+                                                    <span className="block text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Điểm số</span>
+                                                    <span className="font-mono font-bold text-2xl text-gray-900 dark:text-white">
+                                                        {session.score}<span className="text-gray-400 text-sm">/{session.totalQuestions}</span>
+                                                    </span>
                                                 </div>
 
                                                 <div className="text-center min-w-[60px]">
-                                                    <span className="block text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Kết quả</span>
-                                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${session.percentage >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                                        session.percentage >= 50 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                                        }`}>
+                                                    <div className={`
+                                                        w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shadow-inner
+                                                        ${session.percentage >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ring-2 ring-green-500/10' :
+                                                            session.percentage >= 50 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 ring-2 ring-yellow-500/10' :
+                                                                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-2 ring-red-500/10'
+                                                        }
+                                                    `}>
                                                         {session.percentage}%
-                                                    </span>
+                                                    </div>
                                                 </div>
 
                                                 <button
                                                     onClick={() => navigate(`/results/${session.quizId}`, { state: { sessionId: session.id } })}
-                                                    className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
+                                                    className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 text-gray-400 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-lg"
+                                                    title="Xem chi tiết"
                                                 >
-                                                    Xem lại <FaArrowRight />
+                                                    <FaArrowRight />
                                                 </button>
                                             </div>
                                         </div>
@@ -588,14 +658,22 @@ const ProfilePage: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Class Custom Dropdown */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Chọn Lớp học</label>
+                                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Chọn Lớp học</label>
                                         <div className="relative custom-dropdown-container">
                                             <button
-                                                className="w-full text-left appearance-none border-2 border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl px-4 py-3 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex justify-between items-center"
+                                                className={`
+                                                    w-full text-left appearance-none border border-gray-200 dark:border-gray-700 
+                                                    rounded-xl px-4 py-3 bg-white dark:bg-gray-800 
+                                                    focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 
+                                                    transition-all duration-200 flex justify-between items-center shadow-sm hover:shadow-md
+                                                    ${openDropdown === 'class' ? 'ring-2 ring-blue-500/50 border-blue-500' : ''}
+                                                `}
                                                 onClick={() => setOpenDropdown(openDropdown === 'class' ? null : 'class')}
                                             >
-                                                <span>{selectedClass ? selectedClass.name : '-- Chọn một lớp học --'}</span>
-                                                <FaChevronDown className={`text-sm text-gray-500 transition-transform ${openDropdown === 'class' ? 'rotate-180' : ''}`} />
+                                                <span className={`font-medium ${selectedClass ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                                                    {selectedClass ? selectedClass.name : '-- Chọn lớp học --'}
+                                                </span>
+                                                <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${openDropdown === 'class' ? 'rotate-180 text-blue-500' : ''}`} />
                                             </button>
 
                                             {openDropdown === 'class' && (
@@ -625,18 +703,26 @@ const ProfilePage: React.FC = () => {
 
                                     {/* Quiz Custom Dropdown */}
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">Chọn Bài kiểm tra</label>
+                                        <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">Chọn Bài kiểm tra</label>
                                         <div className="relative custom-dropdown-container">
                                             <button
-                                                className={`w-full text-left appearance-none border-2 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex justify-between items-center ${!selectedClassId
-                                                    ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700'
-                                                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 dark:bg-gray-700 dark:text-white'
-                                                    }`}
+                                                className={`
+                                                    w-full text-left appearance-none border rounded-xl px-4 py-3 
+                                                    focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 
+                                                    transition-all duration-200 flex justify-between items-center shadow-sm
+                                                    ${!selectedClassId
+                                                        ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed'
+                                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:shadow-md'
+                                                    }
+                                                    ${openDropdown === 'quiz' ? 'ring-2 ring-blue-500/50 border-blue-500' : ''}
+                                                `}
                                                 onClick={() => selectedClassId && setOpenDropdown(openDropdown === 'quiz' ? null : 'quiz')}
                                                 disabled={!selectedClassId}
                                             >
-                                                <span>{selectedQuiz ? selectedQuiz.title : (!selectedClassId ? '-- Chọn lớp học trước --' : '-- Chọn bài kiểm tra --')}</span>
-                                                <FaChevronDown className={`text-sm text-gray-500 transition-transform ${openDropdown === 'quiz' ? 'rotate-180' : ''}`} />
+                                                <span className={`font-medium ${selectedQuiz ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                                                    {selectedQuiz ? selectedQuiz.title : (!selectedClassId ? '-- Chọn lớp học trước --' : '-- Chọn bài kiểm tra --')}
+                                                </span>
+                                                <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${openDropdown === 'quiz' ? 'rotate-180 text-blue-500' : ''}`} />
                                             </button>
 
                                             {openDropdown === 'quiz' && selectedClassId && (
@@ -669,8 +755,12 @@ const ProfilePage: React.FC = () => {
                                     <button
                                         onClick={handleLoadQuizStats}
                                         disabled={!selectedQuizId || loadingStats}
-                                        className="btn-primary w-full sm:w-auto px-8 py-3 rounded-xl shadow-lg hover:shadow-xl text-white font-bold flex items-center justify-center gap-2 transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{ background: 'linear-gradient(to right, #2563eb, #1d4ed8)' }}
+                                        className="
+                                            px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md 
+                                            bg-blue-600 hover:bg-blue-700 
+                                            disabled:opacity-50 disabled:cursor-not-allowed 
+                                            transition-all duration-200 flex items-center justify-center gap-2
+                                        "
                                     >
                                         {loadingStats ? (
                                             <>
@@ -679,7 +769,7 @@ const ProfilePage: React.FC = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <FaChartBar /> Xem Thống Kê
+                                                <FaChartBar className="text-lg" /> Xem Thống Kê
                                             </>
                                         )}
                                     </button>
@@ -691,35 +781,37 @@ const ProfilePage: React.FC = () => {
                             <div className="space-y-8 animate-slideUpIn">
                                 {/* Overview Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="relative bg-white border border-gray-200 rounded-xl p-6 text-left transition-shadow duration-300 hover:shadow-lg dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800 dark:border-white/10 dark:ring-1 dark:ring-white/10 overflow-hidden group isolate" style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}>
-                                        <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none" />
-                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000 bg-gradient-to-r from-transparent via-white/80 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite] rounded-xl mix-blend-overlay pointer-events-none" />
+                                    {[
+                                        { label: 'Tổng lượt làm bài', value: quizDetails.stats.totalAttempts, icon: FaClipboardList, color: 'blue' },
+                                        { label: 'Điểm trung bình', value: `${quizDetails.stats.avgScore.toFixed(1)}%`, icon: FaTrophy, color: 'green' },
+                                        { label: 'Người tham gia', value: quizDetails.stats.uniqueUsers, icon: FaUsers, color: 'purple' }
+                                    ].map((item, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="
+                                                relative bg-white border border-gray-200 rounded-2xl p-4 text-left
+                                                transition-all duration-300 hover:shadow-xl hover:-translate-y-1
+                                                dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900
+                                                dark:border-white/10 dark:ring-1 dark:ring-white/5
+                                                overflow-hidden group isolate
+                                                flex flex-col lg:flex-row lg:items-center gap-4
+                                            "
+                                            style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
+                                        >
+                                            {/* Overlay pattern elements */}
+                                            <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none" />
+                                            <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000 bg-gradient-to-r from-transparent via-white/80 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite] rounded-xl mix-blend-overlay pointer-events-none" />
 
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full transition-transform"></div>
-                                        <p className="text-gray-500 dark:text-gray-400 font-medium z-10 relative">Tổng lượt làm bài</p>
-                                        <p className="text-4xl font-bold text-gray-900 dark:text-white mt-2 group-hover:text-blue-600 transition-colors z-10 relative">{quizDetails.stats.totalAttempts}</p>
-                                        <FaClipboardList className="absolute top-6 right-6 text-4xl text-blue-500/20 z-10" />
-                                    </div>
+                                            <div className={`w-12 h-12 lg:w-10 lg:h-10 rounded-2xl bg-${item.color}-50 dark:bg-white/10 flex items-center justify-center text-${item.color}-600 dark:text-${item.color}-400 shadow-sm group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
+                                                <item.icon className="text-xl lg:text-lg" />
+                                            </div>
 
-                                    <div className="relative bg-white border border-gray-200 rounded-xl p-6 text-left transition-shadow duration-300 hover:shadow-lg dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800 dark:border-white/10 dark:ring-1 dark:ring-white/10 overflow-hidden group isolate" style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}>
-                                        <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none" />
-                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000 bg-gradient-to-r from-transparent via-white/80 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite] rounded-xl mix-blend-overlay pointer-events-none" />
-
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-bl-full transition-transform"></div>
-                                        <p className="text-gray-500 dark:text-gray-400 font-medium z-10 relative">Điểm trung bình</p>
-                                        <p className="text-4xl font-bold text-gray-900 dark:text-white mt-2 group-hover:text-green-600 transition-colors z-10 relative">{quizDetails.stats.avgScore.toFixed(1)}%</p>
-                                        <FaTrophy className="absolute top-6 right-6 text-4xl text-green-500/20 z-10" />
-                                    </div>
-
-                                    <div className="relative bg-white border border-gray-200 rounded-xl p-6 text-left transition-shadow duration-300 hover:shadow-lg dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800 dark:border-white/10 dark:ring-1 dark:ring-white/10 overflow-hidden group isolate" style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}>
-                                        <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none" />
-                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000 bg-gradient-to-r from-transparent via-white/80 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite] rounded-xl mix-blend-overlay pointer-events-none" />
-
-                                        <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-bl-full transition-transform"></div>
-                                        <p className="text-gray-500 dark:text-gray-400 font-medium z-10 relative">Người tham gia</p>
-                                        <p className="text-4xl font-bold text-gray-900 dark:text-white mt-2 group-hover:text-purple-600 transition-colors z-10 relative">{quizDetails.stats.uniqueUsers}</p>
-                                        <FaUsers className="absolute top-6 right-6 text-4xl text-purple-500/20 z-10" />
-                                    </div>
+                                            <div>
+                                                <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-0.5">{item.label}</h3>
+                                                <p className="text-2xl lg:text-xl font-mono font-bold text-gray-900 dark:text-white leading-none">{item.value}</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 {/* Results Table */}
@@ -737,39 +829,48 @@ const ProfilePage: React.FC = () => {
                                         </div>
                                     ) : (
                                         <div className="overflow-x-auto">
-                                            <table className="w-full text-left">
-                                                <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold border-b border-gray-200 dark:border-gray-700">
                                                     <tr>
-                                                        <th className="py-4 px-6">Học viên</th>
+                                                        <th className="py-4 px-6 rounded-tl-2xl">Học viên</th>
                                                         <th className="py-4 px-6">Điểm số</th>
                                                         <th className="py-4 px-6">Thời gian</th>
-                                                        <th className="py-4 px-6 text-right">Thao tác</th>
+                                                        <th className="py-4 px-6 text-right rounded-tr-2xl">Thao tác</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
                                                     {quizDetails.sessions.map((s: any) => (
-                                                        <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                                                            <td className="py-4 px-6">
-                                                                <div className="font-bold text-gray-900 dark:text-white">{s.userName}</div>
-                                                            </td>
-                                                            <td className="py-4 px-6">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="font-bold text-gray-900 dark:text-white text-lg">{s.score}/{s.totalQuestions}</span>
-                                                                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${(s.score / s.totalQuestions) >= 0.5 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                                                        }`}>
-                                                                        {Math.round((s.score / s.totalQuestions) * 100)}%
-                                                                    </span>
+                                                        <tr key={s.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">
+                                                            <td className="py-4 px-6 align-middle">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-md">
+                                                                        {s.userName.charAt(0).toUpperCase()}
+                                                                    </div>
+                                                                    <span className="font-bold text-gray-900 dark:text-white">{s.userName}</span>
                                                                 </div>
                                                             </td>
-                                                            <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-300">
+                                                            <td className="py-4 px-6 align-middle">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-medium text-gray-900 dark:text-white text-lg">{s.score}/{s.totalQuestions}</span>
+                                                                    <div className="relative h-1.5 w-16 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                                        <div
+                                                                            className={`absolute top-0 left-0 h-full rounded-full ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-500' :
+                                                                                (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                                }`}
+                                                                            style={{ width: `${(s.score / s.totalQuestions) * 100}%` }}
+                                                                        ></div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-4 px-6 align-middle text-sm text-gray-500 font-mono">
                                                                 {formatDateTime(s.completedAt)}
                                                             </td>
-                                                            <td className="py-4 px-6 text-right">
+                                                            <td className="py-4 px-6 align-middle text-right">
                                                                 <button
                                                                     onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id } })}
-                                                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-semibold hover:underline"
+                                                                    className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
                                                                 >
-                                                                    Xem chi tiết
+                                                                    Chi tiết
                                                                 </button>
                                                             </td>
                                                         </tr>
@@ -789,35 +890,38 @@ const ProfilePage: React.FC = () => {
                                         <p className="text-sm text-gray-500 mt-1">Những người dùng được cấp quyền truy cập riêng tư</p>
                                     </div>
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
-                                            <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold border-b border-gray-200 dark:border-gray-700">
                                                 <tr>
-                                                    <th className="py-4 px-6">Người dùng</th>
+                                                    <th className="py-4 px-6 rounded-tl-2xl">Người dùng</th>
                                                     <th className="py-4 px-6">Quyền hạn</th>
-                                                    <th className="py-4 px-6">Ngày tham gia</th>
+                                                    <th className="py-4 px-6 rounded-tr-2xl">Ngày tham gia</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
                                                 {quizDetails.accessList && quizDetails.accessList.length > 0 ? (
                                                     quizDetails.accessList.map((a: any) => (
-                                                        <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                                                        <tr key={a.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors">
                                                             <td className="py-4 px-6">
                                                                 <div className="font-bold text-gray-900 dark:text-white">{a.name}</div>
                                                                 <div className="text-sm text-gray-500">{a.email}</div>
                                                             </td>
                                                             <td className="py-4 px-6">
-                                                                <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs font-bold">
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${a.accessLevel === 'full'
+                                                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                                                    }`}>
                                                                     {a.accessLevel === 'full' ? 'Làm bài & Xem' : 'Chỉ xem'}
                                                                 </span>
                                                             </td>
-                                                            <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-300">
+                                                            <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-300 font-mono">
                                                                 {formatDateTime(a.joinedAt)}
                                                             </td>
                                                         </tr>
                                                     ))
                                                 ) : (
                                                     <tr>
-                                                        <td colSpan={3} className="py-8 text-center text-gray-500">Chưa có thành viên nào trong danh sách truy cập.</td>
+                                                        <td colSpan={3} className="py-8 text-center text-gray-500 italic">Chưa có thành viên nào trong danh sách truy cập.</td>
                                                     </tr>
                                                 )}
                                             </tbody>

@@ -423,6 +423,8 @@ export const StatsAPI = {
     apiRequest<any[]>(`/stats/owner/class/${classId}/quizzes`, { token }),
   getQuizStats: (quizId: string, token: string) =>
     apiRequest<any>(`/stats/owner/quiz/${quizId}/stats`, { token }),
+  getProfileStats: (token: string) =>
+    apiRequest<any>(`/profile/stats`, { token }),
 };
 
 export type {};

@@ -12,7 +12,7 @@ const router = express.Router();
 router.get('/me', authRequired, async (req, res) => {
   try {
     const user = await queryOne(
-      'SELECT id, email, name FROM User WHERE id = ?',
+      'SELECT id, email, name, lastLoginAt, createdAt, passwordChangedAt FROM User WHERE id = ?',
       [req.user.id]
     );
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -42,7 +42,7 @@ router.post('/signup', async (req, res) => {
   const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
   if (!secret) return res.status(500).json({ message: 'Server misconfigured' });
   const token = jwt.sign({ sub: userId, email: normalizedEmail }, secret, { expiresIn: '7d' });
-  res.status(201).json({ token, user: { id: userId, email: normalizedEmail, name: name || null } });
+  res.status(201).json({ token, user: { id: userId, email: normalizedEmail, name: name || null, createdAt: now, lastLoginAt: null, passwordChangedAt: now } });
 });
 
 router.post('/login', async (req, res) => {
@@ -61,15 +61,15 @@ router.post('/login', async (req, res) => {
   const token = jwt.sign({ sub: user.id, email: user.email }, secret, { expiresIn: '7d' });
   
   // update lastLoginAt + lastActivityAt
+  const now = formatDateForMySQL();
   try {
-    const now = formatDateForMySQL();
     await query(
       'UPDATE User SET lastLoginAt = ?, lastActivityAt = ?, updatedAt = ? WHERE id = ?',
       [now, now, now, user.id]
     );
   } catch (_) {}
   
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
+  res.json({ token, user: { id: user.id, email: user.email, name: user.name, lastLoginAt: now } });
 });
 
 // Logout
@@ -160,7 +160,7 @@ router.post('/reset', async (req, res) => {
     const userId = payload.sub;
     const hash = await bcrypt.hash(newPassword, 10);
     const now = formatDateForMySQL();
-    await query('UPDATE User SET passwordHash = ?, updatedAt = ? WHERE id = ?', [hash, now, userId]);
+    await query('UPDATE User SET passwordHash = ?, updatedAt = ?, passwordChangedAt = ? WHERE id = ?', [hash, now, now, userId]);
     res.status(204).end();
   } catch (e) {
     res.status(400).json({ message: 'Invalid or expired token' });
@@ -297,7 +297,7 @@ router.post('/reset-with-otp', async (req, res) => {
   await transaction(async (conn) => {
     const updateTime = formatDateForMySQL();
     const usedAt = formatDateForMySQL();
-    await conn.execute('UPDATE User SET passwordHash = ?, updatedAt = ? WHERE id = ?', [hash, updateTime, user.id]);
+    await conn.execute('UPDATE User SET passwordHash = ?, updatedAt = ?, passwordChangedAt = ? WHERE id = ?', [hash, updateTime, updateTime, user.id]);
     await conn.execute('UPDATE PasswordReset SET usedAt = ? WHERE id = ?', [usedAt, record.id]);
   });
   return res.status(204).end();
