@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `Question` (
   `type` ENUM('single', 'multiple', 'text', 'drag', 'composite') NOT NULL,
   `options` JSON DEFAULT NULL,
   `correctAnswers` JSON NOT NULL,
-  `explanation` TEXT DEFAULT NULL,
+  `explanation` MEDIUMTEXT DEFAULT NULL,
   `questionImage` VARCHAR(512) DEFAULT NULL,
   `optionImages` JSON DEFAULT NULL,
   `quizId` VARCHAR(191) NOT NULL,

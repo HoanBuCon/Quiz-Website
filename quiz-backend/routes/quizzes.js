@@ -272,8 +272,31 @@ router.put('/:id', authRequired, async (req, res) => {
     
     res.json(quiz);
   } catch (error) {
-    console.error('Update quiz error:', error);
-    res.status(500).json({ message: 'Failed to update quiz' });
+    console.error('========== UPDATE QUIZ ERROR ==========');
+    console.error('Error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('SQL State:', error.sqlState);
+    console.error('SQL Message:', error.sqlMessage);
+    
+    // Log request body summary
+    if (req.body) {
+      console.error('Request body keys:', Object.keys(req.body));
+      if (req.body.questions && Array.isArray(req.body.questions)) {
+        console.error('Number of questions:', req.body.questions.length);
+        req.body.questions.forEach((q, i) => {
+          console.error(`Q${i}:`, {
+            type: q.type,
+            hasExplanation: !!q.explanation,
+            explanationLength: q.explanation?.length || 0,
+            explanationPreview: q.explanation?.substring(0, 50)
+          });
+        });
+      }
+    }
+    console.error('=======================================');
+    
+    res.status(500).json({ message: 'Failed to update quiz', error: error.message });
   }
 });
 
