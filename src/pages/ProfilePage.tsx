@@ -378,7 +378,7 @@ const ProfilePage: React.FC = () => {
 
             {/* Navigation Tabs - Clean Segmented Style */}
             <div className="flex justify-center mb-10">
-                <div className="bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 inline-flex shadow-sm">
+                <div className="inline-flex p-1 gap-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl">
                     {[
                         { id: 'overview', label: 'Tổng quan', icon: FaUser },
                         { id: 'history', label: 'Lịch sử', icon: FaHistory },
@@ -388,15 +388,18 @@ const ProfilePage: React.FC = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`
-                                relative flex items-center gap-2.5 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300
+                                relative flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300
                                 ${activeTab === tab.id
-                                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md ring-1 ring-black/5 dark:ring-white/10 scale-100'
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50'
+                                    ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-lg shadow-blue-500/10'
+                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/30'
                                 }
                             `}
                         >
-                            <tab.icon className={`text-lg ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
-                            {tab.label}
+                            <tab.icon className="text-base" />
+                            <span>{tab.label}</span>
+                            {activeTab === tab.id && (
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                            )}
                         </button>
                     ))}
                 </div>
@@ -657,7 +660,7 @@ const ProfilePage: React.FC = () => {
                 {activeTab === 'history' && (
                     <div className="space-y-6">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sm:p-8">
-                            <h2 className="text-2xl font-bold dark:text-white mb-6 flex items-center gap-3">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                                 <FaHistory className="text-blue-500" /> Lịch sử làm bài
                             </h2>
 
@@ -906,57 +909,97 @@ const ProfilePage: React.FC = () => {
                                             Chưa có dữ liệu bài làm nào.
                                         </div>
                                     ) : (
-                                        <div className="overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
-                                            <table className="w-full text-left border-collapse">
-                                                <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold relative">
-                                                    <tr>
-                                                        <th className="py-4 px-6">Học viên</th>
-                                                        <th className="py-4 px-6">Điểm số</th>
-                                                        <th className="py-4 px-6">Thời gian</th>
-                                                        <th className="py-4 px-6 text-right">Thao tác</th>
-                                                    </tr>
-                                                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
-                                                </thead>
-                                                <tbody>
-                                                    {quizDetails.sessions.map((s: any) => (
-                                                        <tr key={s.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200 relative gradient-row-divider">
-                                                            <td className="py-4 px-6 align-middle">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-md">
-                                                                        {s.userName.charAt(0).toUpperCase()}
-                                                                    </div>
-                                                                    <span className="font-medium text-gray-900 dark:text-white">{s.userName}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="py-4 px-6 align-middle">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="font-medium text-gray-900 dark:text-white text-lg">{s.score}/{s.totalQuestions}</span>
-                                                                    <div className="relative h-1.5 w-16 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                                                                        <div
-                                                                            className={`absolute top-0 left-0 h-full rounded-full ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-500' :
-                                                                                (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
-                                                                                }`}
-                                                                            style={{ width: `${(s.score / s.totalQuestions) * 100}%` }}
-                                                                        ></div>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="py-4 px-6 align-middle text-sm text-gray-500 font-mono">
-                                                                {formatDateTime(s.completedAt)}
-                                                            </td>
-                                                            <td className="py-4 px-6 align-middle text-right">
-                                                                <button
-                                                                    onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id } })}
-                                                                    className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
-                                                                >
-                                                                    Chi tiết
-                                                                </button>
-                                                            </td>
+                                        <>
+                                            {/* Desktop Table View */}
+                                            <div className="hidden md:block overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold relative">
+                                                        <tr>
+                                                            <th className="py-4 px-6">Học viên</th>
+                                                            <th className="py-4 px-6">Điểm số</th>
+                                                            <th className="py-4 px-6">Thời gian</th>
+                                                            <th className="py-4 px-6 text-right">Thao tác</th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
+                                                    </thead>
+                                                    <tbody>
+                                                        {quizDetails.sessions.map((s: any) => (
+                                                            <tr key={s.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200 relative gradient-row-divider">
+                                                                <td className="py-4 px-6 align-middle">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-md">
+                                                                            {s.userName.charAt(0).toUpperCase()}
+                                                                        </div>
+                                                                        <span className="font-medium text-gray-900 dark:text-white">{s.userName}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-4 px-6 align-middle">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-medium text-gray-900 dark:text-white text-lg">{s.score}/{s.totalQuestions}</span>
+                                                                        <div className="relative h-1.5 w-16 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                                            <div
+                                                                                className={`absolute top-0 left-0 h-full rounded-full ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-500' :
+                                                                                    (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                                    }`}
+                                                                                style={{ width: `${(s.score / s.totalQuestions) * 100}%` }}
+                                                                            ></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-4 px-6 align-middle text-sm text-gray-500 font-mono">
+                                                                    {formatDateTime(s.completedAt)}
+                                                                </td>
+                                                                <td className="py-4 px-6 align-middle text-right">
+                                                                    <button
+                                                                        onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id } })}
+                                                                        className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
+                                                                    >
+                                                                        Chi tiết
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Mobile Card View */}
+                                            <div className="md:hidden p-4 space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
+                                                {quizDetails.sessions.map((s: any) => (
+                                                    <div key={s.id} className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 space-y-3 relative gradient-row-divider">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md flex-shrink-0">
+                                                                {s.userName.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="font-bold text-gray-900 dark:text-white truncate">{s.userName}</div>
+                                                                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">{formatDateTime(s.completedAt)}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold mb-1">Điểm số</div>
+                                                                <div className="font-bold text-2xl text-gray-900 dark:text-white">{s.score}<span className="text-gray-400 text-base">/{s.totalQuestions}</span></div>
+                                                            </div>
+                                                            <div className="relative h-2 w-24 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                                                <div
+                                                                    className={`absolute top-0 left-0 h-full rounded-full ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-500' :
+                                                                        (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                        }`}
+                                                                    style={{ width: `${(s.score / s.totalQuestions) * 100}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id } })}
+                                                            className="w-full py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
+                                                        >
+                                                            Xem chi tiết
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
                                     )}
                                 </div>
 
@@ -969,7 +1012,8 @@ const ProfilePage: React.FC = () => {
                                         </h3>
                                         <p className="text-sm text-gray-500 mt-1">Những người dùng được cấp quyền truy cập riêng tư</p>
                                     </div>
-                                    <div className="overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
+                                    {/* Desktop Table View */}
+                                    <div className="hidden md:block overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
                                         <table className="w-full text-left border-collapse">
                                             <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold relative">
                                                 <tr>
@@ -985,7 +1029,6 @@ const ProfilePage: React.FC = () => {
                                                         <tr key={a.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors relative gradient-row-divider">
                                                             <td className="py-4 px-6">
                                                                 <div className="font-medium text-gray-900 dark:text-white">{a.name}</div>
-                                                                <div className="text-sm text-gray-500">{a.email}</div>
                                                             </td>
                                                             <td className="py-4 px-6">
                                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${a.accessLevel === 'full'
@@ -1007,6 +1050,36 @@ const ProfilePage: React.FC = () => {
                                                 )}
                                             </tbody>
                                         </table>
+                                    </div>
+
+                                    {/* Mobile Card View */}
+                                    <div className="md:hidden p-4 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                        {quizDetails.accessList && quizDetails.accessList.length > 0 ? (
+                                            quizDetails.accessList.map((a: any) => (
+                                                <div key={a.id} className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 space-y-3 relative gradient-row-divider">
+                                                    <div>
+                                                        <div className="font-bold text-gray-900 dark:text-white">{a.name}</div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold mb-1">Quyền hạn</div>
+                                                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${a.accessLevel === 'full'
+                                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                                : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                                                }`}>
+                                                                {a.accessLevel === 'full' ? 'Xem & Làm bài' : 'Chỉ xem'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold mb-1">Tham gia</div>
+                                                            <div className="text-sm text-gray-600 dark:text-gray-300 font-mono">{formatDateTime(a.joinedAt)}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="py-8 text-center text-gray-500 italic">Chưa có thành viên nào trong danh sách truy cập.</div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
