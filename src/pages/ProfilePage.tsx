@@ -303,7 +303,10 @@ const ProfilePage: React.FC = () => {
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            {(() => {
+                const SpinnerLoading = require('../components/SpinnerLoading').default;
+                return <SpinnerLoading />;
+            })()}
         </div>
     );
 
@@ -510,8 +513,11 @@ const ProfilePage: React.FC = () => {
                                                         placeholder="Nhập tên hiển thị mới (tối đa 30 ký tự)"
                                                     />
                                                     <div className="flex gap-2">
-                                                        <button onClick={handleUpdateName} disabled={savingName} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap">
-                                                            {savingName ? 'Lưu...' : 'Lưu'}
+                                                        <button onClick={handleUpdateName} disabled={savingName} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap flex items-center justify-center gap-2">
+                                                            {savingName ? (() => {
+                                                                const SpinnerLoading = require('../components/SpinnerLoading').default;
+                                                                return <div style={{ transform: 'scale(0.05)' }}><SpinnerLoading /></div>;
+                                                            })() : 'Lưu'}
                                                         </button>
                                                         <button onClick={() => setEditingName(false)} className="px-5 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-xl font-bold transition-all">
                                                             Hủy
@@ -557,8 +563,11 @@ const ProfilePage: React.FC = () => {
                                                         />
                                                     </div>
                                                     <div className="flex gap-3 pt-2">
-                                                        <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all">
-                                                            {savingEmail ? 'Đang xác thực...' : 'Cập nhật Email'}
+                                                        <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                                                            {savingEmail ? (() => {
+                                                                const SpinnerLoading = require('../components/SpinnerLoading').default;
+                                                                return <div style={{ transform: 'scale(0.05)' }}><SpinnerLoading /></div>;
+                                                            })() : 'Cập nhật Email'}
                                                         </button>
                                                         <button onClick={() => setEditingEmail(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
                                                             Hủy bỏ
@@ -676,8 +685,11 @@ const ProfilePage: React.FC = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-3 pt-2">
-                                                        <button onClick={handleChangePassword} disabled={savingPassword} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all">
-                                                            {savingPassword ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+                                                        <button onClick={handleChangePassword} disabled={savingPassword} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                                                            {savingPassword ? (() => {
+                                                                const SpinnerLoading = require('../components/SpinnerLoading').default;
+                                                                return <div style={{ transform: 'scale(0.05)' }}><SpinnerLoading /></div>;
+                                                            })() : 'Đổi mật khẩu'}
                                                         </button>
                                                         <button onClick={() => setEditingPassword(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
                                                             Hủy bỏ
@@ -962,8 +974,8 @@ const ProfilePage: React.FC = () => {
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="font-medium text-gray-900 dark:text-white text-lg">{s.score}/{s.totalQuestions}</span>
                                                                         <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                                                                (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                                                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                                            (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                                                                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                                                             }`}>
                                                                             {Math.round((s.score / s.totalQuestions) * 100)}%
                                                                         </span>
@@ -1024,8 +1036,8 @@ const ProfilePage: React.FC = () => {
                                                                         <span className="text-gray-400 text-base">/{s.totalQuestions}</span>
                                                                     </div>
                                                                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                                                            (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                                                                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                                        (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                                                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                                                         }`}>
                                                                         {Math.round((s.score / s.totalQuestions) * 100)}%
                                                                     </span>

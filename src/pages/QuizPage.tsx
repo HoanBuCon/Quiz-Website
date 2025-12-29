@@ -1243,7 +1243,7 @@ const QuizPage: React.FC = () => {
 
   // Render loading state
   if (loading) {
-    const Spinner = require("../components/Spinner").default;
+    const Spinner = require("../components/SpinnerLoading").default;
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 flex items-center justify-center">
       </div>

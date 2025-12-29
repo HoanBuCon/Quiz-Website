@@ -286,11 +286,11 @@ const Header: React.FC = () => {
                       <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
                         <span
                           className="
-      nav-shimmer
-      block h-full bg-gradient-to-r from-transparent via-primary-400/80 to-transparent
-      opacity-0 group-hover:opacity-100
-      transition-opacity duration-200 ease-in-out
-    "
+                            nav-shimmer
+                            block h-full bg-gradient-to-r from-transparent via-primary-400/80 to-transparent
+                            opacity-0 group-hover:opacity-100
+                            transition-opacity duration-200 ease-in-out
+                          "
                         />
                       </div>
                     </button>

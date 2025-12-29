@@ -288,7 +288,7 @@ const ResultsPage: React.FC = () => {
   };
 
   if (loading) {
-    const Spinner = require("../components/Spinner").default;
+    const Spinner = require("../components/SpinnerLoading").default;
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex items-center justify-center">
         <Spinner size={48} />

@@ -1003,8 +1003,8 @@ const ClassesPage: React.FC = () => {
           {loading ? (
             <div className="py-8 flex items-center justify-center">
               {(() => {
-                const Any = require("../components/Spinner").default;
-                return <Any size={36} />;
+                const SpinnerLoading = require("../components/SpinnerLoading").default;
+                return <SpinnerLoading scale={0.15} />;
               })()}
             </div>
           ) : classes.length > 0 ? (
