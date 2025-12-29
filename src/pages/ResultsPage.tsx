@@ -317,18 +317,6 @@ const ResultsPage: React.FC = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Floating Back Button - Only shown when navigating from ProfilePage */}
-      {fromProfile && (
-        <button
-          onClick={() => navigate('/profile', { state: { activeTab } })}
-          className="fixed top-8 left-24 z-50 w-12 h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 border border-gray-200 dark:border-gray-700"
-          title="Trở lại Profile"
-          aria-label="Trở lại Profile"
-        >
-          <FaArrowLeft className="text-xl" />
-        </button>
-      )}
-
       {/* Header với kết quả tổng quan */}
       <div className="card p-8 mb-8">
         <div className="text-center mb-6">
@@ -1014,8 +1002,21 @@ const ResultsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Phải: minimap */}
+        {/* Phải: minimap & back button */}
         <div className="w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2 lg:self-start sticky top-20 xl:top-4 z-30">
+          {/* Back Button - Only shown when navigating from ProfilePage */}
+          {fromProfile && (
+            <button
+              onClick={() => navigate('/profile', { state: { activeTab } })}
+              className="mb-4 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 border border-gray-200 dark:border-gray-700 font-medium"
+              title="Trở lại Profile"
+              aria-label="Trở lại Profile"
+            >
+              <FaArrowLeft className="text-lg" />
+              <span>Trở lại Profile</span>
+            </button>
+          )}
+
           <div className="card p-4 sm:p-6 lg:max-h-[calc(100vh-6rem)] lg:overflow-auto">
             <div className="flex overflow-x-auto snap-x no-scrollbar gap-2 p-4 -m-4 lg:m-0 lg:p-0 lg:grid lg:grid-cols-5 lg:gap-2">
               {displayQuestions.map((q: any, index: number) => {
