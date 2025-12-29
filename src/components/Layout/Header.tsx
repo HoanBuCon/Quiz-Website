@@ -14,6 +14,7 @@ import {
   FaPlus,
   FaGraduationCap,
   FaCommentDots,
+  FaChartBar,
 } from "react-icons/fa";
 import { getToken, clearToken } from "../../utils/auth";
 import { toast } from "react-hot-toast";
@@ -140,6 +141,7 @@ const Header: React.FC = () => {
     { path: "/classes", label: "Lớp học", icon: FaGraduationCap },
     { path: "/create", label: "Tạo lớp", icon: FaPlus },
     { path: "/documents", label: "Tài liệu", icon: FaBook },
+    { path: "/profile?tab=history", label: "Thống kê", icon: FaChartBar, isStats: true },
   ];
 
   // Kiểm tra xem link có active không
@@ -147,6 +149,8 @@ const Header: React.FC = () => {
     if (path === "/") {
       return location.pathname === "/";
     }
+    // Special handling for Stats button - active when on profile page
+    if (path === "/profile?tab=history") return location.pathname.startsWith("/profile");
     return location.pathname.startsWith(path);
   };
 
@@ -254,6 +258,45 @@ const Header: React.FC = () => {
                 const IconComponent = item.icon;
                 const active = isActive(item.path);
 
+                // Special handling for Stats button
+                if (item.isStats) {
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => navigate('/profile', { state: { activeTab: 'history' } })}
+                      onMouseEnter={handleMouseEnter as any}
+                      onMouseLeave={handleMouseLeave as any}
+                      className={`relative z-10 nav-item group px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2
+                        border border-transparent outline-none ring-0 focus:outline-none focus:ring-0
+                        transition-all duration-0 ${!active ? "hover:duration-700" : ""} ease-out overflow-hidden
+                        ${active
+                          ? `nav-item-active subpixel-antialiased ${isDarkMode
+                            ? "text-primary-300"
+                            : "text-blue-800"
+                          }`
+                          : "text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0"
+                        }`}
+                    >
+                      <IconComponent className="w-4 h-4 nav:hidden navicon:block transition-colors duration-300 ease-out" />
+                      <span className="transition-colors duration-300 ease-out">
+                        {item.label}
+                      </span>
+
+                      {/* shimmer: inner sweep with transform so it reverses on hover-out */}
+                      <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
+                        <span
+                          className="
+      nav-shimmer
+      block h-full bg-gradient-to-r from-transparent via-primary-400/80 to-transparent
+      opacity-0 group-hover:opacity-100
+      transition-opacity duration-200 ease-in-out
+    "
+                        />
+                      </div>
+                    </button>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.path}
@@ -271,7 +314,7 @@ const Header: React.FC = () => {
                         : "text-white dark:text-slate-300 hover:text-primary-200 dark:hover:text-primary-400 hover:bg-blue-800/40 dark:hover:bg-slate-800/40 border-0"
                       }`}
                   >
-                    <IconComponent className="w-4 h-4 transition-colors duration-300 ease-out" />
+                    <IconComponent className="w-4 h-4 nav:hidden navicon:block transition-colors duration-300 ease-out" />
                     <span className="transition-colors duration-300 ease-out">
                       {item.label}
                     </span>
@@ -488,6 +531,27 @@ const Header: React.FC = () => {
           <div className="py-4 px-4 sm:px-6 lg:px-8 space-y-2">
             {navItems.map((item) => {
               const IconComponent = item.icon;
+
+              // Special handling for Stats button
+              if (item.isStats) {
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => {
+                      navigate('/profile', { state: { activeTab: 'history' } });
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 w-full text-left ${isActive(item.path)
+                      ? "bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 border-l-4 border-primary-600"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                      }`}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              }
+
               return (
                 <Link
                   key={item.path}

@@ -11,7 +11,8 @@ import {
     FaBook,
     FaPlus,
     FaGraduationCap,
-    FaCommentDots
+    FaCommentDots,
+    FaChartBar
 } from "react-icons/fa";
 import { getToken, clearToken } from "../../utils/auth";
 import { toast } from "react-hot-toast";
@@ -141,10 +142,13 @@ const Sidebar: React.FC = () => {
         { path: "/classes", label: "Lớp học", icon: FaGraduationCap },
         { path: "/create", label: "Tạo lớp", icon: FaPlus },
         { path: "/documents", label: "Tài liệu", icon: FaBook },
+        { path: "/profile?tab=history", label: "Thống kê", icon: FaChartBar, isStats: true },
     ];
 
     const isActive = (path: string) => {
         if (path === "/") return location.pathname === "/";
+        // Special handling for Stats button - active when on profile page
+        if (path === "/profile?tab=history") return location.pathname.startsWith("/profile");
         return location.pathname.startsWith(path);
     };
 
@@ -222,6 +226,40 @@ const Sidebar: React.FC = () => {
                 {navItems.map((item, index) => {
                     const active = isActive(item.path);
                     const Icon = item.icon;
+
+                    // Special handling for Stats button
+                    if (item.isStats) {
+                        return (
+                            <button
+                                key={item.path}
+                                ref={(el) => {
+                                    itemRefs.current[index] = el as any;
+                                }}
+                                onClick={() => navigate('/profile', { state: { activeTab: 'history' } })}
+                                onMouseEnter={handleMouseEnter}
+                                onMouseLeave={handleMouseLeave}
+                                className={`flex items-center gap-3 pl-4 pr-3 h-12 w-full rounded-xl transition-all duration-0 ease-out group relative overflow-hidden font-medium
+                                    ${active
+                                        ? "subpixel-antialiased text-blue-700 dark:text-blue-400"
+                                        : "hover:duration-500 text-blue-100 dark:text-gray-400 hover:bg-blue-800/40 dark:hover:bg-gray-800/50 hover:text-white dark:hover:text-gray-200 hover:shadow-inner"
+                                    }
+                                `}
+                            >
+                                <Icon className={`w-6 h-6 flex-shrink-0 text-center transition-colors duration-500 ease-out ${active ? "text-blue-700 dark:text-blue-400" : "text-blue-200 dark:text-gray-500 group-hover:text-white dark:group-hover:text-gray-300"}`} />
+                                <span className="whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-500 ease-out delay-75">
+                                    {item.label}
+                                </span>
+
+                                {/* Shimmer Effect */}
+                                <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
+                                    <span
+                                        className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-primary-400/80 dark:via-blue-400/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out"
+                                    />
+                                </div>
+                            </button>
+                        );
+                    }
+
                     return (
                         <Link
                             key={item.path}
