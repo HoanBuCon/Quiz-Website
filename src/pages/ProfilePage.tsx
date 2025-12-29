@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit, FaGraduationCap, FaClipboardList, FaTrophy, FaClock, FaChartBar, FaHistory, FaUsers, FaArrowRight, FaEye, FaChevronDown } from 'react-icons/fa';
 import { getApiBaseUrl, StatsAPI } from '../utils/api';
@@ -38,6 +38,7 @@ interface RecentSession {
 const ProfilePage: React.FC = () => {
     const { isDarkMode } = useTheme();
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [stats, setStats] = useState<UserStats | null>(null);
@@ -91,6 +92,13 @@ const ProfilePage: React.FC = () => {
             setQuizDetails(null);
         }
     }, [selectedClassId]);
+
+    // Restore activeTab from navigation state (e.g., when navigating back from ResultsPage)
+    useEffect(() => {
+        if (location.state?.activeTab) {
+            setActiveTab(location.state.activeTab);
+        }
+    }, [location.state]);
 
     // Click outside to close dropdowns
     useEffect(() => {
@@ -715,7 +723,7 @@ const ProfilePage: React.FC = () => {
                                                 </div>
 
                                                 <button
-                                                    onClick={() => navigate(`/results/${session.quizId}`, { state: { sessionId: session.id } })}
+                                                    onClick={() => navigate(`/results/${session.quizId}`, { state: { sessionId: session.id, fromProfile: true, activeTab: 'history' } })}
                                                     className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 text-gray-400 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-lg"
                                                     title="Xem chi tiết"
                                                 >
@@ -955,7 +963,7 @@ const ProfilePage: React.FC = () => {
                                                                 </td>
                                                                 <td className="py-4 px-6 align-middle text-right">
                                                                     <button
-                                                                        onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id } })}
+                                                                        onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id, fromProfile: true, activeTab: 'management' } })}
                                                                         className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
                                                                     >
                                                                         Chi tiết
@@ -995,7 +1003,7 @@ const ProfilePage: React.FC = () => {
                                                             </div>
                                                         </div>
                                                         <button
-                                                            onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id } })}
+                                                            onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id, fromProfile: true, activeTab: 'management' } })}
                                                             className="w-full py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
                                                         >
                                                             Xem chi tiết

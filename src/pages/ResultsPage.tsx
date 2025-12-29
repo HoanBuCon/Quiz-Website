@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 import { Quiz, Question } from "../types";
 import MathText from "../components/MathText";
 import ImageModal from "../components/ImageModal";
@@ -33,6 +34,10 @@ const ResultsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showExplanations, setShowExplanations] = useState(false);
   const passedOrder: string[] | undefined = location?.state?.questionOrder;
+
+  // Detect navigation from ProfilePage
+  const fromProfile = location?.state?.fromProfile;
+  const activeTab = location?.state?.activeTab;
 
   // Floating scroll buttons
   const [atTop, setAtTop] = useState(true);
@@ -312,6 +317,18 @@ const ResultsPage: React.FC = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Floating Back Button - Only shown when navigating from ProfilePage */}
+      {fromProfile && (
+        <button
+          onClick={() => navigate('/profile', { state: { activeTab } })}
+          className="fixed top-8 left-24 z-50 w-12 h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+          title="Trở lại Profile"
+          aria-label="Trở lại Profile"
+        >
+          <FaArrowLeft className="text-xl" />
+        </button>
+      )}
+
       {/* Header với kết quả tổng quan */}
       <div className="card p-8 mb-8">
         <div className="text-center mb-6">
