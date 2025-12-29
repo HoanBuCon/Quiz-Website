@@ -176,14 +176,65 @@ const ImageUpload: React.FC<{
       }
     };
 
-    const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
       const items = event.clipboardData?.items;
       if (items) {
         for (let i = 0; i < items.length; i++) {
           if (items[i].type.indexOf("image") !== -1) {
-            const file = items[i].getAsFile();
-            if (file) {
-              handleFile(file);
+            const blob = items[i].getAsFile();
+            if (blob) {
+              try {
+                // Check if this is an SVG wrapper (common when pasting from Word)
+                console.log('🔍 Blob type:', blob.type);
+                if (blob.type === 'image/svg+xml') {
+                  console.log('✅ Detected SVG wrapper');
+                  // Read the SVG content to extract the actual image
+                  const text = await blob.text();
+
+                  // Look for embedded base64 image in SVG
+                  const base64Match = text.match(/xlink:href="data:image\/(jpeg|jpg|png|gif);base64,([^"]+)"/i);
+
+                  if (base64Match) {
+                    // Extract the actual image type and base64 data
+                    const imageType = base64Match[1].toLowerCase();
+                    const base64Data = base64Match[2];
+                    const mimeType = `image/${imageType === 'jpg' ? 'jpeg' : imageType}`;
+                    console.log('✨ Extracted:', imageType, 'size:', base64Data.length);
+
+                    // Convert base64 to blob
+                    const byteCharacters = atob(base64Data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let j = 0; j < byteCharacters.length; j++) {
+                      byteNumbers[j] = byteCharacters.charCodeAt(j);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const imageBlob = new Blob([byteArray], { type: mimeType });
+
+                    // Create File from extracted image
+                    const timestamp = Date.now();
+                    const extension = imageType === 'jpg' ? 'jpeg' : imageType;
+                    const filename = `clipboard-${timestamp}.${extension}`;
+                    const file = new File([imageBlob], filename, { type: mimeType });
+
+                    handleFile(file);
+                    break;
+                  }
+                }
+
+                // Not SVG or no embedded image found - treat as regular image
+                const mimeType = blob.type || 'image/png';
+                const extension = mimeType.split('/')[1] || 'png';
+                const timestamp = Date.now();
+                const filename = `clipboard-${timestamp}.${extension}`;
+
+                // Create a new File object from the blob with proper metadata
+                const file = new File([blob], filename, { type: mimeType });
+
+                handleFile(file);
+              } catch (error) {
+                console.error('Error processing pasted image:', error);
+                toast.error('Lỗi khi xử lý ảnh paste');
+              }
             }
             break;
           }
@@ -3814,6 +3865,33 @@ const EditQuizPage: React.FC = () => {
                             for (const type of item.types) {
                               if (type.startsWith("image/")) {
                                 const blob = await item.getType(type);
+
+                                // Check if this is an SVG wrapper (common when pasting from Word)
+                                if (type === 'image/svg+xml') {
+                                  try {
+                                    // Read SVG content
+                                    const text = await blob.text();
+
+                                    // Look for embedded base64 image in SVG
+                                    const base64Match = text.match(/xlink:href="data:image\/(jpeg|jpg|png|gif);base64,([^"]+)"/i);
+
+                                    if (base64Match) {
+                                      // Extract the actual image as data URL
+                                      const imageType = base64Match[1].toLowerCase();
+                                      const base64Data = base64Match[2];
+                                      const dataUrl = `data:image/${imageType === 'jpg' ? 'jpeg' : imageType};base64,${base64Data}`;
+
+                                      handleQuestionImageUpload(dataUrl);
+                                      toast.success("Đã dán ảnh từ clipboard!");
+                                      return;
+                                    }
+                                  } catch (svgError) {
+                                    console.error('SVG extraction error:', svgError);
+                                    // Fall through to regular processing
+                                  }
+                                }
+
+                                // Not SVG or extraction failed - process normally
                                 const reader = new FileReader();
                                 reader.onload = (e) => {
                                   const result = e.target?.result as string;
@@ -4135,6 +4213,38 @@ const EditQuizPage: React.FC = () => {
                                       for (const type of item.types) {
                                         if (type.startsWith("image/")) {
                                           const blob = await item.getType(type);
+
+                                          // Check if this is an SVG wrapper (common when pasting from Word)
+                                          if (type === 'image/svg+xml') {
+                                            try {
+                                              // Read SVG content
+                                              const text = await blob.text();
+
+                                              // Look for embedded base64 image in SVG
+                                              const base64Match = text.match(/xlink:href="data:image\/(jpeg|jpg|png|gif);base64,([^"]+)"/i);
+
+                                              if (base64Match) {
+                                                // Extract the actual image as data URL
+                                                const imageType = base64Match[1].toLowerCase();
+                                                const base64Data = base64Match[2];
+                                                const dataUrl = `data:image/${imageType === 'jpg' ? 'jpeg' : imageType};base64,${base64Data}`;
+
+                                                handleOptionImageUpload(
+                                                  option,
+                                                  dataUrl
+                                                );
+                                                toast.success(
+                                                  "Đã dán ảnh từ clipboard!"
+                                                );
+                                                return;
+                                              }
+                                            } catch (svgError) {
+                                              console.error('SVG extraction error:', svgError);
+                                              // Fall through to regular processing
+                                            }
+                                          }
+
+                                          // Not SVG or extraction failed - process normally
                                           const reader = new FileReader();
                                           reader.onload = (e) => {
                                             const result = e.target

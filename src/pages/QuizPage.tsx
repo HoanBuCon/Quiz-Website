@@ -3226,6 +3226,5 @@ const DragDropQuestion: React.FC<{
 
     </div>
   );
-};
-
+}
 export default QuizPage;
