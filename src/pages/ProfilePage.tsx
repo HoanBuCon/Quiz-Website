@@ -752,7 +752,7 @@ const ProfilePage: React.FC = () => {
                                             <div className="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto mt-2 md:mt-0 pt-4 md:pt-0 border-t md:border-0 border-gray-100 dark:border-gray-700 z-10">
                                                 <div className="text-center group-hover:scale-105 transition-transform duration-300">
                                                     <span className="block text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-1">Điểm số</span>
-                                                    <span className="font-mono font-bold text-2xl text-gray-900 dark:text-white">
+                                                    <span className="font-semibold text-2xl text-gray-900 dark:text-white">
                                                         {session.score}<span className="text-gray-400 text-sm">/{session.totalQuestions}</span>
                                                     </span>
                                                 </div>
