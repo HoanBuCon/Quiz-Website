@@ -305,7 +305,7 @@ const ProfilePage: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
             {(() => {
                 const SpinnerLoading = require('../components/SpinnerLoading').default;
-                return <SpinnerLoading />;
+                return <div style={{ transform: 'scale(0.435)' }}><SpinnerLoading /></div>;
             })()}
         </div>
     );
@@ -516,7 +516,7 @@ const ProfilePage: React.FC = () => {
                                                         <button onClick={handleUpdateName} disabled={savingName} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap flex items-center justify-center gap-2">
                                                             {savingName ? (() => {
                                                                 const SpinnerLoading = require('../components/SpinnerLoading').default;
-                                                                return <div style={{ transform: 'scale(0.05)' }}><SpinnerLoading /></div>;
+                                                                return <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div>;
                                                             })() : 'Lưu'}
                                                         </button>
                                                         <button onClick={() => setEditingName(false)} className="px-5 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-xl font-bold transition-all">
@@ -566,7 +566,7 @@ const ProfilePage: React.FC = () => {
                                                         <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
                                                             {savingEmail ? (() => {
                                                                 const SpinnerLoading = require('../components/SpinnerLoading').default;
-                                                                return <div style={{ transform: 'scale(0.05)' }}><SpinnerLoading /></div>;
+                                                                return <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div>;
                                                             })() : 'Cập nhật Email'}
                                                         </button>
                                                         <button onClick={() => setEditingEmail(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
@@ -688,7 +688,7 @@ const ProfilePage: React.FC = () => {
                                                         <button onClick={handleChangePassword} disabled={savingPassword} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
                                                             {savingPassword ? (() => {
                                                                 const SpinnerLoading = require('../components/SpinnerLoading').default;
-                                                                return <div style={{ transform: 'scale(0.05)' }}><SpinnerLoading /></div>;
+                                                                return <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div>;
                                                             })() : 'Đổi mật khẩu'}
                                                         </button>
                                                         <button onClick={() => setEditingPassword(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">

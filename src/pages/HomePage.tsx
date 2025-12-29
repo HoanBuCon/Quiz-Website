@@ -283,7 +283,7 @@ const HomePage: React.FC = () => {
             <div className="py-16 flex items-center justify-center">
               {(() => {
                 const SpinnerLoading = require("../components/SpinnerLoading").default;
-                return <SpinnerLoading />;
+                return <div style={{ transform: 'scale(0.435)' }}><SpinnerLoading /></div>;
               })()}
             </div>
           ) : publicClasses.length === 0 ? (

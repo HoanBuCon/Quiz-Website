@@ -1004,7 +1004,7 @@ const ClassesPage: React.FC = () => {
             <div className="py-8 flex items-center justify-center">
               {(() => {
                 const SpinnerLoading = require("../components/SpinnerLoading").default;
-                return <SpinnerLoading scale={0.15} />;
+                return <div style={{ transform: 'scale(0.435)' }}><SpinnerLoading /></div>;
               })()}
             </div>
           ) : classes.length > 0 ? (
