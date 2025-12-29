@@ -1553,10 +1553,10 @@ const QuizPage: React.FC = () => {
                           </span>
                           <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                             {sub.type === "text"
-                              ? "Tự luận"
+                              ? "Điền đáp án"
                               : sub.type === "single"
-                                ? "Chọn 1"
-                                : "Chọn nhiều"}
+                                ? "Chọn một đáp án"
+                                : "Chọn nhiều đáp án"}
                           </span>
                         </div>
                         <div className="font-medium mb-3 text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
