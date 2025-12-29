@@ -38,6 +38,8 @@ const ResultsPage: React.FC = () => {
   // Detect navigation from ProfilePage
   const fromProfile = location?.state?.fromProfile;
   const activeTab = location?.state?.activeTab;
+  const selectedClassId = location?.state?.selectedClassId;
+  const selectedQuizId = location?.state?.selectedQuizId;
 
   // Floating scroll buttons
   const [atTop, setAtTop] = useState(true);
@@ -1007,7 +1009,7 @@ const ResultsPage: React.FC = () => {
           {/* Back Button - Only shown when navigating from ProfilePage */}
           {fromProfile && (
             <button
-              onClick={() => navigate('/profile', { state: { activeTab } })}
+              onClick={() => navigate('/profile', { state: { activeTab, selectedClassId, selectedQuizId } })}
               className="mb-4 w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300 border border-gray-200 dark:border-gray-700 font-medium"
               title="Trở lại Profile"
               aria-label="Trở lại Profile"

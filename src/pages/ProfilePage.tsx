@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit, FaGraduationCap, FaClipboardList, FaTrophy, FaClock, FaChartBar, FaHistory, FaUsers, FaArrowRight, FaEye, FaChevronDown } from 'react-icons/fa';
@@ -85,20 +85,55 @@ const ProfilePage: React.FC = () => {
         loadMyClasses(); // Preload classes data upfront
     }, []);
 
+    const isRestoringRef = useRef(false);
+
     useEffect(() => {
         if (selectedClassId) {
             loadClassQuizzes(selectedClassId);
-            setSelectedQuizId('');
-            setQuizDetails(null);
+            // Only reset quiz selection if not restoring from navigation
+            if (!isRestoringRef.current) {
+                setSelectedQuizId('');
+                setQuizDetails(null);
+            }
         }
     }, [selectedClassId]);
 
-    // Restore activeTab from navigation state (e.g., when navigating back from ResultsPage)
+    // Restore activeTab and management state from navigation (e.g., when navigating back from ResultsPage)
     useEffect(() => {
+        // Set restoration flag if we have state to restore
+        if (location.state?.selectedClassId || location.state?.selectedQuizId) {
+            isRestoringRef.current = true;
+        }
+
         if (location.state?.activeTab) {
             setActiveTab(location.state.activeTab);
         }
+        // Restore management tab selections if returning from stats view
+        if (location.state?.selectedClassId) {
+            setSelectedClassId(location.state.selectedClassId);
+        }
+        if (location.state?.selectedQuizId) {
+            setSelectedQuizId(location.state.selectedQuizId);
+        }
+
+        // Reset restoration flag after a brief delay to allow effects to run
+        if (isRestoringRef.current) {
+            setTimeout(() => {
+                isRestoringRef.current = false;
+            }, 100);
+        }
     }, [location.state]);
+
+    // Track last loaded quiz to prevent infinite reload
+    const lastLoadedQuizRef = useRef<string>('');
+
+    // Auto-load quiz stats when quiz is selected and changed
+    useEffect(() => {
+        if (selectedQuizId && activeTab === 'management' && selectedQuizId !== lastLoadedQuizRef.current) {
+            lastLoadedQuizRef.current = selectedQuizId;
+            handleLoadQuizStats();
+        }
+    }, [selectedQuizId, activeTab]);
 
     // Click outside to close dropdowns
     useEffect(() => {
@@ -842,30 +877,6 @@ const ProfilePage: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-
-                                <div className="mt-8 flex justify-center sm:justify-start">
-                                    <button
-                                        onClick={handleLoadQuizStats}
-                                        disabled={!selectedQuizId || loadingStats}
-                                        className="
-                                            px-6 py-3 rounded-xl text-white font-bold text-sm shadow-md 
-                                            bg-blue-600 hover:bg-blue-700 
-                                            disabled:opacity-50 disabled:cursor-not-allowed 
-                                            transition-all duration-200 flex items-center justify-center gap-2
-                                        "
-                                    >
-                                        {loadingStats ? (
-                                            <>
-                                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                                Đang tải...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <FaChartBar className="text-lg" /> Xem Thống Kê
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
                             </div>
                         </div>
 
@@ -886,7 +897,7 @@ const ProfilePage: React.FC = () => {
                                                 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900
                                                 dark:border-white/10 dark:ring-1 dark:ring-white/5
                                                 overflow-hidden group isolate
-                                                flex flex-col lg:flex-row lg:items-center gap-4
+                                                flex flex-row items-center justify-between gap-4
                                             "
                                             style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
                                         >
@@ -894,13 +905,15 @@ const ProfilePage: React.FC = () => {
                                             <div className="absolute inset-0 opacity-10 bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)] dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)] rounded-xl pointer-events-none" />
                                             <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000 bg-gradient-to-r from-transparent via-white/80 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite] rounded-xl mix-blend-overlay pointer-events-none" />
 
-                                            <div className={`w-12 h-12 lg:w-10 lg:h-10 rounded-2xl bg-${item.color}-50 dark:bg-white/10 flex items-center justify-center text-${item.color}-600 dark:text-${item.color}-400 shadow-sm group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
-                                                <item.icon className="text-xl lg:text-lg" />
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-2xl bg-${item.color}-50 dark:bg-white/10 flex items-center justify-center text-${item.color}-600 dark:text-${item.color}-400 shadow-sm group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
+                                                    <item.icon className="text-lg" />
+                                                </div>
+                                                <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">{item.label}</h3>
                                             </div>
 
                                             <div>
-                                                <h3 className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider mb-0.5">{item.label}</h3>
-                                                <p className="text-2xl lg:text-xl font-mono font-bold text-gray-900 dark:text-white leading-none">{item.value}</p>
+                                                <p className="text-xl font-mono font-bold text-gray-900 dark:text-white leading-none text-right">{item.value}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -948,6 +961,12 @@ const ProfilePage: React.FC = () => {
                                                                 <td className="py-4 px-6 align-middle">
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="font-medium text-gray-900 dark:text-white text-lg">{s.score}/{s.totalQuestions}</span>
+                                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                                                                (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                                                                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                                            }`}>
+                                                                            {Math.round((s.score / s.totalQuestions) * 100)}%
+                                                                        </span>
                                                                         <div className="relative h-1.5 w-16 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                                                                             <div
                                                                                 className={`absolute top-0 left-0 h-full rounded-full ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-500' :
@@ -963,7 +982,15 @@ const ProfilePage: React.FC = () => {
                                                                 </td>
                                                                 <td className="py-4 px-6 align-middle text-right">
                                                                     <button
-                                                                        onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id, fromProfile: true, activeTab: 'management' } })}
+                                                                        onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, {
+                                                                            state: {
+                                                                                sessionId: s.id,
+                                                                                fromProfile: true,
+                                                                                activeTab: 'management',
+                                                                                selectedClassId,
+                                                                                selectedQuizId
+                                                                            }
+                                                                        })}
                                                                         className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
                                                                     >
                                                                         Chi tiết
@@ -991,7 +1018,18 @@ const ProfilePage: React.FC = () => {
                                                         <div className="flex items-center justify-between">
                                                             <div>
                                                                 <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold mb-1">Điểm số</div>
-                                                                <div className="font-bold text-2xl text-gray-900 dark:text-white">{s.score}<span className="text-gray-400 text-base">/{s.totalQuestions}</span></div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex items-baseline gap-1">
+                                                                        <span className="font-bold text-2xl text-gray-900 dark:text-white">{s.score}</span>
+                                                                        <span className="text-gray-400 text-base">/{s.totalQuestions}</span>
+                                                                    </div>
+                                                                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm ${(s.score / s.totalQuestions) >= 0.8 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                                                            (s.score / s.totalQuestions) >= 0.5 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                                                                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                                        }`}>
+                                                                        {Math.round((s.score / s.totalQuestions) * 100)}%
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                             <div className="relative h-2 w-24 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                                                                 <div
@@ -1003,7 +1041,15 @@ const ProfilePage: React.FC = () => {
                                                             </div>
                                                         </div>
                                                         <button
-                                                            onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, { state: { sessionId: s.id, fromProfile: true, activeTab: 'management' } })}
+                                                            onClick={() => navigate(`/results/${quizDetails.quizId || selectedQuizId}`, {
+                                                                state: {
+                                                                    sessionId: s.id,
+                                                                    fromProfile: true,
+                                                                    activeTab: 'management',
+                                                                    selectedClassId,
+                                                                    selectedQuizId
+                                                                }
+                                                            })}
                                                             className="w-full py-2.5 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-95"
                                                         >
                                                             Xem chi tiết
