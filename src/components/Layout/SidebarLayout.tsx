@@ -15,7 +15,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, noPadding = fal
     // Desktop Layout active if Width >= 1280px AND Height >= 620px
     const [isDesktopMode, setIsDesktopMode] = useState<boolean>(() => {
         if (typeof window !== "undefined") {
-            return window.innerWidth >= 1280 && window.innerHeight >= 620;
+            return window.innerWidth >= 1280 && window.innerHeight >= 700;
         }
         return false;
     });
@@ -24,7 +24,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, noPadding = fal
         const checkLayout = () => {
             const width = window.innerWidth;
             const height = window.innerHeight;
-            setIsDesktopMode(width >= 1280 && height >= 620);
+            setIsDesktopMode(width >= 1280 && height >= 700);
         };
 
         // Check initially
