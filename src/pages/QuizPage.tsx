@@ -1914,51 +1914,113 @@ const QuizPage: React.FC = () => {
         <div className={`w-full lg:w-80 lg:flex-shrink-0 order-1 lg:order-2 ${displayMode === "list" ? "lg:sticky lg:top-4 self-start" : ""}`}>
           <div className={`card p-4 sm:p-6 ${displayMode === "list" ? "lg:max-h-[calc(100vh-32px)] lg:overflow-y-auto" : ""}`}>
             {displayMode === "list" && (
-              <div className="mb-4 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+              <>
+                {/* Mobile View (Preserved) */}
+                <div className="lg:hidden mb-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                        {quizTitle}
+                      </h3>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mt-1">
+                        <FaRegClock className="w-4 h-4" />
+                        <span className="font-share-tech-mono tabular-nums tracking-[0.15em]">
+                          {formatElapsed(elapsed)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleSubmit}
+                      className="btn-primary h-10 px-4 text-sm inline-flex items-center gap-2 shrink-0"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Nộp bài</span>
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                      <span>
+                        Tiến độ: {questions.filter((q) => isQuestionAnswered(q)).length}/{questions.length} câu
+                      </span>
+                      <span>
+                        {Math.round(
+                          (questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100
+                        )}
+                        %
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div
+                        className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop View (Optimized Layout - Structure Only) */}
+                <div className="hidden lg:flex mb-6 flex-col gap-4">
+                  {/* Title Row */}
+                  <div className="w-full">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 leading-snug">
                       {quizTitle}
                     </h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mt-1">
-                      <FaRegClock className="w-4 h-4" />
-                      <span className="font-share-tech-mono tabular-nums tracking-[0.15em]">
+                  </div>
+
+                  {/* Stats Row */}
+                  {/* Stats Row */}
+                  {/* Stats Row */}
+                  {/* Stats Row */}
+                  <div className="flex items-center gap-3">
+                    {/* Timer - Original Style */}
+                    <div className="flex items-center gap-2 px-3 h-10 rounded-lg bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 w-fit shrink-0 whitespace-nowrap">
+                      <FaRegClock className="w-4 h-4 shrink-0" />
+                      <span className="text-sm font-share-tech-mono tabular-nums tracking-[0.15em]">
                         {formatElapsed(elapsed)}
                       </span>
                     </div>
+
+                    {/* Submit Button (Moved here) */}
+                    <button
+                      onClick={handleSubmit}
+                      className="flex-1 btn-primary h-10 text-sm inline-flex items-center justify-center gap-2 font-semibold"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Nộp bài</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={handleSubmit}
-                    className="btn-primary h-10 px-4 text-sm inline-flex items-center gap-2 shrink-0"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Nộp bài</span>
-                  </button>
+
+                  {/* Progress Bar Row */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                      <span className="tracking-wider">
+                        Tiến độ: {questions.filter((q) => isQuestionAnswered(q)).length}/{questions.length}
+                      </span>
+                      <span className="font-share-tech-mono">
+                        {Math.round(
+                          (questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100
+                        )}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div
+                        className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+
                 </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                    <span>
-                      Tiến độ: {questions.filter((q) => isQuestionAnswered(q)).length}/{questions.length} câu
-                    </span>
-                    <span>
-                      {Math.round(
-                        (questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100
-                      )}
-                      %
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div
-                      className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${(questions.filter((q) => isQuestionAnswered(q)).length / questions.length) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
+              </>
             )}
             <div className="flex items-center justify-between mb-3 sm:mb-4 lg:hidden">
               <div className="flex items-center gap-2 ml-auto w-full justify-between lg:hidden h-auto">
@@ -2113,7 +2175,7 @@ const QuizPage: React.FC = () => {
         <div className="mt-6 sm:mt-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-              Tiến độ làm bài: {questions.filter((q) => isQuestionAnswered(q)).length}/{questions.length} câu
+              Tiến độ làm bài: {questions.filter((q) => isQuestionAnswered(q)).length}/{questions.length}
             </span>
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {Math.round(
