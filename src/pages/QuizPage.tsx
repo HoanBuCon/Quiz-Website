@@ -1297,7 +1297,7 @@ const QuizPage: React.FC = () => {
         key={isList ? q.id : idx}
         id={`q-${q.id}`}
         data-question-index={idx}
-        className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl hover:scale-[1.002] transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 ${animClass} outline-none`}
+        className={`allow-selection group card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-blue-500 dark:hover:border-l-blue-500 ${animClass} outline-none`}
         tabIndex={isList ? 0 : -1}
         onMouseEnter={() => (hoveredQuestionIdRef.current = q.id)}
         onMouseLeave={() => {
