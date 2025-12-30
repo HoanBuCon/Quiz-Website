@@ -23,6 +23,12 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, isOpen, onClose }) =>
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const dragStart = useRef({ x: 0, y: 0 });
+    const onCloseRef = useRef(onClose);
+
+    // Keep onClose ref updated
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
     // Reset state when opening
     useEffect(() => {
@@ -34,23 +40,23 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, isOpen, onClose }) =>
 
     // Handle ESC key press
     useEffect(() => {
+        if (!isOpen) return;
+
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
-                onClose();
+            if (e.key === 'Escape') {
+                onCloseRef.current();
             }
         };
 
-        if (isOpen) {
-            document.addEventListener('keydown', handleEscape);
-            // Prevent body scroll when modal is open
-            document.body.style.overflow = 'hidden';
-        }
+        document.addEventListener('keydown', handleEscape);
+        // Prevent body scroll when modal is open
+        document.body.style.overflow = 'hidden';
 
         return () => {
             document.removeEventListener('keydown', handleEscape);
-            document.body.style.overflow = 'unset';
+            document.body.style.overflow = '';
         };
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     // Handle Wheel Zoom
     useEffect(() => {
