@@ -94,7 +94,7 @@ const DocumentViewerPage: React.FC = () => {
                     if (delta > 0) {
                         return Math.min(prev + step, 3.0);
                     } else {
-                        return Math.max(prev - step, 0.5);
+                        return Math.max(prev - step, 0.1);
                     }
                 });
             }
@@ -105,7 +105,7 @@ const DocumentViewerPage: React.FC = () => {
     }, []);
 
     const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.1, 3.0));
-    const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.5));
+    const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.1, 0.1));
     const handleResetZoom = () => setZoomLevel(1);
 
     const handleBack = () => {
@@ -227,7 +227,7 @@ const DocumentViewerPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                             <input
                                 type="range"
-                                min="0.5"
+                                min="0.1"
                                 max="3.0"
                                 step="0.1"
                                 value={zoomLevel}
