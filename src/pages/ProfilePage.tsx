@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit, FaGraduationCap, FaClipboardList, FaTrophy, FaClock, FaChartBar, FaHistory, FaUsers, FaArrowRight, FaEye, FaChevronDown } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit, FaGraduationCap, FaClipboardList, FaTrophy, FaClock, FaChartBar, FaHistory, FaUsers, FaArrowRight, FaEye, FaChevronDown, FaCheck, FaCheckCircle } from 'react-icons/fa';
 import { getApiBaseUrl, StatsAPI } from '../utils/api';
 import { getToken } from '../utils/auth';
 import { toast } from 'react-hot-toast';
@@ -371,7 +371,7 @@ const ProfilePage: React.FC = () => {
                             {[
                                 { label: 'Lớp học', value: stats.classesOwned, icon: FaGraduationCap },
                                 { label: 'Quiz đã tạo', value: stats.quizzesOwned, icon: FaClipboardList },
-                                { label: 'Đã hoàn thành', value: stats.quizzesTaken, icon: FaClock },
+                                { label: 'Đã hoàn thành', value: stats.quizzesTaken, icon: FaCheckCircle },
                                 { label: 'Điểm trung bình', value: `${stats.averageScore}%`, icon: FaTrophy }
                             ].map((item, idx) => (
                                 <div
