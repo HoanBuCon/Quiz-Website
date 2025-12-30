@@ -8,7 +8,7 @@ module.exports = {
     extend: {
       screens: {
         nav: "1024px", // Custom breakpoint cho navigation menu
-        navicon: "1065px", // Custom breakpoint cho nav icons (1065px+)
+        navicon: "1125px", // Custom breakpoint cho nav icons (1125px+)
       },
 
       fontFamily: {
