@@ -373,7 +373,7 @@ const ProfilePage: React.FC = () => {
                             {[
                                 { label: 'Lớp học', value: stats.classesOwned, icon: FaGraduationCap },
                                 { label: 'Quiz đã tạo', value: stats.quizzesOwned, icon: FaClipboardList },
-                                { label: 'Quiz đã làm', value: stats.quizzesTaken, icon: FaClock },
+                                { label: 'Đã hoàn thành', value: stats.quizzesTaken, icon: FaClock },
                                 { label: 'Điểm trung bình', value: `${stats.averageScore}%`, icon: FaTrophy }
                             ].map((item, idx) => (
                                 <div
