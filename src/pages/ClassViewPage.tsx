@@ -48,12 +48,16 @@ const ClassViewPage: React.FC = () => {
     })();
   }, [classId]);
 
-  if (loading)
+  if (loading) {
+    const SpinnerLoading = require("../components/SpinnerLoading").default;
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="card p-6 animate-pulse h-32" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div style={{ transform: 'scale(0.435)' }}>
+          <SpinnerLoading />
+        </div>
       </div>
     );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">

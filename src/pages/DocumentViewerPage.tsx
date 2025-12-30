@@ -118,7 +118,7 @@ const DocumentViewerPage: React.FC = () => {
         if (document.type === 'docs') {
             return (
                 <div
-                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 overflow-auto h-full bg-gray-100 dark:bg-gray-900 flex"
+                    className="bg-gray-100 dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 overflow-auto h-full flex"
                 >
                     <div
                         // Use CSS zoom for better layout flow handling (works in Chrome/Edge/Safari)
@@ -166,9 +166,12 @@ const DocumentViewerPage: React.FC = () => {
     };
 
     if (loading) {
+        const SpinnerLoading = require("../components/SpinnerLoading").default;
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <div style={{ transform: 'scale(0.435)' }}>
+                    <SpinnerLoading />
+                </div>
             </div>
         );
     }

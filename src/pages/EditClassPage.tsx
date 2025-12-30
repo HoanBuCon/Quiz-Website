@@ -69,9 +69,12 @@ const EditClassPage: React.FC = () => {
   };
 
   if (loading) {
+    const SpinnerLoading = require("../components/SpinnerLoading").default;
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="card p-6 animate-pulse h-32" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div style={{ transform: 'scale(0.435)' }}>
+          <SpinnerLoading />
+        </div>
       </div>
     );
   }
