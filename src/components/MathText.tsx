@@ -321,15 +321,28 @@ const normalizeMath = (latex: string): string => {
 const MathText: React.FC<MathTextProps> = ({ text, className = '', block = false }) => {
     if (!text) return null;
 
-    // Split by math delimiters
-    const regex = /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\sqrt\s*\(\(.*?\)\)|(?:\\[a-zA-Z]+(?:\{[^}]*\})*))/g;
+    // Split by math delimiters and markdown code blocks
+    // Added: ```[\s\S]*?``` for code blocks
+    const regex = /(```[\s\S]*?```|\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\sqrt\s*\(\(.*?\)\)|(?:\\[a-zA-Z]+(?:\{[^}]*\})*))/g;
 
     const parts = text.split(regex);
 
     return (
         <span className={`math-text-container whitespace-pre-wrap ${className} ${block ? 'block' : ''}`}>
             {parts.map((part, index) => {
-                if (part.startsWith('$$') && part.endsWith('$$')) {
+                if (part.startsWith('```') && part.endsWith('```')) {
+                    // Markdown Code Block
+                    // Extract content between ``` and ```
+                    let code = part.slice(3, -3);
+                    // Remove the first newline if it exists (common pattern ```\nCode)
+                    if (code.startsWith('\n')) code = code.slice(1);
+
+                    return (
+                        <div key={index} className="bg-[#2b2d31] text-gray-100 p-3 rounded-md font-mono text-sm overflow-x-auto my-2 whitespace-pre shadow-inner">
+                            {code}
+                        </div>
+                    );
+                } else if (part.startsWith('$$') && part.endsWith('$$')) {
                     // Block Math
                     let math = part.slice(2, -2);
                     math = normalizeMath(math); // Normalize
