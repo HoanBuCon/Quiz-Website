@@ -429,7 +429,7 @@ const ResultsPage: React.FC = () => {
           }
           className="btn-primary w-full inline-flex items-center justify-center"
         >
-          Làm lại Quiz
+          {fromProfile ? "Làm Quiz" : "Làm lại Quiz"}
         </button>
         <Link to="/classes" className="btn-secondary w-full inline-flex items-center justify-center">
           Xem lớp học khác
@@ -455,7 +455,7 @@ const ResultsPage: React.FC = () => {
                   <div
                     key={q.id}
                     id={`q-${q.id}`}
-                    className="card p-6 border-2 border-primary-200 dark:border-primary-800"
+                    className="card p-6 border-2 border-primary-200 dark:border-primary-800 transition-all duration-300 ease-in-out"
                   >
                     {/* Câu hỏi mẹ */}
                     <div className="mb-6">
@@ -670,7 +670,7 @@ const ResultsPage: React.FC = () => {
               const userAnswer = result.userAnswers[q.id] || [];
               const { isCorrect, correctAnswers } = getAnswerStatus(q, userAnswer);
               return (
-                <div key={q.id} id={`q-${q.id}`} className="card p-6">
+                <div key={q.id} id={`q-${q.id}`} className="card p-6 transition-all duration-300 ease-in-out">
                   <div className="flex items-start justify-between mb-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-start">
                       <span className="mr-3 whitespace-nowrap shrink-0">Câu {qIndex + 1}:</span>
