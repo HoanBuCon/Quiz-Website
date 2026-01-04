@@ -2703,7 +2703,7 @@ const ClassesPage: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm..."
+                  placeholder="Tìm kiếm lớp học, bài kiểm tra..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:border-primary-500 focus:ring-0 outline-none transition-all shadow-sm hover:shadow-md"
