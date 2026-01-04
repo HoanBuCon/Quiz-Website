@@ -1104,7 +1104,7 @@ const ClassesPage: React.FC = () => {
                       border-l-4 border-l-gray-300 dark:border-l-gray-600
                       hover:border-l-primary-500 dark:hover:border-l-primary-500
                       ${openDropdown === classRoom.id
-                        ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50 z-50"
+                        ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50 z-10"
                         : "hover:scale-[1.005]"
                       } animate-slideUpIn anim-delay-100
                     `}
