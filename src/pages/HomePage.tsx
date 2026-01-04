@@ -143,9 +143,18 @@ const HomePage: React.FC = () => {
           <div className="relative z-10 lg:flex lg:items-start lg:gap-6 lg:justify-between">
             <div className="text-center lg:text-left lg:max-w-xs flex-shrink-0">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-medium text-white mb-4 tracking-tight">
-                <span className="logo-text text-3xl sm:text-4xl lg:text-5xl">
-                  liemdai
-                </span>{" "}
+                <div className="relative inline-block logo-main-wrapper">
+                  <span className="logo-text text-3xl sm:text-4xl lg:text-5xl relative z-10">
+                    liemdai
+                  </span>
+                  <span className="logo-text text-3xl sm:text-4xl lg:text-5xl logo-glitch-layer logo-glitch-layer-1" aria-hidden="true">
+                    liemdai
+                  </span>
+                  <span className="logo-text text-3xl sm:text-4xl lg:text-5xl logo-glitch-layer logo-glitch-layer-2" aria-hidden="true">
+                    liemdai
+                  </span>
+                </div>
+                {" "}
                 <span className="text-[41%] align-baseline opacity-80">
                   Đại Liêm🐧
                 </span>

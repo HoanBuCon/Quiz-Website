@@ -1210,6 +1210,53 @@ code {
     0 0 24px rgba(34,211,238,1);
 }
 
+/* LOGO GLITCH LAYERS (DOM Duplication Method) */
+.logo-glitch-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* IMPORTANT: Hide the ::before (prefix) and ::after (cursor) for ghost layers to avoid duplication */
+.logo-glitch-layer::before,
+.logo-glitch-layer::after {
+  content: none !important;
+  display: none !important;
+}
+
+.logo-glitch-layer-1 {
+  transform: translate(1px, -1px);
+  filter: hue-rotate(-60deg);
+  animation: logoGlitchA 2.5s infinite linear alternate;
+}
+
+.logo-glitch-layer-2 {
+  transform: translate(-1px, 1px);
+  filter: hue-rotate(-60deg);
+  animation: logoGlitchB 1.8s infinite linear alternate;
+}
+
+/* Hover Sync for Glitch Layers */
+.logo-main-wrapper:hover .logo-text {
+  letter-spacing: 0.02em;
+  transform: translateY(-1px);
+}
+
+.logo-main-wrapper:hover .logo-glitch-layer-1 {
+  /* Move up 1px from original (1px, -1px) -> (1px, -2px) */
+  transform: translate(1px, -2px);
+}
+
+.logo-main-wrapper:hover .logo-glitch-layer-2 {
+  /* Move up 1px from original (-1px, 1px) -> (-1px, 0px) */
+  transform: translate(-1px, 0px);
+}
+
 /* LOGO GLITCH */
 /* ===== LOGO GLITCH (SAFE VERSION) ===== */
 .logo-glitch-wrapper {
