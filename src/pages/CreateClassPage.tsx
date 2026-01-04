@@ -433,7 +433,7 @@ const CreateClassPage: React.FC = () => {
               Tạo lớp học mới
             </h1>
             <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
-              Nhập thông tin và chọn cách tạo bài kiểm tra
+              Tạo bài kiểm tra thủ công hoặc tự động
             </p>
           </div>
         </div>

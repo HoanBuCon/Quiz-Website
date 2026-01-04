@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 import { getToken, clearToken } from "../../utils/auth";
 import { toast } from "react-hot-toast";
+import userAvatar from "../../assets/user_avatar.gif";
 
 // Component Header chính của website
 const Header: React.FC = () => {
@@ -405,8 +406,8 @@ const Header: React.FC = () => {
                       }
                     `}
                   >
-                    <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                      {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
+                    <div className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden shadow-sm">
+                      <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
                     <span className="hidden sm:inline truncate max-w-[150px]">{userName || "Tài khoản"}</span>
                   </button>

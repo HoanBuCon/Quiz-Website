@@ -690,7 +690,7 @@ const DocumentsPage: React.FC = () => {
               Tài liệu của tôi
             </h1>
             <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
-              Quản lý và tạo bài kiểm tra từ tài liệu
+              Lưu trữ và quản lý tài liệu của bạn
             </p>
           </div>
         </div>

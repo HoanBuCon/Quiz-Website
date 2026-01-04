@@ -16,6 +16,7 @@ import {
 } from "react-icons/fa";
 import { getToken, clearToken } from "../../utils/auth";
 import { toast } from "react-hot-toast";
+import userAvatar from "../../assets/user_avatar.gif";
 
 const Sidebar: React.FC = () => {
     const { isDarkMode, toggleTheme } = useTheme();
@@ -366,8 +367,8 @@ const Sidebar: React.FC = () => {
                 {isLoggedIn ? (
                     <div className="flex items-center gap-3 pl-[15px] pr-3 h-14 rounded-xl bg-white/10 dark:bg-gray-800/30 border border-white/10 dark:border-gray-700/50 justify-start overflow-hidden group/profile relative transition-colors duration-500 ease-out hover:bg-blue-800/40 dark:hover:bg-gray-800/50">
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center transition-transform duration-500 ease-out origin-center">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-400 flex items-center justify-center text-white font-bold text-xs shadow-sm leading-none">
-                                {userName ? userName.charAt(0).toUpperCase() : <FaUser className="w-3 h-3" />}
+                            <div className="w-6 h-6 rounded-full overflow-hidden shadow-sm leading-none">
+                                <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
                             </div>
                         </div>
 

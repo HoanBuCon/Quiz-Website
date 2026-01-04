@@ -790,7 +790,7 @@ const ClassesPage: React.FC = () => {
               Lớp học của tôi
             </h1>
             <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
-              Chọn lớp học để bắt đầu làm bài trắc nghiệm
+              Nhập ID để tham gia lớp học được chia sẻ
             </p>
           </div>
         </div>
@@ -999,7 +999,7 @@ const ClassesPage: React.FC = () => {
             {/* Import Button */}
             <button
               onClick={() => setImportOpen(true)}
-              className="flex-1 xl:flex-none xl:w-auto group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-blue-900 dark:text-blue-100 bg-white dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700/50 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
+              className="flex-1 xl:flex-none xl:w-auto group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-mono font-bold text-blue-900 dark:text-blue-100 bg-white dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700/50 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
               title="Nhập ID/Link lớp học hoặc quiz"
             >
               {/* Texture effect overlay - Diagonal Stripes */}
@@ -1029,9 +1029,9 @@ const ClassesPage: React.FC = () => {
             {/* Search Button */}
             <button
               onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className={`flex-1 xl:hidden group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold border-2 transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md ${showMobileSearch
-                ? "text-white bg-primary-500 border-primary-500"
-                : "text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
+              className={`flex-1 xl:hidden group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md ${showMobileSearch
+                ? "text-white bg-primary-500"
+                : "text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400"
                 }`}
             >
               <MagnifyingGlassIcon className={`w-5 h-5 ${showMobileSearch ? "text-white" : "text-gray-400 group-hover:text-primary-500"}`} />
@@ -1047,7 +1047,7 @@ const ClassesPage: React.FC = () => {
                 placeholder="Tìm kiếm lớp học, bài kiểm tra..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-primary-500 focus:ring-0 outline-none transition-all shadow-sm"
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 rounded-lg focus:ring-0 outline-none transition-all shadow-sm"
                 autoFocus
               />
               <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -2690,7 +2690,7 @@ const ClassesPage: React.FC = () => {
                   placeholder="Tìm kiếm..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-primary-500 focus:ring-0 outline-none transition-all shadow-sm hover:shadow-md"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:border-primary-500 focus:ring-0 outline-none transition-all shadow-sm hover:shadow-md"
                 />
                 <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 {searchQuery && (

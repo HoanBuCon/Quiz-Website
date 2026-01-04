@@ -4,6 +4,7 @@ import { getToken } from "../utils/auth";
 import { ChatAPI, getApiBaseUrl } from "../utils/api";
 import { FiPaperclip, FiSend, FiTrash2, FiEyeOff } from "react-icons/fi";
 import { FaCommentDots } from "react-icons/fa";
+import userAvatar from "../assets/user_avatar.gif";
 
 // --- INTERFACES & HELPERS ---
 interface ChatMessage {
@@ -32,12 +33,6 @@ function formatDateSeparator(dateString: string): string {
   if (isSameDay(date, now)) return "Hôm nay";
   if (isSameDay(date, yesterday)) return "Hôm qua";
 
-  return date.toLocaleDateString('vi-VN', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
   return date.toLocaleDateString('vi-VN', {
     weekday: 'long',
     year: 'numeric',
@@ -800,11 +795,17 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
   // Avatar component
   const Avatar = ({ user }: { user?: { id: string; name?: string | null; email: string } }) => {
     if (!user) return null;
-    const initial = (user.name?.[0] || user.email[0] || '?').toUpperCase();
     return (
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
-        {initial}
-      </div>
+      <a
+        href={userAvatar}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block w-8 h-8 rounded-full overflow-hidden shadow-md flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer"
+        title="Nhấp để xem avatar"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
+      </a>
     );
   };
 

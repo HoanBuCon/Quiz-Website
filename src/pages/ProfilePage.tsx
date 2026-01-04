@@ -7,6 +7,7 @@ import { getToken } from '../utils/auth';
 import { toast } from 'react-hot-toast';
 import SpinnerLoading from '../components/SpinnerLoading';
 import ContributionGraph, { YearSelector } from '../components/ContributionGraph';
+import userAvatar from '../assets/user_avatar.gif';
 
 interface UserProfile {
     id: string;
@@ -333,9 +334,15 @@ const ProfilePage: React.FC = () => {
                             <div className="relative group/avatar">
                                 <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-500"></div>
                                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-br from-blue-400 to-purple-500 dark:from-gray-500 dark:to-gray-700 shadow-2xl overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500">
-                                    <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900 flex items-center justify-center text-gray-600 dark:text-gray-200 text-3xl font-mono font-bold shadow-inner">
-                                        {profile.name ? profile.name.charAt(0).toUpperCase() : profile.email.charAt(0).toUpperCase()}
-                                    </div>
+                                    <a
+                                        href={userAvatar}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block w-full h-full rounded-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                                        title="Nhấp để xem avatar"
+                                    >
+                                        <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                                    </a>
                                 </div>
                             </div>
 
