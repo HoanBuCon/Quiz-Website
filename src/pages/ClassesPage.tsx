@@ -797,12 +797,12 @@ const ClassesPage: React.FC = () => {
       </div>
 
       {/* Mobile Stats (only visible on mobile) */}
-      <div className="xl:hidden mb-8">
-        <div className="grid grid-cols-2 gap-4 sm:gap-6">
+      <div className="lg:hidden mb-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {/* Ô 1: Lớp học */}
           <div
             className="
-                  relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+                  relative bg-white border border-gray-200 rounded-xl py-2.5 px-3 sm:py-3 sm:px-4 text-left
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
@@ -841,18 +841,20 @@ const ClassesPage: React.FC = () => {
                   "
             />
 
-            <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-              {classes.length}
-            </div>
-            <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-              Lớp học
+            <div className="relative flex items-center justify-between gap-2">
+              <div className="text-xs sm:text-sm font-mono text-blue-600 dark:text-gray-200">
+                Lớp học
+              </div>
+              <div className="text-lg sm:text-xl font-mono font-bold text-blue-600 dark:text-gray-50">
+                {classes.length}
+              </div>
             </div>
           </div>
 
           {/* Ô 2: Bài kiểm tra */}
           <div
             className="
-                  relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+                  relative bg-white border border-gray-200 rounded-xl py-2.5 px-3 sm:py-3 sm:px-4 text-left
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
@@ -886,21 +888,23 @@ const ClassesPage: React.FC = () => {
                   "
             />
 
-            <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-              {classes.reduce(
-                (total, cls) => total + getValidQuizzes(cls).length,
-                0
-              )}
-            </div>
-            <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-              Bài kiểm tra
+            <div className="relative flex items-center justify-between gap-2">
+              <div className="text-xs sm:text-sm font-mono text-blue-600 dark:text-gray-200">
+                Bài kiểm tra
+              </div>
+              <div className="text-lg sm:text-xl font-mono font-bold text-blue-600 dark:text-gray-50">
+                {classes.reduce(
+                  (total, cls) => total + getValidQuizzes(cls).length,
+                  0
+                )}
+              </div>
             </div>
           </div>
 
           {/* Ô 3: Đã hoàn thành */}
           <div
             className="
-                  relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+                  relative bg-white border border-gray-200 rounded-xl py-2.5 px-3 sm:py-3 sm:px-4 text-left
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
@@ -934,18 +938,20 @@ const ClassesPage: React.FC = () => {
                   "
             />
 
-            <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-              {statsCompleted}
-            </div>
-            <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-              Đã hoàn thành
+            <div className="relative flex items-center justify-between gap-2">
+              <div className="text-xs sm:text-sm font-mono text-blue-600 dark:text-gray-200">
+                Đã hoàn thành
+              </div>
+              <div className="text-lg sm:text-xl font-mono font-bold text-blue-600 dark:text-gray-50">
+                {statsCompleted}
+              </div>
             </div>
           </div>
 
           {/* Ô 4: Điểm trung bình */}
           <div
             className="
-                  relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
+                  relative bg-white border border-gray-200 rounded-xl py-2.5 px-3 sm:py-3 sm:px-4 text-left
                   transition-all duration-500
                   dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
                   dark:border-white/10 dark:ring-1 dark:ring-white/10
@@ -979,19 +985,21 @@ const ClassesPage: React.FC = () => {
                   "
             />
 
-            <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-              {statsAverage}%
-            </div>
-            <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-              Điểm trung bình
+            <div className="relative flex items-center justify-between gap-2">
+              <div className="text-xs sm:text-sm font-mono text-blue-600 dark:text-gray-200">
+                Điểm trung bình
+              </div>
+              <div className="text-lg sm:text-xl font-mono font-bold text-blue-600 dark:text-gray-50">
+                {statsAverage}%
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Left Section - Main Content */}
-        <div className="xl:w-[70%] min-w-0 order-1">
+        <div className="lg:w-[70%] min-w-0 order-1">
 
 
 
@@ -999,7 +1007,7 @@ const ClassesPage: React.FC = () => {
             {/* Import Button */}
             <button
               onClick={() => setImportOpen(true)}
-              className="flex-1 xl:flex-none xl:w-auto group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-mono font-bold text-blue-900 dark:text-blue-100 bg-white dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700/50 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
+              className="flex-1 lg:flex-none lg:w-auto group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-mono font-bold text-blue-900 dark:text-blue-100 bg-white dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700/50 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
               title="Nhập ID/Link lớp học hoặc quiz"
             >
               {/* Texture effect overlay - Diagonal Stripes */}
@@ -1029,18 +1037,18 @@ const ClassesPage: React.FC = () => {
             {/* Search Button */}
             <button
               onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className={`flex-1 xl:hidden group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md ${showMobileSearch
+              className={`flex-1 lg:hidden group relative inline-flex items-center border-2 border-gray-200 dark:border-gray-800 justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md ${showMobileSearch
                 ? "text-white bg-primary-500"
                 : "text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400"
                 }`}
             >
-              <MagnifyingGlassIcon className={`w-5 h-5 ${showMobileSearch ? "text-white" : "text-gray-400 group-hover:text-primary-500"}`} />
+              <MagnifyingGlassIcon className={`w-5 h-5 transition-colors duration-300 ${showMobileSearch ? "text-white" : "text-gray-400 group-hover:text-primary-500"}`} />
               Tìm kiếm
             </button>
           </div>
 
           {/* Collapsible Mobile Search Input */}
-          <div className={`xl:hidden overflow-hidden transition-all duration-300 ease-in-out ${showMobileSearch ? "max-h-20 mb-6 opacity-100" : "max-h-0 mb-0 opacity-0"}`}>
+          <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${showMobileSearch ? "max-h-20 mb-6 opacity-100" : "max-h-0 mb-0 opacity-0"}`}>
             <div className="relative">
               <input
                 type="text"
@@ -2679,7 +2687,7 @@ const ClassesPage: React.FC = () => {
         </div>
 
         {/* Right Section - Desktop Only (Statistics + Guidance) */}
-        <div className="hidden xl:block xl:w-[30%] xl:flex-shrink-0 order-2">
+        <div className="hidden lg:block lg:w-[30%] lg:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-4 space-y-6">
 
             {/* Desktop Search Bar */}
