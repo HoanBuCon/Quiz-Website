@@ -15,23 +15,22 @@ interface ActivityData {
 interface ContributionGraphProps {
     showLabel?: boolean;
     blockSize?: number;
-    maxHeight?: number;
+    maxHeight?: string;
+    isBanner?: boolean; // New prop for high-contrast mode
     selectedYear?: number;
     onYearChange?: (year: number) => void;
 }
 
-const ContributionGraph: React.FC<ContributionGraphProps> = ({
-    showLabel = true,
-    blockSize = 12,
-    maxHeight,
-    selectedYear: externalYear,
-    onYearChange,
-}) => {
+export const ContributionGraph = ({ blockSize = 12, showLabel = true, selectedYear: externalYear, onYearChange, maxHeight, isBanner }: ContributionGraphProps) => {
     const [activityData, setActivityData] = useState<ActivityData[]>([]);
     const [loading, setLoading] = useState(true);
     const [internalYear, setInternalYear] = useState(new Date().getFullYear());
     const { isDarkMode } = useTheme();
     const API_URL = getApiBaseUrl();
+
+    const labelColor = isBanner ? '#f8fafc' : (isDarkMode ? '#9ca3af' : '#4b5563');
+    const footerTextColor = isBanner ? 'text-blue-50/90' : 'text-gray-500 dark:text-gray-400';
+    const subLabelColor = isBanner ? 'text-blue-100/70' : 'text-xs text-gray-400';
 
     // Use external year if provided, otherwise use internal
     const selectedYear = externalYear || internalYear;
@@ -146,7 +145,7 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
                         }
                         showWeekdayLabels
                         style={{
-                            color: isDarkMode ? '#9ca3af' : '#4b5563',
+                            color: labelColor,
                         }}
                     />
                 </div>
@@ -154,25 +153,25 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
 
             {/* Stationary Footer Section */}
             {(showLabel || true) && (
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-4 text-[13px] text-gray-500 dark:text-gray-400 font-medium xl:px-[32px] lg:px-[28px]">
-                    <div className="activity-summary flex items-center gap-1.5 text-gray-400 dark:text-gray-500">
-                        <span className="text-blue-500 font-bold">{totalCountValue}</span>
+                <div className={`mt-3 flex flex-wrap items-center justify-between gap-4 text-[13px] ${footerTextColor} font-medium xl:px-[32px] lg:px-[28px]`}>
+                    <div className="activity-summary flex items-center gap-1.5">
+                        <span className={`${isBanner ? 'text-white' : 'text-blue-500'} font-bold`}>{totalCountValue}</span>
                         <span>bài kiểm tra đã hoàn thành trong năm {selectedYear}</span>
                     </div>
 
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-gray-400">Ít</span>
+                            <span className={subLabelColor}>Ít</span>
                             <div className="flex gap-1">
                                 {(isDarkMode ? theme.dark : theme.light).map((color, i) => (
                                     <div
                                         key={i}
-                                        className="w-3 h-3 rounded-sm"
+                                        className={`w-3 h-3 rounded-sm ${isBanner ? 'ring-1 ring-white/10' : ''}`}
                                         style={{ backgroundColor: color }}
                                     />
                                 ))}
                             </div>
-                            <span className="text-xs text-gray-400">Nhiều</span>
+                            <span className={subLabelColor}>Nhiều</span>
                         </div>
                     </div>
                 </div>
