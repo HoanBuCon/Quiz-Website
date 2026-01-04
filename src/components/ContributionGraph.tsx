@@ -41,14 +41,7 @@ export const ContributionGraph = ({
     const footerTextColor = isBanner ? 'text-blue-50/90' : 'text-gray-500 dark:text-gray-400';
     const subLabelColor = isBanner ? 'text-blue-100/70' : 'text-xs text-gray-400';
 
-    const containerRef = React.useRef<HTMLDivElement>(null);
 
-    // Auto-scroll to the end (current month) when data loads
-    useEffect(() => {
-        if (!loading && activityData.length > 0 && containerRef.current) {
-            containerRef.current.scrollLeft = containerRef.current.scrollWidth;
-        }
-    }, [loading, activityData]);
 
     // Use external year if provided, otherwise use internal
     const selectedYear = externalYear || internalYear;
@@ -126,7 +119,6 @@ export const ContributionGraph = ({
         <div className="w-fit max-w-full">
             {/* Graph only - scrollable container */}
             <div
-                ref={containerRef}
                 className={`w-full overflow-x-auto ${scrollbarClass}`}
                 style={{ maxHeight: maxHeight || 'auto' }}
             >
