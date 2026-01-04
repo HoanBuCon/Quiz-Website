@@ -499,7 +499,7 @@ const HomePage: React.FC = () => {
                         </svg>
                         Bài kiểm tra trong lớp
                       </h4>
-                      <div className="grid gap-3">
+                      <div className="grid gap-3 max-h-[280px] overflow-y-auto custom-scrollbar pr-2">
                         {(classRoom.quizzes as Quiz[]).map((quiz) => (
                           <div
                             key={quiz.id}
