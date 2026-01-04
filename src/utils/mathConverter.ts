@@ -6,6 +6,7 @@
 export interface ConversionOptions {
   autoWrap?: boolean; // Tự động wrap trong $...$ nếu phát hiện math
   preserveMarkers?: boolean; // Giữ nguyên [IMAGE:id] markers
+  preserveWhitespace?: boolean; // Giữ nguyên khoảng trắng (cho paste text/code)
 }
 
 /**
@@ -59,13 +60,15 @@ export function convertToLatex(text: string, options: ConversionOptions = {}): s
   // Step 7: Xử lý ma trận và vector
   result = handleMatricesAndVectors(result);
 
-  // Step 8: Làm sạch khoảng trắng thừa
-  result = result
-    .replace(/\s+/g, ' ')
-    .replace(/\s*\\\s*/g, '\\') // Loại bỏ space quanh backslash
-    .replace(/\s*\{\s*/g, '{')
-    .replace(/\s*\}\s*/g, '}')
-    .trim();
+  // Step 8: Làm sạch khoảng trắng thừa (chỉ chạy nếu không preserveWhitespace)
+  if (!options.preserveWhitespace) {
+    result = result
+      .replace(/\s+/g, ' ')
+      .replace(/\s*\\\s*/g, '\\') // Loại bỏ space quanh backslash
+      .replace(/\s*\{\s*/g, '{')
+      .replace(/\s*\}\s*/g, '}')
+      .trim();
+  }
 
   // Restore markers
   if (preserveMarkers) {

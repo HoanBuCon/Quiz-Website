@@ -1324,8 +1324,8 @@ const EditQuizPage: React.FC = () => {
     // FIX: Normalize LaTeX braces - remove whitespace/newlines inside braces
     // This fixes {n } → {n} and {n\n} → {n} after image drop
     // NOTE: This only affects structural braces, LaTeX is already protected
-    normalizedContent = normalizedContent.replace(/\{\s+/g, '{');
-    normalizedContent = normalizedContent.replace(/\s+\}/g, '}');
+    // REMOVED: normalizedContent = normalizedContent.replace(/\{\s+/g, '{');
+    // REMOVED: normalizedContent = normalizedContent.replace(/\s+\}/g, '}');
 
     // CRITICAL: Restore LaTeX expressions AFTER normalization
     normalizedContent = restoreLatexExpressions(normalizedContent, latexExpressions);

@@ -920,7 +920,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
               const plainText = e.clipboardData.getData('text');
 
               if (html || plainText) {
-                const processedText = plainText ? plainText.split('\n').map(line => processMathInput(line)).join('\n') : "";
+                const processedText = plainText ? plainText.split('\n').map(line => processMathInput(line, { preserveWhitespace: true })).join('\n') : "";
 
                 // Check for image items (Files)
                 const imageCodes: string[] = [];
@@ -1035,7 +1035,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
               } else {
                 // Standard text paste with math processing
                 const text = e.clipboardData.getData('text');
-                const processed = text.split('\n').map(line => processMathInput(line)).join('\n');
+                const processed = text.split('\n').map(line => processMathInput(line, { preserveWhitespace: true })).join('\n');
                 insertText(processed);
               }
             }}
