@@ -64,10 +64,29 @@ const DocumentsPage: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.size === documents.length && documents.length > 0) {
-      setSelectedIds(new Set());
+    // Get filtered documents based on search query
+    const filteredDocs = documents.filter(doc =>
+      !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Check if all filtered documents are already selected
+    const allFilteredSelected = filteredDocs.length > 0 &&
+      filteredDocs.every(doc => selectedIds.has(doc.id));
+
+    if (allFilteredSelected) {
+      // Deselect all filtered documents
+      setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        filteredDocs.forEach(doc => newSet.delete(doc.id));
+        return newSet;
+      });
     } else {
-      setSelectedIds(new Set(documents.map(d => d.id)));
+      // Select all filtered documents
+      setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        filteredDocs.forEach(doc => newSet.add(doc.id));
+        return newSet;
+      });
     }
   };
 
@@ -1621,18 +1640,33 @@ const DocumentsPage: React.FC = () => {
             <button
               onClick={handleSelectAll}
               className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group relative overflow-hidden"
-              title={selectedIds.size === documents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+              title={(() => {
+                const filteredDocs = documents.filter(doc =>
+                  !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+                const allFilteredSelected = filteredDocs.length > 0 &&
+                  filteredDocs.every(doc => selectedIds.has(doc.id));
+                return allFilteredSelected ? "Hủy chọn tất cả" : "Chọn tất cả";
+              })()}
             >
               <div className="relative z-10">
-                {selectedIds.size === documents.length ? (
-                  <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6 group-hover:text-blue-500 transition-colors" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7.53 12L9 10.5l1.4-1.41 2.07 2.08L17.17 6.5l1.41 1.41L12.47 14zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z" />
-                  </svg>
-                )}
+                {(() => {
+                  const filteredDocs = documents.filter(doc =>
+                    !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+                  );
+                  const allFilteredSelected = filteredDocs.length > 0 &&
+                    filteredDocs.every(doc => selectedIds.has(doc.id));
+
+                  return allFilteredSelected ? (
+                    <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 group-hover:text-blue-500 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7.53 12L9 10.5l1.4-1.41 2.07 2.08L17.17 6.5l1.41 1.41L12.47 14zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z" />
+                    </svg>
+                  );
+                })()}
               </div>
             </button>
 
