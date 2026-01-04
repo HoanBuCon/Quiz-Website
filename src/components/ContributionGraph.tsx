@@ -141,6 +141,9 @@ export const ContributionGraph = ({ blockSize = 12, showLabel = true, selectedYe
                                         month: 'long',
                                         year: 'numeric',
                                     })}`,
+                                strokeWidth: 0, // Remove block borders
+                                rx: 2, // Slight rounding for premium feel if not already there
+                                ry: 2,
                             } as any)
                         }
                         showWeekdayLabels
@@ -166,7 +169,7 @@ export const ContributionGraph = ({ blockSize = 12, showLabel = true, selectedYe
                                 {(isDarkMode ? theme.dark : theme.light).map((color, i) => (
                                     <div
                                         key={i}
-                                        className={`w-3 h-3 rounded-sm ${isBanner ? 'ring-1 ring-white/10' : ''}`}
+                                        className="w-3 h-3 rounded-sm"
                                         style={{ backgroundColor: color }}
                                     />
                                 ))}
