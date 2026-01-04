@@ -739,6 +739,15 @@ code {
     background: rgba(255, 255, 255, 0.025); /* Ghostly hover presence (Reduced from 0.035 to be closer to base 0.02) */
   }
 
+
+  /* Fix alignment for weekday labels (Mon, Wed, Fri) 
+     Targeting text-anchor="end" which weekday labels usually have by default.
+  */
+  .contribution-calendar-wrapper svg text[text-anchor="end"] {
+      text-anchor: start !important;
+      transform: translateX(-21px); /* Reduced shift to prevent cutoff (was -28px) */
+  }
+
   /* Header and Footer optimized texture effects */
   .header-texture {
     position: relative;

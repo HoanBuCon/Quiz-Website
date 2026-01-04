@@ -122,7 +122,7 @@ export const ContributionGraph = ({
                 className={`w-full overflow-x-auto ${scrollbarClass}`}
                 style={{ maxHeight: maxHeight || 'auto' }}
             >
-                <div className="min-w-max">
+                <div className="min-w-max contribution-calendar-wrapper">
                     <ActivityCalendar
                         data={activityData}
                         theme={explicitTheme}

@@ -1,0 +1,9 @@
+/* Align weekday labels to the start (left) */
+.contribution-calendar-wrapper svg text[dominant-baseline="hanging"] {
+  text-anchor: start !important;
+  transform: translateX(-20px); /* Adjust this value to position correctly */
+}
+
+.contribution-calendar-wrapper svg text {
+  /* Ensure we only target the weekday labels if possible */
+}
