@@ -19,6 +19,8 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  // Track expanded classes on mobile
+  const [expandedMobileClasses, setExpandedMobileClasses] = useState<Record<string, boolean>>({});
 
   // Hàm xử lý di chuyển chuột cho ảnh 1 (Kho tài liệu)
   const handleMouseMove1 = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -48,6 +50,13 @@ const HomePage: React.FC = () => {
 
   const handleMouseLeave2 = () => {
     setMousePosition2({ x: 0, y: 0 });
+  };
+
+  const toggleMobileClass = (classId: string) => {
+    setExpandedMobileClasses((prev) => ({
+      ...prev,
+      [classId]: !prev[classId],
+    }));
   };
 
   // Fetch public classes data
@@ -320,8 +329,19 @@ const HomePage: React.FC = () => {
                 .map((classRoom, index) => (
                   <div
                     key={classRoom.id}
-                    className="group card p-6 hover:shadow-2xl hover:scale-[1.01] transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 animate-slideUpIn anim-delay-100"
+                    className={`
+                      group relative card p-6 hover:shadow-2xl transition-all duration-300
+                      border-l-4 border-l-gray-300 dark:border-l-gray-600
+                      hover:border-l-primary-500 dark:hover:border-l-primary-500
+                      ${openDropdown === classRoom.id
+                        ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50 z-50"
+                        : "hover:scale-[1.005]"
+                      } animate-slideUpIn anim-delay-100
+                    `}
                     style={{ animationDelay: `${(index % 5) * 0.1}s` }}
+                    onMouseLeave={() =>
+                      openDropdown === classRoom.id && setOpenDropdown(null)
+                    }
                   >
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">
                       <div className="flex-1">
@@ -435,7 +455,7 @@ const HomePage: React.FC = () => {
                         {openDropdown === classRoom.id &&
                           classRoom.quizzes &&
                           classRoom.quizzes.length > 1 && (
-                            <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-10 overflow-hidden">
+                            <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
                               <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
                                 <p className="text-sm font-semibold text-white">
                                   Chọn bài kiểm tra
@@ -479,66 +499,88 @@ const HomePage: React.FC = () => {
                       </div>
                     </div>
 
+
+                    {/* Centered Mobile Toggle Button */}
+                    {classRoom.quizzes && classRoom.quizzes.length > 0 && (
+                      <div className="block sm:!hidden">
+                        <div className="flex justify-center mb-4">
+                          <button
+                            onClick={() => toggleMobileClass(classRoom.id)}
+                            className={`w-12 h-6 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 flex items-center justify-center transition-all duration-200 ${expandedMobileClasses[classRoom.id] ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : ""}`}
+                            title={expandedMobileClasses[classRoom.id] ? "Thu gọn" : "Xem bài kiểm tra"}
+                          >
+                            <svg className={`w-4 h-4 transition-transform duration-300 ${expandedMobileClasses[classRoom.id] ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Danh sách quiz trong lớp */}
                     {classRoom.quizzes && classRoom.quizzes.length > 0 && (
-                      <div className="border-t border-gray-100 dark:border-gray-700 pt-5 mt-5">
-                        <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                          <svg
-                            className="w-5 h-5 text-primary-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                            />
-                          </svg>
-                          Bài kiểm tra trong lớp
-                        </h4>
-                        <div className="grid gap-3 max-h-[280px] overflow-y-auto custom-scrollbar pr-2">
-                          {(classRoom.quizzes as Quiz[]).map((quiz) => (
-                            <div
-                              key={quiz.id}
-                              className="group/quiz p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-gray-900 dark:text-white mb-1 group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
-                                    {quiz.title}
-                                  </p>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                                    {quiz.description}
-                                  </p>
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    navigate(`/quiz/${quiz.id}`, {
-                                      state: { className: classRoom.name },
-                                    })
-                                  }
-                                  className="btn-secondary text-sm px-4 py-2 flex items-center justify-center gap-2 hover:bg-primary-500 hover:text-white transition-all"
+                      <div className={`grid grid-rows-[0fr] opacity-0 sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 transition-all duration-500 ease-in-out ${expandedMobileClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
+                        <div className="overflow-hidden">
+                          <div className="border-t border-gray-100 dark:border-gray-700 pt-5 mt-5">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                              <svg
+                                className="w-5 h-5 text-primary-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                />
+                              </svg>
+                              Bài kiểm tra trong lớp
+                            </h4>
+                            <div className="grid gap-3 max-h-[280px] overflow-y-auto custom-scrollbar pr-2">
+                              {(classRoom.quizzes as Quiz[]).map((quiz) => (
+                                <div
+                                  key={quiz.id}
+                                  className="group/quiz p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
                                 >
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M14 5l7 7m0 0l-7 7m7-7H3"
-                                    />
-                                  </svg>
-                                  Làm bài
-                                </button>
-                              </div>
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-semibold text-gray-900 dark:text-white mb-1 group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
+                                        {quiz.title}
+                                      </p>
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                                        {quiz.description}
+                                      </p>
+                                    </div>
+                                    <button
+                                      onClick={() =>
+                                        navigate(`/quiz/${quiz.id}`, {
+                                          state: { className: classRoom.name },
+                                        })
+                                      }
+                                      className="btn-secondary text-sm px-4 py-2 flex items-center justify-center gap-2 hover:bg-primary-500 hover:text-white transition-all"
+                                    >
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                        />
+                                      </svg>
+                                      Làm bài
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          </div>
                         </div>
                       </div>
                     )}

@@ -1196,7 +1196,7 @@ const ClassesPage: React.FC = () => {
                                       d="M13 10V3L4 14h7v7l9-11h-7z"
                                     />
                                   </svg>
-                                  Tham gia ({quizCount})
+                                  Tham gia
                                   <svg
                                     className={`w-4 h-4 ml-1 transition-transform duration-200 ${openDropdown === classRoom.id
                                       ? "rotate-180"
@@ -1305,7 +1305,7 @@ const ClassesPage: React.FC = () => {
                                         d="M13 10V3L4 14h7v7l9-11h-7z"
                                       />
                                     </svg>
-                                    Tham gia ({quizCount})
+                                    Tham gia
                                     <svg
                                       className={`w-4 h-4 ml-1 transition-transform duration-200 ${openDropdown === classRoom.id
                                         ? "rotate-180"
@@ -1371,7 +1371,7 @@ const ClassesPage: React.FC = () => {
                             // Không có quiz nào
                             return (
                               <button className="btn-primary" disabled>
-                                Chưa có bài tập
+                                Chưa có bài kiểm tra
                               </button>
                             );
                           }
@@ -1661,7 +1661,7 @@ const ClassesPage: React.FC = () => {
                                       d="M13 10V3L4 14h7v7l9-11h-7z"
                                     />
                                   </svg>
-                                  Tham gia ({quizCount})
+                                  Tham gia
                                   <svg
                                     className={`w-4 h-4 ml-1 transition-transform duration-200 ${openDropdown === classRoom.id
                                       ? "rotate-180"
@@ -1770,7 +1770,7 @@ const ClassesPage: React.FC = () => {
                                         d="M13 10V3L4 14h7v7l9-11h-7z"
                                       />
                                     </svg>
-                                    Tham gia ({quizCount})
+                                    Tham gia
                                     <svg
                                       className={`w-4 h-4 ml-1 transition-transform duration-200 ${openDropdown === classRoom.id
                                         ? "rotate-180"
@@ -1834,7 +1834,7 @@ const ClassesPage: React.FC = () => {
                           } else {
                             return (
                               <button className="btn-primary flex-1" disabled>
-                                Chưa có bài tập
+                                Chưa có bài kiểm tra
                               </button>
                             );
                           }
