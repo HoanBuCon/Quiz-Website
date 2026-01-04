@@ -101,9 +101,12 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
         );
     }
 
+    // Calculate total contributions manually
+    const totalCountValue = activityData.reduce((sum, day) => sum + day.count, 0);
+
     return (
-        <div className="w-full">
-            {/* Graph only - year selector moved to parent */}
+        <div className="w-fit max-w-full">
+            {/* Graph only - scrollable container */}
             <div
                 className="w-full overflow-x-auto custom-scrollbar"
                 style={{ maxHeight: maxHeight || 'auto' }}
@@ -116,18 +119,14 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
                         blockSize={blockSize}
                         blockMargin={4}
                         fontSize={12}
-                        showTotalCount={showLabel}
+                        showTotalCount={false}
+                        showColorLegend={false}
                         labels={{
-                            legend: {
-                                less: 'Ít',
-                                more: 'Nhiều',
-                            },
                             months: [
                                 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
                             ],
                             weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-                            totalCount: `{{count}} bài kiểm tra đã hoàn thành trong năm ${selectedYear}`,
                         }}
                         renderBlock={(block, activity) =>
                             React.cloneElement(block, {
@@ -152,6 +151,32 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
                     />
                 </div>
             </div>
+
+            {/* Stationary Footer Section */}
+            {(showLabel || true) && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-4 text-[13px] text-gray-500 dark:text-gray-400 font-medium xl:px-[32px] lg:px-[28px]">
+                    <div className="activity-summary flex items-center gap-1.5 text-gray-400 dark:text-gray-500">
+                        <span className="text-blue-500 font-bold">{totalCountValue}</span>
+                        <span>bài kiểm tra đã hoàn thành trong năm {selectedYear}</span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-gray-400">Ít</span>
+                            <div className="flex gap-1">
+                                {(isDarkMode ? theme.dark : theme.light).map((color, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-3 h-3 rounded-sm"
+                                        style={{ backgroundColor: color }}
+                                    />
+                                ))}
+                            </div>
+                            <span className="text-xs text-gray-400">Nhiều</span>
+                        </div>
+                    </div>
+                </div>
+            )}
             <Tooltip id="activity-tooltip" />
         </div>
     );

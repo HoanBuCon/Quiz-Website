@@ -141,7 +141,7 @@ const HomePage: React.FC = () => {
             "
           ></div>
           <div className="relative z-10 lg:flex lg:items-start lg:gap-6 lg:justify-between">
-            <div className="text-center lg:text-left lg:max-w-sm flex-shrink-0">
+            <div className="text-center lg:text-left lg:max-w-xs flex-shrink-0">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
                 <span className="logo-text text-3xl sm:text-4xl lg:text-5xl">
                   liemdai
@@ -175,9 +175,7 @@ const HomePage: React.FC = () => {
                     </svg>
                     Hoạt động làm bài
                   </h3>
-                  <div className="w-full overflow-x-auto custom-scrollbar pb-1">
-                    <ContributionGraph blockSize={10} showLabel={true} />
-                  </div>
+                  <ContributionGraph blockSize={10} showLabel={true} />
                 </div>
               </div>
             )}
