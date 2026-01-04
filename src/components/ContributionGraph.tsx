@@ -17,11 +17,20 @@ interface ContributionGraphProps {
     blockSize?: number;
     maxHeight?: string;
     isBanner?: boolean; // New prop for high-contrast mode
+    scrollbarClass?: string; // New prop for custom scrollbar styling
     selectedYear?: number;
     onYearChange?: (year: number) => void;
 }
 
-export const ContributionGraph = ({ blockSize = 12, showLabel = true, selectedYear: externalYear, onYearChange, maxHeight, isBanner }: ContributionGraphProps) => {
+export const ContributionGraph = ({
+    blockSize = 12,
+    showLabel = true,
+    selectedYear: externalYear,
+    onYearChange,
+    maxHeight,
+    isBanner,
+    scrollbarClass = "custom-scrollbar" // Default to existing style
+}: ContributionGraphProps) => {
     const [activityData, setActivityData] = useState<ActivityData[]>([]);
     const [loading, setLoading] = useState(true);
     const [internalYear, setInternalYear] = useState(new Date().getFullYear());
@@ -107,7 +116,7 @@ export const ContributionGraph = ({ blockSize = 12, showLabel = true, selectedYe
         <div className="w-fit max-w-full">
             {/* Graph only - scrollable container */}
             <div
-                className="w-full overflow-x-auto custom-scrollbar"
+                className={`w-full overflow-x-auto ${scrollbarClass}`}
                 style={{ maxHeight: maxHeight || 'auto' }}
             >
                 <div className="min-w-max">

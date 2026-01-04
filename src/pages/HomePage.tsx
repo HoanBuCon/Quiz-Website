@@ -175,7 +175,7 @@ const HomePage: React.FC = () => {
                     </svg>
                     Hoạt động làm bài
                   </h3>
-                  <ContributionGraph blockSize={10} showLabel={true} isBanner={true} />
+                  <ContributionGraph blockSize={10} showLabel={true} isBanner={true} scrollbarClass="banner-glass-scroll" />
                 </div>
               </div>
             )}
