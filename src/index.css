@@ -357,6 +357,14 @@ a *,
 .cursor-pointer * {
   cursor: pointer !important;
 }
+/* Exception: preserve zoom cursor for images */
+button img.cursor-zoom-in,
+a img.cursor-zoom-in,
+[role="button"] img.cursor-zoom-in,
+[onclick] img.cursor-zoom-in,
+.cursor-pointer img.cursor-zoom-in {
+  cursor: zoom-in !important;
+}
 
 /* Draggable elements show grab/grabbing cursor */
 [draggable="true"],
