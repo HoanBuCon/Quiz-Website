@@ -120,10 +120,10 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
                                 more: 'Nhiều',
                             },
                             months: [
-                                'Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6',
-                                'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12',
+                                'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
                             ],
-                            weekdays: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                            weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
                             totalCount: showLabel
                                 ? `{{count}} lần làm bài trong năm ${selectedYear}`
                                 : undefined,
@@ -269,9 +269,6 @@ export const YearSelector: React.FC<{
 
             {/* Desktop Vertical List */}
             <div className="hidden xl:flex flex-col gap-2 h-[156px] overflow-y-auto custom-scrollbar pr-2">
-                <div className="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-1 sticky top-0 bg-white dark:bg-gray-800 py-1 z-10 w-full text-left">
-                    Năm
-                </div>
                 {availableYears.map((year) => (
                     <button
                         key={year}
