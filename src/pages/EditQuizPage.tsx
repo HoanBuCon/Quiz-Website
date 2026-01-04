@@ -1107,7 +1107,8 @@ const EditQuizPage: React.FC = () => {
     result = result.replace(/\$\$[\s\S]*?\$\$/g, (match) => {
       const index = protectedExpressions.length;
       // CRITICAL: Keep original format, only replace newlines with spaces for protection
-      protectedExpressions.push(match.replace(/\n/g, ' '));
+      // FIX: Do NOT replace newlines with spaces, preserve them for code blocks
+      protectedExpressions.push(match);
       return `__LATEX_PROTECTED_${index}__`;
     });
 
@@ -1115,7 +1116,7 @@ const EditQuizPage: React.FC = () => {
     result = result.replace(/\$[^$\n]+\$/g, (match) => {
       const index = protectedExpressions.length;
       // CRITICAL: Keep original format
-      protectedExpressions.push(match.replace(/\n/g, ' '));
+      protectedExpressions.push(match);
       return `__LATEX_PROTECTED_${index}__`;
     });
 
@@ -1248,7 +1249,8 @@ const EditQuizPage: React.FC = () => {
           if (isMathExpr) {
             const index = protectedExpressions.length;
             // CRITICAL: Keep original format, only replace newlines with spaces for protection
-            protectedExpressions.push(mathExpr.replace(/\n/g, ' '));
+            // FIX: Do NOT replace newlines with spaces
+            protectedExpressions.push(mathExpr);
             result = result.substring(0, braceStart) + `__LATEX_PROTECTED_${index}__` + result.substring(braceEnd);
             i = braceStart + `__LATEX_PROTECTED_${index}__`.length;
             continue;
