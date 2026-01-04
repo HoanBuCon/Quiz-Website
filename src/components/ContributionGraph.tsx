@@ -3,6 +3,8 @@ import { ActivityCalendar } from 'react-activity-calendar';
 import { useTheme } from '../context/ThemeContext';
 import { getApiBaseUrl } from '../utils/api';
 import { getToken } from '../utils/auth';
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
 
 interface ActivityData {
     date: string;
@@ -14,6 +16,7 @@ interface ContributionGraphProps {
     showLabel?: boolean;
     blockSize?: number;
     maxHeight?: number;
+    minHeight?: number;
     selectedYear?: number;
     onYearChange?: (year: number) => void;
 }
@@ -22,6 +25,7 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
     showLabel = true,
     blockSize = 12,
     maxHeight,
+    minHeight = 150,
     selectedYear: externalYear,
     onYearChange,
 }) => {
@@ -152,41 +156,24 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
                 </div>
             </div>
 
-            {/* Tooltip styles */}
+            <Tooltip
+                id="activity-tooltip"
+                style={{
+                    zIndex: 1000,
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    padding: '8px 12px',
+                    backgroundColor: isDarkMode ? '#1f2937' : '#374151',
+                    color: '#fff',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                }}
+            />
+
             <style>{`
-        [data-tooltip-id='activity-tooltip'] {
-          cursor: pointer;
-          position: relative;
-        }
-        
-        [data-tooltip-id='activity-tooltip']:hover::after {
-          content: attr(data-tooltip-content);
-          position: absolute;
-          bottom: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          padding: 8px 12px;
-          background: ${isDarkMode ? '#1f2937' : '#374151'};
-          color: white;
-          border-radius: 6px;
-          font-size: 12px;
-          white-space: nowrap;
-          z-index: 1000;
-          margin-bottom: 8px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        
-        [data-tooltip-id='activity-tooltip']:hover::before {
-          content: '';
-          position: absolute;
-          bottom: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          border-width: 6px;
-          border-style: solid;
-          border-color: ${isDarkMode ? '#1f2937' : '#374151'} transparent transparent transparent;
-          z-index: 1000;
-          margin-bottom: 2px;
+        /* Align weekday labels to the left and move them out of the grid area */
+        svg text {
+          text-anchor: start !important;
+          transform: translateX(-38px);
         }
       `}</style>
         </div>
