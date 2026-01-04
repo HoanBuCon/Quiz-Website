@@ -176,7 +176,7 @@ const HomePage: React.FC = () => {
                     Hoạt động làm bài
                   </h3>
                   <div className="w-full overflow-x-auto custom-scrollbar pb-1">
-                    <ContributionGraph blockSize={10} showLabel={false} />
+                    <ContributionGraph blockSize={10} showLabel={true} />
                   </div>
                 </div>
               </div>

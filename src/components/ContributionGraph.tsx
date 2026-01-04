@@ -16,7 +16,6 @@ interface ContributionGraphProps {
     showLabel?: boolean;
     blockSize?: number;
     maxHeight?: number;
-    minHeight?: number;
     selectedYear?: number;
     onYearChange?: (year: number) => void;
 }
@@ -25,7 +24,6 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
     showLabel = true,
     blockSize = 12,
     maxHeight,
-    minHeight = 150,
     selectedYear: externalYear,
     onYearChange,
 }) => {
@@ -118,6 +116,7 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
                         blockSize={blockSize}
                         blockMargin={4}
                         fontSize={12}
+                        showTotalCount={showLabel}
                         labels={{
                             legend: {
                                 less: 'Ít',
@@ -128,15 +127,13 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
                                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
                             ],
                             weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-                            totalCount: showLabel
-                                ? `{{count}} lần làm bài trong năm ${selectedYear}`
-                                : undefined,
+                            totalCount: `{{count}} bài kiểm tra đã hoàn thành trong năm ${selectedYear}`,
                         }}
                         renderBlock={(block, activity) =>
                             React.cloneElement(block, {
                                 'data-tooltip-id': 'activity-tooltip',
                                 'data-tooltip-content': activity.count > 0
-                                    ? `${activity.count} lần làm bài vào ${new Date(activity.date).toLocaleDateString('vi-VN', {
+                                    ? `${activity.count} bài kiểm tra đã hoàn thành vào ${new Date(activity.date).toLocaleDateString('vi-VN', {
                                         day: 'numeric',
                                         month: 'long',
                                         year: 'numeric',
@@ -155,27 +152,7 @@ const ContributionGraph: React.FC<ContributionGraphProps> = ({
                     />
                 </div>
             </div>
-
-            <Tooltip
-                id="activity-tooltip"
-                style={{
-                    zIndex: 1000,
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    padding: '8px 12px',
-                    backgroundColor: isDarkMode ? '#1f2937' : '#374151',
-                    color: '#fff',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                }}
-            />
-
-            <style>{`
-        /* Align weekday labels to the left and move them out of the grid area */
-        svg text {
-          text-anchor: start !important;
-          transform: translateX(-38px);
-        }
-      `}</style>
+            <Tooltip id="activity-tooltip" />
         </div>
     );
 };
@@ -241,7 +218,7 @@ export const YearSelector: React.FC<{
                                         onYearChange(year);
                                         setIsOpen(false);
                                     }}
-                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selectedYear === year
+                                    className={`w-full text-center px-3 py-2 rounded-lg text-sm transition-colors ${selectedYear === year
                                         ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
                                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                                         }`}
@@ -260,7 +237,7 @@ export const YearSelector: React.FC<{
                     <button
                         key={year}
                         onClick={() => onYearChange(year)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all w-full text-left ${selectedYear === year
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all w-full text-center ${selectedYear === year
                             ? 'bg-blue-500 text-white shadow-md'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}

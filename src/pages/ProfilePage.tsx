@@ -478,40 +478,6 @@ const ProfilePage: React.FC = () => {
             <div className="min-h-[500px]">
                 {activeTab === 'overview' && (
                     <div className="space-y-8 tab-content">
-                        {/* Activity Graph Section - Moved to top */}
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
-                            <div className="p-4 sm:p-8 md:p-10">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-6">
-                                    <svg
-                                        className="w-5 h-5 text-blue-500"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                        />
-                                    </svg>
-                                    Hoạt động làm bài
-                                </h2>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                                    Biểu đồ thể hiện số lần bạn đã làm bài kiểm tra theo năm
-                                </p>
-                                <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 border border-gray-100 dark:border-gray-700">
-                                    <div className="flex flex-col xl:flex-row gap-6 items-start">
-                                        <div className="flex-1 w-full overflow-hidden">
-                                            <ContributionGraph blockSize={12} showLabel={true} selectedYear={graphYear} onYearChange={setGraphYear} />
-                                        </div>
-                                        <div className="w-full xl:w-auto">
-                                            <YearSelector selectedYear={graphYear} onYearChange={setGraphYear} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         {/* Settings Form - Premium Redesign */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
@@ -744,11 +710,80 @@ const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+                        {/* Activity Graph Section - Moved below personal info */}
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+                            <div className="p-4 sm:p-8 md:p-10">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-6">
+                                    <svg
+                                        className="w-5 h-5 text-blue-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                        />
+                                    </svg>
+                                    Hoạt động làm bài
+                                </h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                    Biểu đồ thể hiện số bài kiểm tra bạn đã hoàn thành theo năm
+                                </p>
+                                <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 border border-gray-100 dark:border-gray-700">
+                                    <div className="flex flex-col xl:flex-row gap-6 items-start">
+                                        <div className="flex-1 w-full overflow-hidden">
+                                            <ContributionGraph blockSize={12} showLabel={true} selectedYear={graphYear} onYearChange={setGraphYear} />
+                                        </div>
+                                        <div className="w-full xl:w-auto">
+                                            <YearSelector selectedYear={graphYear} onYearChange={setGraphYear} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
                 {activeTab === 'history' && (
                     <div className="space-y-6 tab-content">
+                        {/* Activity Graph Section - Keep consistent with Overview */}
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+                            <div className="p-4 sm:p-8 md:p-10">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-6">
+                                    <svg
+                                        className="w-5 h-5 text-blue-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                        />
+                                    </svg>
+                                    Hoạt động làm bài
+                                </h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                    Biểu đồ thể hiện số bài kiểm tra bạn đã hoàn thành theo năm
+                                </p>
+                                <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 border border-gray-100 dark:border-gray-700">
+                                    <div className="flex flex-col xl:flex-row gap-6 items-start">
+                                        <div className="flex-1 w-full overflow-hidden">
+                                            <ContributionGraph blockSize={12} showLabel={true} selectedYear={graphYear} onYearChange={setGraphYear} />
+                                        </div>
+                                        <div className="w-full xl:w-auto">
+                                            <YearSelector selectedYear={graphYear} onYearChange={setGraphYear} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sm:p-8">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                                 <FaHistory className="text-blue-500" /> Lịch sử làm bài
