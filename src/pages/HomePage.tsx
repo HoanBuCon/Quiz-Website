@@ -158,7 +158,7 @@ const HomePage: React.FC = () => {
             {/* Contribution Graph - Only show if logged in */}
             {isLoggedIn && (
               <div className="mt-8 lg:mt-0 flex-1 min-w-0 flex justify-end">
-                <div className="bg-white/10 dark:bg-black/20 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl w-fit max-w-full overflow-hidden transition-all duration-500 hover:bg-white/15 dark:hover:bg-black/30">
+                <div className="dark:bg-slate-950/5 dark:backdrop-blur-xl rounded-2xl p-6 w-fit max-w-full overflow-hidden">
                   <h3 className="text-xs font-bold text-blue-100/80 dark:text-blue-200 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <svg
                       className="w-4 h-4"
