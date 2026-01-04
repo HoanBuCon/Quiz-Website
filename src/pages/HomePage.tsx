@@ -147,30 +147,32 @@ const HomePage: React.FC = () => {
                   liemdai
                 </span>{" "}
                 <span className="text-[41%] align-baseline opacity-80">
-                  (Đại Liêm🐧)
+                  Đại Liêm🐧
                 </span>
               </h1>
-              <p className="mt-4 space-y-3 font-mono text-base sm:text-lg text-cyan-200 cyber-scan">
-                <span className="block text-blue-300 opacity-90">
+              <div className="mt-4 space-y-3 font-mono text-base sm:text-lg text-cyan-200 cyber-scan">
+                <span className="block text-blue-200 dark:text-blue-300 opacity-95">
                   Nền tảng học tập trực tuyến
                 </span>
 
-                {["Cực chất", "Cực liêm", "Cực liếm 🗣️🔥"].map((item, i) => (
-                  <span
-                    key={i}
-                    className="cyber-line group flex items-center gap-4"
-                    data-text={item}
-                  >
-                    {/* hologram bullet */}
-                    <span className="cyber-dot" />
+                <div className="w-fit mx-auto lg:mx-0 flex flex-col gap-3">
+                  {["Cực chất 🗣️🔥", "Cực liêm 🗿", "Cực liếm 👅"].map((item, i) => (
+                    <span
+                      key={i}
+                      className="cyber-line group flex items-center gap-4"
+                      data-text={item}
+                    >
+                      {/* hologram bullet */}
+                      <span className="cyber-dot" />
 
-                    {/* glitch text */}
-                    <span className="cyber-glitch" data-text={item}>
-                      {item}
+                      {/* glitch text */}
+                      <span className="cyber-glitch" data-text={item}>
+                        {item}
+                      </span>
                     </span>
-                  </span>
-                ))}
-              </p>
+                  ))}
+                </div>
+              </div>
 
 
             </div>
