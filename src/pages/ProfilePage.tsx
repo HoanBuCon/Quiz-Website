@@ -6,7 +6,7 @@ import { getApiBaseUrl, StatsAPI } from '../utils/api';
 import { getToken } from '../utils/auth';
 import { toast } from 'react-hot-toast';
 import SpinnerLoading from '../components/SpinnerLoading';
-import ContributionGraph from '../components/ContributionGraph';
+import ContributionGraph, { YearSelector } from '../components/ContributionGraph';
 
 interface UserProfile {
     id: string;
@@ -45,6 +45,7 @@ const ProfilePage: React.FC = () => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [stats, setStats] = useState<UserStats | null>(null);
     const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'management'>('overview');
+    const [graphYear, setGraphYear] = useState(new Date().getFullYear());
 
     // Stats Management States
     const [myClasses, setMyClasses] = useState<any[]>([]);
@@ -480,15 +481,34 @@ const ProfilePage: React.FC = () => {
                         {/* Activity Graph Section - Moved to top */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
                             <div className="p-4 sm:p-8 md:p-10">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-6">
-                                    <FaChartBar className="text-blue-500" />
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-6">
+                                    <svg
+                                        className="w-5 h-5 text-blue-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                        />
+                                    </svg>
                                     Hoạt động làm bài
                                 </h2>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                                     Biểu đồ thể hiện số lần bạn đã làm bài kiểm tra theo năm
                                 </p>
                                 <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 border border-gray-100 dark:border-gray-700">
-                                    <ContributionGraph blockSize={12} showLabel={true} showYearSelector={true} />
+                                    <div className="flex flex-col xl:flex-row gap-6 items-start">
+                                        <div className="flex-1 w-full overflow-hidden">
+                                            <ContributionGraph blockSize={12} showLabel={true} selectedYear={graphYear} onYearChange={setGraphYear} />
+                                        </div>
+                                        <div className="w-full xl:w-auto">
+                                            <YearSelector selectedYear={graphYear} onYearChange={setGraphYear} />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -538,7 +558,7 @@ const ProfilePage: React.FC = () => {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="text-lg font-bold text-gray-900 dark:text-white border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
+                                                <div className="text-lg font-medium text-gray-900 dark:text-white border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
                                                     {profile.name}
                                                 </div>
                                             )}
@@ -550,7 +570,7 @@ const ProfilePage: React.FC = () => {
                                                 <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</label>
                                                 {!editingEmail && (
                                                     <button onClick={() => setEditingEmail(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
-                                                        <FaEdit /> Thay đổi
+                                                        <FaEdit /> Chỉnh sửa
                                                     </button>
                                                 )}
                                             </div>
@@ -589,7 +609,7 @@ const ProfilePage: React.FC = () => {
                                             ) : (
                                                 <div className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
                                                     {profile.email}
-                                                    <span className="bg-green-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">Unverified</span>
+                                                    <span className="bg-green-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] px-2 py-0.5 rounded-full font-jetbrains uppercase tracking-wide">Unverified</span>
                                                 </div>
                                             )}
                                         </div>
@@ -600,7 +620,7 @@ const ProfilePage: React.FC = () => {
                                                 <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mật khẩu</label>
                                                 {!editingPassword && (
                                                     <button onClick={() => setEditingPassword(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
-                                                        <FaEdit /> Cập nhật
+                                                        <FaEdit /> Chỉnh sửa
                                                     </button>
                                                 )}
                                             </div>
@@ -712,8 +732,8 @@ const ProfilePage: React.FC = () => {
                                                     <div className="flex items-center gap-1.5">
                                                         {[...Array(8)].map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></div>)}
                                                     </div>
-                                                    <span className="text-xs text-gray-400 font-medium">
-                                                        Lần cuối: {profile.passwordChangedAt
+                                                    <span className="text-xs text-gray-400 font-mono">
+                                                        Cập nhật lần cuối: {profile.passwordChangedAt
                                                             ? new Date(profile.passwordChangedAt).toLocaleDateString('vi-VN')
                                                             : 'Chưa cập nhật'}
                                                     </span>
