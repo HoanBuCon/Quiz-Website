@@ -231,4 +231,65 @@ router.get('/stats', authRequired, async (req, res) => {
   }
 });
 
+// GET /profile/activity - Get quiz activity data for contribution graph
+router.get('/activity', authRequired, async (req, res) => {
+  try {
+    const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+    
+    // Validate year
+    const currentYear = new Date().getFullYear();
+    if (year < 2025 || year > currentYear) {
+      return res.status(400).json({ message: 'Invalid year' });
+    }
+    
+    // Get quiz completion activity for the specified year
+    const activityData = await query(
+      `SELECT 
+        DATE(completedAt) as date,
+        COUNT(*) as count
+       FROM QuizSession
+       WHERE userId = ? 
+         AND YEAR(completedAt) = ?
+       GROUP BY DATE(completedAt)
+       ORDER BY date ASC`,
+      [req.user.id, year]
+    );
+    
+    // Create a map of existing data
+    const dataMap = new Map();
+    activityData.forEach(item => {
+      const dateStr = item.date.toISOString().split('T')[0];
+      dataMap.set(dateStr, item.count || 0);
+    });
+    
+    // Fill in all dates for the year
+    const startDate = new Date(year, 0, 1); // January 1
+    const endDate = new Date(year, 11, 31); // December 31 - always show full year
+    const formattedData = [];
+    
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      const count = dataMap.get(dateStr) || 0;
+      
+      // Calculate level based on count
+      let level = 0;
+      if (count > 0) level = 1;
+      if (count >= 3) level = 2;
+      if (count >= 5) level = 3;
+      if (count >= 8) level = 4;
+      
+      formattedData.push({
+        date: dateStr,
+        count: count,
+        level: level
+      });
+    }
+    
+    res.json(formattedData);
+  } catch (error) {
+    console.error('Get activity error:', error);
+    res.status(500).json({ message: 'Failed to get activity data' });
+  }
+});
+
 module.exports = router;

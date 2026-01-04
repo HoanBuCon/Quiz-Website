@@ -3,6 +3,7 @@ import { ClassRoom, Quiz } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { formatDate } from "../utils/fileUtils";
+import ContributionGraph from "../components/ContributionGraph";
 
 // Component trang chủ
 const HomePage: React.FC = () => {
@@ -139,8 +140,8 @@ const HomePage: React.FC = () => {
               rounded-2xl pointer-events-none
             "
           ></div>
-          <div className="relative z-10 lg:flex lg:items-start lg:justify-between">
-            <div className="lg:flex-1">
+          <div className="relative z-10">
+            <div className="text-center lg:text-left">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
                 <span className="logo-text text-3xl sm:text-4xl lg:text-5xl">
                   liemdai
@@ -149,120 +150,36 @@ const HomePage: React.FC = () => {
                   (Đại Liêm🐧)
                 </span>
               </h1>
-              <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
+              <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed mx-auto lg:mx-0">
                 Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
               </p>
             </div>
 
-            {/* Stats */}
-            <div className="mt-8 lg:mt-0 lg:ml-8 lg:w-80">
-              <div className="flex justify-start lg:justify-end">
-                <div
-                  className="inline-grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-1"
-                  style={{ gridAutoColumns: "max-content" }}
+            {/* Contribution Graph - Only show if logged in */}
+            {isLoggedIn && (
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <h3 className="text-sm font-semibold text-blue-100 mb-4 flex items-center gap-2"
                 >
-                  {/* Ô 1: Tổng lớp học */}
-                  <div
-                    className="
-                      relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
-                      transition-all duration-500
-                      dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
-                      dark:border-white/10 dark:ring-1 dark:ring-white/10
-                      overflow-hidden group isolate
-                    "
-                    style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    {/* Overlay pattern: vân chéo rõ nét */}
-                    <div
-                      className="
-                        absolute inset-0 opacity-10
-                        bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
-                        dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
-                        rounded-xl pointer-events-none
-                      "
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                     />
-
-                    {/* Hiệu ứng shimmer ánh bạc */}
-                    <div
-                      className="
-                        absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
-                        bg-gradient-to-r from-transparent via-white/80 to-transparent
-                        translate-x-[-100%] group-hover:translate-x-[100%]
-                        blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
-                        rounded-xl mix-blend-overlay pointer-events-none
-                      "
-                    />
-
-                    {/* Hiệu ứng bóng sáng mờ giữa */}
-                    <div
-                      className="
-                        absolute inset-0 pointer-events-none
-                        bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
-                        dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
-                        rounded-xl
-                      "
-                    />
-
-                    <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                      {totalClasses}
-                    </div>
-                    <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-                      Lớp học công khai
-                    </div>
-                  </div>
-
-                  {/* Ô 2: Tổng bài kiểm tra */}
-                  <div
-                    className="
-                      relative bg-white border border-gray-200 rounded-xl py-3 px-5 text-left
-                      transition-all duration-500
-                      dark:bg-gradient-to-br dark:from-slate-700 dark:to-gray-800
-                      dark:border-white/10 dark:ring-1 dark:ring-white/10
-                      overflow-hidden group isolate
-                    "
-                    style={{ WebkitMaskImage: '-webkit-radial-gradient(white, white)' } as React.CSSProperties}
-                  >
-                    {/* Overlay pattern: vân chéo rõ nét */}
-                    <div
-                      className="
-                        absolute inset-0 opacity-10
-                        bg-[repeating-linear-gradient(135deg,_rgba(0,0,0,0.08)_0px,_rgba(0,0,0,0.08)_1px,_transparent_1px,_transparent_8px)]
-                        dark:bg-[repeating-linear-gradient(135deg,_rgba(255,255,255,0.15)_0px,_rgba(255,255,255,0.15)_1px,_transparent_1px,_transparent_8px)]
-                        rounded-xl pointer-events-none
-                      "
-                    />
-
-                    {/* Hiệu ứng shimmer ánh bạc */}
-                    <div
-                      className="
-                        absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-1000
-                        bg-gradient-to-r from-transparent via-white/80 to-transparent
-                        translate-x-[-100%] group-hover:translate-x-[100%]
-                        blur-[2px] animate-[shimmer_1.8s_ease-in-out_infinite]
-                        rounded-xl mix-blend-overlay pointer-events-none
-                      "
-                    />
-
-                    {/* Hiệu ứng bóng sáng mờ giữa */}
-                    <div
-                      className="
-                        absolute inset-0 pointer-events-none
-                        bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_70%)]
-                        dark:bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_70%)]
-                        rounded-xl
-                      "
-                    />
-
-                    <div className="relative text-xl sm:text-2xl font-mono font-bold text-blue-600 dark:text-gray-50 mb-1">
-                      {totalQuizzes}
-                    </div>
-                    <div className="relative text-sm font-mono text-blue-600 dark:text-gray-200">
-                      Bài kiểm tra công khai
-                    </div>
-                  </div>
+                  </svg>
+                  Hoạt động làm bài
+                </h3>
+                <div className="bg-white dark:bg-white/10 backdrop-blur-md rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <ContributionGraph blockSize={10} maxHeight={200} showLabel={false} />
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

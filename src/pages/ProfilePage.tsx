@@ -6,6 +6,7 @@ import { getApiBaseUrl, StatsAPI } from '../utils/api';
 import { getToken } from '../utils/auth';
 import { toast } from 'react-hot-toast';
 import SpinnerLoading from '../components/SpinnerLoading';
+import ContributionGraph from '../components/ContributionGraph';
 
 interface UserProfile {
     id: string;
@@ -476,7 +477,22 @@ const ProfilePage: React.FC = () => {
             <div className="min-h-[500px]">
                 {activeTab === 'overview' && (
                     <div className="space-y-8 tab-content">
-                        {/* Settings Form */}
+                        {/* Activity Graph Section - Moved to top */}
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+                            <div className="p-4 sm:p-8 md:p-10">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-6">
+                                    <FaChartBar className="text-blue-500" />
+                                    Hoạt động làm bài
+                                </h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                    Biểu đồ thể hiện số lần bạn đã làm bài kiểm tra theo năm
+                                </p>
+                                <div className="bg-gray-50 dark:bg-gray-900/30 rounded-xl p-6 border border-gray-100 dark:border-gray-700">
+                                    <ContributionGraph blockSize={12} showLabel={true} showYearSelector={true} />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Settings Form - Premium Redesign */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
                             {/* Header removed for cleaner look, integrated into spacing */}

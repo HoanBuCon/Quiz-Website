@@ -24,6 +24,7 @@
     "katex": "^0.16.27",
     "mammoth": "^1.10.0",
     "react": "^19.1.1",
+    "react-activity-calendar": "^3.0.5",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.5.2",
     "react-icons": "^4.10.1",
