@@ -3,7 +3,7 @@ import React from "react";
 // Component Footer của website
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] border-t border-slate-200/80 dark:border-slate-700/80 mt-auto shadow-xl">
+    <footer className="bg-gradient-to-r from-blue-900 to-blue-600 dark:bg-gradient-to-r dark:from-[#1a1e3a] dark:to-[#181824] mt-auto shadow-xl">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-[1.16rem] sm:py-[1.55rem] relative">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="text-center md:text-left mb-4 md:mb-0">
