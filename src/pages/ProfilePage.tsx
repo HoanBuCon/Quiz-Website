@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit, FaGraduationCap, FaClipboardList, FaTrophy, FaClock, FaChartBar, FaHistory, FaUsers, FaArrowRight, FaEye, FaChevronDown, FaCheck, FaCheckCircle } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit, FaGraduationCap, FaClipboardList, FaTrophy, FaClock, FaChartBar, FaHistory, FaUsers, FaArrowRight, FaEye, FaChevronDown, FaCheck, FaCheckCircle, FaCalendar } from 'react-icons/fa';
 import { getApiBaseUrl, StatsAPI } from '../utils/api';
 import { getToken } from '../utils/auth';
 import { toast } from 'react-hot-toast';
@@ -58,6 +58,11 @@ const ProfilePage: React.FC = () => {
 
     // Dropdown States
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+    // Date Filter States
+    const [showDateFilter, setShowDateFilter] = useState(false);
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
     // Edit states
     const [editingName, setEditingName] = useState(false);
@@ -146,13 +151,17 @@ const ProfilePage: React.FC = () => {
             if (!target.closest('.custom-dropdown-container')) {
                 setOpenDropdown(null);
             }
+            // Close date filter if clicking outside
+            if (showDateFilter && !target.closest('.date-filter-container')) {
+                setShowDateFilter(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, []);
+    }, [showDateFilter]);
 
     const loadProfileData = async () => {
         try {
@@ -304,6 +313,40 @@ const ProfilePage: React.FC = () => {
             year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
         });
     };
+
+    // Date filter helper functions
+    const resetDateFilter = () => {
+        setStartDate('');
+        setEndDate('');
+        setShowDateFilter(false);
+    };
+
+    const setQuickPreset = (days: number | null) => {
+        if (days === null) {
+            // All time
+            setStartDate('');
+            setEndDate('');
+        } else {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(start.getDate() - days);
+            setStartDate(start.toISOString().split('T')[0]);
+            setEndDate(end.toISOString().split('T')[0]);
+        }
+    };
+
+    // Filter sessions based on date range
+    const filteredSessions = stats?.recentSessions.filter(session => {
+        if (!startDate && !endDate) return true;
+
+        const sessionDate = new Date(session.completedAt);
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate + 'T23:59:59') : null;
+
+        if (start && sessionDate < start) return false;
+        if (end && sessionDate > end) return false;
+        return true;
+    }) || [];
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
@@ -792,18 +835,114 @@ const ProfilePage: React.FC = () => {
                         </div>
 
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sm:p-8">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                                <FaHistory className="text-blue-500" /> Lịch sử làm bài
-                            </h2>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <FaHistory className="text-blue-500" /> Lịch sử làm bài
+                                    {(startDate || endDate) && (
+                                        <span className="ml-2 px-2.5 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full inline-flex items-center gap-1.5">
+                                            <span>{filteredSessions.length} kết quả</span>
+                                            <span className="hidden md:inline text-blue-400 dark:text-blue-500">•</span>
+                                            <span className="hidden md:inline font-mono text-xs">
+                                                {startDate ? new Date(startDate).toLocaleDateString('en-GB') : 'Hiện tại'} - {endDate ? new Date(endDate).toLocaleDateString('en-GB') : 'Hiện tại'}
+                                            </span>
+                                        </span>
+                                    )}
+                                </h2>
 
-                            {stats.recentSessions.length === 0 ? (
+                                {/* Date Range Filter Button */}
+                                <div className="relative date-filter-container">
+                                    <button
+                                        onClick={() => setShowDateFilter(!showDateFilter)}
+                                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 transition-all shadow-sm hover:shadow-md"
+                                    >
+                                        <FaCalendar className={`text-sm ${startDate || endDate ? 'text-blue-500' : 'text-gray-400'}`} />
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Lọc theo ngày
+                                        </span>
+                                        <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${showDateFilter ? 'rotate-180 text-blue-500' : ''}`} />
+                                    </button>
+
+                                    {/* Dropdown Filter Panel */}
+                                    {showDateFilter && (
+                                        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-5 z-50 animate-slideUp">
+                                            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+                                                <FaCalendar className="text-blue-500" />
+                                                Chọn khoảng thời gian
+                                            </h3>
+
+                                            {/* Date Inputs */}
+                                            <div className="space-y-4 mb-4">
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                                                        Từ ngày
+                                                    </label>
+                                                    <input
+                                                        type="date"
+                                                        value={startDate}
+                                                        onChange={(e) => setStartDate(e.target.value)}
+                                                        max={endDate || undefined}
+                                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                                                        Đến ngày
+                                                    </label>
+                                                    <input
+                                                        type="date"
+                                                        value={endDate}
+                                                        onChange={(e) => setEndDate(e.target.value)}
+                                                        min={startDate || undefined}
+                                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Quick Presets */}
+                                            <div className="mb-4">
+                                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                                                    Chọn nhanh
+                                                </label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {[
+                                                        { label: '7 ngày', days: 7 },
+                                                        { label: '30 ngày', days: 30 },
+                                                        { label: '3 tháng', days: 90 },
+                                                        { label: 'Tất cả', days: null }
+                                                    ].map((preset) => (
+                                                        <button
+                                                            key={preset.label}
+                                                            onClick={() => setQuickPreset(preset.days)}
+                                                            className="px-3 py-2 text-xs font-medium bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500"
+                                                        >
+                                                            {preset.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Action Button */}
+                                            <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+                                                <button
+                                                    onClick={resetDateFilter}
+                                                    className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold text-sm transition-all"
+                                                >
+                                                    Đặt lại
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {filteredSessions.length === 0 ? (
                                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/30 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
                                     <FaClock className="mx-auto text-4xl text-gray-300 dark:text-gray-600 mb-4" />
                                     <p className="text-gray-500 dark:text-gray-400 font-medium">Bạn chưa thực hiện bài kiểm tra nào.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-5 max-h-[65vh] overflow-y-auto custom-scrollbar pr-2 py-4">
-                                    {stats.recentSessions.map(session => (
+                                    {filteredSessions.map(session => (
                                         <div key={session.id} className="group relative bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-900/50 flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden">
                                             {/* Decorative side bar - REMOVED since border-l-4 replaces it */}
 
