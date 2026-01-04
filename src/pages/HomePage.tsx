@@ -142,17 +142,37 @@ const HomePage: React.FC = () => {
           ></div>
           <div className="relative z-10 lg:flex lg:items-start lg:gap-6 lg:justify-between">
             <div className="text-center lg:text-left lg:max-w-xs flex-shrink-0">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-medium text-white mb-4 tracking-tight">
                 <span className="logo-text text-3xl sm:text-4xl lg:text-5xl">
                   liemdai
                 </span>{" "}
-                <span className="text-[50%] align-baseline opacity-80">
+                <span className="text-[41%] align-baseline opacity-80">
                   (Đại Liêm🐧)
                 </span>
               </h1>
-              <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 leading-relaxed mx-auto lg:mx-0">
-                Nền tảng học tập trực tuyến cực chất, cực liêm và cực liếm🗣️🔥
+              <p className="mt-4 space-y-3 font-mono text-base sm:text-lg text-cyan-200 cyber-scan">
+                <span className="block text-blue-300 opacity-90">
+                  Nền tảng học tập trực tuyến
+                </span>
+
+                {["Cực chất", "Cực liêm", "Cực liếm 🗣️🔥"].map((item, i) => (
+                  <span
+                    key={i}
+                    className="cyber-line group flex items-center gap-4"
+                    data-text={item}
+                  >
+                    {/* hologram bullet */}
+                    <span className="cyber-dot" />
+
+                    {/* glitch text */}
+                    <span className="cyber-glitch" data-text={item}>
+                      {item}
+                    </span>
+                  </span>
+                ))}
               </p>
+
+
             </div>
 
             {/* Contribution Graph - Only show if logged in */}

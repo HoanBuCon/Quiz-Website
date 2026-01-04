@@ -1123,3 +1123,130 @@ code {
       0 0 60px rgba(56, 189, 248, 0.1); /* Far outer fade */
   }
 }
+
+/* ===== SCANLINE ===== */
+/* .cyber-scan {
+  position: relative;
+}
+.cyber-scan::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.04),
+    rgba(255,255,255,0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation: scanMove 6s linear infinite;
+} */
+
+@keyframes scanMove {
+  from { background-position-y: 0; }
+  to { background-position-y: 100%; }
+}
+
+/* ===== HOLOGRAM DOT ===== */
+.cyber-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #22d3ee;
+  box-shadow:
+    0 0 6px #22d3ee,
+    0 0 12px rgba(34,211,238,0.7);
+  animation: flicker 2.5s infinite alternate;
+}
+
+@keyframes flicker {
+  0% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+/* ===== GLITCH TEXT ===== */
+.cyber-glitch {
+  position: relative;
+  font-weight: 500;
+}
+
+.cyber-glitch::before,
+.cyber-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0.8;
+}
+
+.cyber-glitch::before {
+  color: #22d3ee;
+  transform: translate(1px, 0);
+  animation: glitchA 2s infinite linear alternate-reverse;
+}
+
+.cyber-glitch::after {
+  color: #f472b6;
+  transform: translate(-1px, 0);
+  animation: glitchB 1.5s infinite linear alternate-reverse;
+}
+
+@keyframes glitchA {
+  0% { clip-path: inset(0 0 80% 0); }
+  50% { clip-path: inset(30% 0 30% 0); }
+  100% { clip-path: inset(80% 0 0 0); }
+}
+
+@keyframes glitchB {
+  0% { clip-path: inset(70% 0 0 0); }
+  50% { clip-path: inset(20% 0 50% 0); }
+  100% { clip-path: inset(0 0 70% 0); }
+}
+
+.cyber-line:hover .cyber-dot {
+  box-shadow:
+    0 0 10px #22d3ee,
+    0 0 24px rgba(34,211,238,1);
+}
+
+/* LOGO GLITCH */
+/* ===== LOGO GLITCH (SAFE VERSION) ===== */
+.logo-glitch-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.logo-glitch-wrapper::before,
+.logo-glitch-wrapper::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.logo-glitch-wrapper::before {
+  transform: translate(1px, -1px);
+  filter: hue-rotate(60deg);
+  animation: logoGlitchA 2.5s infinite linear alternate;
+}
+
+.logo-glitch-wrapper::after {
+  transform: translate(-1px, 1px);
+  filter: hue-rotate(-60deg);
+  animation: logoGlitchB 1.8s infinite linear alternate;
+}
+
+@keyframes logoGlitchA {
+  0%   { clip-path: inset(0 0 85% 0); }
+  50%  { clip-path: inset(30% 0 40% 0); }
+  100% { clip-path: inset(70% 0 0 0); }
+}
+
+@keyframes logoGlitchB {
+  0%   { clip-path: inset(60% 0 0 0); }
+  50%  { clip-path: inset(20% 0 60% 0); }
+  100% { clip-path: inset(0 0 80% 0); }
+}
+
