@@ -1384,9 +1384,11 @@ const ClassesPage: React.FC = () => {
                               ? "opacity-50 cursor-not-allowed"
                               : ""
                             }`}
-                          title={`Trạng thái: ${shareStatus[`class_${classRoom.id}`]
-                            ? "Có thể chia sẻ"
-                            : "Không thể chia sẻ"
+                          title={(classRoom as any).accessType === "shared"
+                            ? "Không có quyền sử dụng"
+                            : `Trạng thái: ${shareStatus[`class_${classRoom.id}`]
+                              ? "Có thể chia sẻ"
+                              : "Không thể chia sẻ"
                             }\n\nNhấn để ${shareStatus[`class_${classRoom.id}`] ? "tắt" : "bật"
                             } chia sẻ lớp học`}
                         >
@@ -1433,8 +1435,9 @@ const ClassesPage: React.FC = () => {
                             ? "opacity-50 cursor-not-allowed"
                             : ""
                             }`}
-                          title={
-                            shareStatus[`class_${classRoom.id}`]
+                          title={(classRoom as any).accessType === "shared"
+                            ? "Không có quyền sử dụng"
+                            : shareStatus[`class_${classRoom.id}`]
                               ? "Sao chép ID/Link chia sẻ"
                               : "Bật chia sẻ trước để lấy ID/Link"
                           }
@@ -1470,7 +1473,9 @@ const ClassesPage: React.FC = () => {
                               ? "opacity-50 cursor-not-allowed"
                               : ""
                             }`}
-                          title={`Trạng thái: ${classRoom.isPublic ? "Công khai" : "Riêng tư"
+                          title={(classRoom as any).accessType === "shared"
+                            ? "Không có quyền sử dụng"
+                            : `Trạng thái: ${classRoom.isPublic ? "Công khai" : "Riêng tư"
                             }\n\nNhấn để ${classRoom.isPublic ? "đặt riêng tư" : "công khai"
                             } lớp học và tất cả quiz`}
                         >
@@ -1528,7 +1533,7 @@ const ClassesPage: React.FC = () => {
                             ? "opacity-50 cursor-not-allowed"
                             : ""
                             }`}
-                          title="Chỉnh sửa lớp học"
+                          title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa lớp học"}
                         >
                           <svg
                             className="w-4 h-4"
@@ -1842,7 +1847,9 @@ const ClassesPage: React.FC = () => {
                               ? "opacity-50 cursor-not-allowed"
                               : ""
                             }`}
-                          title={`${shareStatus[`class_${classRoom.id}`] ? "Tắt" : "Bật"
+                          title={(classRoom as any).accessType === "shared"
+                            ? "Không có quyền sử dụng"
+                            : `${shareStatus[`class_${classRoom.id}`] ? "Tắt" : "Bật"
                             } chia sẻ lớp học`}
                         >
                           {shareStatus[`class_${classRoom.id}`] ? (
@@ -1886,8 +1893,9 @@ const ClassesPage: React.FC = () => {
                             ? "opacity-50 cursor-not-allowed"
                             : ""
                             }`}
-                          title={
-                            shareStatus[`class_${classRoom.id}`]
+                          title={(classRoom as any).accessType === "shared"
+                            ? "Không có quyền sử dụng"
+                            : shareStatus[`class_${classRoom.id}`]
                               ? "Copy ID/Link"
                               : "Bật chia sẻ trước"
                           }
@@ -1927,7 +1935,9 @@ const ClassesPage: React.FC = () => {
                               ? "opacity-50 cursor-not-allowed"
                               : ""
                             }`}
-                          title={`${classRoom.isPublic ? "Công khai" : "Riêng tư"
+                          title={(classRoom as any).accessType === "shared"
+                            ? "Không có quyền sử dụng"
+                            : `${classRoom.isPublic ? "Công khai" : "Riêng tư"
                             }`}
                         >
                           {classRoom.isPublic ? (
@@ -1984,7 +1994,7 @@ const ClassesPage: React.FC = () => {
                             ? "opacity-50 cursor-not-allowed"
                             : ""
                             }`}
-                          title="Chỉnh sửa lớp học"
+                          title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa lớp học"}
                         >
                           <svg
                             className="w-5 h-5"
@@ -2118,9 +2128,11 @@ const ClassesPage: React.FC = () => {
                                             ? "opacity-50 cursor-not-allowed"
                                             : ""
                                           }`}
-                                        title={`Trạng thái: ${shareStatus[`quiz_${quiz.id}`]
-                                          ? "Có thể chia sẻ"
-                                          : "Không thể chia sẻ"
+                                        title={(classRoom as any).accessType === "shared"
+                                          ? "Không có quyền sử dụng"
+                                          : `Trạng thái: ${shareStatus[`quiz_${quiz.id}`]
+                                            ? "Có thể chia sẻ"
+                                            : "Không thể chia sẻ"
                                           }\n\nNhấn để ${shareStatus[`quiz_${quiz.id}`]
                                             ? "tắt"
                                             : "bật"
@@ -2163,8 +2175,9 @@ const ClassesPage: React.FC = () => {
                                           ? "opacity-50 cursor-not-allowed"
                                           : ""
                                           }`}
-                                        title={
-                                          shareStatus[`quiz_${quiz.id}`]
+                                        title={(classRoom as any).accessType === "shared"
+                                          ? "Không có quyền sử dụng"
+                                          : shareStatus[`quiz_${quiz.id}`]
                                             ? "Sao chép ID/Link chia sẻ"
                                             : "Bật chia sẻ trước để lấy ID/Link"
                                         }
@@ -2207,9 +2220,11 @@ const ClassesPage: React.FC = () => {
                                             ? "opacity-50 cursor-not-allowed"
                                             : ""
                                           }`}
-                                        title={`Trạng thái: ${(quiz as any).published
-                                          ? "Công khai"
-                                          : "Nháp (Riêng tư)"
+                                        title={(classRoom as any).accessType === "shared"
+                                          ? "Không có quyền sử dụng"
+                                          : `Trạng thái: ${(quiz as any).published
+                                            ? "Công khai"
+                                            : "Nháp (Riêng tư)"
                                           }\n\nNhấn để ${(quiz as any).published
                                             ? "đặt nháp"
                                             : "công khai quiz"
@@ -2305,7 +2320,7 @@ const ClassesPage: React.FC = () => {
                                           ? "opacity-50 cursor-not-allowed"
                                           : ""
                                           }`}
-                                        title="Chỉnh sửa bài kiểm tra"
+                                        title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa bài kiểm tra"}
                                       >
                                         <svg
                                           className="w-4 h-4"
@@ -2395,9 +2410,11 @@ const ClassesPage: React.FC = () => {
                                             ? "opacity-50 cursor-not-allowed"
                                             : ""
                                           }`}
-                                        title={`${shareStatus[`quiz_${quiz.id}`]
-                                          ? "Đang chia sẻ"
-                                          : "Chưa chia sẻ"
+                                        title={(classRoom as any).accessType === "shared"
+                                          ? "Không có quyền sử dụng"
+                                          : `${shareStatus[`quiz_${quiz.id}`]
+                                            ? "Đang chia sẻ"
+                                            : "Chưa chia sẻ"
                                           }`}
                                       >
                                         <svg
@@ -2436,8 +2453,9 @@ const ClassesPage: React.FC = () => {
                                           ? "opacity-50 cursor-not-allowed"
                                           : ""
                                           }`}
-                                        title={
-                                          shareStatus[`quiz_${quiz.id}`]
+                                        title={(classRoom as any).accessType === "shared"
+                                          ? "Không có quyền sử dụng"
+                                          : shareStatus[`quiz_${quiz.id}`]
                                             ? "Sao chép ID/Link"
                                             : "Bật chia sẻ trước"
                                         }
@@ -2479,9 +2497,11 @@ const ClassesPage: React.FC = () => {
                                             ? "opacity-50 cursor-not-allowed"
                                             : ""
                                           }`}
-                                        title={`${(quiz as any).published
-                                          ? "Công khai"
-                                          : "Nháp"
+                                        title={(classRoom as any).accessType === "shared"
+                                          ? "Không có quyền sử dụng"
+                                          : `${(quiz as any).published
+                                            ? "Công khai"
+                                            : "Nháp"
                                           }`}
                                       >
                                         {(quiz as any).published ? (
@@ -2573,7 +2593,7 @@ const ClassesPage: React.FC = () => {
                                           ? "opacity-50 cursor-not-allowed"
                                           : ""
                                           }`}
-                                        title="Chỉnh sửa bài kiểm tra"
+                                        title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa bài kiểm tra"}
                                       >
                                         <svg
                                           className="w-5 h-5"
