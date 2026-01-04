@@ -9,6 +9,7 @@ import {
   EllipsisVerticalIcon,
   PencilSquareIcon,
   DocumentDuplicateIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid";
 import { ClassRoom, Quiz } from "../types";
 
@@ -48,6 +49,20 @@ const ClassesPage: React.FC = () => {
 
   // Share status tracking (classId/quizId -> isShareable)
   const [shareStatus, setShareStatus] = useState<Record<string, boolean>>({});
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredClasses = classes.filter((cls) => {
+    const query = searchQuery.toLowerCase();
+    const matchClass = cls.name.toLowerCase().includes(query);
+    const matchQuiz =
+      Array.isArray(cls.quizzes) &&
+      cls.quizzes.some(
+        (q) => typeof q !== "string" && q.title.toLowerCase().includes(query)
+      );
+    return matchClass || matchQuiz;
+  });
 
   // Hàm xóa lớp học
   const handleDeleteClass = async (classId: string, className: string) => {
@@ -969,6 +984,40 @@ const ClassesPage: React.FC = () => {
         <div className="xl:w-[70%] min-w-0 order-1">
 
 
+          {/* Mobile Search Bar */}
+          <div className="xl:hidden mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm lớp học, bài kiểm tra..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-primary-500 focus:ring-0 outline-none transition-all shadow-sm"
+              />
+              <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-2 mb-6">
             <button
               onClick={() => setImportOpen(true)}
@@ -1010,7 +1059,7 @@ const ClassesPage: React.FC = () => {
           ) : classes.length > 0 ? (
             // Danh sách lớp học
             <div className="space-y-4">
-              {classes.map((classRoom: ClassRoom, index) => {
+              {filteredClasses.map((classRoom: ClassRoom, index) => {
                 const validQuizzes = getValidQuizzes(classRoom);
                 const quizCount = validQuizzes.length;
 
@@ -2570,6 +2619,41 @@ const ClassesPage: React.FC = () => {
         {/* Right Section - Desktop Only (Statistics + Guidance) */}
         <div className="hidden xl:block xl:w-[30%] xl:flex-shrink-0 order-2">
           <div className="lg:sticky lg:top-4 space-y-6">
+
+            {/* Desktop Search Bar */}
+            <div className="animate-slideLeftIn anim-delay-100">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:border-primary-500 focus:ring-0 outline-none transition-all shadow-sm hover:shadow-md"
+                />
+                <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Stats Card */}
             <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-200">
               <div className="text-center mb-6">
