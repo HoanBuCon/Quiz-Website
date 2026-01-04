@@ -1381,7 +1381,7 @@ const ClassesPage: React.FC = () => {
                             ? "!bg-purple-500 !text-white hover:!bg-purple-600 dark:!bg-purple-600 dark:hover:!bg-purple-700"
                             : "!bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
                             } ${(classRoom as any).accessType === "shared"
-                              ? "opacity-50 cursor-not-allowed"
+                              ? "opacity-50 !cursor-not-allowed"
                               : ""
                             }`}
                           title={(classRoom as any).accessType === "shared"
@@ -1432,7 +1432,7 @@ const ClassesPage: React.FC = () => {
                           }
                           className={`btn-secondary !bg-indigo-100 !text-indigo-700 hover:!bg-indigo-200 dark:!bg-indigo-900/20 dark:!text-indigo-300 dark:hover:!bg-indigo-900/40 ${(classRoom as any).accessType === "shared" ||
                             !shareStatus[`class_${classRoom.id}`]
-                            ? "opacity-50 cursor-not-allowed"
+                            ? "opacity-50 !cursor-not-allowed"
                             : ""
                             }`}
                           title={(classRoom as any).accessType === "shared"
@@ -1470,7 +1470,7 @@ const ClassesPage: React.FC = () => {
                             ? "!bg-green-500 !text-white hover:!bg-green-600 dark:!bg-green-600 dark:hover:!bg-green-700"
                             : "!bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40"
                             } ${(classRoom as any).accessType === "shared"
-                              ? "opacity-50 cursor-not-allowed"
+                              ? "opacity-50 !cursor-not-allowed"
                               : ""
                             }`}
                           title={(classRoom as any).accessType === "shared"
@@ -1530,7 +1530,7 @@ const ClassesPage: React.FC = () => {
                           }
                           disabled={(classRoom as any).accessType === "shared"}
                           className={`btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40 ${(classRoom as any).accessType === "shared"
-                            ? "opacity-50 cursor-not-allowed"
+                            ? "opacity-50 !cursor-not-allowed"
                             : ""
                             }`}
                           title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa lớp học"}
@@ -1844,7 +1844,7 @@ const ClassesPage: React.FC = () => {
                             ? "bg-purple-500 hover:bg-purple-600 text-white dark:bg-purple-600 dark:hover:bg-purple-700"
                             : "bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 dark:text-purple-300"
                             } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
-                              ? "opacity-50 cursor-not-allowed"
+                              ? "opacity-50 !cursor-not-allowed"
                               : ""
                             }`}
                           title={(classRoom as any).accessType === "shared"
@@ -1890,7 +1890,7 @@ const ClassesPage: React.FC = () => {
                           }
                           className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared" ||
                             !shareStatus[`class_${classRoom.id}`]
-                            ? "opacity-50 cursor-not-allowed"
+                            ? "opacity-50 !cursor-not-allowed"
                             : ""
                             }`}
                           title={(classRoom as any).accessType === "shared"
@@ -1932,7 +1932,7 @@ const ClassesPage: React.FC = () => {
                             ? "bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
                             : "bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:text-green-300"
                             } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
-                              ? "opacity-50 cursor-not-allowed"
+                              ? "opacity-50 !cursor-not-allowed"
                               : ""
                             }`}
                           title={(classRoom as any).accessType === "shared"
@@ -1991,7 +1991,7 @@ const ClassesPage: React.FC = () => {
                           }
                           disabled={(classRoom as any).accessType === "shared"}
                           className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
-                            ? "opacity-50 cursor-not-allowed"
+                            ? "opacity-50 !cursor-not-allowed"
                             : ""
                             }`}
                           title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa lớp học"}
@@ -2125,7 +2125,7 @@ const ClassesPage: React.FC = () => {
                                           ? "text-purple-600 dark:text-purple-400"
                                           : "text-purple-400 dark:text-purple-600"
                                           } hover:text-purple-700 dark:hover:text-purple-300 p-1 ${(classRoom as any).accessType === "shared"
-                                            ? "opacity-50 cursor-not-allowed"
+                                            ? "opacity-50 !cursor-not-allowed"
                                             : ""
                                           }`}
                                         title={(classRoom as any).accessType === "shared"
@@ -2172,7 +2172,7 @@ const ClassesPage: React.FC = () => {
                                         className={`text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 p-1 ${(classRoom as any).accessType ===
                                           "shared" ||
                                           !shareStatus[`quiz_${quiz.id}`]
-                                          ? "opacity-50 cursor-not-allowed"
+                                          ? "opacity-50 !cursor-not-allowed"
                                           : ""
                                           }`}
                                         title={(classRoom as any).accessType === "shared"
@@ -2217,7 +2217,7 @@ const ClassesPage: React.FC = () => {
                                           ? "bg-green-500 text-white hover:bg-green-600 rounded shadow-sm p-1.5"
                                           : "text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"
                                           } ${(classRoom as any).accessType === "shared"
-                                            ? "opacity-50 cursor-not-allowed"
+                                            ? "opacity-50 !cursor-not-allowed"
                                             : ""
                                           }`}
                                         title={(classRoom as any).accessType === "shared"
@@ -2317,7 +2317,7 @@ const ClassesPage: React.FC = () => {
                                           (classRoom as any).accessType === "shared"
                                         }
                                         className={`text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 ${(classRoom as any).accessType === "shared"
-                                          ? "opacity-50 cursor-not-allowed"
+                                          ? "opacity-50 !cursor-not-allowed"
                                           : ""
                                           }`}
                                         title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa bài kiểm tra"}
@@ -2407,7 +2407,7 @@ const ClassesPage: React.FC = () => {
                                           ? "bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
                                           : "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-900/40"
                                           } flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === "shared"
-                                            ? "opacity-50 cursor-not-allowed"
+                                            ? "opacity-50 !cursor-not-allowed"
                                             : ""
                                           }`}
                                         title={(classRoom as any).accessType === "shared"
@@ -2450,7 +2450,7 @@ const ClassesPage: React.FC = () => {
                                         className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType ===
                                           "shared" ||
                                           !shareStatus[`quiz_${quiz.id}`]
-                                          ? "opacity-50 cursor-not-allowed"
+                                          ? "opacity-50 !cursor-not-allowed"
                                           : ""
                                           }`}
                                         title={(classRoom as any).accessType === "shared"
@@ -2494,7 +2494,7 @@ const ClassesPage: React.FC = () => {
                                           ? "bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
                                           : "bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300"
                                           } flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === "shared"
-                                            ? "opacity-50 cursor-not-allowed"
+                                            ? "opacity-50 !cursor-not-allowed"
                                             : ""
                                           }`}
                                         title={(classRoom as any).accessType === "shared"
@@ -2590,7 +2590,7 @@ const ClassesPage: React.FC = () => {
                                           (classRoom as any).accessType === "shared"
                                         }
                                         className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
-                                          ? "opacity-50 cursor-not-allowed"
+                                          ? "opacity-50 !cursor-not-allowed"
                                           : ""
                                           }`}
                                         title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa bài kiểm tra"}

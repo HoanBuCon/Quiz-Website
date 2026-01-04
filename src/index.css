@@ -368,7 +368,6 @@ a *,
   cursor: grabbing !important;
 }
 
-/* Ensure custom button utility classes also force pointer (and children) */
 .btn-primary,
 .btn-secondary,
 .effect-btn,
@@ -377,6 +376,21 @@ a *,
 .effect-btn * {
   cursor: pointer !important;
 }
+
+/* Disabled buttons: force not-allowed cursor and prevent children from intercepting mouse events */
+button:disabled,
+button[disabled],
+button:disabled *,
+button[disabled] * {
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+/* Restore pointer-events on the disabled button itself (only children should have none) */
+button:disabled,
+button[disabled] {
+  pointer-events: auto !important;
+}
+
 
 /* Drag question specific: force grab cursors within draggable answers, overriding generic pointer rules */
 .drag-question [draggable="true"],
