@@ -53,6 +53,15 @@ const ClassesPage: React.FC = () => {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  // Track expanded classes on mobile
+  const [expandedMobileClasses, setExpandedMobileClasses] = useState<Record<string, boolean>>({});
+
+  const toggleMobileClass = (classId: string) => {
+    setExpandedMobileClasses((prev) => ({
+      ...prev,
+      [classId]: !prev[classId],
+    }));
+  };
 
   const filteredClasses = classes.filter((cls) => {
     const query = searchQuery.toLowerCase();
@@ -1087,7 +1096,7 @@ const ClassesPage: React.FC = () => {
                       border-l-4 border-l-gray-300 dark:border-l-gray-600
                       hover:border-l-primary-500 dark:hover:border-l-primary-500
                       ${openDropdown === classRoom.id
-                        ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50"
+                        ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50 z-50"
                         : "hover:scale-[1.005]"
                       } animate-slideUpIn anim-delay-100
                     `}
@@ -1199,7 +1208,7 @@ const ClassesPage: React.FC = () => {
                                 </button>
                                 {/* Dropdown Menu - Hiện tất cả quiz */}
                                 {openDropdown === classRoom.id && (
-                                  <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                  <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
                                     <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
                                       <p className="text-sm font-semibold text-white">
                                         Chọn bài kiểm tra
@@ -1308,7 +1317,7 @@ const ClassesPage: React.FC = () => {
                                   </button>
                                   {/* Dropdown Menu */}
                                   {openDropdown === classRoom.id && (
-                                    <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                    <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
                                       <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
                                         <p className="text-sm font-semibold text-white">
                                           Chọn bài kiểm tra
@@ -1659,7 +1668,7 @@ const ClassesPage: React.FC = () => {
                                 </button>
                                 {/* Dropdown Menu - Hiện tất cả quiz (mobile) */}
                                 {openDropdown === classRoom.id && (
-                                  <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                  <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
                                     <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
                                       <p className="text-sm font-semibold text-white">
                                         Chọn bài kiểm tra
@@ -1767,7 +1776,7 @@ const ClassesPage: React.FC = () => {
                                     </svg>
                                   </button>
                                   {openDropdown === classRoom.id && (
-                                    <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                    <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
                                       <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
                                         <p className="text-sm font-semibold text-white">
                                           Chọn bài kiểm tra
@@ -2015,9 +2024,26 @@ const ClassesPage: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* Centered Mobile Toggle Button */}
+                    {quizCount > 0 && (
+                      <div className="block sm:!hidden">
+                        <div className="flex justify-center mb-4">
+                          <button
+                            onClick={() => toggleMobileClass(classRoom.id)}
+                            className={`w-12 h-6 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 flex items-center justify-center transition-all duration-200 ${expandedMobileClasses[classRoom.id] ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : ""}`}
+                            title={expandedMobileClasses[classRoom.id] ? "Thu gọn" : "Xem bài kiểm tra"}
+                          >
+                            <svg className={`w-4 h-4 transition-transform duration-300 ${expandedMobileClasses[classRoom.id] ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Danh sách bài kiểm tra - scrollable toàn bộ */}
                     {quizCount > 0 && (
-                      <div className="grid grid-rows-[0fr] opacity-0 group-hover:grid-rows-[1fr] group-hover:opacity-100 transition-all duration-500 ease-in-out">
+                      <div className={`grid grid-rows-[0fr] opacity-0 sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 transition-all duration-500 ease-in-out ${expandedMobileClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
                         <div className="overflow-hidden">
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
