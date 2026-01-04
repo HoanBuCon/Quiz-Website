@@ -399,7 +399,7 @@ const HomePage: React.FC = () => {
 
                       <div className="relative dropdown-container flex-shrink-0">
                         <button
-                          className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm w-full sm:w-auto justify-center shadow-lg hover:shadow-xl transition-shadow"
+                          className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm w-full sm:w-auto justify-center shadow-lg hover:shadow-xl transition-all"
                           onClick={() => {
                             if (
                               classRoom.quizzes &&
