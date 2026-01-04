@@ -66,12 +66,16 @@ const ClassesPage: React.FC = () => {
   const filteredClasses = classes.filter((cls) => {
     const query = searchQuery.toLowerCase();
     const matchClass = cls.name.toLowerCase().includes(query);
+    const matchClassDescription = cls.description && cls.description.toLowerCase().includes(query);
     const matchQuiz =
       Array.isArray(cls.quizzes) &&
       cls.quizzes.some(
-        (q) => typeof q !== "string" && q.title.toLowerCase().includes(query)
+        (q) => typeof q !== "string" && (
+          q.title.toLowerCase().includes(query) ||
+          (q.description && q.description.toLowerCase().includes(query))
+        )
       );
-    return matchClass || matchQuiz;
+    return matchClass || matchClassDescription || matchQuiz;
   });
 
   // Hàm xóa lớp học
