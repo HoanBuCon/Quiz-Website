@@ -82,7 +82,7 @@ const ClassViewPage: React.FC = () => {
                 </div>
                 {!isOwner && !(q as any).published && (
                   <div className="text-xs text-amber-600 mt-1">
-                    Nháp (chỉ chủ sở hữu xem được)
+                    Riêng tư (chỉ chủ sở hữu xem được)
                   </div>
                 )}
               </div>

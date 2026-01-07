@@ -1914,7 +1914,7 @@ const ClassesPage: React.FC = () => {
                           title={(classRoom as any).accessType === "shared"
                             ? "Không có quyền sử dụng"
                             : shareStatus[`class_${classRoom.id}`]
-                              ? "Copy ID/Link"
+                              ? "Sao chép ID/Link"
                               : "Bật chia sẻ trước"
                           }
                         >
@@ -2244,9 +2244,9 @@ const ClassesPage: React.FC = () => {
                                           ? "Không có quyền sử dụng"
                                           : `Trạng thái: ${(quiz as any).published
                                             ? "Công khai"
-                                            : "Nháp (Riêng tư)"
+                                            : "Riêng tư"
                                           }\n\nNhấn để ${(quiz as any).published
-                                            ? "đặt nháp"
+                                            ? "đặt riêng tư"
                                             : "công khai quiz"
                                           }`}
                                       >
@@ -2523,7 +2523,7 @@ const ClassesPage: React.FC = () => {
                                           ? "Không có quyền sử dụng"
                                           : `${(quiz as any).published
                                             ? "Công khai"
-                                            : "Nháp"
+                                            : "Riêng tư"
                                           }`}
                                       >
                                         {(quiz as any).published ? (
