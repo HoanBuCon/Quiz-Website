@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
-import { Quiz, Question } from "../types";
+import { Quiz, Question, DragItem, DragTarget } from "../types";
 import MathText from "../components/MathText";
 import ImageModal from "../components/ImageModal";
 
@@ -557,6 +557,12 @@ const ResultsPage: React.FC = () => {
                                     </div>
                                   )}
                                 </div>
+                              ) : subQ.type === "drag" ? (
+                                <ResultDragDropView
+                                  question={subQ}
+                                  userMapping={(userAnswer && typeof userAnswer[0] === "object" ? userAnswer[0] : {}) as Record<string, string>}
+                                  correctMapping={(correctAnswers && typeof correctAnswers === "object" ? correctAnswers : {}) as Record<string, string>}
+                                />
                               ) : Array.isArray(subQ.options) ? (
                                 <>
                                   {(subQ.options as string[]).map(
@@ -772,133 +778,11 @@ const ResultsPage: React.FC = () => {
                       </div>
                     ) : q.type === "drag" ? (
                       <div className="space-y-3">
-                        {(() => {
-                          const userMapping =
-                            userAnswer && typeof userAnswer === "object"
-                              ? userAnswer
-                              : {};
-                          const correctMapping: Record<string, string> =
-                            correctAnswers && typeof correctAnswers === "object"
-                              ? correctAnswers
-                              : {};
-                          const dragOpt = (q.options as any) || {
-                            targets: [],
-                            items: [],
-                          };
-                          const targets = Array.isArray(dragOpt.targets)
-                            ? dragOpt.targets
-                            : [];
-                          const items = Array.isArray(dragOpt.items)
-                            ? dragOpt.items
-                            : [];
-
-                          return (
-                            <div className="space-y-4">
-                              {/* Hiển thị từng đáp án */}
-                              {items.map((item: any) => {
-                                const userTargetId = userMapping[item.id];
-                                const correctTargetId = correctMapping[item.id];
-                                const userTarget = targets.find(
-                                  (t: any) => t.id === userTargetId
-                                );
-                                const correctTarget = targets.find(
-                                  (t: any) => t.id === correctTargetId
-                                );
-
-                                // Xử lý trường hợp đáp án đúng là không thuộc nhóm nào
-                                let isItemCorrect = false;
-                                if (correctTargetId === undefined) {
-                                  // Đáp án đúng là không thuộc nhóm nào
-                                  isItemCorrect =
-                                    userTargetId === undefined ||
-                                    userTargetId === "";
-                                } else {
-                                  // Đáp án đúng là thuộc nhóm correctTargetId
-                                  isItemCorrect = userTargetId === correctTargetId;
-                                }
-
-                                return (
-                                  <div
-                                    key={item.id}
-                                    className={`p-4 rounded-lg border ${isItemCorrect
-                                      ? "bg-green-200 border-green-400 dark:bg-green-900/20 dark:border-green-700"
-                                      : "bg-red-300 border-red-500 dark:bg-red-900/20 dark:border-red-700"
-                                      }`}
-                                  >
-                                    <div className="font-medium text-gray-900 dark:text-white mb-2 whitespace-pre-wrap">
-                                      📝 <MathText text={item.label} />
-                                    </div>
-                                    {/* Hiển thị ảnh đáp án kéo thả nếu có */}
-                                    {(q as any).optionImages && (q as any).optionImages[item.label] && (
-                                      <div className="mb-2">
-                                        <img
-                                          src={(q as any).optionImages[item.label]}
-                                          alt={`Item ${item.label}`}
-                                          className="max-w-xs max-h-32 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 cursor-zoom-in"
-                                          onClick={() => setViewingImage((q as any).optionImages[item.label])}
-                                        />
-                                      </div>
-                                    )}
-                                    <div className="space-y-1 text-sm">
-                                      <div
-                                        className={`${isItemCorrect
-                                          ? "text-green-800 dark:text-green-300"
-                                          : "text-red-800 dark:text-red-300"
-                                          }`}
-                                      >
-                                        <span className="font-semibold">
-                                          Bạn chọn:
-                                        </span>{" "}
-                                        <span className="whitespace-pre-wrap">
-                                          {userTarget?.label ||
-                                            "(Không thuộc nhóm nào)"}
-                                        </span>
-                                        {isItemCorrect && (
-                                          <span className="ml-2">✓</span>
-                                        )}
-                                      </div>
-                                      {!isItemCorrect && (
-                                        <div className="text-green-800 dark:text-green-300">
-                                          <span className="font-semibold">
-                                            Đáp án đúng:
-                                          </span>{" "}
-                                          <span className="whitespace-pre-wrap">
-                                            {correctTarget?.label ||
-                                              "(Không thuộc nhóm nào)"}
-                                          </span>{" "}
-                                          ✓
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-
-                              {/* Tổng kết */}
-                              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700">
-                                <div className="text-sm text-gray-700 dark:text-gray-300">
-                                  <span className="font-semibold">Kết quả:</span>{" "}
-                                  Bạn đã phân loại đúng{" "}
-                                  {
-                                    items.filter((item: any) => {
-                                      const userTargetId = userMapping[item.id];
-                                      const correctTargetId =
-                                        correctMapping[item.id];
-                                      if (correctTargetId === undefined) {
-                                        return (
-                                          userTargetId === undefined ||
-                                          userTargetId === ""
-                                        );
-                                      }
-                                      return userTargetId === correctTargetId;
-                                    }).length
-                                  }
-                                  /{items.length} đáp án
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
+                        <ResultDragDropView
+                          question={q}
+                          userMapping={(userAnswer && typeof userAnswer === "object" ? userAnswer : {}) as Record<string, string>}
+                          correctMapping={(correctAnswers && typeof correctAnswers === "object" ? correctAnswers : {}) as Record<string, string>}
+                        />
                       </div>
                     ) : Array.isArray(q.options) ? (
                       <>
@@ -1180,3 +1064,193 @@ const ResultsPage: React.FC = () => {
 };
 
 export default ResultsPage;
+
+const ResultDragDropView: React.FC<{
+  question: Question;
+  userMapping: Record<string, string>;
+  correctMapping: Record<string, string>;
+}> = ({ question, userMapping, correctMapping }) => {
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
+
+  const targets = ((question.options as any)?.targets as DragTarget[]) || [];
+  const items = ((question.options as any)?.items as DragItem[]) || [];
+
+  // Items chưa được user xếp vào đâu
+  const poolItems = items.filter((it) => !userMapping[it.id]);
+
+  // Group items vào các target mà user đã chọn
+  // (Lưu ý: userMapping[itemId] = targetId)
+  const itemsByTarget: Record<string, DragItem[]> = {};
+  targets.forEach((t) => (itemsByTarget[t.id] = []));
+  items.forEach((it) => {
+    const tid = userMapping[it.id];
+    if (tid && itemsByTarget[tid]) {
+      itemsByTarget[tid].push(it);
+    }
+  });
+
+  const getStatusColor = (item: DragItem, targetId: string) => {
+    const correctTargetId = correctMapping[item.id];
+    // Check if item is correctly placed
+    if (correctTargetId === targetId) {
+      return "bg-green-500 text-white border-transparent shadow-[0_2px_8px_rgba(34,197,94,0.4)] dark:bg-green-600/80 dark:text-white dark:shadow-[0_2px_8px_rgba(34,197,94,0.2)]"; // Correct
+    }
+    return "bg-red-500 text-white border-transparent shadow-[0_2px_8px_rgba(239,68,68,0.4)] dark:bg-red-800/60 dark:text-red-100 dark:shadow-[0_2px_8px_rgba(239,68,68,0.2)]"; // Wrong placement
+  };
+
+  return (
+    <div className="space-y-6">
+      {viewingImage && (
+        <ImageModal
+          imageUrl={viewingImage}
+          isOpen={!!viewingImage}
+          onClose={() => setViewingImage(null)}
+        />
+      )}
+
+      {/* 1. Kho chưa phân loại (Pool) */}
+      <div className="border border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gray-200/40 dark:bg-gray-900/30">
+        <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-3 text-center uppercase text-sm tracking-wide">
+          Không thuộc nhóm nào
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {poolItems.map((it) => {
+            // Check if this item SHOULD have been placed somewhere
+            const correctTargetId = correctMapping[it.id];
+            // If it should have been placed but wasn't, mark as wrong (red border/light bg?)
+            // Or just keep neutral? Usually neutral looks better for "unanswered".
+            // But if we want strict grading:
+            const isMissed = !!correctTargetId;
+
+            return (
+              <div
+                key={it.id}
+                className={`p-3 rounded-lg border-2 font-medium flex items-center gap-2 transition-all ${isMissed
+                  ? "bg-red-200 border-red-500 text-red-900 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300"
+                  : "bg-green-100 border-green-400 text-green-900 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300"
+                  }`}
+              >
+                <div className="flex-1 whitespace-pre-wrap">
+                  <MathText text={it.label} />
+                </div>
+                {/* Ảnh đáp án nếu có */}
+                {(question as any).optionImages?.[it.label] && (
+                  <img
+                    src={(question as any).optionImages[it.label]}
+                    alt="Option"
+                    className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600 cursor-zoom-in"
+                    onClick={() => setViewingImage((question as any).optionImages[it.label])}
+                  />
+                )}
+              </div>
+            );
+          })}
+          {poolItems.length === 0 && (
+            <p className="col-span-full text-center text-sm text-gray-400 italic py-2">
+              Đã phân loại hết
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Các nhóm đích (Targets) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {targets.map((t) => (
+          <div
+            key={t.id}
+            className="border-2 border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-200/40 dark:bg-gray-900/30 shadow-sm"
+          >
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-300/50 dark:border-gray-700">
+              <h3 className="font-bold text-gray-800 dark:text-gray-100">
+                {t.label}
+              </h3>
+              <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-1 rounded-full font-medium">
+                {(itemsByTarget[t.id] || []).length} đáp án
+              </span>
+            </div>
+
+            <div className="space-y-2 min-h-[60px]">
+              {(itemsByTarget[t.id] || []).map((it) => (
+                <div
+                  key={it.id}
+                  className={`p-3 rounded-lg font-medium text-sm transition-all flex items-center justify-between gap-2 ${getStatusColor(
+                    it,
+                    t.id
+                  )}`}
+                >
+                  <div className="whitespace-pre-wrap flex-1">
+                    <MathText text={it.label} />
+                  </div>
+                  {(question as any).optionImages?.[it.label] && (
+                    <img
+                      src={(question as any).optionImages[it.label]}
+                      alt="Option"
+                      className="w-8 h-8 object-cover rounded bg-white cursor-zoom-in"
+                      onClick={() => setViewingImage((question as any).optionImages[it.label])}
+                    />
+                  )}
+                </div>
+              ))}
+              {(itemsByTarget[t.id] || []).length === 0 && (
+                <div className="text-center py-6 text-sm text-gray-400 dark:text-gray-600 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-lg">
+                  Trống
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 3. Hiển thị đáp án đúng (Key) */}
+      <div className="mt-4 p-4 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-900/10">
+        <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
+          <span>🗝️</span> Đáp án chính xác
+        </h4>
+        <div className="space-y-2">
+          {items.map((it) => {
+            const correctTid = correctMapping[it.id];
+            const correctTarget = targets.find((t) => t.id === correctTid);
+            const userTid = userMapping[it.id];
+
+            // Chỉ highlight dòng này nếu user làm sai item này
+            const isUserWrong = userTid !== correctTid;
+
+            if (!isUserWrong) return null; // Chỉ hiện những câu sai để gọn? Hoặc hiện hết? 
+            // Thường ResultsPage nên hiện hết hoặc ít nhất là highlight cái sai.
+            // Để giống QuizPage reveal, ta hiện hết list nhưng highlight distinctively.
+            // "Correct Answer" section usually shows the full truth.
+
+            return (
+              // Return null here to filter ONLY WRONG? 
+              // User asked for style update. 
+              // Let's show full list in a compact way, or just list items.
+              // Replicating QuizPage reveal style:
+              null
+            );
+          })}
+
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 list-none">
+            {items.map(it => {
+              const correctTid = correctMapping[it.id];
+              const correctTarget = targets.find((t) => t.id === correctTid);
+              const userTid = userMapping[it.id];
+              const isUserWrong = userTid !== correctTid;
+
+              return (
+                <li key={it.id} className={`text-sm flex items-center gap-2 py-1 border-b border-gray-200/50 dark:border-gray-700/50 last:border-0 ${isUserWrong ? 'text-red-700 dark:text-red-400 font-medium' : 'text-gray-600 dark:text-gray-400'}`}>
+                  <span className={`${isUserWrong ? 'opacity-100' : 'opacity-70'}`}>
+                    <MathText text={it.label} />
+                  </span>
+                  <span className="text-gray-400">→</span>
+                  <span className={`${isUserWrong ? 'text-gray-900 dark:text-gray-100' : ''}`}>
+                    {correctTarget?.label || "(Không thuộc nhóm nào)"}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
