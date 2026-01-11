@@ -1191,9 +1191,28 @@ const ClassesPage: React.FC = () => {
                       <div className="hidden sm:flex justify-between items-start mb-4">
                         <div className="flex-1">
                           <div className="flex items-start gap-3 mb-3">
-                            {/* Avatar với chữ cái đầu tiên */}
-                            <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                              {classRoom.name.charAt(0).toUpperCase()}
+                            {/* Avatar với chữ cái đầu tiên (New Luxury Style) */}
+                            <div className="relative flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden group/avatar shadow-sm group-hover:shadow-md transition-all duration-300">
+                              {/* Background & Gradient */}
+                              <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-100 dark:from-gray-800 dark:to-gray-900" />
+
+                              {/* Inner Shine */}
+                              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-gray-300/5 to-gray-200/8 dark:via-gray-700/3 dark:to-gray-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                              {/* Border Ring */}
+                              <div className="absolute inset-0 border border-gray-200/60 dark:border-gray-700/60 rounded-2xl" />
+
+                              {/* Content */}
+                              <div className="relative h-full w-full flex items-center justify-center">
+                                {/* Default state */}
+                                <span className="font-mono text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-400 select-none group-hover:opacity-0 transition-opacity duration-300">
+                                  {classRoom.name.charAt(0).toUpperCase()}
+                                </span>
+                                {/* Hover state */}
+                                <span className="absolute inset-0 flex items-center justify-center font-mono text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-primary-600 to-primary-500 dark:from-primary-400 dark:to-primary-500 select-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  {classRoom.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
@@ -1695,9 +1714,28 @@ const ClassesPage: React.FC = () => {
                       <div className="sm:hidden mb-4">
                         <div className="pr-8">
                           <div className="flex items-start gap-3 mb-3">
-                            {/* Avatar với chữ cái đầu tiên */}
-                            <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                              {classRoom.name.charAt(0).toUpperCase()}
+                            {/* Avatar với chữ cái đầu tiên (New Luxury Style) */}
+                            <div className="relative flex-shrink-0 w-16 h-16 rounded-2xl overflow-hidden group/avatar shadow-sm group-hover:shadow-md transition-all duration-300">
+                              {/* Background & Gradient */}
+                              <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-100 dark:from-gray-800 dark:to-gray-900" />
+
+                              {/* Inner Shine */}
+                              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-gray-300/5 to-gray-200/8 dark:via-gray-700/3 dark:to-gray-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                              {/* Border Ring */}
+                              <div className="absolute inset-0 border border-gray-200/60 dark:border-gray-700/60 rounded-2xl" />
+
+                              {/* Content */}
+                              <div className="relative h-full w-full flex items-center justify-center">
+                                {/* Default state */}
+                                <span className="font-mono text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-400 select-none group-hover:opacity-0 transition-opacity duration-300">
+                                  {classRoom.name.charAt(0).toUpperCase()}
+                                </span>
+                                {/* Hover state */}
+                                <span className="absolute inset-0 flex items-center justify-center font-mono text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-primary-600 to-primary-500 dark:from-primary-400 dark:to-primary-500 select-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  {classRoom.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
