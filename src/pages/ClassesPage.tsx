@@ -1027,7 +1027,7 @@ const ClassesPage: React.FC = () => {
             {/* Import Button */}
             <button
               onClick={() => setImportOpen(true)}
-              className="flex-1 lg:flex-none lg:w-auto group relative inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-mono font-bold text-blue-900 dark:text-blue-100 bg-white dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700/50 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
+              className="flex-1 lg:flex-none lg:w-auto group relative inline-flex items-center justify-center gap-2 max-[368px]:gap-1 px-5 py-2.5 max-[368px]:px-2 max-[368px]:py-1.5 rounded-lg text-sm max-[368px]:text-[11px] font-mono font-bold text-blue-900 dark:text-blue-100 bg-white dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700/50 hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-white transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
               title="Nhập ID/Link lớp học hoặc quiz"
             >
               {/* Texture effect overlay - Diagonal Stripes */}
@@ -1038,7 +1038,7 @@ const ClassesPage: React.FC = () => {
 
               <span className="relative z-10 flex items-center gap-2">
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 max-[368px]:w-3.5 max-[368px]:h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1050,7 +1050,8 @@ const ClassesPage: React.FC = () => {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Nhập ID/Link
+                <span className="hidden min-[571px]:inline">Nhập ID/Link</span>
+                <span className="inline min-[571px]:hidden">Nhập ID</span>
               </span>
             </button>
 
@@ -1095,12 +1096,12 @@ const ClassesPage: React.FC = () => {
             {/* Search Button */}
             <button
               onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className={`flex-1 lg:hidden group relative inline-flex items-center border-2 border-gray-200 dark:border-gray-800 justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md ${showMobileSearch
+              className={`flex-1 lg:hidden group relative inline-flex items-center border-2 border-gray-200 dark:border-gray-800 justify-center gap-2 max-[368px]:gap-1 px-5 py-2.5 max-[368px]:px-2 max-[368px]:py-1.5 rounded-lg text-sm max-[368px]:text-[11px] font-bold transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md ${showMobileSearch
                 ? "text-white bg-primary-500"
                 : "text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400"
                 }`}
             >
-              <MagnifyingGlassIcon className={`w-5 h-5 transition-colors duration-300 ${showMobileSearch ? "text-white" : "text-gray-400 group-hover:text-primary-500"}`} />
+              <MagnifyingGlassIcon className={`w-5 h-5 max-[368px]:w-3.5 max-[368px]:h-3.5 transition-colors duration-300 ${showMobileSearch ? "text-white" : "text-gray-400 group-hover:text-primary-500"}`} />
               Tìm kiếm
             </button>
           </div>
