@@ -386,8 +386,8 @@ body.dark-mode .volume-label {
 
 .dark .volume-slider,
 body.dark-mode .volume-slider {
-  background: #444;
-  accent-color: #1abc9c;
+  background: var(--mp-slider-bg);
+  accent-color: var(--mp-accent);
 }
 
 .dark .volume-value,

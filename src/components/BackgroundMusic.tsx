@@ -39,6 +39,7 @@ const BackgroundMusic = () => {
         { name: "END OF TIME - K-391 X ALAN WALKER X AHRIX", src: require("../assets/music/edm/end_of_time.mp3") },
         { name: "YOU - AXOL X ALEX SKRINDO", src: require("../assets/music/edm/you.mp3") },
         { name: "LONELY WORLD - K-391 & VICTOR CRONE", src: require("../assets/music/edm/lonely_world.mp3") },
+        { name: "DIGITAL STRANGERS - K-391", src: require("../assets/music/edm/digital_strangers.mp3") },
         { name: "HEROES TONIGHT - JANJI", src: require("../assets/music/edm/heroes_tonight.mp3") },
         { name: "FEELING - ALTERO", src: require("../assets/music/edm/feeling.mp3") },
         { name: "EARTH - K-391", src: require("../assets/music/edm/earth.mp3") },
