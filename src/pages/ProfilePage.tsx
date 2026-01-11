@@ -63,6 +63,7 @@ const ProfilePage: React.FC = () => {
     const [showDateFilter, setShowDateFilter] = useState(false);
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
+    const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'a-z' | 'z-a'>('newest');
 
     // Edit states
     const [editingName, setEditingName] = useState(false);
@@ -318,6 +319,7 @@ const ProfilePage: React.FC = () => {
     const resetDateFilter = () => {
         setStartDate('');
         setEndDate('');
+        setSortOrder('newest');
         setShowDateFilter(false);
     };
 
@@ -346,6 +348,18 @@ const ProfilePage: React.FC = () => {
         if (start && sessionDate < start) return false;
         if (end && sessionDate > end) return false;
         return true;
+    }).sort((a, b) => {
+        switch (sortOrder) {
+            case 'oldest':
+                return new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime();
+            case 'a-z':
+                return a.quizTitle.localeCompare(b.quizTitle);
+            case 'z-a':
+                return b.quizTitle.localeCompare(a.quizTitle);
+            case 'newest':
+            default:
+                return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+        }
     }) || [];
 
     if (loading) return (
@@ -469,7 +483,7 @@ const ProfilePage: React.FC = () => {
 
             {/* Navigation Tabs - Clean Segmented Style */}
             <div className="flex justify-center mb-10 px-4">
-                <div className="flex flex-wrap justify-center p-1 gap-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl">
+                <div className="grid grid-cols-3 p-1 gap-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl w-full sm:w-fit">
                     {[
                         { id: 'overview', label: 'Tổng quan', icon: FaUser },
                         { id: 'history', label: 'Lịch sử', icon: FaHistory },
@@ -479,15 +493,15 @@ const ProfilePage: React.FC = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`
-                                relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-300
+                                relative flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-300
                                 ${activeTab === tab.id
                                     ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-lg shadow-blue-500/10'
                                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-700/30'
                                 }
                             `}
                         >
-                            <span className="text-base flex items-center justify-center w-5 h-5"><tab.icon /></span>
-                            <span>{tab.label}</span>
+                            <span className="text-base flex items-center justify-center"><tab.icon /></span>
+                            <span className="truncate">{tab.label}</span>
                             {activeTab === tab.id && (
                                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
                             )}
@@ -855,9 +869,11 @@ const ProfilePage: React.FC = () => {
                                         onClick={() => setShowDateFilter(!showDateFilter)}
                                         className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 transition-all shadow-sm hover:shadow-md"
                                     >
-                                        <FaCalendar className={`text-sm ${startDate || endDate ? 'text-blue-500' : 'text-gray-400'}`} />
+                                        <svg className={`w-5 h-5 ${startDate || endDate ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
+                                        </svg>
                                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Lọc theo ngày
+                                            Lọc & Sắp xếp
                                         </span>
                                         <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${showDateFilter ? 'rotate-180 text-blue-500' : ''}`} />
                                     </button>
@@ -867,8 +883,39 @@ const ProfilePage: React.FC = () => {
                                         <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-5 z-50 animate-slideUp">
                                             <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
                                                 <FaCalendar className="text-blue-500" />
-                                                Chọn khoảng thời gian
+                                                Lọc & Sắp xếp
                                             </h3>
+
+                                            {/* Sort Options */}
+                                            <div className="mb-4">
+                                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                                                    Sắp xếp theo
+                                                </label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {[
+                                                        { id: 'newest', label: 'Mới nhất' },
+                                                        { id: 'oldest', label: 'Cũ nhất' },
+                                                        { id: 'a-z', label: 'Tên (A → Z)' },
+                                                        { id: 'z-a', label: 'Tên (Z → A)' }
+                                                    ].map((opt) => (
+                                                        <button
+                                                            key={opt.id}
+                                                            onClick={() => setSortOrder(opt.id as any)}
+                                                            className={`
+                                                                px-3 py-2 text-xs font-medium rounded-lg transition-all border
+                                                                ${sortOrder === opt.id
+                                                                    ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/50'
+                                                                    : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                                                                }
+                                                            `}
+                                                        >
+                                                            {opt.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="h-px bg-gray-100 dark:bg-gray-700 my-4"></div>
 
                                             {/* Date Inputs */}
                                             <div className="space-y-4 mb-4">
