@@ -149,6 +149,7 @@ const ProfilePage: React.FC = () => {
     const [showDateFilter, setShowDateFilter] = useState(false);
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
+    const [selectedPreset, setSelectedPreset] = useState<number | null | 'custom'>(null);
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'a-z' | 'z-a'>('newest');
     const [historySearch, setHistorySearch] = useState('');
 
@@ -406,12 +407,14 @@ const ProfilePage: React.FC = () => {
     const resetDateFilter = () => {
         setStartDate('');
         setEndDate('');
+        setSelectedPreset(null);
         setSortOrder('newest');
         setHistorySearch('');
         setShowDateFilter(false);
     };
 
     const setQuickPreset = (days: number | null) => {
+        setSelectedPreset(days);
         if (days === null) {
             // All time
             setStartDate('');
@@ -1040,13 +1043,13 @@ const ProfilePage: React.FC = () => {
                                                     <DateInput
                                                         label="Từ ngày"
                                                         value={startDate}
-                                                        onChange={setStartDate}
+                                                        onChange={(val: string) => { setStartDate(val); setSelectedPreset('custom'); }}
                                                         max={endDate}
                                                     />
                                                     <DateInput
                                                         label="Đến ngày"
                                                         value={endDate}
-                                                        onChange={setEndDate}
+                                                        onChange={(val: string) => { setEndDate(val); setSelectedPreset('custom'); }}
                                                         min={startDate}
                                                     />
                                                 </div>
@@ -1066,7 +1069,12 @@ const ProfilePage: React.FC = () => {
                                                             <button
                                                                 key={preset.label}
                                                                 onClick={() => setQuickPreset(preset.days)}
-                                                                className="px-3 py-2 text-xs font-medium bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500"
+                                                                className={`px-3 py-2 text-xs font-medium rounded-lg transition-all border
+                                                                    ${selectedPreset === preset.days
+                                                                        ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/50'
+                                                                        : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                                                                    }
+                                                                `}
                                                             >
                                                                 {preset.label}
                                                             </button>
