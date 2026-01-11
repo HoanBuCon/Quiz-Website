@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ClassRoom, Quiz } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
@@ -19,8 +19,27 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  // Track expanded classes (desktop + mobile)
   const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({});
+  const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc' | 'date-asc' | 'date-desc'>('date-desc');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const filterRefDesktop = useRef<HTMLDivElement>(null);
+  const filterRefMobile = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showSortMenu &&
+        filterRefDesktop.current &&
+        !filterRefDesktop.current.contains(event.target as Node) &&
+        filterRefMobile.current &&
+        !filterRefMobile.current.contains(event.target as Node)
+      ) {
+        setShowSortMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSortMenu]);
 
   // Hàm xử lý di chuyển chuột cho ảnh 1 (Kho tài liệu)
   const handleMouseMove1 = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -244,52 +263,132 @@ const HomePage: React.FC = () => {
               </p>
             </div>
 
-            {/* Desktop Search */}
-            <div className="hidden sm:block relative w-64">
-              <input
-                type="text"
-                placeholder="Tìm kiếm..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-10 py-2 w-full bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg text-sm focus:ring-0 outline-none transition-all shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
-              />
-              <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              {searchQuery && (
+            {/* Filter Button - Desktop */}
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="relative" ref={filterRefDesktop}>
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:ring-0 outline-none hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 active:scale-95 transition-all shadow-sm text-gray-900 dark:text-gray-100"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
                   </svg>
                 </button>
-              )}
+
+                {/* Dropdown Menu */}
+                {showSortMenu && (
+                  <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
+                    {[
+                      { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
+                      { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' },
+                      { id: 'date-desc' as const, label: 'Mới nhất', icon: '↓' },
+                      { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' }
+                    ].map(option => (
+                      <button
+                        key={option.id}
+                        onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                          }`}
+                      >
+                        <span>{option.label}</span>
+                        {sortBy === option.id && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Search */}
+              <div className="relative w-64">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-10 py-2 w-full bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg text-sm focus:ring-0 outline-none transition-all shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
+                />
+                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Mobile Search Input */}
-            <div className="sm:hidden w-full relative">
-              <input
-                type="text"
-                placeholder="Tìm kiếm..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:ring-0 outline-none transition-all shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
-              />
-              <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              {searchQuery && (
+            <div className="sm:hidden w-full flex gap-2">
+              {/* Mobile Filter Button */}
+              <div className="relative flex-none" ref={filterRefMobile}>
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="w-auto inline-flex items-center justify-center px-2.5 py-2.5 rounded-lg text-sm font-mono font-bold bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 active:scale-95 transition-all duration-300 shadow-sm text-gray-900 dark:text-gray-100"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
                   </svg>
                 </button>
-              )}
+
+                {/* Dropdown Menu Mobile */}
+                {showSortMenu && (
+                  <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
+                    {[
+                      { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
+                      { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' },
+                      { id: 'date-desc' as const, label: 'Mới nhất', icon: '↓' },
+                      { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' }
+                    ].map(option => (
+                      <button
+                        key={option.id}
+                        onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                          }`}
+                      >
+                        <span>{option.label}</span>
+                        {sortBy === option.id && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:ring-0 outline-none transition-all shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
+                />
+                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -332,7 +431,21 @@ const HomePage: React.FC = () => {
           ) : (
             // Danh sách lớp học
             <div className="space-y-4">
-              {publicClasses
+              {[...publicClasses]
+                .sort((a, b) => {
+                  switch (sortBy) {
+                    case 'name-asc':
+                      return a.name.localeCompare(b.name);
+                    case 'name-desc':
+                      return b.name.localeCompare(a.name);
+                    case 'date-desc':
+                      return b.createdAt.getTime() - a.createdAt.getTime();
+                    case 'date-asc':
+                      return a.createdAt.getTime() - b.createdAt.getTime();
+                    default:
+                      return 0;
+                  }
+                })
                 .filter(cls =>
                   !searchQuery.trim() ||
                   cls.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

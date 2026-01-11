@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UploadedFile } from "../types";
 import { parseFile } from "../utils/docsParser";
@@ -50,6 +50,19 @@ const DocumentsPage: React.FC = () => {
 
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc' | 'date-asc' | 'date-desc'>('date-desc');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setShowSortMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => {
@@ -988,9 +1001,47 @@ const DocumentsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-6 animate-slideUpIn">
-            <div className="relative">
+          {/* Filter and Search Bar Row */}
+          <div className="mb-6 flex gap-2 animate-slideUpIn">
+            <div className="relative" ref={sortMenuRef}>
+              <button
+                onClick={() => setShowSortMenu(!showSortMenu)}
+                className="flex items-center justify-center px-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 active:scale-95 rounded-lg transition-all shadow-sm text-gray-900 dark:text-gray-100"
+              >
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showSortMenu && (
+                <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
+                  {[
+                    { id: 'name-asc' as const, label: 'Tên (A → Z)' },
+                    { id: 'name-desc' as const, label: 'Tên (Z → A)' },
+                    { id: 'date-desc' as const, label: 'Mới nhất' },
+                    { id: 'date-asc' as const, label: 'Cũ nhất' }
+                  ].map(option => (
+                    <button
+                      key={option.id}
+                      onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
+                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                    >
+                      <span>{option.label}</span>
+                      {sortBy === option.id && (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Search Bar */}
+            <div className="flex-1 relative">
               <input
                 type="text"
                 placeholder="Tìm kiếm tài liệu..."
@@ -1026,7 +1077,21 @@ const DocumentsPage: React.FC = () => {
             <div className="space-y-4">
               {/* Bulk Actions Header */}
               {/* Bulk Actions Header REMOVED - Replaced by FAB */}
-              {documents
+              {[...documents]
+                .sort((a, b) => {
+                  switch (sortBy) {
+                    case 'name-asc':
+                      return a.name.localeCompare(b.name);
+                    case 'name-desc':
+                      return b.name.localeCompare(a.name);
+                    case 'date-desc':
+                      return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+                    case 'date-asc':
+                      return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
+                    default:
+                      return 0;
+                  }
+                })
                 .filter(doc => !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map((doc, index) => (
                   <div

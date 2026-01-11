@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { formatDate } from "../utils/fileUtils";
 import {
@@ -55,6 +55,19 @@ const ClassesPage: React.FC = () => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   // Track expanded classes (desktop + mobile)
   const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({});
+  const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc' | 'date-asc' | 'date-desc'>('date-desc');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setShowSortMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const toggleClassExpansion = (classId: string) => {
     setExpandedClasses((prev) => ({
@@ -1010,7 +1023,7 @@ const ClassesPage: React.FC = () => {
 
 
 
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6 justify-between">
             {/* Import Button */}
             <button
               onClick={() => setImportOpen(true)}
@@ -1041,6 +1054,44 @@ const ClassesPage: React.FC = () => {
               </span>
             </button>
 
+            {/* Filter Button */}
+            <div className="relative flex-none lg:flex-none" ref={sortMenuRef}>
+              <button
+                onClick={() => setShowSortMenu(!showSortMenu)}
+                className="h-full w-auto lg:w-auto inline-flex items-center justify-center gap-0 lg:gap-2 px-2.5 lg:px-4 py-2.5 rounded-lg text-sm font-mono font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 active:scale-95 transition-all shadow-sm"
+              >
+                <svg className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showSortMenu && (
+                <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
+                  {[
+                    { id: 'name-asc' as const, label: 'Tên (A → Z)' },
+                    { id: 'name-desc' as const, label: 'Tên (Z → A)' },
+                    { id: 'date-desc' as const, label: 'Mới nhất' },
+                    { id: 'date-asc' as const, label: 'Cũ nhất' }
+                  ].map(option => (
+                    <button
+                      key={option.id}
+                      onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
+                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                    >
+                      <span>{option.label}</span>
+                      {sortBy === option.id && (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Search Button */}
             <button
               onClick={() => setShowMobileSearch(!showMobileSearch)}
@@ -1062,7 +1113,7 @@ const ClassesPage: React.FC = () => {
                 placeholder="Tìm kiếm lớp học, bài kiểm tra..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 rounded-lg focus:ring-0 outline-none transition-all shadow-sm"
+                className="w-full pl-10 pr-10 py-2.5 text-sm bg-white dark:bg-gray-800 rounded-lg focus:ring-0 outline-none transition-all shadow-sm"
                 autoFocus
               />
               <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1099,49 +1150,108 @@ const ClassesPage: React.FC = () => {
           ) : classes.length > 0 ? (
             // Danh sách lớp học
             <div className="space-y-4">
-              {filteredClasses.map((classRoom: ClassRoom, index) => {
-                const validQuizzes = getValidQuizzes(classRoom);
-                const quizCount = validQuizzes.length;
+              {[...filteredClasses]
+                .sort((a, b) => {
+                  switch (sortBy) {
+                    case 'name-asc':
+                      return a.name.localeCompare(b.name);
+                    case 'name-desc':
+                      return b.name.localeCompare(a.name);
+                    case 'date-desc':
+                      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    case 'date-asc':
+                      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                    default:
+                      return 0;
+                  }
+                })
+                .map((classRoom: ClassRoom, index) => {
+                  const validQuizzes = getValidQuizzes(classRoom);
+                  const quizCount = validQuizzes.length;
 
-                return (
-                  <div
-                    key={classRoom.id}
-                    className={`
+                  return (
+                    <div
+                      key={classRoom.id}
+                      className={`
                       group relative card p-4 sm:p-6 hover:shadow-2xl transition-all duration-300
                       border-l-4 border-l-gray-300 dark:border-l-gray-600
                       hover:border-l-primary-500 dark:hover:border-l-primary-500
                       ${openDropdown === classRoom.id
-                        ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50 z-10"
-                        : "hover:scale-[1.005]"
-                      } animate-slideUpIn anim-delay-100
+                          ? "shadow-2xl scale-[1.01] border-l-primary-500 bg-blue-50/50 dark:bg-gray-700/50 z-10"
+                          : "hover:scale-[1.005]"
+                        } animate-slideUpIn anim-delay-100
                     `}
-                    style={{ animationDelay: `${(index % 5) * 0.1}s` }}
-                  // onMouseLeave={() =>
-                  //   openDropdown === classRoom.id && setOpenDropdown(null)
-                  // }
-                  >
-                    {/* Desktop Layout - flex ngang */}
-                    <div className="hidden sm:flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-start gap-3 mb-3">
-                          {/* Avatar với chữ cái đầu tiên */}
-                          <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                            {classRoom.name.charAt(0).toUpperCase()}
+                      style={{ animationDelay: `${(index % 5) * 0.1}s` }}
+                    // onMouseLeave={() =>
+                    //   openDropdown === classRoom.id && setOpenDropdown(null)
+                    // }
+                    >
+                      {/* Desktop Layout - flex ngang */}
+                      <div className="hidden sm:flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-start gap-3 mb-3">
+                            {/* Avatar với chữ cái đầu tiên */}
+                            <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                              {classRoom.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                {classRoom.name}
+                              </h3>
+                              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                                {classRoom.description}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                              {classRoom.name}
-                            </h3>
-                            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                              {classRoom.description}
-                            </p>
+
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                            <span className="inline-flex items-center gap-1.5">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                              </svg>
+                              {formatDate(classRoom.createdAt)}
+                            </span>
+                            <span className="text-gray-300 dark:text-gray-600">
+                              •
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                              {quizCount} bài kiểm tra
+                            </span>
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                          <span className="inline-flex items-center gap-1.5">
+                        {/* Desktop buttons - bên phải */}
+                        <div className="flex items-center gap-2">
+                          {/* Unified 'Tham gia' button for Desktop that toggles expansion */}
+                          <button
+                            className="btn-primary flex items-center gap-2"
+                            onClick={() => toggleClassExpansion(classRoom.id)}
+                          >
                             <svg
-                              className="w-4 h-4"
+                              className="w-4 h-4 mr-1"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -1150,17 +1260,15 @@ const ClassesPage: React.FC = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"
                               />
                             </svg>
-                            {formatDate(classRoom.createdAt)}
-                          </span>
-                          <span className="text-gray-300 dark:text-gray-600">
-                            •
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
+                            Tham gia
                             <svg
-                              className="w-4 h-4"
+                              className={`w-4 h-4 ml-1 transition-transform duration-200 ${expandedClasses[classRoom.id]
+                                ? "rotate-180"
+                                : ""
+                                }`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -1169,54 +1277,12 @@ const ClassesPage: React.FC = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                d="M19 9l-7 7-7-7"
                               />
                             </svg>
-                            {quizCount} bài kiểm tra
-                          </span>
-                        </div>
-                      </div>
+                          </button>
 
-                      {/* Desktop buttons - bên phải */}
-                      <div className="flex items-center gap-2">
-                        {/* Unified 'Tham gia' button for Desktop that toggles expansion */}
-                        <button
-                          className="btn-primary flex items-center gap-2"
-                          onClick={() => toggleClassExpansion(classRoom.id)}
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 10V3L4 14h7v7l9-11h-7z"
-                            />
-                          </svg>
-                          Tham gia
-                          <svg
-                            className={`w-4 h-4 ml-1 transition-transform duration-200 ${expandedClasses[classRoom.id]
-                              ? "rotate-180"
-                              : ""
-                              }`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </button>
-
-                        {/* OLD COMPLEX LOGIC FOR THAM GIA BUTTON
+                          {/* OLD COMPLEX LOGIC FOR THAM GIA BUTTON
                         {(() => {
                           if (quizCount > 3) {
                             // Nếu có hơn 3 quiz, hiện dropdown để xem tất cả
@@ -1420,304 +1486,304 @@ const ClassesPage: React.FC = () => {
                           }
                         })()} */}
 
-                        <button
-                          onClick={() =>
-                            handleToggleClassShare(
-                              classRoom.id,
-                              shareStatus[`class_${classRoom.id}`] || false
-                            )
-                          }
-                          disabled={(classRoom as any).accessType === "shared"}
-                          className={`btn-secondary ${shareStatus[`class_${classRoom.id}`]
-                            ? "!bg-purple-500 !text-white hover:!bg-purple-600 dark:!bg-purple-600 dark:hover:!bg-purple-700"
-                            : "!bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
-                            } ${(classRoom as any).accessType === "shared"
+                          <button
+                            onClick={() =>
+                              handleToggleClassShare(
+                                classRoom.id,
+                                shareStatus[`class_${classRoom.id}`] || false
+                              )
+                            }
+                            disabled={(classRoom as any).accessType === "shared"}
+                            className={`btn-secondary ${shareStatus[`class_${classRoom.id}`]
+                              ? "!bg-purple-500 !text-white hover:!bg-purple-600 dark:!bg-purple-600 dark:hover:!bg-purple-700"
+                              : "!bg-purple-100 !text-purple-700 hover:!bg-purple-200 dark:!bg-purple-900/20 dark:!text-purple-300 dark:hover:!bg-purple-900/40"
+                              } ${(classRoom as any).accessType === "shared"
+                                ? "opacity-50 !cursor-not-allowed"
+                                : ""
+                              }`}
+                            title={(classRoom as any).accessType === "shared"
+                              ? "Không có quyền sử dụng"
+                              : `Trạng thái: ${shareStatus[`class_${classRoom.id}`]
+                                ? "Có thể chia sẻ"
+                                : "Không thể chia sẻ"
+                              }\n\nNhấn để ${shareStatus[`class_${classRoom.id}`] ? "tắt" : "bật"
+                              } chia sẻ lớp học`}
+                          >
+                            {/* Share Toggle Icon */}
+                            {shareStatus[`class_${classRoom.id}`] ? (
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => handleShareClass(classRoom.id)}
+                            disabled={
+                              (classRoom as any).accessType === "shared" ||
+                              !shareStatus[`class_${classRoom.id}`]
+                            }
+                            className={`btn-secondary !bg-indigo-100 !text-indigo-700 hover:!bg-indigo-200 dark:!bg-indigo-900/20 dark:!text-indigo-300 dark:hover:!bg-indigo-900/40 ${(classRoom as any).accessType === "shared" ||
+                              !shareStatus[`class_${classRoom.id}`]
                               ? "opacity-50 !cursor-not-allowed"
-                              : ""
-                            }`}
-                          title={(classRoom as any).accessType === "shared"
-                            ? "Không có quyền sử dụng"
-                            : `Trạng thái: ${shareStatus[`class_${classRoom.id}`]
-                              ? "Có thể chia sẻ"
-                              : "Không thể chia sẻ"
-                            }\n\nNhấn để ${shareStatus[`class_${classRoom.id}`] ? "tắt" : "bật"
-                            } chia sẻ lớp học`}
-                        >
-                          {/* Share Toggle Icon */}
-                          {shareStatus[`class_${classRoom.id}`] ? (
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                              />
-                            </svg>
-                          )}
-                        </button>
-
-                        <button
-                          onClick={() => handleShareClass(classRoom.id)}
-                          disabled={
-                            (classRoom as any).accessType === "shared" ||
-                            !shareStatus[`class_${classRoom.id}`]
-                          }
-                          className={`btn-secondary !bg-indigo-100 !text-indigo-700 hover:!bg-indigo-200 dark:!bg-indigo-900/20 dark:!text-indigo-300 dark:hover:!bg-indigo-900/40 ${(classRoom as any).accessType === "shared" ||
-                            !shareStatus[`class_${classRoom.id}`]
-                            ? "opacity-50 !cursor-not-allowed"
-                            : ""
-                            }`}
-                          title={(classRoom as any).accessType === "shared"
-                            ? "Không có quyền sử dụng"
-                            : shareStatus[`class_${classRoom.id}`]
-                              ? "Sao chép ID/Link chia sẻ"
-                              : "Bật chia sẻ trước để lấy ID/Link"
-                          }
-                        >
-                          {/* Copy Link Icon */}
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            handleToggleClassPublic(
-                              classRoom.id,
-                              Boolean(classRoom.isPublic)
-                            )
-                          }
-                          disabled={(classRoom as any).accessType === "shared"}
-                          className={`btn-secondary ${classRoom.isPublic
-                            ? "!bg-green-500 !text-white hover:!bg-green-600 dark:!bg-green-600 dark:hover:!bg-green-700"
-                            : "!bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40"
-                            } ${(classRoom as any).accessType === "shared"
-                              ? "opacity-50 !cursor-not-allowed"
-                              : ""
-                            }`}
-                          title={(classRoom as any).accessType === "shared"
-                            ? "Không có quyền sử dụng"
-                            : `Trạng thái: ${classRoom.isPublic ? "Công khai" : "Riêng tư"
-                            }\n\nNhấn để ${classRoom.isPublic ? "đặt riêng tư" : "công khai"
-                            } lớp học và tất cả quiz`}
-                        >
-                          {/* Public vs Private Icon */}
-                          {classRoom.isPublic ? (
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 11h14v10H5z"
-                              />
-                            </svg>
-                          )}
-                        </button>
-                        <button
-                          onClick={() =>
-                            navigate(`/edit-class/${classRoom.id}`, {
-                              state: { classRoom },
-                            })
-                          }
-                          disabled={(classRoom as any).accessType === "shared"}
-                          className={`btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40 ${(classRoom as any).accessType === "shared"
-                            ? "opacity-50 !cursor-not-allowed"
-                            : ""
-                            }`}
-                          title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa lớp học"}
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleDeleteClass(classRoom.id, classRoom.name)
-                          }
-                          className="btn-secondary !bg-red-100 !text-red-700 hover:!bg-red-200 dark:!bg-red-900/20 dark:!text-red-400 dark:hover:!bg-red-900/40"
-                          title="Xóa lớp học"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Mobile Layout - flex dọc, nút xóa cùng hàng với Vào lớp */}
-                    <div className="sm:hidden mb-4">
-                      <div className="pr-8">
-                        <div className="flex items-start gap-3 mb-3">
-                          {/* Avatar với chữ cái đầu tiên */}
-                          <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                            {classRoom.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                              {classRoom.name}
-                            </h3>
-                            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                              {classRoom.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
-                          <span className="inline-flex items-center gap-1.5">
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                            {formatDate(classRoom.createdAt)}
-                          </span>
-                          <span className="text-gray-300 dark:text-gray-600">
-                            •
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                            {quizCount} bài kiểm tra
-                          </span>
-                        </div>
-                      </div>
-                      {/* Mobile buttons - Vào lớp và Xóa lớp cùng hàng */}
-                      <div className="flex flex-row gap-2 mt-2">
-                        {/* Mobile 'Tham gia' button */}
-                        <button
-                          className="btn-primary flex items-center justify-center flex-1"
-                          onClick={() => toggleClassExpansion(classRoom.id)}
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13 10V3L4 14h7v7l9-11h-7z"
-                            />
-                          </svg>
-                          Tham gia
-                          <svg
-                            className={`w-4 h-4 ml-1 transition-transform duration-200 ${expandedClasses[classRoom.id]
-                              ? "rotate-180"
                               : ""
                               }`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                            title={(classRoom as any).accessType === "shared"
+                              ? "Không có quyền sử dụng"
+                              : shareStatus[`class_${classRoom.id}`]
+                                ? "Sao chép ID/Link chia sẻ"
+                                : "Bật chia sẻ trước để lấy ID/Link"
+                            }
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </button>
-                        {/* {(() => {
+                            {/* Copy Link Icon */}
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </button>
+
+                          <button
+                            onClick={() =>
+                              handleToggleClassPublic(
+                                classRoom.id,
+                                Boolean(classRoom.isPublic)
+                              )
+                            }
+                            disabled={(classRoom as any).accessType === "shared"}
+                            className={`btn-secondary ${classRoom.isPublic
+                              ? "!bg-green-500 !text-white hover:!bg-green-600 dark:!bg-green-600 dark:hover:!bg-green-700"
+                              : "!bg-green-100 !text-green-700 hover:!bg-green-200 dark:!bg-green-900/20 dark:!text-green-300 dark:hover:!bg-green-900/40"
+                              } ${(classRoom as any).accessType === "shared"
+                                ? "opacity-50 !cursor-not-allowed"
+                                : ""
+                              }`}
+                            title={(classRoom as any).accessType === "shared"
+                              ? "Không có quyền sử dụng"
+                              : `Trạng thái: ${classRoom.isPublic ? "Công khai" : "Riêng tư"
+                              }\n\nNhấn để ${classRoom.isPublic ? "đặt riêng tư" : "công khai"
+                              } lớp học và tất cả quiz`}
+                          >
+                            {/* Public vs Private Icon */}
+                            {classRoom.isPublic ? (
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 11h14v10H5z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/edit-class/${classRoom.id}`, {
+                                state: { classRoom },
+                              })
+                            }
+                            disabled={(classRoom as any).accessType === "shared"}
+                            className={`btn-secondary !bg-blue-100 !text-blue-700 hover:!bg-blue-200 dark:!bg-yellow-900/20 dark:!text-yellow-400 dark:hover:!bg-yellow-900/40 ${(classRoom as any).accessType === "shared"
+                              ? "opacity-50 !cursor-not-allowed"
+                              : ""
+                              }`}
+                            title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa lớp học"}
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleDeleteClass(classRoom.id, classRoom.name)
+                            }
+                            className="btn-secondary !bg-red-100 !text-red-700 hover:!bg-red-200 dark:!bg-red-900/20 dark:!text-red-400 dark:hover:!bg-red-900/40"
+                            title="Xóa lớp học"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Mobile Layout - flex dọc, nút xóa cùng hàng với Vào lớp */}
+                      <div className="sm:hidden mb-4">
+                        <div className="pr-8">
+                          <div className="flex items-start gap-3 mb-3">
+                            {/* Avatar với chữ cái đầu tiên */}
+                            <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                              {classRoom.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                                {classRoom.name}
+                              </h3>
+                              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                                {classRoom.description}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                            <span className="inline-flex items-center gap-1.5">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                              </svg>
+                              {formatDate(classRoom.createdAt)}
+                            </span>
+                            <span className="text-gray-300 dark:text-gray-600">
+                              •
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
+                              </svg>
+                              {quizCount} bài kiểm tra
+                            </span>
+                          </div>
+                        </div>
+                        {/* Mobile buttons - Vào lớp và Xóa lớp cùng hàng */}
+                        <div className="flex flex-row gap-2 mt-2">
+                          {/* Mobile 'Tham gia' button */}
+                          <button
+                            className="btn-primary flex items-center justify-center flex-1"
+                            onClick={() => toggleClassExpansion(classRoom.id)}
+                          >
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 10V3L4 14h7v7l9-11h-7z"
+                              />
+                            </svg>
+                            Tham gia
+                            <svg
+                              className={`w-4 h-4 ml-1 transition-transform duration-200 ${expandedClasses[classRoom.id]
+                                ? "rotate-180"
+                                : ""
+                                }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </button>
+                          {/* {(() => {
                           if (quizCount > 3) {
                             return (
                               <div className="relative dropdown-container flex-1">
@@ -1917,122 +1983,171 @@ const ClassesPage: React.FC = () => {
                             );
                           }
                         })()} */}
-                        {/* Nút toggle chia sẻ & copy link cho mobile */}
-                        <button
-                          onClick={() =>
-                            handleToggleClassShare(
-                              classRoom.id,
-                              shareStatus[`class_${classRoom.id}`] || false
-                            )
-                          }
-                          disabled={(classRoom as any).accessType === "shared"}
-                          className={`w-9 h-9 rounded ${shareStatus[`class_${classRoom.id}`]
-                            ? "bg-purple-500 hover:bg-purple-600 text-white dark:bg-purple-600 dark:hover:bg-purple-700"
-                            : "bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 dark:text-purple-300"
-                            } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
+                          {/* Nút toggle chia sẻ & copy link cho mobile */}
+                          <button
+                            onClick={() =>
+                              handleToggleClassShare(
+                                classRoom.id,
+                                shareStatus[`class_${classRoom.id}`] || false
+                              )
+                            }
+                            disabled={(classRoom as any).accessType === "shared"}
+                            className={`w-9 h-9 rounded ${shareStatus[`class_${classRoom.id}`]
+                              ? "bg-purple-500 hover:bg-purple-600 text-white dark:bg-purple-600 dark:hover:bg-purple-700"
+                              : "bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/20 dark:hover:bg-purple-900/40 dark:text-purple-300"
+                              } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
+                                ? "opacity-50 !cursor-not-allowed"
+                                : ""
+                              }`}
+                            title={(classRoom as any).accessType === "shared"
+                              ? "Không có quyền sử dụng"
+                              : `${shareStatus[`class_${classRoom.id}`] ? "Tắt" : "Bật"
+                              } chia sẻ lớp học`}
+                          >
+                            {shareStatus[`class_${classRoom.id}`] ? (
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleShareClass(classRoom.id)}
+                            disabled={
+                              (classRoom as any).accessType === "shared" ||
+                              !shareStatus[`class_${classRoom.id}`]
+                            }
+                            className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared" ||
+                              !shareStatus[`class_${classRoom.id}`]
                               ? "opacity-50 !cursor-not-allowed"
                               : ""
-                            }`}
-                          title={(classRoom as any).accessType === "shared"
-                            ? "Không có quyền sử dụng"
-                            : `${shareStatus[`class_${classRoom.id}`] ? "Tắt" : "Bật"
-                            } chia sẻ lớp học`}
-                        >
-                          {shareStatus[`class_${classRoom.id}`] ? (
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                              />
-                            </svg>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleShareClass(classRoom.id)}
-                          disabled={
-                            (classRoom as any).accessType === "shared" ||
-                            !shareStatus[`class_${classRoom.id}`]
-                          }
-                          className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared" ||
-                            !shareStatus[`class_${classRoom.id}`]
-                            ? "opacity-50 !cursor-not-allowed"
-                            : ""
-                            }`}
-                          title={(classRoom as any).accessType === "shared"
-                            ? "Không có quyền sử dụng"
-                            : shareStatus[`class_${classRoom.id}`]
-                              ? "Sao chép ID/Link"
-                              : "Bật chia sẻ trước"
-                          }
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                              }`}
+                            title={(classRoom as any).accessType === "shared"
+                              ? "Không có quyền sử dụng"
+                              : shareStatus[`class_${classRoom.id}`]
+                                ? "Sao chép ID/Link"
+                                : "Bật chia sẻ trước"
+                            }
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.172-1.172"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656L17.656 10"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleToggleClassPublic(
-                              classRoom.id,
-                              Boolean(classRoom.isPublic)
-                            )
-                          }
-                          disabled={(classRoom as any).accessType === "shared"}
-                          className={`w-9 h-9 rounded ${classRoom.isPublic
-                            ? "bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
-                            : "bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:text-green-300"
-                            } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.172-1.172"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656L17.656 10"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleToggleClassPublic(
+                                classRoom.id,
+                                Boolean(classRoom.isPublic)
+                              )
+                            }
+                            disabled={(classRoom as any).accessType === "shared"}
+                            className={`w-9 h-9 rounded ${classRoom.isPublic
+                              ? "bg-green-500 hover:bg-green-600 text-white dark:bg-green-600 dark:hover:bg-green-700"
+                              : "bg-green-100 hover:bg-green-200 text-green-700 dark:bg-green-900/20 dark:hover:bg-green-900/40 dark:text-green-300"
+                              } flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
+                                ? "opacity-50 !cursor-not-allowed"
+                                : ""
+                              }`}
+                            title={(classRoom as any).accessType === "shared"
+                              ? "Không có quyền sử dụng"
+                              : `${classRoom.isPublic ? "Công khai" : "Riêng tư"
+                              }`}
+                          >
+                            {classRoom.isPublic ? (
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 11h14v10H5z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                          {/* Nút chỉnh sửa & xóa lớp học - mobile */}
+                          <button
+                            onClick={() =>
+                              navigate(`/edit-class/${classRoom.id}`, {
+                                state: { classRoom },
+                              })
+                            }
+                            disabled={(classRoom as any).accessType === "shared"}
+                            className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
                               ? "opacity-50 !cursor-not-allowed"
                               : ""
-                            }`}
-                          title={(classRoom as any).accessType === "shared"
-                            ? "Không có quyền sử dụng"
-                            : `${classRoom.isPublic ? "Công khai" : "Riêng tư"
-                            }`}
-                        >
-                          {classRoom.isPublic ? (
+                              }`}
+                            title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa lớp học"}
+                          >
                             <svg
                               className="w-5 h-5"
                               fill="none"
@@ -2043,10 +2158,17 @@ const ClassesPage: React.FC = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                                d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
                               />
                             </svg>
-                          ) : (
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleDeleteClass(classRoom.id, classRoom.name)
+                            }
+                            className="w-9 h-9 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
+                            title="Xóa lớp học"
+                          >
                             <svg
                               className="w-5 h-5"
                               fill="none"
@@ -2057,71 +2179,15 @@ const ClassesPage: React.FC = () => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 strokeWidth={2}
-                                d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z"
-                              />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 11h14v10H5z"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                               />
                             </svg>
-                          )}
-                        </button>
-                        {/* Nút chỉnh sửa & xóa lớp học - mobile */}
-                        <button
-                          onClick={() =>
-                            navigate(`/edit-class/${classRoom.id}`, {
-                              state: { classRoom },
-                            })
-                          }
-                          disabled={(classRoom as any).accessType === "shared"}
-                          className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
-                            ? "opacity-50 !cursor-not-allowed"
-                            : ""
-                            }`}
-                          title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa lớp học"}
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
-                            />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleDeleteClass(classRoom.id, classRoom.name)
-                          }
-                          className="w-9 h-9 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden"
-                          title="Xóa lớp học"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Centered Mobile Toggle Button - COMMENTED OUT as integrated into main 'Tham gia' button */}
-                    {/* {quizCount > 0 && (
+                      {/* Centered Mobile Toggle Button - COMMENTED OUT as integrated into main 'Tham gia' button */}
+                      {/* {quizCount > 0 && (
                       <div className="block sm:!hidden">
                         <div className="flex justify-center mb-4">
                           <button
@@ -2137,196 +2203,336 @@ const ClassesPage: React.FC = () => {
                       </div>
                     )} */}
 
-                    {/* Danh sách bài kiểm tra - scrollable toàn bộ */}
-                    {quizCount > 0 && (
-                      <div className={`grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out ${expandedClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
-                        {/* OLD HOVER LOGIC: sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 */}
-                        <div className="overflow-hidden">
-                          <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                              <svg
-                                className="w-5 h-5 text-primary-500"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                />
-                              </svg>
-                              Bài kiểm tra trong lớp
-                            </h4>
-                            <div
-                              className="space-y-3 max-h-[600px] md:max-h-[725px] overflow-y-auto pr-2 global-scrollbar"
-                            >
-                              {validQuizzes.map((quiz) => (
-                                <div
-                                  key={quiz.id}
-                                  className="group/quiz p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
+                      {/* Danh sách bài kiểm tra - scrollable toàn bộ */}
+                      {quizCount > 0 && (
+                        <div className={`grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out ${expandedClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
+                          {/* OLD HOVER LOGIC: sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 */}
+                          <div className="overflow-hidden">
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                              <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                <svg
+                                  className="w-5 h-5 text-primary-500"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
                                 >
-                                  {/* Desktop Layout cho quiz items */}
-                                  <div className="hidden sm:flex items-center justify-between">
-                                    <div>
-                                      <p className="font-medium text-gray-900 dark:text-white group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                  />
+                                </svg>
+                                Bài kiểm tra trong lớp
+                              </h4>
+                              <div
+                                className="space-y-3 max-h-[600px] md:max-h-[725px] overflow-y-auto pr-2 global-scrollbar"
+                              >
+                                {validQuizzes.map((quiz) => (
+                                  <div
+                                    key={quiz.id}
+                                    className="group/quiz p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-xl hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
+                                  >
+                                    {/* Desktop Layout cho quiz items */}
+                                    <div className="hidden sm:flex items-center justify-between">
+                                      <div>
+                                        <p className="font-medium text-gray-900 dark:text-white group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
+                                          {quiz.title}
+                                        </p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                          {quiz.description}
+                                        </p>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Link
+                                          to={`/quiz/${quiz.id}`}
+                                          state={{ className: classRoom.name }}
+                                          className="btn-secondary text-sm hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                                        >
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                            />
+                                          </svg>
+                                          Làm bài
+                                        </Link>
+                                        <button
+                                          onClick={() =>
+                                            handleToggleQuizShare(
+                                              quiz.id,
+                                              shareStatus[`quiz_${quiz.id}`] || false
+                                            )
+                                          }
+                                          disabled={
+                                            (classRoom as any).accessType === "shared"
+                                          }
+                                          className={`${shareStatus[`quiz_${quiz.id}`]
+                                            ? "text-purple-600 dark:text-purple-400"
+                                            : "text-purple-400 dark:text-purple-600"
+                                            } hover:text-purple-700 dark:hover:text-purple-300 p-1 ${(classRoom as any).accessType === "shared"
+                                              ? "opacity-50 !cursor-not-allowed"
+                                              : ""
+                                            }`}
+                                          title={(classRoom as any).accessType === "shared"
+                                            ? "Không có quyền sử dụng"
+                                            : `Trạng thái: ${shareStatus[`quiz_${quiz.id}`]
+                                              ? "Có thể chia sẻ"
+                                              : "Không thể chia sẻ"
+                                            }\n\nNhấn để ${shareStatus[`quiz_${quiz.id}`]
+                                              ? "tắt"
+                                              : "bật"
+                                            } chia sẻ quiz`}
+                                        >
+                                          {/* Share Toggle Icon */}
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            {shareStatus[`quiz_${quiz.id}`] ? (
+                                              <>
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                  d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+                                                />
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                />
+                                              </>
+                                            ) : (
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                                              />
+                                            )}
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => handleShareQuiz(quiz.id)}
+                                          disabled={
+                                            (classRoom as any).accessType ===
+                                            "shared" ||
+                                            !shareStatus[`quiz_${quiz.id}`]
+                                          }
+                                          className={`text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 p-1 ${(classRoom as any).accessType ===
+                                            "shared" ||
+                                            !shareStatus[`quiz_${quiz.id}`]
+                                            ? "opacity-50 !cursor-not-allowed"
+                                            : ""
+                                            }`}
+                                          title={(classRoom as any).accessType === "shared"
+                                            ? "Không có quyền sử dụng"
+                                            : shareStatus[`quiz_${quiz.id}`]
+                                              ? "Sao chép ID/Link chia sẻ"
+                                              : "Bật chia sẻ trước để lấy ID/Link"
+                                          }
+                                        >
+                                          {/* Copy Link Icon */}
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.172-1.172"
+                                            />
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656L17.656 10"
+                                            />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleToggleQuizPublished(
+                                              quiz.id,
+                                              Boolean((quiz as any).published)
+                                            )
+                                          }
+                                          disabled={
+                                            (classRoom as any).accessType === "shared"
+                                          }
+                                          className={`${(quiz as any).published
+                                            ? "bg-green-500 text-white hover:bg-green-600 rounded shadow-sm p-1.5"
+                                            : "text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"
+                                            } ${(classRoom as any).accessType === "shared"
+                                              ? "opacity-50 !cursor-not-allowed"
+                                              : ""
+                                            }`}
+                                          title={(classRoom as any).accessType === "shared"
+                                            ? "Không có quyền sử dụng"
+                                            : `Trạng thái: ${(quiz as any).published
+                                              ? "Công khai"
+                                              : "Riêng tư"
+                                            }\n\nNhấn để ${(quiz as any).published
+                                              ? "đặt riêng tư"
+                                              : "công khai quiz"
+                                            }`}
+                                        >
+                                          {/* Public vs Private Icon */}
+                                          {(quiz as any).published ? (
+                                            <svg
+                                              className="w-4 h-4"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                                              />
+                                            </svg>
+                                          ) : (
+                                            <svg
+                                              className="w-4 h-4"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z"
+                                              />
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M5 11h14v10H5z"
+                                              />
+                                            </svg>
+                                          )}
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              const { getToken } = await import(
+                                                "../utils/auth"
+                                              );
+                                              const token = getToken();
+                                              if (!token) {
+                                                alert("Vui lòng đăng nhập");
+                                                return;
+                                              }
+                                              const { QuizzesAPI } = await import(
+                                                "../utils/api"
+                                              );
+                                              const full = await QuizzesAPI.getById(
+                                                quiz.id,
+                                                token
+                                              );
+                                              navigate("/edit-quiz", {
+                                                state: {
+                                                  questions: full.questions,
+                                                  fileName: full.title,
+                                                  fileId: full.id,
+                                                  quizTitle: full.title,
+                                                  quizDescription: full.description,
+                                                  isEdit: true,
+                                                  classInfo: {
+                                                    isNew: false,
+                                                    name: classRoom.name,
+                                                    description: classRoom.description,
+                                                    classId: classRoom.id,
+                                                  },
+                                                },
+                                              });
+                                            } catch (e) {
+                                              alert(
+                                                "Không thể tải nội dung quiz để chỉnh sửa."
+                                              );
+                                            }
+                                          }}
+                                          disabled={
+                                            (classRoom as any).accessType === "shared"
+                                          }
+                                          className={`text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 ${(classRoom as any).accessType === "shared"
+                                            ? "opacity-50 !cursor-not-allowed"
+                                            : ""
+                                            }`}
+                                          title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa bài kiểm tra"}
+                                        >
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
+                                            />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteQuiz(
+                                              classRoom.id,
+                                              quiz.id,
+                                              quiz.title
+                                            )
+                                          }
+                                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
+                                          title="Xóa bài kiểm tra"
+                                        >
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Mobile Layout cho quiz items - nút Làm bài và xóa cùng hàng */}
+                                    <div className="sm:hidden">
+                                      <p className="font-medium text-gray-900 dark:text-white mb-1 group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
                                         {quiz.title}
                                       </p>
-                                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                                         {quiz.description}
                                       </p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Link
-                                        to={`/quiz/${quiz.id}`}
-                                        state={{ className: classRoom.name }}
-                                        className="btn-secondary text-sm hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2"
-                                      >
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
+                                      <div className="flex flex-row gap-2">
+                                        <Link
+                                          to={`/quiz/${quiz.id}`}
+                                          state={{ className: classRoom.name }}
+                                          className="btn-secondary text-sm text-center w-full hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2"
                                         >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M14 5l7 7m0 0l-7 7m7-7H3"
-                                          />
-                                        </svg>
-                                        Làm bài
-                                      </Link>
-                                      <button
-                                        onClick={() =>
-                                          handleToggleQuizShare(
-                                            quiz.id,
-                                            shareStatus[`quiz_${quiz.id}`] || false
-                                          )
-                                        }
-                                        disabled={
-                                          (classRoom as any).accessType === "shared"
-                                        }
-                                        className={`${shareStatus[`quiz_${quiz.id}`]
-                                          ? "text-purple-600 dark:text-purple-400"
-                                          : "text-purple-400 dark:text-purple-600"
-                                          } hover:text-purple-700 dark:hover:text-purple-300 p-1 ${(classRoom as any).accessType === "shared"
-                                            ? "opacity-50 !cursor-not-allowed"
-                                            : ""
-                                          }`}
-                                        title={(classRoom as any).accessType === "shared"
-                                          ? "Không có quyền sử dụng"
-                                          : `Trạng thái: ${shareStatus[`quiz_${quiz.id}`]
-                                            ? "Có thể chia sẻ"
-                                            : "Không thể chia sẻ"
-                                          }\n\nNhấn để ${shareStatus[`quiz_${quiz.id}`]
-                                            ? "tắt"
-                                            : "bật"
-                                          } chia sẻ quiz`}
-                                      >
-                                        {/* Share Toggle Icon */}
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          {shareStatus[`quiz_${quiz.id}`] ? (
-                                            <>
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
-                                              />
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                              />
-                                            </>
-                                          ) : (
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                            />
-                                          )}
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() => handleShareQuiz(quiz.id)}
-                                        disabled={
-                                          (classRoom as any).accessType ===
-                                          "shared" ||
-                                          !shareStatus[`quiz_${quiz.id}`]
-                                        }
-                                        className={`text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 p-1 ${(classRoom as any).accessType ===
-                                          "shared" ||
-                                          !shareStatus[`quiz_${quiz.id}`]
-                                          ? "opacity-50 !cursor-not-allowed"
-                                          : ""
-                                          }`}
-                                        title={(classRoom as any).accessType === "shared"
-                                          ? "Không có quyền sử dụng"
-                                          : shareStatus[`quiz_${quiz.id}`]
-                                            ? "Sao chép ID/Link chia sẻ"
-                                            : "Bật chia sẻ trước để lấy ID/Link"
-                                        }
-                                      >
-                                        {/* Copy Link Icon */}
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.172-1.172"
-                                          />
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656L17.656 10"
-                                          />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleToggleQuizPublished(
-                                            quiz.id,
-                                            Boolean((quiz as any).published)
-                                          )
-                                        }
-                                        disabled={
-                                          (classRoom as any).accessType === "shared"
-                                        }
-                                        className={`${(quiz as any).published
-                                          ? "bg-green-500 text-white hover:bg-green-600 rounded shadow-sm p-1.5"
-                                          : "text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"
-                                          } ${(classRoom as any).accessType === "shared"
-                                            ? "opacity-50 !cursor-not-allowed"
-                                            : ""
-                                          }`}
-                                        title={(classRoom as any).accessType === "shared"
-                                          ? "Không có quyền sử dụng"
-                                          : `Trạng thái: ${(quiz as any).published
-                                            ? "Công khai"
-                                            : "Riêng tư"
-                                          }\n\nNhấn để ${(quiz as any).published
-                                            ? "đặt riêng tư"
-                                            : "công khai quiz"
-                                          }`}
-                                      >
-                                        {/* Public vs Private Icon */}
-                                        {(quiz as any).published ? (
                                           <svg
                                             className="w-4 h-4"
                                             fill="none"
@@ -2337,12 +2543,88 @@ const ClassesPage: React.FC = () => {
                                               strokeLinecap="round"
                                               strokeLinejoin="round"
                                               strokeWidth={2}
-                                              d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                                              d="M14 5l7 7m0 0l-7 7m7-7H3"
                                             />
                                           </svg>
-                                        ) : (
+                                          Làm bài
+                                        </Link>
+                                        <button
+                                          onClick={() =>
+                                            handleToggleQuizShare(
+                                              quiz.id,
+                                              shareStatus[`quiz_${quiz.id}`] || false
+                                            )
+                                          }
+                                          disabled={
+                                            (classRoom as any).accessType === "shared"
+                                          }
+                                          className={`w-9 h-9 rounded ${shareStatus[`quiz_${quiz.id}`]
+                                            ? "bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+                                            : "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-900/40"
+                                            } flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === "shared"
+                                              ? "opacity-50 !cursor-not-allowed"
+                                              : ""
+                                            }`}
+                                          title={(classRoom as any).accessType === "shared"
+                                            ? "Không có quyền sử dụng"
+                                            : `${shareStatus[`quiz_${quiz.id}`]
+                                              ? "Đang chia sẻ"
+                                              : "Chưa chia sẻ"
+                                            }`}
+                                        >
                                           <svg
-                                            className="w-4 h-4"
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            {shareStatus[`quiz_${quiz.id}`] ? (
+                                              <>
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                  d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+                                                />
+                                                <path
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                  strokeWidth={2}
+                                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                                />
+                                              </>
+                                            ) : (
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                                              />
+                                            )}
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => handleShareQuiz(quiz.id)}
+                                          disabled={
+                                            (classRoom as any).accessType ===
+                                            "shared" ||
+                                            !shareStatus[`quiz_${quiz.id}`]
+                                          }
+                                          className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType ===
+                                            "shared" ||
+                                            !shareStatus[`quiz_${quiz.id}`]
+                                            ? "opacity-50 !cursor-not-allowed"
+                                            : ""
+                                            }`}
+                                          title={(classRoom as any).accessType === "shared"
+                                            ? "Không có quyền sử dụng"
+                                            : shareStatus[`quiz_${quiz.id}`]
+                                              ? "Sao chép ID/Link"
+                                              : "Bật chia sẻ trước"
+                                          }
+                                        >
+                                          <svg
+                                            className="w-5 h-5"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -2351,257 +2633,125 @@ const ClassesPage: React.FC = () => {
                                               strokeLinecap="round"
                                               strokeLinejoin="round"
                                               strokeWidth={2}
-                                              d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z"
+                                              d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.172-1.172"
                                             />
                                             <path
                                               strokeLinecap="round"
                                               strokeLinejoin="round"
                                               strokeWidth={2}
-                                              d="M5 11h14v10H5z"
+                                              d="M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656L17.656 10"
                                             />
                                           </svg>
-                                        )}
-                                      </button>
-                                      <button
-                                        onClick={async () => {
-                                          try {
-                                            const { getToken } = await import(
-                                              "../utils/auth"
-                                            );
-                                            const token = getToken();
-                                            if (!token) {
-                                              alert("Vui lòng đăng nhập");
-                                              return;
-                                            }
-                                            const { QuizzesAPI } = await import(
-                                              "../utils/api"
-                                            );
-                                            const full = await QuizzesAPI.getById(
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleToggleQuizPublished(
                                               quiz.id,
-                                              token
-                                            );
-                                            navigate("/edit-quiz", {
-                                              state: {
-                                                questions: full.questions,
-                                                fileName: full.title,
-                                                fileId: full.id,
-                                                quizTitle: full.title,
-                                                quizDescription: full.description,
-                                                isEdit: true,
-                                                classInfo: {
-                                                  isNew: false,
-                                                  name: classRoom.name,
-                                                  description: classRoom.description,
-                                                  classId: classRoom.id,
-                                                },
-                                              },
-                                            });
-                                          } catch (e) {
-                                            alert(
-                                              "Không thể tải nội dung quiz để chỉnh sửa."
-                                            );
+                                              Boolean((quiz as any).published)
+                                            )
                                           }
-                                        }}
-                                        disabled={
-                                          (classRoom as any).accessType === "shared"
-                                        }
-                                        className={`text-blue-600 hover:text-blue-700 dark:text-yellow-400 dark:hover:text-yellow-300 p-1 ${(classRoom as any).accessType === "shared"
-                                          ? "opacity-50 !cursor-not-allowed"
-                                          : ""
-                                          }`}
-                                        title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa bài kiểm tra"}
-                                      >
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
+                                          disabled={
+                                            (classRoom as any).accessType === "shared"
+                                          }
+                                          className={`w-9 h-9 rounded ${(quiz as any).published
+                                            ? "bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+                                            : "bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300"
+                                            } flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === "shared"
+                                              ? "opacity-50 !cursor-not-allowed"
+                                              : ""
+                                            }`}
+                                          title={(classRoom as any).accessType === "shared"
+                                            ? "Không có quyền sử dụng"
+                                            : `${(quiz as any).published
+                                              ? "Công khai"
+                                              : "Riêng tư"
+                                            }`}
                                         >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
-                                          />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleDeleteQuiz(
-                                            classRoom.id,
-                                            quiz.id,
-                                            quiz.title
-                                          )
-                                        }
-                                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-1"
-                                        title="Xóa bài kiểm tra"
-                                      >
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                          />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Mobile Layout cho quiz items - nút Làm bài và xóa cùng hàng */}
-                                  <div className="sm:hidden">
-                                    <p className="font-medium text-gray-900 dark:text-white mb-1 group-hover/quiz:text-primary-600 dark:group-hover/quiz:text-primary-400 transition-colors">
-                                      {quiz.title}
-                                    </p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                                      {quiz.description}
-                                    </p>
-                                    <div className="flex flex-row gap-2">
-                                      <Link
-                                        to={`/quiz/${quiz.id}`}
-                                        state={{ className: classRoom.name }}
-                                        className="btn-secondary text-sm text-center w-full hover:bg-primary-500 hover:text-white transition-all flex items-center justify-center gap-2"
-                                      >
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M14 5l7 7m0 0l-7 7m7-7H3"
-                                          />
-                                        </svg>
-                                        Làm bài
-                                      </Link>
-                                      <button
-                                        onClick={() =>
-                                          handleToggleQuizShare(
-                                            quiz.id,
-                                            shareStatus[`quiz_${quiz.id}`] || false
-                                          )
-                                        }
-                                        disabled={
-                                          (classRoom as any).accessType === "shared"
-                                        }
-                                        className={`w-9 h-9 rounded ${shareStatus[`quiz_${quiz.id}`]
-                                          ? "bg-purple-500 text-white hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
-                                          : "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-900/40"
-                                          } flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === "shared"
-                                            ? "opacity-50 !cursor-not-allowed"
-                                            : ""
-                                          }`}
-                                        title={(classRoom as any).accessType === "shared"
-                                          ? "Không có quyền sử dụng"
-                                          : `${shareStatus[`quiz_${quiz.id}`]
-                                            ? "Đang chia sẻ"
-                                            : "Chưa chia sẻ"
-                                          }`}
-                                      >
-                                        <svg
-                                          className="w-5 h-5"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          {shareStatus[`quiz_${quiz.id}`] ? (
-                                            <>
+                                          {(quiz as any).published ? (
+                                            <svg
+                                              className="w-5 h-5"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
                                               <path
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"
                                                 strokeWidth={2}
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"
+                                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
                                               />
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                              />
-                                            </>
+                                            </svg>
                                           ) : (
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                                            />
+                                            <svg
+                                              className="w-5 h-5"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z"
+                                              />
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M5 11h14v10H5z"
+                                              />
+                                            </svg>
                                           )}
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() => handleShareQuiz(quiz.id)}
-                                        disabled={
-                                          (classRoom as any).accessType ===
-                                          "shared" ||
-                                          !shareStatus[`quiz_${quiz.id}`]
-                                        }
-                                        className={`w-9 h-9 rounded bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType ===
-                                          "shared" ||
-                                          !shareStatus[`quiz_${quiz.id}`]
-                                          ? "opacity-50 !cursor-not-allowed"
-                                          : ""
-                                          }`}
-                                        title={(classRoom as any).accessType === "shared"
-                                          ? "Không có quyền sử dụng"
-                                          : shareStatus[`quiz_${quiz.id}`]
-                                            ? "Sao chép ID/Link"
-                                            : "Bật chia sẻ trước"
-                                        }
-                                      >
-                                        <svg
-                                          className="w-5 h-5"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.172-1.172"
-                                          />
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656L17.656 10"
-                                          />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleToggleQuizPublished(
-                                            quiz.id,
-                                            Boolean((quiz as any).published)
-                                          )
-                                        }
-                                        disabled={
-                                          (classRoom as any).accessType === "shared"
-                                        }
-                                        className={`w-9 h-9 rounded ${(quiz as any).published
-                                          ? "bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
-                                          : "bg-green-100 hover:bg-green-200 dark:bg-green-900/20 dark:hover:bg-green-900/40 text-green-700 dark:text-green-300"
-                                          } flex items-center justify-center transition-all duration-200 hover:scale-110 ${(classRoom as any).accessType === "shared"
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              const { getToken } = await import(
+                                                "../utils/auth"
+                                              );
+                                              const token = getToken();
+                                              if (!token) {
+                                                alert("Vui lòng đăng nhập");
+                                                return;
+                                              }
+                                              const { QuizzesAPI } = await import(
+                                                "../utils/api"
+                                              );
+                                              const full = await QuizzesAPI.getById(
+                                                quiz.id,
+                                                token
+                                              );
+                                              navigate("/edit-quiz", {
+                                                state: {
+                                                  questions: full.questions,
+                                                  fileName: full.title,
+                                                  fileId: full.id,
+                                                  quizTitle: full.title,
+                                                  quizDescription: full.description,
+                                                  isEdit: true,
+                                                  classInfo: {
+                                                    isNew: false,
+                                                    name: classRoom.name,
+                                                    description: classRoom.description,
+                                                    classId: classRoom.id,
+                                                  },
+                                                },
+                                              });
+                                            } catch (e) {
+                                              alert(
+                                                "Không thể tải nội dung quiz để chỉnh sửa."
+                                              );
+                                            }
+                                          }}
+                                          disabled={
+                                            (classRoom as any).accessType === "shared"
+                                          }
+                                          className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
                                             ? "opacity-50 !cursor-not-allowed"
                                             : ""
-                                          }`}
-                                        title={(classRoom as any).accessType === "shared"
-                                          ? "Không có quyền sử dụng"
-                                          : `${(quiz as any).published
-                                            ? "Công khai"
-                                            : "Riêng tư"
-                                          }`}
-                                      >
-                                        {(quiz as any).published ? (
+                                            }`}
+                                          title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa bài kiểm tra"}
+                                        >
                                           <svg
                                             className="w-5 h-5"
                                             fill="none"
@@ -2612,131 +2762,47 @@ const ClassesPage: React.FC = () => {
                                               strokeLinecap="round"
                                               strokeLinejoin="round"
                                               strokeWidth={2}
-                                              d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                                              d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
                                             />
                                           </svg>
-                                        ) : (
-                                          <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M12 11c1.657 0 3-1.343 3-3V6a3 3 0 10-6 0v2c0 1.657 1.343 3 3 3z"
-                                            />
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M5 11h14v10H5z"
-                                            />
-                                          </svg>
-                                        )}
-                                      </button>
-                                      <button
-                                        onClick={async () => {
-                                          try {
-                                            const { getToken } = await import(
-                                              "../utils/auth"
-                                            );
-                                            const token = getToken();
-                                            if (!token) {
-                                              alert("Vui lòng đăng nhập");
-                                              return;
-                                            }
-                                            const { QuizzesAPI } = await import(
-                                              "../utils/api"
-                                            );
-                                            const full = await QuizzesAPI.getById(
+                                        </button>
+                                        <button
+                                          onClick={() =>
+                                            handleDeleteQuiz(
+                                              classRoom.id,
                                               quiz.id,
-                                              token
-                                            );
-                                            navigate("/edit-quiz", {
-                                              state: {
-                                                questions: full.questions,
-                                                fileName: full.title,
-                                                fileId: full.id,
-                                                quizTitle: full.title,
-                                                quizDescription: full.description,
-                                                isEdit: true,
-                                                classInfo: {
-                                                  isNew: false,
-                                                  name: classRoom.name,
-                                                  description: classRoom.description,
-                                                  classId: classRoom.id,
-                                                },
-                                              },
-                                            });
-                                          } catch (e) {
-                                            alert(
-                                              "Không thể tải nội dung quiz để chỉnh sửa."
-                                            );
+                                              quiz.title
+                                            )
                                           }
-                                        }}
-                                        disabled={
-                                          (classRoom as any).accessType === "shared"
-                                        }
-                                        className={`w-9 h-9 rounded bg-blue-100 hover:bg-blue-200 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40 text-blue-700 dark:text-yellow-400 flex items-center justify-center transition-all duration-200 hover:scale-110 sm:hidden ${(classRoom as any).accessType === "shared"
-                                          ? "opacity-50 !cursor-not-allowed"
-                                          : ""
-                                          }`}
-                                        title={(classRoom as any).accessType === "shared" ? "Không có quyền sử dụng" : "Chỉnh sửa bài kiểm tra"}
-                                      >
-                                        <svg
-                                          className="w-5 h-5"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
+                                          className="w-9 h-9 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110"
+                                          title="Xóa bài kiểm tra"
                                         >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17.25V21h3.75l11.06-11.06a2.121 2.121 0 10-3-3L3 17.25z"
-                                          />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleDeleteQuiz(
-                                            classRoom.id,
-                                            quiz.id,
-                                            quiz.title
-                                          )
-                                        }
-                                        className="w-9 h-9 rounded bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center transition-all duration-200 hover:scale-110"
-                                        title="Xóa bài kiểm tra"
-                                      >
-                                        <svg
-                                          className="w-5 h-5"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                          />
-                                        </svg>
-                                      </button>
+                                          <svg
+                                            className="w-5 h-5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
+                                          </svg>
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           ) : (
             // Empty state
@@ -2781,7 +2847,7 @@ const ClassesPage: React.FC = () => {
                   placeholder="Tìm kiếm lớp học, bài kiểm tra..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:border-primary-500 focus:ring-0 outline-none transition-all shadow-sm hover:shadow-md"
+                  className="w-full pl-10 pr-10 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:border-primary-500 focus:ring-0 outline-none transition-all shadow-sm hover:shadow-md"
                 />
                 <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 {searchQuery && (
