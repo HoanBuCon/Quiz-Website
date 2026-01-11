@@ -53,11 +53,11 @@ const ClassesPage: React.FC = () => {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [showMobileSearch, setShowMobileSearch] = useState(false);
-  // Track expanded classes on mobile
-  const [expandedMobileClasses, setExpandedMobileClasses] = useState<Record<string, boolean>>({});
+  // Track expanded classes (desktop + mobile)
+  const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({});
 
-  const toggleMobileClass = (classId: string) => {
-    setExpandedMobileClasses((prev) => ({
+  const toggleClassExpansion = (classId: string) => {
+    setExpandedClasses((prev) => ({
       ...prev,
       [classId]: !prev[classId],
     }));
@@ -399,6 +399,9 @@ const ClassesPage: React.FC = () => {
           return { ...cls, quizzes };
         })
       );
+
+      // Sort by createdAt descending (newest first)
+      classesWithQuizzes.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setClasses(classesWithQuizzes);
       await loadStats(classesWithQuizzes);
@@ -1113,9 +1116,9 @@ const ClassesPage: React.FC = () => {
                       } animate-slideUpIn anim-delay-100
                     `}
                     style={{ animationDelay: `${(index % 5) * 0.1}s` }}
-                    onMouseLeave={() =>
-                      openDropdown === classRoom.id && setOpenDropdown(null)
-                    }
+                  // onMouseLeave={() =>
+                  //   openDropdown === classRoom.id && setOpenDropdown(null)
+                  // }
                   >
                     {/* Desktop Layout - flex ngang */}
                     <div className="hidden sm:flex justify-between items-start mb-4">
@@ -1176,6 +1179,44 @@ const ClassesPage: React.FC = () => {
 
                       {/* Desktop buttons - bên phải */}
                       <div className="flex items-center gap-2">
+                        {/* Unified 'Tham gia' button for Desktop that toggles expansion */}
+                        <button
+                          className="btn-primary flex items-center gap-2"
+                          onClick={() => toggleClassExpansion(classRoom.id)}
+                        >
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                            />
+                          </svg>
+                          Tham gia
+                          <svg
+                            className={`w-4 h-4 ml-1 transition-transform duration-200 ${expandedClasses[classRoom.id]
+                              ? "rotate-180"
+                              : ""
+                              }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* OLD COMPLEX LOGIC FOR THAM GIA BUTTON
                         {(() => {
                           if (quizCount > 3) {
                             // Nếu có hơn 3 quiz, hiện dropdown để xem tất cả
@@ -1218,7 +1259,6 @@ const ClassesPage: React.FC = () => {
                                     />
                                   </svg>
                                 </button>
-                                {/* Dropdown Menu - Hiện tất cả quiz */}
                                 {openDropdown === classRoom.id && (
                                   <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
                                     <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
@@ -1327,7 +1367,6 @@ const ClassesPage: React.FC = () => {
                                       />
                                     </svg>
                                   </button>
-                                  {/* Dropdown Menu */}
                                   {openDropdown === classRoom.id && (
                                     <div className="absolute top-full left-0 mt-2 w-64 sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
                                       <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
@@ -1379,7 +1418,7 @@ const ClassesPage: React.FC = () => {
                               </button>
                             );
                           }
-                        })()}
+                        })()} */}
 
                         <button
                           onClick={() =>
@@ -1642,7 +1681,43 @@ const ClassesPage: React.FC = () => {
                       </div>
                       {/* Mobile buttons - Vào lớp và Xóa lớp cùng hàng */}
                       <div className="flex flex-row gap-2 mt-2">
-                        {(() => {
+                        {/* Mobile 'Tham gia' button */}
+                        <button
+                          className="btn-primary flex items-center justify-center flex-1"
+                          onClick={() => toggleClassExpansion(classRoom.id)}
+                        >
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 10V3L4 14h7v7l9-11h-7z"
+                            />
+                          </svg>
+                          Tham gia
+                          <svg
+                            className={`w-4 h-4 ml-1 transition-transform duration-200 ${expandedClasses[classRoom.id]
+                              ? "rotate-180"
+                              : ""
+                              }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                        {/* {(() => {
                           if (quizCount > 3) {
                             return (
                               <div className="relative dropdown-container flex-1">
@@ -1683,7 +1758,6 @@ const ClassesPage: React.FC = () => {
                                     />
                                   </svg>
                                 </button>
-                                {/* Dropdown Menu - Hiện tất cả quiz (mobile) */}
                                 {openDropdown === classRoom.id && (
                                   <div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
                                     <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
@@ -1842,7 +1916,7 @@ const ClassesPage: React.FC = () => {
                               </button>
                             );
                           }
-                        })()}
+                        })()} */}
                         {/* Nút toggle chia sẻ & copy link cho mobile */}
                         <button
                           onClick={() =>
@@ -2046,26 +2120,27 @@ const ClassesPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Centered Mobile Toggle Button */}
-                    {quizCount > 0 && (
+                    {/* Centered Mobile Toggle Button - COMMENTED OUT as integrated into main 'Tham gia' button */}
+                    {/* {quizCount > 0 && (
                       <div className="block sm:!hidden">
                         <div className="flex justify-center mb-4">
                           <button
-                            onClick={() => toggleMobileClass(classRoom.id)}
-                            className={`w-12 h-6 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 flex items-center justify-center transition-all duration-200 ${expandedMobileClasses[classRoom.id] ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : ""}`}
-                            title={expandedMobileClasses[classRoom.id] ? "Thu gọn" : "Xem bài kiểm tra"}
+                            onClick={() => toggleClassExpansion(classRoom.id)}
+                            className={`w-12 h-6 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 flex items-center justify-center transition-all duration-200 ${expandedClasses[classRoom.id] ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : ""}`}
+                            title={expandedClasses[classRoom.id] ? "Thu gọn" : "Xem bài kiểm tra"}
                           >
-                            <svg className={`w-4 h-4 transition-transform duration-300 ${expandedMobileClasses[classRoom.id] ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className={`w-4 h-4 transition-transform duration-300 ${expandedClasses[classRoom.id] ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </button>
                         </div>
                       </div>
-                    )}
+                    )} */}
 
                     {/* Danh sách bài kiểm tra - scrollable toàn bộ */}
                     {quizCount > 0 && (
-                      <div className={`grid grid-rows-[0fr] opacity-0 sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 transition-all duration-500 ease-in-out ${expandedMobileClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
+                      <div className={`grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out ${expandedClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
+                        {/* OLD HOVER LOGIC: sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 */}
                         <div className="overflow-hidden">
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -2085,7 +2160,7 @@ const ClassesPage: React.FC = () => {
                               Bài kiểm tra trong lớp
                             </h4>
                             <div
-                              className="space-y-3 max-h-72 overflow-y-auto pr-2 global-scrollbar"
+                              className="space-y-3 max-h-[600px] md:max-h-[725px] overflow-y-auto pr-2 global-scrollbar"
                             >
                               {validQuizzes.map((quiz) => (
                                 <div

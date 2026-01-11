@@ -19,8 +19,8 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  // Track expanded classes on mobile
-  const [expandedMobileClasses, setExpandedMobileClasses] = useState<Record<string, boolean>>({});
+  // Track expanded classes (desktop + mobile)
+  const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({});
 
   // Hàm xử lý di chuyển chuột cho ảnh 1 (Kho tài liệu)
   const handleMouseMove1 = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -52,8 +52,8 @@ const HomePage: React.FC = () => {
     setMousePosition2({ x: 0, y: 0 });
   };
 
-  const toggleMobileClass = (classId: string) => {
-    setExpandedMobileClasses((prev) => ({
+  const toggleClassExpansion = (classId: string) => {
+    setExpandedClasses((prev) => ({
       ...prev,
       [classId]: !prev[classId],
     }));
@@ -98,6 +98,9 @@ const HomePage: React.FC = () => {
             updatedAt: cls.updatedAt ? new Date(cls.updatedAt) : undefined,
           } as unknown as ClassRoom);
         }
+
+        // Sort by createdAt descending (newest first)
+        processedClasses.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
         setPublicClasses(processedClasses);
         setTotalClasses(processedClasses.length);
@@ -248,11 +251,21 @@ const HomePage: React.FC = () => {
                 placeholder="Tìm kiếm..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg text-sm focus:ring-0 outline-none transition-all shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
+                className="pl-10 pr-10 py-2 w-full bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg text-sm focus:ring-0 outline-none transition-all shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
               />
               <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* Mobile Search Input */}
@@ -339,9 +352,9 @@ const HomePage: React.FC = () => {
                       } animate-slideUpIn anim-delay-100
                     `}
                     style={{ animationDelay: `${(index % 5) * 0.1}s` }}
-                    onMouseLeave={() =>
-                      openDropdown === classRoom.id && setOpenDropdown(null)
-                    }
+                  // onMouseLeave={() =>
+                  //   openDropdown === classRoom.id && setOpenDropdown(null)
+                  // }
                   >
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-4">
                       <div className="flex-1">
@@ -401,23 +414,25 @@ const HomePage: React.FC = () => {
                       <div className="relative dropdown-container flex-shrink-0">
                         <button
                           className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm w-full sm:w-auto justify-center shadow-lg hover:shadow-xl transition-all"
-                          onClick={() => {
-                            if (
-                              classRoom.quizzes &&
-                              classRoom.quizzes.length === 1
-                            ) {
-                              const firstQuiz = (classRoom.quizzes as Quiz[])[0];
-                              navigate(`/quiz/${firstQuiz.id}`, {
-                                state: { className: classRoom.name },
-                              });
-                            } else {
-                              setOpenDropdown(
-                                openDropdown === classRoom.id
-                                  ? null
-                                  : classRoom.id
-                              );
-                            }
-                          }}
+                          onClick={() => toggleClassExpansion(classRoom.id)}
+                        // OLD LOGIC
+                        // onClick={() => {
+                        //   if (
+                        //     classRoom.quizzes &&
+                        //     classRoom.quizzes.length === 1
+                        //   ) {
+                        //     const firstQuiz = (classRoom.quizzes as Quiz[])[0];
+                        //     navigate(`/quiz/${firstQuiz.id}`, {
+                        //       state: { className: classRoom.name },
+                        //     });
+                        //   } else {
+                        //     setOpenDropdown(
+                        //       openDropdown === classRoom.id
+                        //         ? null
+                        //         : classRoom.id
+                        //     );
+                        //   }
+                        // }}
                         >
                           <svg
                             className="w-4 h-4"
@@ -433,6 +448,23 @@ const HomePage: React.FC = () => {
                             />
                           </svg>
                           Tham gia
+                          {/* Chevron icon indicating expansion state */}
+                          <svg
+                            className={`w-4 h-4 transition-transform duration-200 ${expandedClasses[classRoom.id] ? "rotate-180" : ""
+                              }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+
+                          {/* OLD DROPDOWN ICON LOGIC
                           {classRoom.quizzes && classRoom.quizzes.length > 1 && (
                             <svg
                               className={`w-4 h-4 transition-transform duration-200 ${openDropdown === classRoom.id ? "rotate-180" : ""
@@ -448,11 +480,11 @@ const HomePage: React.FC = () => {
                                 d="M19 9l-7 7-7-7"
                               />
                             </svg>
-                          )}
+                          )} */}
                         </button>
 
-                        {/* Dropdown Menu */}
-                        {openDropdown === classRoom.id &&
+                        {/* Dropdown Menu - COMMENTED OUT AS PER NEW REQUIREMENT */}
+                        {/* {openDropdown === classRoom.id &&
                           classRoom.quizzes &&
                           classRoom.quizzes.length > 1 && (
                             <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 w-full sm:w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden">
@@ -495,31 +527,32 @@ const HomePage: React.FC = () => {
                                 )}
                               </div>
                             </div>
-                          )}
+                          )} */}
                       </div>
                     </div>
 
 
-                    {/* Centered Mobile Toggle Button */}
-                    {classRoom.quizzes && classRoom.quizzes.length > 0 && (
+                    {/* Centered Mobile Toggle Button - COMMENTED OUT as integrated into main 'Tham gia' button */}
+                    {/* {classRoom.quizzes && classRoom.quizzes.length > 0 && (
                       <div className="block sm:!hidden">
                         <div className="flex justify-center mb-4">
                           <button
-                            onClick={() => toggleMobileClass(classRoom.id)}
-                            className={`w-12 h-6 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 flex items-center justify-center transition-all duration-200 ${expandedMobileClasses[classRoom.id] ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : ""}`}
-                            title={expandedMobileClasses[classRoom.id] ? "Thu gọn" : "Xem bài kiểm tra"}
+                            onClick={() => toggleClassExpansion(classRoom.id)}
+                            className={`w-12 h-6 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 flex items-center justify-center transition-all duration-200 ${expandedClasses[classRoom.id] ? "bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400" : ""}`}
+                            title={expandedClasses[classRoom.id] ? "Thu gọn" : "Xem bài kiểm tra"}
                           >
-                            <svg className={`w-4 h-4 transition-transform duration-300 ${expandedMobileClasses[classRoom.id] ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className={`w-4 h-4 transition-transform duration-300 ${expandedClasses[classRoom.id] ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </button>
                         </div>
                       </div>
-                    )}
+                    )} */}
 
                     {/* Danh sách quiz trong lớp */}
                     {classRoom.quizzes && classRoom.quizzes.length > 0 && (
-                      <div className={`grid grid-rows-[0fr] opacity-0 sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 transition-all duration-500 ease-in-out ${expandedMobileClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
+                      <div className={`grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out ${expandedClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
+                        {/* OLD HOVER LOGIC: sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 */}
                         <div className="overflow-hidden">
                           <div className="border-t border-gray-100 dark:border-gray-700 pt-5 mt-5">
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -538,7 +571,7 @@ const HomePage: React.FC = () => {
                               </svg>
                               Bài kiểm tra trong lớp
                             </h4>
-                            <div className="grid gap-3 max-h-[280px] overflow-y-auto custom-scrollbar pr-2">
+                            <div className="grid gap-3 max-h-[440px] md:max-h-[460px] overflow-y-auto custom-scrollbar pr-2">
                               {(classRoom.quizzes as Quiz[]).map((quiz) => (
                                 <div
                                   key={quiz.id}
