@@ -38,6 +38,92 @@ interface RecentSession {
     completedAt: string;
 }
 
+const DateInput: React.FC<{
+    label: string,
+    value: string,
+    onChange: (val: string) => void,
+    min?: string,
+    max?: string
+}> = ({ label, value, onChange, min, max }) => {
+    // value is YYYY-MM-DD
+    const [textValue, setTextValue] = useState('');
+    const pickerRef = useRef<HTMLInputElement>(null);
+
+    // Sync text value when external value changes
+    useEffect(() => {
+        if (value) {
+            const [y, m, d] = value.split('-');
+            setTextValue(`${d}/${m}/${y}`);
+        } else {
+            setTextValue('');
+        }
+    }, [value]);
+
+    const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        // Only allow numbers and slash
+        if (val && !/^[\d/]*$/.test(val)) return;
+
+        setTextValue(val);
+
+        // Try parse DD/MM/YYYY
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+            const [d, m, y] = val.split('/').map(Number);
+            const date = new Date(y, m - 1, d);
+            if (date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d) {
+                // Valid date, conversion to YYYY-MM-DD
+                const isoDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                onChange(isoDate);
+            }
+        } else if (val === '') {
+            onChange('');
+        }
+    };
+
+    const handlePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e.target.value);
+    };
+
+    const openPicker = () => {
+        pickerRef.current?.showPicker();
+    };
+
+    return (
+        <div>
+            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                {label}
+            </label>
+            <div className="relative">
+                <input
+                    type="text"
+                    value={textValue}
+                    onChange={handleTextChange}
+                    placeholder="dd/mm/yyyy"
+                    maxLength={10}
+                    className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm font-mono tracking-wide"
+                />
+                <button
+                    onClick={openPicker}
+                    className="absolute right-0 top-0 bottom-0 px-3 text-gray-400 hover:text-blue-500 transition-colors"
+                >
+                    <FaCalendar />
+                </button>
+                {/* Hidden native picker */}
+                <input
+                    ref={pickerRef}
+                    type="date"
+                    value={value}
+                    onChange={handlePickerChange}
+                    min={min}
+                    max={max}
+                    className="absolute opacity-0 pointer-events-none w-0 h-0 bottom-0 left-1/2"
+                    tabIndex={-1}
+                />
+            </div>
+        </div>
+    );
+};
+
 const ProfilePage: React.FC = () => {
     const { isDarkMode } = useTheme();
     const navigate = useNavigate();
@@ -64,6 +150,7 @@ const ProfilePage: React.FC = () => {
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'a-z' | 'z-a'>('newest');
+    const [historySearch, setHistorySearch] = useState('');
 
     // Edit states
     const [editingName, setEditingName] = useState(false);
@@ -320,6 +407,7 @@ const ProfilePage: React.FC = () => {
         setStartDate('');
         setEndDate('');
         setSortOrder('newest');
+        setHistorySearch('');
         setShowDateFilter(false);
     };
 
@@ -339,7 +427,7 @@ const ProfilePage: React.FC = () => {
 
     // Filter sessions based on date range
     const filteredSessions = stats?.recentSessions.filter(session => {
-        if (!startDate && !endDate) return true;
+        // if (!startDate && !endDate) return true;
 
         const sessionDate = new Date(session.completedAt);
         const start = startDate ? new Date(startDate) : null;
@@ -347,6 +435,12 @@ const ProfilePage: React.FC = () => {
 
         if (start && sessionDate < start) return false;
         if (end && sessionDate > end) return false;
+
+        // Search Filter
+        if (historySearch && !session.quizTitle.toLowerCase().includes(historySearch.toLowerCase()) && !session.className.toLowerCase().includes(historySearch.toLowerCase())) {
+            return false;
+        }
+
         return true;
     }).sort((a, b) => {
         switch (sortOrder) {
@@ -764,7 +858,7 @@ const ProfilePage: React.FC = () => {
                                                     </div>
                                                     <span className="text-xs text-gray-400 font-mono">
                                                         Cập nhật lần cuối: {profile.passwordChangedAt
-                                                            ? new Date(profile.passwordChangedAt).toLocaleDateString('vi-VN')
+                                                            ? new Date(profile.passwordChangedAt).toLocaleDateString('en-GB')
                                                             : 'Chưa cập nhật'}
                                                     </span>
                                                 </div>
@@ -863,122 +957,135 @@ const ProfilePage: React.FC = () => {
                                     )}
                                 </h2>
 
-                                {/* Date Range Filter Button */}
-                                <div className="relative date-filter-container">
-                                    <button
-                                        onClick={() => setShowDateFilter(!showDateFilter)}
-                                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 transition-all shadow-sm hover:shadow-md"
-                                    >
-                                        <svg className={`w-5 h-5 ${startDate || endDate ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
+                                {/* Date Range Filter Button & Search Bar */}
+                                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                                    {/* Search Bar */}
+                                    <div className="relative flex-1 sm:w-64">
+                                        <input
+                                            type="text"
+                                            value={historySearch}
+                                            onChange={(e) => setHistorySearch(e.target.value)}
+                                            placeholder="Tìm kiếm bài kiểm tra..."
+                                            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 border-0 focus:outline-none focus:ring-0 transition-shadow shadow-sm hover:shadow-md text-sm"
+                                        />
+                                        <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                         </svg>
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Lọc & Sắp xếp
-                                        </span>
-                                        <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${showDateFilter ? 'rotate-180 text-blue-500' : ''}`} />
-                                    </button>
+                                        {historySearch && (
+                                            <button
+                                                onClick={() => setHistorySearch('')}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                            >
+                                                <FaTimes className="text-xs" />
+                                            </button>
+                                        )}
+                                    </div>
 
-                                    {/* Dropdown Filter Panel */}
-                                    {showDateFilter && (
-                                        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-5 z-50 animate-slideUp">
-                                            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
-                                                <FaCalendar className="text-blue-500" />
+                                    {/* Filter Button */}
+                                    <div className="relative date-filter-container">
+                                        <button
+                                            onClick={() => setShowDateFilter(!showDateFilter)}
+                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+                                        >
+                                            <svg className={`w-5 h-5 ${startDate || endDate ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
+                                            </svg>
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                                 Lọc & Sắp xếp
-                                            </h3>
+                                            </span>
+                                            <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${showDateFilter ? 'rotate-180 text-blue-500' : ''}`} />
+                                        </button>
 
-                                            {/* Sort Options */}
-                                            <div className="mb-4">
-                                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
-                                                    Sắp xếp theo
-                                                </label>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {[
-                                                        { id: 'newest', label: 'Mới nhất' },
-                                                        { id: 'oldest', label: 'Cũ nhất' },
-                                                        { id: 'a-z', label: 'Tên (A → Z)' },
-                                                        { id: 'z-a', label: 'Tên (Z → A)' }
-                                                    ].map((opt) => (
-                                                        <button
-                                                            key={opt.id}
-                                                            onClick={() => setSortOrder(opt.id as any)}
-                                                            className={`
-                                                                px-3 py-2 text-xs font-medium rounded-lg transition-all border
-                                                                ${sortOrder === opt.id
-                                                                    ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/50'
-                                                                    : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
-                                                                }
-                                                            `}
-                                                        >
-                                                            {opt.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                        {/* Dropdown Filter Panel */}
+                                        {showDateFilter && (
+                                            <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-5 z-50 animate-slideUp">
+                                                <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+                                                    <FaCalendar className="text-blue-500" />
+                                                    Lọc & Sắp xếp
+                                                </h3>
 
-                                            <div className="h-px bg-gray-100 dark:bg-gray-700 my-4"></div>
-
-                                            {/* Date Inputs */}
-                                            <div className="space-y-4 mb-4">
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                                                        Từ ngày
+                                                {/* Sort Options */}
+                                                <div className="mb-4">
+                                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                                                        Sắp xếp theo
                                                     </label>
-                                                    <input
-                                                        type="date"
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {[
+                                                            { id: 'newest', label: 'Mới nhất' },
+                                                            { id: 'oldest', label: 'Cũ nhất' },
+                                                            { id: 'a-z', label: 'Tên (A → Z)' },
+                                                            { id: 'z-a', label: 'Tên (Z → A)' }
+                                                        ].map((opt) => (
+                                                            <button
+                                                                key={opt.id}
+                                                                onClick={() => setSortOrder(opt.id as any)}
+                                                                className={`
+                                                                    px-3 py-2 text-xs font-medium rounded-lg transition-all border
+                                                                    ${sortOrder === opt.id
+                                                                        ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/50'
+                                                                        : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                                                                    }
+                                                                `}
+                                                            >
+                                                                {opt.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="h-px bg-gray-100 dark:bg-gray-700 my-4"></div>
+
+                                                {/* Date Inputs replaced with DateInput */}
+                                                <div className="space-y-4 mb-4">
+                                                    <DateInput
+                                                        label="Từ ngày"
                                                         value={startDate}
-                                                        onChange={(e) => setStartDate(e.target.value)}
-                                                        max={endDate || undefined}
-                                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                                        onChange={setStartDate}
+                                                        max={endDate}
                                                     />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
-                                                        Đến ngày
-                                                    </label>
-                                                    <input
-                                                        type="date"
+                                                    <DateInput
+                                                        label="Đến ngày"
                                                         value={endDate}
-                                                        onChange={(e) => setEndDate(e.target.value)}
-                                                        min={startDate || undefined}
-                                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                                                        onChange={setEndDate}
+                                                        min={startDate}
                                                     />
                                                 </div>
-                                            </div>
 
-                                            {/* Quick Presets */}
-                                            <div className="mb-4">
-                                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
-                                                    Chọn nhanh
-                                                </label>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {[
-                                                        { label: '7 ngày', days: 7 },
-                                                        { label: '30 ngày', days: 30 },
-                                                        { label: '3 tháng', days: 90 },
-                                                        { label: 'Tất cả', days: null }
-                                                    ].map((preset) => (
-                                                        <button
-                                                            key={preset.label}
-                                                            onClick={() => setQuickPreset(preset.days)}
-                                                            className="px-3 py-2 text-xs font-medium bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500"
-                                                        >
-                                                            {preset.label}
-                                                        </button>
-                                                    ))}
+                                                {/* Quick Presets */}
+                                                <div className="mb-4">
+                                                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                                                        Chọn nhanh
+                                                    </label>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {[
+                                                            { label: '7 ngày', days: 7 },
+                                                            { label: '30 ngày', days: 30 },
+                                                            { label: '3 tháng', days: 90 },
+                                                            { label: 'Tất cả', days: null }
+                                                        ].map((preset) => (
+                                                            <button
+                                                                key={preset.label}
+                                                                onClick={() => setQuickPreset(preset.days)}
+                                                                className="px-3 py-2 text-xs font-medium bg-gray-50 dark:bg-gray-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-all border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500"
+                                                            >
+                                                                {preset.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Action Button */}
+                                                <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+                                                    <button
+                                                        onClick={resetDateFilter}
+                                                        className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold text-sm transition-all"
+                                                    >
+                                                        Đặt lại
+                                                    </button>
                                                 </div>
                                             </div>
-
-                                            {/* Action Button */}
-                                            <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-                                                <button
-                                                    onClick={resetDateFilter}
-                                                    className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold text-sm transition-all"
-                                                >
-                                                    Đặt lại
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

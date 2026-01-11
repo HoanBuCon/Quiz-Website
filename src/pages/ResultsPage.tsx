@@ -672,14 +672,25 @@ const ResultsPage: React.FC = () => {
               return (
                 <div key={q.id} id={`q-${q.id}`} className="card p-6 transition-all duration-300 ease-in-out">
                   <div className="flex items-start justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-start">
-                      <span className="mr-3 whitespace-nowrap shrink-0">Câu {qIndex + 1}:</span>
-                      {isCorrect ? (
-                        <span className="text-green-600">✓</span>
-                      ) : (
-                        <span className="text-red-600">✗</span>
-                      )}
-                    </h4>
+                    <div className="flex flex-col gap-1">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-start">
+                        <span className="mr-3 whitespace-nowrap shrink-0">Câu {qIndex + 1}:</span>
+                        {isCorrect ? (
+                          <span className="text-green-600">✓</span>
+                        ) : (
+                          <span className="text-red-600">✗</span>
+                        )}
+                      </h4>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {q.type === 'single'
+                          ? "Chọn một đáp án"
+                          : q.type === 'multiple'
+                            ? "Chọn nhiều đáp án"
+                            : q.type === 'drag'
+                              ? "Kéo thả đáp án vào nhóm tương ứng"
+                              : "Điền đáp án"}
+                      </span>
+                    </div>
                     <span
                       className={`px-3 py-1 rounded-full text-sm font-semibold ${isCorrect
                         ? "bg-green-200 text-green-900 dark:bg-green-900/20 dark:text-green-400"
