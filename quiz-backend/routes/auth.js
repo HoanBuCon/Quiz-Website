@@ -45,12 +45,20 @@ router.post('/signup', async (req, res) => {
   
   // Set httpOnly cookie for enhanced security
   // Default to session cookie (expires when browser closes) for signup
-  res.cookie('auth_token', token, {
+  const signupCookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    sameSite: 'lax', // lax works for same-site (production on same domain)
+    path: '/'
     // No maxAge = session cookie (expires when browser closes)
-  });
+  };
+  
+  // Add domain for production if specified
+  if (process.env.COOKIE_DOMAIN) {
+    signupCookieOptions.domain = process.env.COOKIE_DOMAIN;
+  }
+  
+  res.cookie('auth_token', token, signupCookieOptions);
   
   // Still return token for backward compatibility during migration
   res.status(201).json({ token, user: { id: userId, email: normalizedEmail, name: name || null, createdAt: now, lastLoginAt: null, passwordChangedAt: now } });
@@ -85,9 +93,20 @@ router.post('/login', async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    ...(rememberMe ? { maxAge: 30 * 24 * 60 * 60 * 1000 } : {}) // 30 days if rememberMe, session cookie otherwise
+    sameSite: 'lax', // lax works for same-site (production on same domain)
+    path: '/'
   };
+  
+  // Add domain for production if specified
+  if (process.env.COOKIE_DOMAIN) {
+    cookieOptions.domain = process.env.COOKIE_DOMAIN;
+  }
+  
+  // Set maxAge only if rememberMe is true
+  if (rememberMe) {
+    cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+  }
+  
   res.cookie('auth_token', token, cookieOptions);
   
   // Still return token for backward compatibility during migration
@@ -108,11 +127,18 @@ router.post('/logout', authRequired, async (req, res) => {
     );
     
     // Clear the auth cookie
-    res.clearCookie('auth_token', {
+    const clearOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
-    });
+      sameSite: 'lax',
+      path: '/'
+    };
+    
+    if (process.env.COOKIE_DOMAIN) {
+      clearOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+    
+    res.clearCookie('auth_token', clearOptions);
     
     res.status(204).end();
   } catch (_e) {

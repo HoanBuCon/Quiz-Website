@@ -146,30 +146,31 @@ const Header: React.FC = () => {
   // Hàm đăng xuất
   const { clearData } = useData();
 
-  const handleLogout = async () => {
-    // Check for active quiz attempt and close it on backend
+  const handleLogout = () => {
+    // Fire-and-forget: End quiz attempt in background (không await)
     try {
       const quizRaw = localStorage.getItem("quiz_progress");
       if (quizRaw) {
         const data = JSON.parse(quizRaw);
-        if (data && data.attemptId) {
-          const { SessionsAPI } = await import("../../utils/api");
-          const token = getToken();
-          if (token) {
-            await SessionsAPI.endAttempt(data.attemptId, token);
-          }
+        if (data?.attemptId) {
+          import("../../utils/api").then(({ SessionsAPI }) => {
+            const token = getToken();
+            if (token) {
+              SessionsAPI.endAttempt(data.attemptId, token).catch(() => {});
+            }
+          });
         }
       }
     } catch { }
 
-    // Call logout API to clear httpOnly cookie
-    try {
-      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-    } catch { }
+    // Fire-and-forget: Call logout API to clear httpOnly cookie (không await)
+    const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+    fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    }).catch(() => {});
 
+    // UI phản hồi ngay lập tức
     clearToken();
     setIsLoggedIn(false);
     setUserName(null);

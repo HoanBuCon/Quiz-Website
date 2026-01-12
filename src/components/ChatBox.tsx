@@ -91,20 +91,22 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
   }, [open]);
   const [unread, setUnread] = useState<number>(0);
 
-  // Auth Token
-  const token = useMemo(() => getToken(), []);
+  // Auth Token - Use dummy token for cookie-based auth or real token from localStorage
+  const token = useMemo(() => {
+    const storedToken = getToken();
+    // If no token in localStorage, use dummy token to indicate cookie-based auth
+    return storedToken || '_cookie_auth_';
+  }, []);
 
   // Get Current User ID from API (Cookie-based auth - can't decode dummy token)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
-
     const fetchCurrentUser = async () => {
       try {
         const response = await fetch(`${getApiBaseUrl()}/auth/me`, {
           credentials: 'include',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: token !== '_cookie_auth_' ? { Authorization: `Bearer ${token}` } : undefined,
         });
 
         if (response.ok) {

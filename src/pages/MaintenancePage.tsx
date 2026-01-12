@@ -132,7 +132,8 @@ const MaintenancePage: React.FC = () => {
         setActiveTab('start');
         try {
           // Token is in httpOnly cookie, no need to pass it
-          const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/auth/me`, {
+          const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+          const res = await fetch(`${API_URL}/auth/me`, {
             credentials: 'include'
           });
           if (res.ok) {
@@ -167,7 +168,7 @@ const MaintenancePage: React.FC = () => {
     if (activeTab === 'start' && currentUser?.name && isPlaying) {
       const fullText = `Xin chào ${currentUser.name}!`;
       let currentIndex = 0;
-      setDisplayedText('');
+      setDisplayedText(''); // Reset text
 
       const typingInterval = setInterval(() => {
         if (currentIndex <= fullText.length) {
@@ -732,7 +733,8 @@ const MaintenancePage: React.FC = () => {
                         onClick={async () => {
                           // Call logout API to clear cookie
                           try {
-                            await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/auth/logout`, {
+                            const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+                            await fetch(`${API_URL}/auth/logout`, {
                               method: 'POST',
                               credentials: 'include'
                             });
