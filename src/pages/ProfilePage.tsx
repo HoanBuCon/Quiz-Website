@@ -7,12 +7,14 @@ import { getToken } from '../utils/auth';
 import { toast } from 'react-hot-toast';
 import SpinnerLoading from '../components/SpinnerLoading';
 import ContributionGraph, { YearSelector } from '../components/ContributionGraph';
+import AvatarUpload from '../components/AvatarUpload';
 import userAvatar from '../assets/user_avatar.gif';
 
 interface UserProfile {
     id: string;
     email: string;
     name: string;
+    avatarUrl?: string | null;
     createdAt: string;
     lastLoginAt?: string;
     passwordChangedAt?: string;
@@ -554,17 +556,130 @@ const ProfilePage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row items-center gap-8">
                         <div className="relative group/avatar">
                             <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-20 group-hover/avatar:opacity-40 transition-opacity duration-500"></div>
-                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-br from-blue-400 to-purple-500 dark:from-gray-500 dark:to-gray-700 shadow-2xl overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500">
-                                <a
-                                    href={userAvatar}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block w-full h-full rounded-full overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                                    title="Nhấp để xem avatar"
-                                >
-                                    <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
-                                </a>
+                            <div
+                                onClick={() => {
+                                    // Toggle avatar options modal
+                                    const modal = document.getElementById('avatar-options-modal');
+                                    if (modal) {
+                                        modal.classList.toggle('hidden');
+                                    }
+                                }}
+                                className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-br from-blue-400 to-purple-500 dark:from-gray-500 dark:to-gray-700 shadow-2xl overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500 cursor-pointer"
+                            >
+                                <div className="relative block w-full h-full rounded-full overflow-hidden">
+                                    <img
+                                        src={profile.avatarUrl || userAvatar}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover transition-opacity duration-300 group-hover/avatar:opacity-50"
+                                    />
+
+                                    {/* Edit icon overlay on hover */}
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-300">
+                                        <FaEdit className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
+                                    </div>
+                                </div>
                             </div>
+
+                            {/* Avatar Options Modal */}
+                            <div
+                                id="avatar-options-modal"
+                                className="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                                onClick={(e) => {
+                                    if (e.target === e.currentTarget) {
+                                        e.currentTarget.classList.add('hidden');
+                                    }
+                                }}
+                            >
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Tùy chọn Avatar</h3>
+                                        <button
+                                            onClick={() => {
+                                                document.getElementById('avatar-options-modal')?.classList.add('hidden');
+                                            }}
+                                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                        >
+                                            <FaTimes className="text-gray-500 dark:text-gray-400" />
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {/* View Avatar */}
+                                        <button
+                                            onClick={() => {
+                                                if (profile.avatarUrl) {
+                                                    window.open(profile.avatarUrl, '_blank');
+                                                } else {
+                                                    window.open(userAvatar, '_blank');
+                                                }
+                                                document.getElementById('avatar-options-modal')?.classList.add('hidden');
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-all text-left group"
+                                        >
+                                            <div className="p-2 bg-white dark:bg-gray-800 rounded-lg group-hover:scale-110 transition-transform">
+                                                <FaEye className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                                            </div>
+                                            <div>
+                                                <div className="font-semibold text-gray-900 dark:text-white">Xem Avatar</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">Mở avatar trong tab mới</div>
+                                            </div>
+                                        </button>
+
+                                        {/* Upload Avatar */}
+                                        <button
+                                            onClick={() => {
+                                                const fileInput = document.getElementById('avatar-upload-input') as HTMLInputElement;
+                                                fileInput?.click();
+                                                document.getElementById('avatar-options-modal')?.classList.add('hidden');
+                                            }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-all text-left group border-2 border-blue-200 dark:border-blue-800"
+                                        >
+                                            <div className="p-2 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
+                                                <FaEdit className="w-5 h-5 text-white" />
+                                            </div>
+                                            <div>
+                                                <div className="font-semibold text-gray-900 dark:text-white">Tải lên Avatar</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">Chọn ảnh và cắt theo ý muốn</div>
+                                            </div>
+                                        </button>
+
+                                        {/* Remove Avatar (only if custom avatar exists) */}
+                                        {profile.avatarUrl && (
+                                            <button
+                                                onClick={async () => {
+                                                    document.getElementById('avatar-options-modal')?.classList.add('hidden');
+                                                    if (!window.confirm('Bạn có chắc muốn gỡ avatar?')) return;
+                                                    try {
+                                                        const token = getToken();
+                                                        const response = await fetch(`${getApiBaseUrl()}/profile/avatar`, {
+                                                            method: 'DELETE',
+                                                            headers: { Authorization: `Bearer ${token}` }
+                                                        });
+                                                        if (!response.ok) throw new Error('Delete failed');
+                                                        toast.success('Đã gỡ avatar');
+                                                        setProfile(prev => prev ? { ...prev, avatarUrl: null } : null);
+                                                        window.dispatchEvent(new Event('authChange'));
+                                                    } catch (error) {
+                                                        console.error('Avatar delete error:', error);
+                                                        toast.error('Không thể gỡ avatar');
+                                                    }
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-all text-left group border-2 border-red-200 dark:border-red-800"
+                                            >
+                                                <div className="p-2 bg-red-600 rounded-lg group-hover:scale-110 transition-transform">
+                                                    <FaTimes className="w-5 h-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-semibold text-gray-900 dark:text-white">Gỡ Avatar</div>
+                                                    <div className="text-xs text-gray-500 dark:text-gray-400">Quay về avatar mặc định</div>
+                                                </div>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+
                         </div>
 
                         <div className="text-center sm:text-left space-y-3">
@@ -1794,6 +1909,16 @@ const ProfilePage: React.FC = () => {
                     )}
                 </div>
             </div>
+
+
+            {/* Global AvatarUpload component for crop functionality - Placed here to avoid z-index stacking issues */}
+            <AvatarUpload
+                currentAvatarUrl={profile.avatarUrl}
+                onAvatarChange={(newAvatarUrl) => {
+                    setProfile(prev => prev ? { ...prev, avatarUrl: newAvatarUrl } : null);
+                    window.dispatchEvent(new Event('authChange'));
+                }}
+            />
         </div>
     );
 };

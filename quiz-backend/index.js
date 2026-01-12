@@ -108,6 +108,10 @@ const documentsPath = isProd
   ? path.join(__dirname, '../documents')
   : path.join(__dirname, 'public/documents');
 
+const avatarUploadPath = isProd
+  ? path.join(__dirname, '../avatars')
+  : path.join(__dirname, 'public/avatars');
+
 // Bọc trong try...catch để tránh crash-loop khi khởi động
 try {
   if (!fs.existsSync(uploadPath)) {
@@ -118,6 +122,9 @@ try {
   }
   if (!fs.existsSync(documentsPath)) {
     fs.mkdirSync(documentsPath, { recursive: true });
+  }
+  if (!fs.existsSync(avatarUploadPath)) {
+    fs.mkdirSync(avatarUploadPath, { recursive: true });
   }
   console.log('[INFO] Upload directories ensured');
 } catch (e) {
@@ -161,6 +168,15 @@ app.use(
     next();
   },
   express.static(documentsPath)
+);
+
+app.use(
+  `${BASE_PATH}/avatars`,
+  (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+  },
+  express.static(avatarUploadPath)
 );
 // =======================================================
 

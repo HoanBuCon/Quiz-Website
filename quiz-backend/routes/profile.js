@@ -3,13 +3,53 @@ const { authRequired } = require('../middleware/auth');
 const { query, queryOne } = require('../utils/db');
 const { formatDateForMySQL, parseJSON } = require('../utils/helpers');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
+
+// Setup avatar upload directory
+const isProd = process.env.NODE_ENV === 'production';
+const avatarUploadDir = isProd
+  ? path.join(__dirname, '../../avatars')
+  : path.join(__dirname, '../public/avatars');
+
+if (!fs.existsSync(avatarUploadDir)) {
+  fs.mkdirSync(avatarUploadDir, { recursive: true });
+}
+
+// Configure multer for avatar uploads
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, avatarUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    // Use userId for avatar filename to easily identify and replace
+    cb(null, `avatar-${req.user.id}-${uniqueSuffix}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
 
 // GET /profile - Get user profile data
 router.get('/', authRequired, async (req, res) => {
   try {
     const user = await queryOne(
-      'SELECT id, email, name, createdAt, lastLoginAt, lastActivityAt, passwordChangedAt FROM User WHERE id = ?',
+      'SELECT id, email, name, avatarUrl, createdAt, lastLoginAt, lastActivityAt, passwordChangedAt FROM User WHERE id = ?',
       [req.user.id]
     );
     
@@ -289,6 +329,102 @@ router.get('/activity', authRequired, async (req, res) => {
   } catch (error) {
     console.error('Get activity error:', error);
     res.status(500).json({ message: 'Failed to get activity data' });
+  }
+});
+
+// POST /profile/avatar - Upload and update avatar
+router.post('/avatar', authRequired, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    // Get current user to check for existing avatar
+    const user = await queryOne(
+      'SELECT avatarUrl FROM User WHERE id = ?',
+      [req.user.id]
+    );
+
+    // Delete old avatar file if exists
+    if (user && user.avatarUrl) {
+      const oldFilename = path.basename(user.avatarUrl);
+      const oldFilePath = path.join(avatarUploadDir, oldFilename);
+      if (fs.existsSync(oldFilePath)) {
+        try {
+          fs.unlinkSync(oldFilePath);
+          console.log(`Deleted old avatar: ${oldFilename}`);
+        } catch (err) {
+          console.error('Error deleting old avatar:', err);
+        }
+      }
+    }
+
+    // Create URL for the new avatar
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const BASE_PATH = process.env.PASSENGER_BASE_URI || process.env.BASE_PATH || (isProd ? '/api' : '');
+    const avatarUrl = `${protocol}://${host}${BASE_PATH}/avatars/${req.file.filename}`;
+
+    // Update database with new avatar URL
+    const now = formatDateForMySQL();
+    await query(
+      'UPDATE User SET avatarUrl = ?, updatedAt = ? WHERE id = ?',
+      [avatarUrl, now, req.user.id]
+    );
+
+    res.json({
+      success: true,
+      avatarUrl: avatarUrl,
+      filename: req.file.filename
+    });
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+    // Delete uploaded file if database update failed
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ message: 'Failed to upload avatar' });
+  }
+});
+
+// DELETE /profile/avatar - Remove avatar
+router.delete('/avatar', authRequired, async (req, res) => {
+  try {
+    // Get current user's avatar
+    const user = await queryOne(
+      'SELECT avatarUrl FROM User WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Delete avatar file if exists
+    if (user.avatarUrl) {
+      const filename = path.basename(user.avatarUrl);
+      const filePath = path.join(avatarUploadDir, filename);
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+          console.log(`Deleted avatar: ${filename}`);
+        } catch (err) {
+          console.error('Error deleting avatar file:', err);
+        }
+      }
+    }
+
+    // Update database to remove avatar URL
+    const now = formatDateForMySQL();
+    await query(
+      'UPDATE User SET avatarUrl = NULL, updatedAt = ? WHERE id = ?',
+      [now, req.user.id]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete avatar error:', error);
+    res.status(500).json({ message: 'Failed to delete avatar' });
   }
 });
 

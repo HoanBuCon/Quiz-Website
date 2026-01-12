@@ -8,4 +8,5 @@ node_modules
 public/uploads/
 public/chatbox/
 public/documents/
+public/avatars/
 scripts/user_info/
