@@ -599,7 +599,7 @@ const ProfilePage: React.FC = () => {
 
                                     {/* Edit icon overlay on hover */}
                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-300">
-                                        <FaUpload className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
+                                        <FaEdit className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                                     </div>
                                 </div>
                             </div>
@@ -712,7 +712,7 @@ const ProfilePage: React.FC = () => {
                                 {profile.lastLoginAt && (
                                     <span className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-md rounded-full text-[10px] sm:text-xs text-green-100 font-medium border border-green-500/20 transition-colors shadow-lg flex items-center gap-2 cursor-default">
                                         <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
-                                        Hoạt động: {profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString('vi-VN') : 'Vừa xong'}
+                                        Hoạt động: {profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleDateString('en-GB') : 'Vừa xong'}
                                     </span>
                                 )}
                             </div>
@@ -848,7 +848,7 @@ const ProfilePage: React.FC = () => {
 
                                         <div className="flex flex-col md:flex-row gap-8 items-center md:items-stretch">
                                             {/* Left Column: Avatar Display & Management */}
-                                            <div className="w-full md:w-auto flex flex-col items-center justify-between p-6 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner min-w-[200px]">
+                                            <div className="w-full md:w-auto flex flex-col items-center justify-between p-6 bg-gray-50 dark:bg-gray-700/30 rounded-2xl shadow-inner min-w-[200px]">
                                                 <div className="relative group/edit mb-4">
                                                     <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-0 group-hover/edit:opacity-20 transition-opacity"></div>
                                                     <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden ring-4 ring-white dark:ring-gray-800 shadow-xl">
