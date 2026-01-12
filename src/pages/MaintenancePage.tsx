@@ -716,9 +716,17 @@ const MaintenancePage: React.FC = () => {
                         </div>
 
                         {/* Text */}
-                        <span className="relative z-10 font-mono text-xl tracking-[0.25em]">
-                          START
-                        </span>
+                        <div className="relative inline-block start-glitch-wrapper">
+                          <span className="relative z-10 font-mono text-xl tracking-[0.25em]">
+                            START
+                          </span>
+                          <span className="font-mono text-xl tracking-[0.25em] start-glitch-layer start-glitch-layer-1" aria-hidden="true">
+                            START
+                          </span>
+                          <span className="font-mono text-xl tracking-[0.25em] start-glitch-layer start-glitch-layer-2" aria-hidden="true">
+                            START
+                          </span>
+                        </div>
                       </button>
                       <button
                         onClick={async () => {
