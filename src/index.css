@@ -794,6 +794,7 @@ code {
   
   /* Developer-style logo typography */
   .logo-text {
+    display: inline-block; /* Make it wrap tightly around text */
     font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
     font-weight: 600;
     letter-spacing: -0.05em;

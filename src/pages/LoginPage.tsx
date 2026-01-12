@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { apiRequest } from "../utils/api";
-import { setToken } from "../utils/auth";
+// setToken is no longer needed - cookie-based auth
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -34,7 +34,8 @@ const LoginPage: React.FC = () => {
         method: "POST",
         body: JSON.stringify(normalizedData),
       });
-      setToken(response.token);
+      // Cookie is automatically set by server via Set-Cookie header
+      // No need to call setToken() anymore
       toast.success("Đăng nhập thành công!");
       navigate("/classes");
     } catch (err: any) {
@@ -77,9 +78,8 @@ const LoginPage: React.FC = () => {
               type="email"
               value={formData.email}
               onChange={handleInputChange}
-              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${errors.email ? "border-red-500" : "border-gray-300"
+                }`}
               placeholder="your_email@email.com"
             />
             {errors.email && (
@@ -100,9 +100,8 @@ const LoginPage: React.FC = () => {
               type="password"
               value={formData.password}
               onChange={handleInputChange}
-              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${
-                errors.password ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${errors.password ? "border-red-500" : "border-gray-300"
+                }`}
               placeholder="your_password"
             />
             {errors.password && (

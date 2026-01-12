@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { apiRequest } from "../utils/api";
-import { setToken } from "../utils/auth";
+// setToken is no longer needed - cookie-based auth
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,7 +48,8 @@ const RegisterPage: React.FC = () => {
         method: "POST",
         body: JSON.stringify(normalizedData),
       });
-      setToken(response.token);
+      // Cookie is automatically set by server via Set-Cookie header
+      // No need to call setToken() anymore
       toast.success("Đăng ký thành công!");
       navigate("/classes");
     } catch (err: any) {
@@ -93,9 +94,8 @@ const RegisterPage: React.FC = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="Username"
-              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${
-                errors.name ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${errors.name ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.name && (
               <p className="text-sm text-red-500 mt-1">{errors.name}</p>
@@ -117,9 +117,8 @@ const RegisterPage: React.FC = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="your_email@email.com"
-              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${errors.email ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.email && (
               <p className="text-sm text-red-500 mt-1">{errors.email}</p>
@@ -141,9 +140,8 @@ const RegisterPage: React.FC = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="your_password"
-              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${
-                errors.password ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${errors.password ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.password && (
               <p className="text-sm text-red-500 mt-1">{errors.password}</p>
@@ -165,9 +163,8 @@ const RegisterPage: React.FC = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="your_password"
-              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${
-                errors.confirmPassword ? "border-red-500" : "border-gray-300"
-              }`}
+              className={`mt-2 w-full rounded-xl border px-3 py-2.5 bg-transparent shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:text-white dark:border-gray-600 ${errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                }`}
             />
             {errors.confirmPassword && (
               <p className="text-sm text-red-500 mt-1">

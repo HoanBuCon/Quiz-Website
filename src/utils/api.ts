@@ -17,9 +17,11 @@ export async function apiRequest<T>(
   const { token, headers, ...rest } = options;
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...rest,
+    credentials: 'include', // ✅ Enable cookie-based authentication
     headers: {
       "Content-Type": "application/json",
       ...(headers || {}),
+      // Keep Authorization header for backward compatibility during migration
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
@@ -101,6 +103,7 @@ export const ImagesAPI = {
 
     const res = await fetch(`${API_BASE_URL}/images/upload`, {
       method: "POST",
+      credentials: 'include', // ✅ Cookie-based auth
       headers: token
         ? ({ Authorization: `Bearer ${token}` } as any)
         : undefined,
@@ -125,6 +128,7 @@ export const ImagesAPI = {
   delete: async (filename: string, token: string): Promise<void> => {
     await fetch(`${API_BASE_URL}/images/${filename}`, {
       method: "DELETE",
+      credentials: 'include', // ✅ Cookie-based auth
       headers: token
         ? ({ Authorization: `Bearer ${token}` } as any)
         : undefined,
@@ -275,6 +279,7 @@ export const DocumentsAPI = {
     
     const response = await fetch(`${API_BASE_URL}/documents/upload`, {
       method: 'POST',
+      credentials: 'include', // ✅ Cookie-based auth
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -296,6 +301,7 @@ export const DocumentsAPI = {
    */
   listMine: async (token: string) => {
     const response = await fetch(`${API_BASE_URL}/documents`, {
+      credentials: 'include', // ✅ Cookie-based auth
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -313,6 +319,7 @@ export const DocumentsAPI = {
    */
   getById: async (id: string, token: string) => {
     const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
+      credentials: 'include', // ✅ Cookie-based auth
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -330,6 +337,7 @@ export const DocumentsAPI = {
   remove: async (id: string, token: string) => {
     const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
       method: 'DELETE',
+      credentials: 'include', // ✅ Cookie-based auth
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -359,6 +367,7 @@ export const ChatAPI = {
     if (file) form.append("attachment", file);
     const res = await fetch(`${API_BASE_URL}/chat/messages`, {
       method: "POST",
+      credentials: 'include', // ✅ Cookie-based auth
       headers: token ? ({ Authorization: `Bearer ${token}` } as any) : undefined,
       body: form,
     });
@@ -377,10 +386,10 @@ export const ChatAPI = {
 };
 
 export const AuthAPI = {
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, rememberMe?: boolean) =>
     apiRequest<{ token: string; user: any }>(`/auth/login`, {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, rememberMe }),
     }),
   register: (data: any) =>
     apiRequest<{ token: string; user: any }>(`/auth/signup`, {

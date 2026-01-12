@@ -61,6 +61,7 @@ export const ContributionGraph = ({
                 if (!token) return;
 
                 const response = await fetch(`${API_URL}/profile/activity?year=${selectedYear}`, {
+                    credentials: 'include', // ✅ Cookie-based authentication
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

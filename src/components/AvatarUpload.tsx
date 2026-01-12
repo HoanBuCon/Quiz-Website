@@ -103,6 +103,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatarUrl, onAvatarC
             const token = getToken();
             const response = await fetch(`${API_URL}/profile/avatar`, {
                 method: 'POST',
+                credentials: 'include', // ✅ Enable cookie-based authentication
                 headers: {
                     Authorization: `Bearer ${token}`
                 },
@@ -142,6 +143,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatarUrl, onAvatarC
             const token = getToken();
             const response = await fetch(`${API_URL}/profile/avatar`, {
                 method: 'DELETE',
+                credentials: 'include', // ✅ Enable cookie-based authentication
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

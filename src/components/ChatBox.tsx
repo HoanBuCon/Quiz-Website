@@ -94,15 +94,27 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
   // Auth Token
   const token = useMemo(() => getToken(), []);
 
-  // Decode Token to get UserID (Logic from Old ChatBox)
-  const currentUserId = useMemo(() => {
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-      return payload.sub || null;
-    } catch {
-      return null;
-    }
+  // Get Current User ID from API (Cookie-based auth - can't decode dummy token)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/auth/me`, {
+          credentials: 'include',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUserId(data.user?.id || null);
+        }
+      } catch { }
+    };
+
+    fetchCurrentUser();
   }, [token]);
 
   // Open/Close Handlers

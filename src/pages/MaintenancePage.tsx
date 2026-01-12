@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { MAINTENANCE_MESSAGE, MAINTENANCE_VIDEO_URL, IS_MAINTENANCE_MODE } from '../utils/maintenanceConfig';
-import { getToken, setToken, clearToken } from '../utils/auth';
+import { checkAuth } from '../utils/auth';
 import { AuthAPI } from '../utils/api';
 import { useData } from '../context/DataContext';
 
@@ -70,7 +70,7 @@ const MaintenancePage: React.FC = () => {
   const navigate = useNavigate();
   const { enterWebsite } = useData();
 
-  const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string } | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('start');
 
@@ -80,6 +80,7 @@ const MaintenancePage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false); // Remember me checkbox state
 
   // Forgot Password States
   const [forgotEmail, setForgotEmail] = useState('');
@@ -92,19 +93,42 @@ const MaintenancePage: React.FC = () => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    // Sync isLoggedIn state
-    const token = getToken();
-    setIsLoggedIn(!!token);
-    if (token) {
-      setActiveTab('start');
-      AuthAPI.me(token)
-        .then(res => setCurrentUser(res.user))
-        .catch(() => {
-          // Token might be invalid, but we let the user try to start and fail or handle logout manually
-        });
-    } else {
-      setActiveTab('login');
-    }
+    // Check authentication status with cookie-based auth
+    const initAuth = async () => {
+      const isAuth = await checkAuth();
+      setIsLoggedIn(isAuth);
+      if (isAuth) {
+        setActiveTab('start');
+        try {
+          // Token is in httpOnly cookie, no need to pass it
+          const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/auth/me`, {
+            credentials: 'include'
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setCurrentUser(data.user);
+          }
+        } catch { }
+      } else {
+        setActiveTab('login');
+      }
+    };
+    initAuth();
+  }, []);
+
+  // Listen for auth changes (e.g., logout from Header/Sidebar)
+  useEffect(() => {
+    const handleAuthChange = async () => {
+      const isAuth = await checkAuth();
+      setIsLoggedIn(isAuth);
+      if (!isAuth) {
+        setActiveTab('login');
+        setCurrentUser(null);
+      }
+    };
+
+    window.addEventListener('authChange', handleAuthChange);
+    return () => window.removeEventListener('authChange', handleAuthChange);
   }, []);
 
   const handleStart = () => {
@@ -132,15 +156,16 @@ const MaintenancePage: React.FC = () => {
         clearInterval(timer);
 
         // Đợi 0.5s cho mượt rồi mới chuyển màn hình
-        setTimeout(() => {
+        setTimeout(async () => {
           setIsProcessStarting(false);
           setIsPlaying(true); // Chuyển sang màn hình chính
 
-          // Logic cũ kiểm tra bảo trì/login
+          // Logic check authentication
           if (IS_MAINTENANCE_MODE) {
             setShowMaintenance(true);
           } else {
-            if (getToken()) {
+            const isAuth = await checkAuth();
+            if (isAuth) {
               setActiveTab('start');
             } else {
               setActiveTab('login');
@@ -172,8 +197,8 @@ const MaintenancePage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const response = await AuthAPI.login(email, password);
-      setToken(response.token);
+      const response = await AuthAPI.login(email, password, rememberMe);
+      // Cookie is automatically set by server
       setIsLoggedIn(true);
       setCurrentUser(response.user);
       setActiveTab('start');
@@ -537,8 +562,14 @@ const MaintenancePage: React.FC = () => {
                         </span>
                       </button>
                       <button
-                        onClick={() => {
-                          clearToken();
+                        onClick={async () => {
+                          // Call logout API to clear cookie
+                          try {
+                            await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/auth/logout`, {
+                              method: 'POST',
+                              credentials: 'include'
+                            });
+                          } catch { }
                           setIsLoggedIn(false);
                           setActiveTab('login');
                         }}
@@ -552,7 +583,7 @@ const MaintenancePage: React.FC = () => {
                   {/* LOGIN SCREEN */}
                   {activeTab === 'login' && (
                     <form onSubmit={handleLogin} className="space-y-5 animate-fadeIn">
-                      <h3 className="text-xl font-bold text-white text-center mb-6">Đăng nhập</h3>
+                      <h3 className="text-xl font-jetbrains text-white text-center mb-6">Đăng nhập</h3>
 
                       <InputField
                         type="email"
@@ -570,7 +601,21 @@ const MaintenancePage: React.FC = () => {
                         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
                       />
 
-                      <div className="flex justify-end">
+                      <div className="flex items-center justify-between">
+                        {/* Remember Me Checkbox */}
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            tabIndex={-1}
+                            className="w-4 h-4 rounded border-2 border-gray-600 bg-gray-700 accent-orange-500 cursor-pointer transition-all hover:border-orange-500 hover:outline hover:outline-1 hover:outline-orange-500/50 focus:ring-0 focus:ring-offset-0"
+                          />
+                          <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                            Lưu đăng nhập
+                          </span>
+                        </label>
+
                         <button type="button" onClick={() => setActiveTab('forgot-password')} tabIndex={-1} className="text-sm text-orange-400 hover:text-orange-300">
                           Quên mật khẩu?
                         </button>
@@ -596,7 +641,7 @@ const MaintenancePage: React.FC = () => {
                   {/* REGISTER SCREEN */}
                   {activeTab === 'register' && (
                     <form onSubmit={handleRegister} className="space-y-4 animate-fadeIn">
-                      <h3 className="text-xl font-bold text-white text-center mb-6">Đăng ký</h3>
+                      <h3 className="text-xl font-jetbrains text-white text-center mb-6">Đăng ký</h3>
 
                       <InputField
                         type="text"

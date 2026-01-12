@@ -281,8 +281,8 @@ const ProfilePage: React.FC = () => {
             }
 
             const [profileRes, statsRes] = await Promise.all([
-                fetch(`${API_URL}/profile`, { headers: { Authorization: `Bearer ${token}` } }),
-                fetch(`${API_URL}/profile/stats`, { headers: { Authorization: `Bearer ${token}` } })
+                fetch(`${API_URL}/profile`, { credentials: 'include', headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${API_URL}/profile/stats`, { credentials: 'include', headers: { Authorization: `Bearer ${token}` } })
             ]);
 
             if (!profileRes.ok || !statsRes.ok) throw new Error('Failed to load data');
@@ -344,6 +344,7 @@ const ProfilePage: React.FC = () => {
             const token = getToken();
             const response = await fetch(`${getApiBaseUrl()}/profile/avatar`, {
                 method: 'DELETE',
+                credentials: 'include',
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!response.ok) throw new Error('Delete failed');
@@ -366,6 +367,7 @@ const ProfilePage: React.FC = () => {
             const token = getToken();
             const res = await fetch(`${API_URL}/profile/username`, {
                 method: 'PUT',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ name: newName.trim() })
             });
@@ -452,6 +454,7 @@ const ProfilePage: React.FC = () => {
             const token = getToken();
             const res = await fetch(`${API_URL}/profile/email`, {
                 method: 'PUT',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ email: newEmail, password: emailPassword })
             });
@@ -477,6 +480,7 @@ const ProfilePage: React.FC = () => {
             const token = getToken();
             const res = await fetch(`${API_URL}/profile/password`, {
                 method: 'PUT',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ currentPassword, newPassword })
             });

@@ -162,6 +162,14 @@ const Header: React.FC = () => {
       }
     } catch { }
 
+    // Call logout API to clear httpOnly cookie
+    try {
+      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch { }
+
     clearToken();
     setIsLoggedIn(false);
     setUserName(null);

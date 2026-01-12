@@ -41,12 +41,23 @@ router.post('/signup', async (req, res) => {
   
   const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
   if (!secret) return res.status(500).json({ message: 'Server misconfigured' });
-  const token = jwt.sign({ sub: userId, email: normalizedEmail }, secret, { expiresIn: '7d' });
+  const token = jwt.sign({ sub: userId, email: normalizedEmail }, secret, { expiresIn: '30d' });
+  
+  // Set httpOnly cookie for enhanced security
+  // Default to session cookie (expires when browser closes) for signup
+  res.cookie('auth_token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+    // No maxAge = session cookie (expires when browser closes)
+  });
+  
+  // Still return token for backward compatibility during migration
   res.status(201).json({ token, user: { id: userId, email: normalizedEmail, name: name || null, createdAt: now, lastLoginAt: null, passwordChangedAt: now } });
 });
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body || {};
+  const { email, password, rememberMe } = req.body || {};
   if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
   const normalizedEmail = email.toLowerCase().trim();
   
@@ -58,7 +69,7 @@ router.post('/login', async (req, res) => {
   
   const secret = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'devsecret' : null);
   if (!secret) return res.status(500).json({ message: 'Server misconfigured' });
-  const token = jwt.sign({ sub: user.id, email: user.email }, secret, { expiresIn: '7d' });
+  const token = jwt.sign({ sub: user.id, email: user.email }, secret, { expiresIn: '30d' });
   
   // update lastLoginAt + lastActivityAt
   const now = formatDateForMySQL();
@@ -69,6 +80,17 @@ router.post('/login', async (req, res) => {
     );
   } catch (_) {}
   
+  // Set httpOnly cookie for enhanced security
+  // If rememberMe is true, cookie lasts 30 days; otherwise it's a session cookie
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    ...(rememberMe ? { maxAge: 30 * 24 * 60 * 60 * 1000 } : {}) // 30 days if rememberMe, session cookie otherwise
+  };
+  res.cookie('auth_token', token, cookieOptions);
+  
+  // Still return token for backward compatibility during migration
   res.json({ token, user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, lastLoginAt: now } });
 });
 
@@ -84,6 +106,14 @@ router.post('/logout', authRequired, async (req, res) => {
       'UPDATE User SET lastLogoutAt = ?, lastActivityAt = ?, updatedAt = ? WHERE id = ?',
       [now, sixMinutesAgo, now, req.user.id]
     );
+    
+    // Clear the auth cookie
+    res.clearCookie('auth_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+    
     res.status(204).end();
   } catch (_e) {
     res.status(500).json({ message: 'Server error' });
@@ -92,7 +122,8 @@ router.post('/logout', authRequired, async (req, res) => {
 
 // Endpoint này được gọi bằng sendBeacon từ frontend khi tab trình duyệt đóng
 router.post('/offline-signal', async (req, res) => {
-  const token = req.query.token; // Lấy token từ query
+  // Try to get token from cookie first, then fallback to query param (sendBeacon limitation)
+  const token = req.cookies?.auth_token || req.query.token;
   
   if (!token) {
     return res.status(401).end();
