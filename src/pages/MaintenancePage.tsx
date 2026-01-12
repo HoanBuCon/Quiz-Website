@@ -95,19 +95,20 @@ const MaintenancePage: React.FC = () => {
   // Typewriter effect states
   const [displayedText, setDisplayedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
+  const [triggerShieldScan, setTriggerShieldScan] = useState(0);
 
   // Generate particles configuration once and memoize it
   const particles = useMemo(() => {
-    return Array.from({ length: 18 }, (_, i) => {
-      const size = Math.random() * 2 + 2; // 2-4px (small square)
+    return Array.from({ length: 36 }, (_, i) => {
+      const size = Math.random() * 4 + 5; // 5-9px (larger squares)
       // Distribute particles more evenly across the width
-      const basePosition = (i / 18) * 100; // Divide into 18 sections
+      const basePosition = (i / 36) * 100; // Divide into 36 sections
       const randomOffset = (Math.random() - 0.5) * 10; // Random offset ±5%
       const startX = Math.max(0, Math.min(100, basePosition + randomOffset));
       
       // Random visual properties
       const opacity = 0.3 + Math.random() * 0.5; // 0.3-0.8
-      const glowIntensity = 4 + Math.random() * 8; // 4-12px glow
+      const glowIntensity = 6 + Math.random() * 12; // 6-18px glow (stronger)
       const brightness = 0.6 + Math.random() * 0.4; // 0.6-1.0
       
       return {
@@ -188,6 +189,24 @@ const MaintenancePage: React.FC = () => {
     }, 530); // Blink every 530ms
 
     return () => clearInterval(cursorInterval);
+  }, []);
+
+  // Shield scan effect - trigger every 5 seconds
+  useEffect(() => {
+    const scanInterval = setInterval(() => {
+      setTriggerShieldScan(prev => prev + 1);
+    }, 5000); // Every 5 seconds
+
+    return () => clearInterval(scanInterval);
+  }, []);
+
+  // Shield scan effect - trigger every 5 seconds
+  useEffect(() => {
+    const scanInterval = setInterval(() => {
+      setTriggerShieldScan(prev => prev + 1);
+    }, 5000); // Every 5 seconds
+
+    return () => clearInterval(scanInterval);
   }, []);
 
   const handleStart = () => {
@@ -609,14 +628,31 @@ const MaintenancePage: React.FC = () => {
                           "
                         />
 
-                        {/* Soft Shimmer Line */}
+                        {/* Soft Wave Shimmer - Hover only */}
                         <div
                           className="
-                            absolute inset-0
+                            absolute inset-0 rounded-lg overflow-hidden
                             -translate-x-full group-hover:translate-x-full
                             transition-transform duration-[1000ms] ease-out
-                            bg-gradient-to-r from-transparent via-cyan-200/10 to-transparent
                           "
+                          style={{
+                            background: 'linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.025) 15%, rgba(0, 255, 255, 0.042) 30%, rgba(0, 255, 255, 0.07) 40%, rgba(0, 255, 255, 0.077) 50%, rgba(0, 255, 255, 0.07) 60%, rgba(0, 255, 255, 0.049) 70%, rgba(0, 255, 255, 0.025) 85%, transparent 100%)',
+                          }}
+                        />
+                        
+                        {/* Hexagonal grid overlay for shimmer */}
+                        <div
+                          className="
+                            absolute inset-0 rounded-lg overflow-hidden
+                            -translate-x-full group-hover:translate-x-full
+                            transition-transform duration-[1000ms] ease-out
+                          "
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg width='28' height='49' viewBox='0 0 28 49' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z' fill='%2300ffff' fill-opacity='0.042' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+                            backgroundSize: '35px 61px',
+                            maskImage: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 3%, rgba(255, 255, 255, 0.8) 20%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0.3) 97%, transparent 100%)',
+                            WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 3%, rgba(255, 255, 255, 0.8) 20%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0.3) 97%, transparent 100%)',
+                          }}
                         />
 
                         {/* Hover Glow Border */}
@@ -627,6 +663,35 @@ const MaintenancePage: React.FC = () => {
                             transition-all duration-300
                           "
                         />
+
+                        {/* Shield Scan Effect - DISABLED
+                        <div
+                          key={triggerShieldScan}
+                          className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none"
+                        >
+                          <div
+                            className="absolute inset-y-0 left-0 right-0"
+                            style={{
+                              background: 'linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.08) 25%, rgba(0, 255, 255, 0.15) 40%, rgba(0, 255, 255, 0.2) 48%, rgba(0, 255, 255, 0.25) 50%, rgba(0, 255, 255, 0.2) 52%, rgba(0, 255, 255, 0.15) 60%, rgba(0, 255, 255, 0.08) 75%, transparent 100%)',
+                              animation: 'shieldScan 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+                            }}
+                          />
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              backgroundImage: `
+                                repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(0, 255, 255, 0.08) 8px, rgba(0, 255, 255, 0.08) 9px),
+                                repeating-linear-gradient(60deg, transparent, transparent 8px, rgba(0, 255, 255, 0.08) 8px, rgba(0, 255, 255, 0.08) 9px),
+                                repeating-linear-gradient(120deg, transparent, transparent 8px, rgba(0, 255, 255, 0.08) 8px, rgba(0, 255, 255, 0.08) 9px)
+                              `,
+                              backgroundSize: '10px 10px',
+                              maskImage: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 20%, rgba(255, 255, 255, 0.8) 35%, white 50%, rgba(255, 255, 255, 0.8) 65%, rgba(255, 255, 255, 0.3) 80%, transparent 100%)',
+                              WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 20%, rgba(255, 255, 255, 0.8) 35%, white 50%, rgba(255, 255, 255, 0.8) 65%, rgba(255, 255, 255, 0.3) 80%, transparent 100%)',
+                              animation: 'shieldScan 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+                            }}
+                          />
+                        </div>
+                        */}
 
                         {/* Particle Layer */}
                         <div className="absolute inset-0 overflow-hidden pointer-events-none">

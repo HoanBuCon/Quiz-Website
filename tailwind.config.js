@@ -88,7 +88,8 @@ module.exports = {
             transform: "translateX(100%) scale(0.95)",
             opacity: "0"
           },
-        },        particleFloat: {
+        },
+        particleFloat: {
           "0%": {
             transform: "translateY(0) translateX(0)",
             opacity: "0"
@@ -103,7 +104,24 @@ module.exports = {
             transform: "translateY(-120px) translateX(-15px)",
             opacity: "0"
           },
-        },      },
+        },
+        shieldScan: {
+          "0%": {
+            transform: "translateX(-100%)",
+            opacity: "0"
+          },
+          "10%": {
+            opacity: "1"
+          },
+          "90%": {
+            opacity: "1"
+          },
+          "100%": {
+            transform: "translateX(100%)",
+            opacity: "0"
+          },
+        },
+      },
       animation: {
         shimmer: "shimmer 2.5s linear infinite",
         slideInLeft: "slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -111,6 +129,7 @@ module.exports = {
         slideOutLeft: "slideOutLeft 0.3s cubic-bezier(0.4, 0, 1, 1)",
         slideOutRight: "slideOutRight 0.3s cubic-bezier(0.4, 0, 1, 1)",
         particleFloat: "particleFloat ease-in-out infinite",
+        shieldScan: "shieldScan 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
       },
     },
   },
