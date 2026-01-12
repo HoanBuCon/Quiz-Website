@@ -712,7 +712,7 @@ const ProfilePage: React.FC = () => {
                                 {profile.lastLoginAt && (
                                     <span className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-md rounded-full text-[10px] sm:text-xs text-green-100 font-medium border border-green-500/20 transition-colors shadow-lg flex items-center gap-2 cursor-default">
                                         <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
-                                        Hoạt động: {profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleDateString('en-GB') : 'Vừa xong'}
+                                        Hoạt động: {profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString('en-GB') : 'Vừa xong'}
                                     </span>
                                 )}
                             </div>

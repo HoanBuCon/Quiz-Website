@@ -41,6 +41,42 @@ function formatDateSeparator(dateString: string): string {
   });
 }
 
+function renderMessageContent(text: string, isMine: boolean): React.ReactNode {
+  if (!text) return null;
+
+  const parts = text.split(/(\s+)/); // Split by whitespace to process words
+
+  return parts.map((part, i) => {
+    // Basic clean to remove trailing punctuation for checking
+    const cleanPart = part.replace(/[.,;!?)]+$/, '');
+    const trailing = part.slice(cleanPart.length);
+
+    // Check patterns - ONLY http/https or www.
+    const isUrl = /^(https?:\/\/|www\.)/i.test(cleanPart);
+
+    if (isUrl && cleanPart.length > 4) {
+      let href = cleanPart;
+      if (!href.startsWith('http')) {
+        href = 'https://' + href;
+      }
+
+      return (
+        <React.Fragment key={i}>
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${isMine ? 'text-white underline decoration-white/50 hover:decoration-white' : 'text-blue-600 dark:text-blue-400 hover:underline'} break-all font-medium`}
+            onClick={(e) => e.stopPropagation()}
+          >{cleanPart}</a>{trailing}
+        </React.Fragment>
+      );
+    }
+
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
+}
+
 interface ChatBoxProps {
   hideOnDesktop?: boolean;
 }
@@ -1018,7 +1054,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
                       )}
 
                       {m.content && (
-                        <div className="text-sm whitespace-pre-wrap break-words select-text">{m.content}</div>
+                        <div className="text-sm whitespace-pre-wrap break-words select-text">{renderMessageContent(m.content, mine)}</div>
                       )}
 
                       {renderAttachment(m)}
