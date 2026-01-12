@@ -153,6 +153,14 @@ const ProfilePage: React.FC = () => {
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'a-z' | 'z-a'>('newest');
     const [historySearch, setHistorySearch] = useState('');
 
+    // Stats tab filter states
+    const [statsSearch, setStatsSearch] = useState('');
+    const [statsSortOrder, setStatsSortOrder] = useState<'newest' | 'oldest' | 'a-z' | 'z-a'>('newest');
+    const [statsStartDate, setStatsStartDate] = useState<string>('');
+    const [statsEndDate, setStatsEndDate] = useState<string>('');
+    const [statsSelectedPreset, setStatsSelectedPreset] = useState<number | null | 'custom'>(null);
+    const [showStatsFilter, setShowStatsFilter] = useState(false);
+
     // Edit states
     const [editingName, setEditingName] = useState(false);
     const [editingEmail, setEditingEmail] = useState(false);
@@ -243,6 +251,9 @@ const ProfilePage: React.FC = () => {
             // Close date filter if clicking outside
             if (showDateFilter && !target.closest('.date-filter-container')) {
                 setShowDateFilter(false);
+            }
+            if (showStatsFilter && !target.closest('.stats-filter-container')) {
+                setShowStatsFilter(false);
             }
         };
 
@@ -343,6 +354,63 @@ const ProfilePage: React.FC = () => {
             setSavingName(false);
         }
     };
+
+    // --- Stats Filter Logic ---
+    const resetStatsFilter = () => {
+        setStatsStartDate('');
+        setStatsEndDate('');
+        setStatsSelectedPreset(null);
+        setStatsSortOrder('newest');
+        // setStatsSearch(''); // Optional: keep search term or reset? pattern usually resets specific filter panel items, but search is separate. In history resetDateFilter does NOT reset search.
+    };
+
+    const setStatsQuickPreset = (days: number | null) => {
+        setStatsSelectedPreset(days);
+        if (days === null) {
+            setStatsStartDate('');
+            setStatsEndDate('');
+        } else {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - days);
+            setStatsStartDate(start.toISOString().split('T')[0]);
+            setStatsEndDate(end.toISOString().split('T')[0]);
+        }
+    };
+
+    const filteredQuizSessions = React.useMemo(() => {
+        if (!quizDetails?.sessions) return [];
+        let sessions = [...quizDetails.sessions];
+
+        // Search by user name (hoc vien)
+        if (statsSearch) {
+            const term = statsSearch.toLowerCase();
+            sessions = sessions.filter(s => s.userName.toLowerCase().includes(term));
+        }
+
+        // Date Filter
+        if (statsStartDate) {
+            sessions = sessions.filter(s => s.completedAt.split('T')[0] >= statsStartDate);
+        }
+        if (statsEndDate) {
+            sessions = sessions.filter(s => s.completedAt.split('T')[0] <= statsEndDate);
+        }
+
+        // Sort
+        sessions.sort((a, b) => {
+            switch (statsSortOrder) {
+                case 'newest': return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+                case 'oldest': return new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime();
+                case 'a-z': return a.userName.localeCompare(b.userName);
+                case 'z-a': return b.userName.localeCompare(a.userName);
+                default: return 0;
+            }
+        });
+
+        return sessions;
+    }, [quizDetails, statsSearch, statsSortOrder, statsStartDate, statsEndDate]);
+
+    // --- End Stats Filter Logic ---
 
     const handleUpdateEmail = async () => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
@@ -874,7 +942,7 @@ const ProfilePage: React.FC = () => {
                         {/* Activity Graph Section - Moved below personal info */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
                             <div className="p-4 sm:p-8 md:p-10">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-6">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-2">
                                     <svg
                                         className="w-5 h-5 text-blue-500"
                                         fill="none"
@@ -913,7 +981,7 @@ const ProfilePage: React.FC = () => {
                         {/* Activity Graph Section - Keep consistent with Overview */}
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
                             <div className="p-4 sm:p-8 md:p-10">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-6">
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3 mb-2">
                                     <svg
                                         className="w-5 h-5 text-blue-500"
                                         fill="none"
@@ -1168,7 +1236,7 @@ const ProfilePage: React.FC = () => {
                                     <FaChartBar className="text-blue-500" />
                                     Thống kê chi tiết
                                 </h2>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 italic">Xem chi tiết kết quả và phân tích bài làm của học viên</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Xem chi tiết kết quả và phân tích bài làm của học viên</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Class Custom Dropdown */}
                                     <div>
@@ -1343,13 +1411,150 @@ const ProfilePage: React.FC = () => {
                                 </div>
 
                                 {/* Results Table */}
-                                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
                                     <div className="p-6 relative flex justify-between items-center">
                                         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
-                                        <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                                            <FaClipboardList className="text-blue-500" /> Kết quả chi tiết
-                                            <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">{quizDetails.sessions.length}</span>
-                                        </h3>
+                                        <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4">
+                                            <h3 className="text-lg font-bold dark:text-white flex items-center gap-2 whitespace-nowrap">
+                                                <FaClipboardList className="text-blue-500" /> Kết quả chi tiết
+                                                <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">{filteredQuizSessions.length}</span>
+                                            </h3>
+
+                                            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                                                {/* Search Bar */}
+                                                <div className="relative flex-1 sm:w-64">
+                                                    <input
+                                                        type="text"
+                                                        value={statsSearch}
+                                                        onChange={(e) => setStatsSearch(e.target.value)}
+                                                        placeholder="Tìm kiếm học viên..."
+                                                        className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 border-0 focus:outline-none focus:ring-0 transition-shadow shadow-sm hover:shadow-md text-sm"
+                                                    />
+                                                    <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                    </svg>
+                                                    {statsSearch && (
+                                                        <button
+                                                            onClick={() => setStatsSearch('')}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                                        >
+                                                            <FaTimes className="text-xs" />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Filter Button */}
+                                                <div className="relative stats-filter-container">
+                                                    <button
+                                                        onClick={() => setShowStatsFilter(!showStatsFilter)}
+                                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+                                                    >
+                                                        <svg className={`w-5 h-5 ${statsStartDate || statsEndDate ? 'text-blue-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
+                                                        </svg>
+                                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                            Lọc & Sắp xếp
+                                                        </span>
+                                                        <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${showStatsFilter ? 'rotate-180 text-blue-500' : ''}`} />
+                                                    </button>
+
+                                                    {/* Dropdown Filter Panel */}
+                                                    {showStatsFilter && (
+                                                        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-5 z-50 animate-slideUp text-left leading-normal">
+                                                            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+                                                                <FaCalendar className="text-blue-500" />
+                                                                Lọc & Sắp xếp
+                                                            </h3>
+
+                                                            {/* Sort Options */}
+                                                            <div className="mb-4">
+                                                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                                                                    Sắp xếp theo
+                                                                </label>
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    {[
+                                                                        { id: 'newest', label: 'Mới nhất' },
+                                                                        { id: 'oldest', label: 'Cũ nhất' },
+                                                                        { id: 'a-z', label: 'Tên (A → Z)' },
+                                                                        { id: 'z-a', label: 'Tên (Z → A)' }
+                                                                    ].map((opt) => (
+                                                                        <button
+                                                                            key={opt.id}
+                                                                            onClick={() => setStatsSortOrder(opt.id as any)}
+                                                                            className={`
+                                                                                px-3 py-2 text-xs font-medium rounded-lg transition-all border
+                                                                                ${statsSortOrder === opt.id
+                                                                                    ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/50'
+                                                                                    : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                                                                                }
+                                                                            `}
+                                                                        >
+                                                                            {opt.label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="h-px bg-gray-100 dark:bg-gray-700 my-4"></div>
+
+                                                            {/* Date Inputs */}
+                                                            <div className="space-y-4 mb-4">
+                                                                <DateInput
+                                                                    label="Từ ngày"
+                                                                    value={statsStartDate}
+                                                                    onChange={(val: string) => { setStatsStartDate(val); setStatsSelectedPreset('custom'); }}
+                                                                    max={statsEndDate}
+                                                                />
+                                                                <DateInput
+                                                                    label="Đến ngày"
+                                                                    value={statsEndDate}
+                                                                    onChange={(val: string) => { setStatsEndDate(val); setStatsSelectedPreset('custom'); }}
+                                                                    min={statsStartDate}
+                                                                />
+                                                            </div>
+
+                                                            {/* Quick Presets */}
+                                                            <div className="mb-4">
+                                                                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                                                                    Chọn nhanh
+                                                                </label>
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    {[
+                                                                        { label: '7 ngày', days: 7 },
+                                                                        { label: '30 ngày', days: 30 },
+                                                                        { label: '3 tháng', days: 90 },
+                                                                        { label: 'Tất cả', days: null }
+                                                                    ].map((preset) => (
+                                                                        <button
+                                                                            key={preset.label}
+                                                                            onClick={() => setStatsQuickPreset(preset.days)}
+                                                                            className={`px-3 py-2 text-xs font-medium rounded-lg transition-all border
+                                                                                ${statsSelectedPreset === preset.days
+                                                                                    ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/50'
+                                                                                    : 'bg-gray-50 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                                                                                }
+                                                                            `}
+                                                                        >
+                                                                            {preset.label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Action Button */}
+                                                            <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+                                                                <button
+                                                                    onClick={resetStatsFilter}
+                                                                    className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold text-sm transition-all"
+                                                                >
+                                                                    Đặt lại
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {quizDetails.sessions.length === 0 ? (
@@ -1361,17 +1566,17 @@ const ProfilePage: React.FC = () => {
                                             {/* Desktop Table View */}
                                             <div className="hidden md:block overflow-x-auto max-h-[500px] overflow-y-auto custom-scrollbar">
                                                 <table className="w-full text-left border-collapse">
-                                                    <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold relative">
+                                                    <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold shadow-sm">
                                                         <tr>
                                                             <th className="py-4 px-6">Học viên</th>
                                                             <th className="py-4 px-6">Điểm số</th>
                                                             <th className="py-4 px-6">Thời gian</th>
-                                                            <th className="py-4 px-6 text-right">Thao tác</th>
+                                                            <th className="py-4 px-6 text-right">Chi tiết</th>
                                                         </tr>
                                                         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                                     </thead>
                                                     <tbody>
-                                                        {quizDetails.sessions.map((s: any) => (
+                                                        {filteredQuizSessions.map((s: any) => (
                                                             <tr key={s.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200 relative gradient-row-divider">
                                                                 <td className="py-4 px-6 align-middle">
                                                                     <div className="flex items-center gap-3">
@@ -1414,9 +1619,10 @@ const ProfilePage: React.FC = () => {
                                                                                 selectedQuizId
                                                                             }
                                                                         })}
-                                                                        className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
+                                                                        className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-700 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 text-gray-400 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-lg ml-auto"
+                                                                        title="Xem chi tiết"
                                                                     >
-                                                                        Chi tiết
+                                                                        <FaArrowRight className="text-xs" />
                                                                     </button>
                                                                 </td>
                                                             </tr>
@@ -1490,17 +1696,19 @@ const ProfilePage: React.FC = () => {
                                         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                         <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
                                             <FaUsers className="text-blue-500" /> Danh sách quyền truy cập
+                                            <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">{quizDetails.accessList?.length || 0}</span>
                                         </h3>
-                                        <p className="text-sm text-gray-500 mt-1">Những người dùng được cấp quyền truy cập riêng tư</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Những người dùng được cấp quyền truy cập riêng tư</p>
                                     </div>
                                     {/* Desktop Table View */}
                                     <div className="hidden md:block overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
                                         <table className="w-full text-left border-collapse">
-                                            <thead className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold relative">
+                                            <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold shadow-sm">
                                                 <tr>
-                                                    <th className="py-4 px-6">Người dùng</th>
-                                                    <th className="py-4 px-6">Quyền hạn</th>
-                                                    <th className="py-4 px-6">Ngày tham gia</th>
+                                                    <th className="py-4 px-6 w-[35%]">Người dùng</th>
+                                                    <th className="py-4 px-6 w-[20%]">Quyền hạn</th>
+                                                    <th className="py-4 px-6 w-[25%]">Ngày tham gia</th>
+                                                    <th className="py-4 px-6 text-right w-[20%]">Số lần làm bài</th>
                                                 </tr>
                                                 <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                             </thead>
@@ -1508,10 +1716,15 @@ const ProfilePage: React.FC = () => {
                                                 {quizDetails.accessList && quizDetails.accessList.length > 0 ? (
                                                     quizDetails.accessList.map((a: any) => (
                                                         <tr key={a.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors relative gradient-row-divider">
-                                                            <td className="py-4 px-6">
-                                                                <div className="font-medium text-gray-900 dark:text-white">{a.name}</div>
+                                                            <td className="py-4 px-6 align-middle">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-md">
+                                                                        {a.name.charAt(0).toUpperCase()}
+                                                                    </div>
+                                                                    <span className="font-medium text-gray-900 dark:text-white">{a.name}</span>
+                                                                </div>
                                                             </td>
-                                                            <td className="py-4 px-6">
+                                                            <td className="py-4 px-6 align-middle">
                                                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${a.accessLevel === 'full'
                                                                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                                                                     : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
@@ -1519,8 +1732,13 @@ const ProfilePage: React.FC = () => {
                                                                     {a.accessLevel === 'full' ? 'Xem & Làm bài' : 'Chỉ xem'}
                                                                 </span>
                                                             </td>
-                                                            <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-300 font-mono">
+                                                            <td className="py-4 px-6 align-middle text-sm text-gray-600 dark:text-gray-300 font-mono">
                                                                 {formatDateTime(a.joinedAt)}
+                                                            </td>
+                                                            <td className="py-4 px-6 align-middle text-right">
+                                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold text-sm">
+                                                                    {quizDetails.sessions?.filter((s: any) => s.userName === a.name).length || 0}
+                                                                </span>
                                                             </td>
                                                         </tr>
                                                     ))
@@ -1555,6 +1773,12 @@ const ProfilePage: React.FC = () => {
                                                             <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold mb-1">Tham gia</div>
                                                             <div className="text-sm text-gray-600 dark:text-gray-300 font-mono">{formatDateTime(a.joinedAt)}</div>
                                                         </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-600">
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Số lần làm bài</span>
+                                                        <span className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold text-sm">
+                                                            {quizDetails.sessions?.filter((s: any) => s.userName === a.name).length || 0}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             ))

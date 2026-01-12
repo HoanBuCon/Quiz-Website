@@ -1013,31 +1013,28 @@ const DocumentsPage: React.FC = () => {
                 </svg>
               </button>
 
-              {/* Dropdown Menu */}
-              {showSortMenu && (
-                <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
-                  {[
-                    { id: 'date-desc' as const, label: 'Mới nhất' },
-                    { id: 'date-asc' as const, label: 'Cũ nhất' },
-                    { id: 'name-asc' as const, label: 'Tên (A → Z)' },
-                    { id: 'name-desc' as const, label: 'Tên (Z → A)' }
-                  ].map(option => (
-                    <button
-                      key={option.id}
-                      onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
-                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
-                        }`}
-                    >
-                      <span>{option.label}</span>
-                      {sortBy === option.id && (
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className={`absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden transition-all duration-200 ease-out origin-top-left ${showSortMenu ? 'opacity-100 scale-100 translate-y-0 visible pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 invisible pointer-events-none'}`}>
+                {[
+                  { id: 'date-desc' as const, label: 'Mới nhất' },
+                  { id: 'date-asc' as const, label: 'Cũ nhất' },
+                  { id: 'name-asc' as const, label: 'Tên (A → Z)' },
+                  { id: 'name-desc' as const, label: 'Tên (Z → A)' }
+                ].map(option => (
+                  <button
+                    key={option.id}
+                    onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
+                    className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                  >
+                    <span>{option.label}</span>
+                    {sortBy === option.id && (
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Search Bar */}

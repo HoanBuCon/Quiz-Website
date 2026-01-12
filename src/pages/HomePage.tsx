@@ -276,30 +276,28 @@ const HomePage: React.FC = () => {
                 </button>
 
                 {/* Dropdown Menu */}
-                {showSortMenu && (
-                  <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
-                    {[
-                      { id: 'date-desc' as const, label: 'Mới nhất', icon: '↓' },
-                      { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' },
-                      { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
-                      { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' }
-                    ].map(option => (
-                      <button
-                        key={option.id}
-                        onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
-                          }`}
-                      >
-                        <span>{option.label}</span>
-                        {sortBy === option.id && (
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className={`absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden transition-all duration-200 ease-out origin-top-left ${showSortMenu ? 'opacity-100 scale-100 translate-y-0 visible pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 invisible pointer-events-none'}`}>
+                  {[
+                    { id: 'date-desc' as const, label: 'Mới nhất', icon: '↓' },
+                    { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' },
+                    { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
+                    { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' }
+                  ].map(option => (
+                    <button
+                      key={option.id}
+                      onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
+                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                    >
+                      <span>{option.label}</span>
+                      {sortBy === option.id && (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Desktop Search */}
@@ -341,30 +339,28 @@ const HomePage: React.FC = () => {
                 </button>
 
                 {/* Dropdown Menu Mobile */}
-                {showSortMenu && (
-                  <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
-                    {[
-                      { id: 'date-desc' as const, label: 'Mới nhất', icon: '↓' },
-                      { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' },
-                      { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
-                      { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' }
-                    ].map(option => (
-                      <button
-                        key={option.id}
-                        onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
-                          }`}
-                      >
-                        <span>{option.label}</span>
-                        {sortBy === option.id && (
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className={`absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden transition-all duration-200 ease-out origin-top-left ${showSortMenu ? 'opacity-100 scale-100 translate-y-0 visible pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 invisible pointer-events-none'}`}>
+                  {[
+                    { id: 'date-desc' as const, label: 'Mới nhất', icon: '↓' },
+                    { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' },
+                    { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
+                    { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' }
+                  ].map(option => (
+                    <button
+                      key={option.id}
+                      onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
+                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                    >
+                      <span>{option.label}</span>
+                      {sortBy === option.id && (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="relative flex-1">
@@ -504,7 +500,7 @@ const HomePage: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 relative dropdown-container">
                           <span className="inline-flex items-center gap-1.5">
                             <svg
                               className="w-4 h-4"
@@ -539,11 +535,90 @@ const HomePage: React.FC = () => {
                               />
                             </svg>
                             {classRoom.quizzes?.length || 0} bài kiểm tra
+
+                            {/* Quick Access Button */}
+                            {classRoom.quizzes && classRoom.quizzes.length > 0 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdown(openDropdown === classRoom.id ? null : classRoom.id);
+                                }}
+                                className={`
+                                ml-1 w-6 h-6 flex items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 
+                                transition-colors duration-200 focus:outline-none ring-0 outline-none
+                                ${openDropdown === classRoom.id ? 'bg-gray-100 dark:bg-gray-700 text-primary-600 dark:text-primary-400' : 'text-gray-400'}
+                              `}
+                                title="Xem nhanh dánh sách bài kiểm tra"
+                              >
+                                <svg
+                                  className={`w-4 h-4 transition-transform duration-200 ${openDropdown === classRoom.id ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                            )}
                           </span>
+
+                          {/* Dropdown Menu */}
+                          {classRoom.quizzes && classRoom.quizzes.length > 0 && (
+                            <div
+                              className={`
+                                  absolute top-full left-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[60] overflow-hidden 
+                                  transition-all duration-200 ease-out origin-top-left
+                                  ${openDropdown === classRoom.id
+                                  ? 'opacity-100 scale-100 translate-y-0 visible pointer-events-auto'
+                                  : 'opacity-0 scale-95 -translate-y-2 invisible pointer-events-none'}
+                                `}
+                            >
+                              <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                                <p className="text-sm font-semibold text-white">
+                                  Chọn bài kiểm tra
+                                </p>
+                              </div>
+                              <div className="p-2 max-h-64 overflow-y-auto custom-scrollbar">
+                                {(classRoom.quizzes as Quiz[]).map(
+                                  (quiz, idx) => (
+                                    <button
+                                      key={quiz.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/quiz/${quiz.id}`, {
+                                          state: { className: classRoom.name },
+                                        });
+                                        setOpenDropdown(null);
+                                      }}
+                                      className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200 group border-b border-gray-100 dark:border-gray-700/50 last:border-0"
+                                    >
+                                      <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400 font-semibold text-sm">
+                                          {idx + 1}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-1">
+                                            {quiz.title}
+                                          </div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            {(quiz as any).questionCount ??
+                                              (quiz as any).questions?.length ??
+                                              0}{" "}
+                                            câu hỏi
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      <div className="relative dropdown-container flex-shrink-0">
+                      <div className="relative flex-shrink-0">
+
                         <button
                           className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm w-full sm:w-auto justify-center shadow-lg hover:shadow-xl transition-all"
                           onClick={() => toggleClassExpansion(classRoom.id)}
