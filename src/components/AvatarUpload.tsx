@@ -200,7 +200,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatarUrl, onAvatarC
                         {/* Crop Area */}
                         <div className="p-8 flex justify-center bg-gray-50 dark:bg-gray-900/50">
                             {imageSrc && (
-                                <div className="shadow-xl rounded-lg overflow-hidden ring-4 ring-white dark:ring-gray-700">
+                                <div className="shadow-2xl">
                                     <ReactCrop
                                         crop={crop}
                                         onChange={(c) => setCrop(c)}

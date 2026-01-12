@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit, FaGraduationCap, FaClipboardList, FaTrophy, FaClock, FaChartBar, FaHistory, FaUsers, FaArrowRight, FaEye, FaChevronDown, FaCheck, FaCheckCircle, FaCalendar } from 'react-icons/fa';
+import {
+    FaUser, FaEnvelope, FaLock, FaSave, FaTimes, FaEdit,
+    FaGraduationCap, FaClipboardList, FaTrophy, FaClock,
+    FaChartBar, FaHistory, FaUsers, FaArrowRight, FaEye,
+    FaChevronDown, FaCheck, FaCheckCircle, FaCalendar,
+    FaUpload, FaTrash
+} from 'react-icons/fa';
 import { getApiBaseUrl, StatsAPI } from '../utils/api';
 import { getToken } from '../utils/auth';
 import { toast } from 'react-hot-toast';
@@ -55,7 +61,7 @@ const DateInput: React.FC<{
     useEffect(() => {
         if (value) {
             const [y, m, d] = value.split('-');
-            setTextValue(`${d}/${m}/${y}`);
+            setTextValue(`${d} /${m}/${y} `);
         } else {
             setTextValue('');
         }
@@ -74,7 +80,7 @@ const DateInput: React.FC<{
             const date = new Date(y, m - 1, d);
             if (date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d) {
                 // Valid date, conversion to YYYY-MM-DD
-                const isoDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const isoDate = `${y} -${String(m).padStart(2, '0')} -${String(d).padStart(2, '0')} `;
                 onChange(isoDate);
             }
         } else if (val === '') {
@@ -332,6 +338,24 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    const handleRemoveAvatar = async () => {
+        if (!window.confirm('Bạn có chắc muốn gỡ avatar?')) return;
+        try {
+            const token = getToken();
+            const response = await fetch(`${getApiBaseUrl()}/profile/avatar`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Delete failed');
+            toast.success('Đã gỡ avatar');
+            setProfile(prev => prev ? { ...prev, avatarUrl: null } : null);
+            window.dispatchEvent(new Event('authChange'));
+        } catch (error) {
+            console.error('Avatar delete error:', error);
+            toast.error('Không thể gỡ avatar');
+        }
+    };
+
     const handleUpdateName = async () => {
         if (!newName.trim() || newName.trim().length < 2) {
             toast.error('Tên phải có ít nhất 2 ký tự');
@@ -575,7 +599,7 @@ const ProfilePage: React.FC = () => {
 
                                     {/* Edit icon overlay on hover */}
                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-300">
-                                        <FaEdit className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
+                                        <FaUpload className="w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-lg" />
                                     </div>
                                 </div>
                             </div>
@@ -614,7 +638,7 @@ const ProfilePage: React.FC = () => {
                                                 }
                                                 document.getElementById('avatar-options-modal')?.classList.add('hidden');
                                             }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-all text-left group"
+                                            className="w-full flex items-center gap-3 px-4 py-3 bg-gray-200/50 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all text-left group"
                                         >
                                             <div className="p-2 bg-white dark:bg-gray-800 rounded-lg group-hover:scale-110 transition-transform">
                                                 <FaEye className="w-5 h-5 text-gray-700 dark:text-gray-300" />
@@ -632,14 +656,14 @@ const ProfilePage: React.FC = () => {
                                                 fileInput?.click();
                                                 document.getElementById('avatar-options-modal')?.classList.add('hidden');
                                             }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-all text-left group border-2 border-blue-200 dark:border-blue-800"
+                                            className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-xl transition-all text-left group"
                                         >
                                             <div className="p-2 bg-blue-600 rounded-lg group-hover:scale-110 transition-transform">
-                                                <FaEdit className="w-5 h-5 text-white" />
+                                                <FaUpload className="w-5 h-5 text-white" />
                                             </div>
                                             <div>
                                                 <div className="font-semibold text-gray-900 dark:text-white">Tải lên Avatar</div>
-                                                <div className="text-xs text-gray-500 dark:text-gray-400">Chọn ảnh và cắt theo ý muốn</div>
+                                                <div className="text-xs text-gray-500 dark:text-gray-400">Tải ảnh lên và chỉnh sửa</div>
                                             </div>
                                         </button>
 
@@ -648,26 +672,12 @@ const ProfilePage: React.FC = () => {
                                             <button
                                                 onClick={async () => {
                                                     document.getElementById('avatar-options-modal')?.classList.add('hidden');
-                                                    if (!window.confirm('Bạn có chắc muốn gỡ avatar?')) return;
-                                                    try {
-                                                        const token = getToken();
-                                                        const response = await fetch(`${getApiBaseUrl()}/profile/avatar`, {
-                                                            method: 'DELETE',
-                                                            headers: { Authorization: `Bearer ${token}` }
-                                                        });
-                                                        if (!response.ok) throw new Error('Delete failed');
-                                                        toast.success('Đã gỡ avatar');
-                                                        setProfile(prev => prev ? { ...prev, avatarUrl: null } : null);
-                                                        window.dispatchEvent(new Event('authChange'));
-                                                    } catch (error) {
-                                                        console.error('Avatar delete error:', error);
-                                                        toast.error('Không thể gỡ avatar');
-                                                    }
+                                                    await handleRemoveAvatar();
                                                 }}
-                                                className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-all text-left group border-2 border-red-200 dark:border-red-800"
+                                                className="w-full flex items-center gap-3 px-4 py-3 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-all text-left group"
                                             >
                                                 <div className="p-2 bg-red-600 rounded-lg group-hover:scale-110 transition-transform">
-                                                    <FaTimes className="w-5 h-5 text-white" />
+                                                    <FaTrash className="w-5 h-5 text-white" />
                                                 </div>
                                                 <div>
                                                     <div className="font-semibold text-gray-900 dark:text-white">Gỡ Avatar</div>
@@ -836,155 +846,174 @@ const ProfilePage: React.FC = () => {
                                             Thông tin cá nhân
                                         </h2>
 
-                                        <div className="grid gap-8">
-                                            {/* Name Section */}
-                                            <div className="group">
-                                                <div className="flex justify-between items-baseline mb-2">
-                                                    <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tên người dùng</label>
-                                                    {!editingName && (
-                                                        <button onClick={() => setEditingName(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
-                                                            <FaEdit /> Chỉnh sửa
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                {editingName ? (
-                                                    <div className="flex flex-col sm:flex-row gap-3 animate-fadeIn mt-2">
-                                                        <input
-                                                            value={newName}
-                                                            onChange={e => setNewName(e.target.value)}
-                                                            maxLength={30}
-                                                            className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
-                                                            autoFocus
-                                                            placeholder="Nhập tên hiển thị mới (tối đa 30 ký tự)"
+                                        <div className="flex flex-col md:flex-row gap-8 items-center md:items-stretch">
+                                            {/* Left Column: Avatar Display & Management */}
+                                            <div className="w-full md:w-auto flex flex-col items-center justify-between p-6 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner min-w-[200px]">
+                                                <div className="relative group/edit mb-4">
+                                                    <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-0 group-hover/edit:opacity-20 transition-opacity"></div>
+                                                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1.5 bg-gradient-to-br from-blue-400 to-purple-500 dark:from-gray-600 dark:to-gray-800 shadow-xl overflow-hidden ring-4 ring-white dark:ring-gray-800">
+                                                        <img
+                                                            src={profile.avatarUrl || userAvatar}
+                                                            alt="Avatar"
+                                                            className="w-full h-full object-cover rounded-full"
                                                         />
-                                                        <div className="flex gap-2">
-                                                            <button onClick={handleUpdateName} disabled={savingName} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap flex items-center justify-center gap-2">
-                                                                {savingName ? (
-                                                                    <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div>
-                                                                ) : 'Lưu'}
-                                                            </button>
-                                                            <button onClick={() => setEditingName(false)} className="px-5 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-xl font-bold transition-all">
-                                                                Hủy
-                                                            </button>
-                                                        </div>
                                                     </div>
-                                                ) : (
-                                                    <div className="text-lg font-medium text-gray-900 dark:text-white border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
-                                                        {profile.name}
-                                                    </div>
-                                                )}
-                                            </div>
+                                                </div>
 
-                                            {/* Email Section */}
-                                            <div className="group">
-                                                <div className="flex justify-between items-baseline mb-2">
-                                                    <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</label>
-                                                    {!editingEmail && (
-                                                        <button onClick={() => setEditingEmail(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
-                                                            <FaEdit /> Chỉnh sửa
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <button
+                                                        onClick={() => {
+                                                            if (profile.avatarUrl) {
+                                                                window.open(profile.avatarUrl, '_blank');
+                                                            } else {
+                                                                window.open(userAvatar, '_blank');
+                                                            }
+                                                        }}
+                                                        title="Xem Avatar"
+                                                        className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-xl transition-all shadow-sm hover:scale-110"
+                                                    >
+                                                        <FaEye className="text-lg" />
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            const fileInput = document.getElementById('avatar-upload-input') as HTMLInputElement;
+                                                            fileInput?.click();
+                                                        }}
+                                                        title="Tải lên Avatar"
+                                                        className="flex items-center justify-center p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-md shadow-blue-500/20 hover:scale-110"
+                                                    >
+                                                        <FaUpload className="text-lg" />
+                                                    </button>
+
+                                                    {profile.avatarUrl && (
+                                                        <button
+                                                            onClick={handleRemoveAvatar}
+                                                            title="Gỡ Avatar"
+                                                            className="flex items-center justify-center p-2.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl transition-all hover:scale-110"
+                                                        >
+                                                            <FaTrash className="text-lg" />
                                                         </button>
                                                     )}
                                                 </div>
-                                                {editingEmail ? (
-                                                    <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700/50 animate-fadeIn mt-2 space-y-5">
-                                                        <div>
-                                                            <label className="text-xs font-bold text-gray-500 mb-1.5 block">EMAIL MỚI</label>
-                                                            <input
-                                                                value={newEmail}
-                                                                onChange={e => setNewEmail(e.target.value)}
-                                                                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
-                                                                placeholder="example@email.com"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-xs font-bold text-gray-500 mb-1.5 block">XÁC NHẬN MẬT KHẨU</label>
-                                                            <input
-                                                                type="password"
-                                                                value={emailPassword}
-                                                                onChange={e => setEmailPassword(e.target.value)}
-                                                                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
-                                                                placeholder="••••••••"
-                                                            />
-                                                        </div>
-                                                        <div className="flex gap-3 pt-2">
-                                                            <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
-                                                                {savingEmail ? (
-                                                                    <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div>
-                                                                ) : 'Cập nhật Email'}
-                                                            </button>
-                                                            <button onClick={() => setEditingEmail(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
-                                                                Hủy bỏ
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
-                                                        {profile.email}
-                                                        <span className="bg-green-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] px-2 py-0.5 rounded-full font-jetbrains uppercase tracking-wide">Unverified</span>
-                                                    </div>
-                                                )}
                                             </div>
 
-                                            {/* Password Section - Moved here */}
-                                            <div className="group">
-                                                <div className="flex justify-between items-baseline mb-2">
-                                                    <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mật khẩu</label>
-                                                    {!editingPassword && (
-                                                        <button onClick={() => setEditingPassword(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
-                                                            <FaEdit /> Chỉnh sửa
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                {editingPassword ? (
-                                                    <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700/50 animate-fadeIn mt-2 space-y-5">
-                                                        <div>
-                                                            <label className="text-xs font-bold text-gray-500 mb-1.5 block">MẬT KHẨU HIỆN TẠI</label>
-                                                            <div className="relative">
-                                                                <input
-                                                                    type={showCurrentPass ? "text" : "password"}
-                                                                    value={currentPassword}
-                                                                    onChange={e => setCurrentPassword(e.target.value)}
-                                                                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white transition-all font-medium pr-10"
-                                                                    placeholder="••••••••"
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setShowCurrentPass(!showCurrentPass)}
-                                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
-                                                                    tabIndex={-1}
-                                                                >
-                                                                    {showCurrentPass ? (
-                                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                                                        </svg>
-                                                                    ) : (
-                                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                        </svg>
-                                                                    )}
+                                            {/* Right Column: Identity Fields */}
+                                            <div className="flex-1 w-full space-y-8">
+                                                {/* Name Section */}
+                                                <div className="group">
+                                                    <div className="flex justify-between items-baseline mb-2">
+                                                        <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tên người dùng</label>
+                                                        {!editingName && (
+                                                            <button onClick={() => setEditingName(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
+                                                                <FaEdit /> Chỉnh sửa
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {editingName ? (
+                                                        <div className="flex flex-col sm:flex-row gap-3 animate-fadeIn mt-2">
+                                                            <input
+                                                                value={newName}
+                                                                onChange={e => setNewName(e.target.value)}
+                                                                maxLength={30}
+                                                                className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
+                                                                autoFocus
+                                                                placeholder="Nhập tên hiển thị mới"
+                                                            />
+                                                            <div className="flex gap-2">
+                                                                <button onClick={handleUpdateName} disabled={savingName} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 whitespace-nowrap flex items-center justify-center gap-2">
+                                                                    {savingName ? <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div> : 'Lưu'}
+                                                                </button>
+                                                                <button onClick={() => setEditingName(false)} className="px-5 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-xl font-bold transition-all">
+                                                                    Hủy
                                                                 </button>
                                                             </div>
                                                         </div>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                    ) : (
+                                                        <div className="text-lg font-medium text-gray-900 dark:text-white border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
+                                                            {profile.name}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Email Section */}
+                                                <div className="group">
+                                                    <div className="flex justify-between items-baseline mb-2">
+                                                        <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</label>
+                                                        {!editingEmail && (
+                                                            <button onClick={() => setEditingEmail(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
+                                                                <FaEdit /> Chỉnh sửa
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {editingEmail ? (
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700/50 animate-fadeIn mt-2 space-y-5">
                                                             <div>
-                                                                <label className="text-xs font-bold text-gray-500 mb-1.5 block">MẬT KHẨU MỚI</label>
+                                                                <label className="text-xs font-bold text-gray-500 mb-1.5 block">EMAIL MỚI</label>
+                                                                <input
+                                                                    value={newEmail}
+                                                                    onChange={e => setNewEmail(e.target.value)}
+                                                                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
+                                                                    placeholder="example@email.com"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-xs font-bold text-gray-500 mb-1.5 block">XÁC NHẬN MẬT KHẨU</label>
+                                                                <input
+                                                                    type="password"
+                                                                    value={emailPassword}
+                                                                    onChange={e => setEmailPassword(e.target.value)}
+                                                                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all font-medium"
+                                                                    placeholder="••••••••"
+                                                                />
+                                                            </div>
+                                                            <div className="flex gap-3 pt-2">
+                                                                <button onClick={handleUpdateEmail} disabled={savingEmail} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                                                                    {savingEmail ? <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div> : 'Cập nhật Email'}
+                                                                </button>
+                                                                <button onClick={() => setEditingEmail(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
+                                                                    Hủy bỏ
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
+                                                            {profile.email}
+                                                            <span className="bg-green-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] px-2 py-0.5 rounded-full font-jetbrains uppercase tracking-wide">Unverified</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Password Section */}
+                                                <div className="group">
+                                                    <div className="flex justify-between items-baseline mb-2">
+                                                        <label className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mật khẩu</label>
+                                                        {!editingPassword && (
+                                                            <button onClick={() => setEditingPassword(true)} className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex items-center gap-1">
+                                                                <FaEdit /> Chỉnh sửa
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {editingPassword ? (
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl border border-gray-100 dark:border-gray-700/50 animate-fadeIn mt-2 space-y-5">
+                                                            <div>
+                                                                <label className="text-xs font-bold text-gray-500 mb-1.5 block">MẬT KHẨU HIỆN TẠI</label>
                                                                 <div className="relative">
                                                                     <input
-                                                                        type={showNewPass ? "text" : "password"}
-                                                                        value={newPassword}
-                                                                        onChange={e => setNewPassword(e.target.value)}
+                                                                        type={showCurrentPass ? "text" : "password"}
+                                                                        value={currentPassword}
+                                                                        onChange={e => setCurrentPassword(e.target.value)}
                                                                         className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white transition-all font-medium pr-10"
-                                                                        placeholder="Ít nhất 6 ký tự"
+                                                                        placeholder="••••••••"
                                                                     />
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => setShowNewPass(!showNewPass)}
+                                                                        onClick={() => setShowCurrentPass(!showCurrentPass)}
                                                                         className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
                                                                         tabIndex={-1}
                                                                     >
-                                                                        {showNewPass ? (
+                                                                        {showCurrentPass ? (
                                                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                                                                             </svg>
@@ -997,59 +1026,88 @@ const ProfilePage: React.FC = () => {
                                                                     </button>
                                                                 </div>
                                                             </div>
-                                                            <div>
-                                                                <label className="text-xs font-bold text-gray-500 mb-1.5 block">XÁC NHẬN MỚI</label>
-                                                                <div className="relative">
-                                                                    <input
-                                                                        type={showConfirmPass ? "text" : "password"}
-                                                                        value={confirmPassword}
-                                                                        onChange={e => setConfirmPassword(e.target.value)}
-                                                                        className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white transition-all font-medium pr-10"
-                                                                        placeholder="Nhập lại mật khẩu mới"
-                                                                    />
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setShowConfirmPass(!showConfirmPass)}
-                                                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
-                                                                        tabIndex={-1}
-                                                                    >
-                                                                        {showConfirmPass ? (
-                                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                                                            </svg>
-                                                                        ) : (
-                                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                                            </svg>
-                                                                        )}
-                                                                    </button>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-gray-500 mb-1.5 block">MẬT KHẨU MỚI</label>
+                                                                    <div className="relative">
+                                                                        <input
+                                                                            type={showNewPass ? "text" : "password"}
+                                                                            value={newPassword}
+                                                                            onChange={e => setNewPassword(e.target.value)}
+                                                                            className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white transition-all font-medium pr-10"
+                                                                            placeholder="Ít nhất 6 ký tự"
+                                                                        />
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setShowNewPass(!showNewPass)}
+                                                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
+                                                                            tabIndex={-1}
+                                                                        >
+                                                                            {showNewPass ? (
+                                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                                                </svg>
+                                                                            ) : (
+                                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                                </svg>
+                                                                            )}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-xs font-bold text-gray-500 mb-1.5 block">XÁC NHẬN MỚI</label>
+                                                                    <div className="relative">
+                                                                        <input
+                                                                            type={showConfirmPass ? "text" : "password"}
+                                                                            value={confirmPassword}
+                                                                            onChange={e => setConfirmPassword(e.target.value)}
+                                                                            className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white transition-all font-medium pr-10"
+                                                                            placeholder="Nhập lại mật khẩu"
+                                                                        />
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setShowConfirmPass(!showConfirmPass)}
+                                                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none"
+                                                                            tabIndex={-1}
+                                                                        >
+                                                                            {showConfirmPass ? (
+                                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                                                </svg>
+                                                                            ) : (
+                                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                                </svg>
+                                                                            )}
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
+                                                            <div className="flex gap-3 pt-2">
+                                                                <button onClick={handleChangePassword} disabled={savingPassword} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                                                                    {savingPassword ? <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div> : 'Đổi mật khẩu'}
+                                                                </button>
+                                                                <button onClick={() => setEditingPassword(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
+                                                                    Hủy bỏ
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex gap-3 pt-2">
-                                                            <button onClick={handleChangePassword} disabled={savingPassword} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
-                                                                {savingPassword ? (
-                                                                    <div style={{ transform: 'scale(0.022)' }}><SpinnerLoading /></div>
-                                                                ) : 'Đổi mật khẩu'}
-                                                            </button>
-                                                            <button onClick={() => setEditingPassword(false)} className="px-6 py-2.5 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-bold transition-all">
-                                                                Hủy bỏ
-                                                            </button>
+                                                    ) : (
+                                                        <div className="flex items-center justify-between py-2 border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
+                                                            <div className="flex items-center gap-1.5">
+                                                                {[...Array(8)].map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></div>)}
+                                                            </div>
+                                                            <span className="text-xs text-gray-400 font-mono">
+                                                                Cập nhật lần cuối: {profile.passwordChangedAt
+                                                                    ? new Date(profile.passwordChangedAt).toLocaleDateString('en-GB')
+                                                                    : 'Chưa cập nhật'}
+                                                            </span>
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-between py-2 border-b border-dashed border-gray-200 dark:border-gray-700 pb-1">
-                                                        <div className="flex items-center gap-1.5">
-                                                            {[...Array(8)].map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></div>)}
-                                                        </div>
-                                                        <span className="text-xs text-gray-400 font-mono">
-                                                            Cập nhật lần cuối: {profile.passwordChangedAt
-                                                                ? new Date(profile.passwordChangedAt).toLocaleDateString('en-GB')
-                                                                : 'Chưa cập nhật'}
-                                                        </span>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
