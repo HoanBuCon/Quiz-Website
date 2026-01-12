@@ -14,7 +14,7 @@ interface ChatMessage {
   attachmentUrl?: string | null;
   attachmentType?: "image" | "video" | "file" | null;
   createdAt: string;
-  user?: { id: string; name?: string | null; email: string };
+  user?: { id: string; name?: string | null; email: string; avatarUrl?: string | null };
   replyTo?: string | null;
   hidden?: boolean;
 }
@@ -793,18 +793,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
   });
 
   // Avatar component
-  const Avatar = ({ user }: { user?: { id: string; name?: string | null; email: string } }) => {
+  const Avatar = ({ user }: { user?: { id: string; name?: string | null; email: string; avatarUrl?: string | null } }) => {
     if (!user) return null;
     return (
       <a
-        href={userAvatar}
+        href={user.avatarUrl || userAvatar}
         target="_blank"
         rel="noopener noreferrer"
         className="block w-8 h-8 rounded-full overflow-hidden shadow-md flex-shrink-0 hover:opacity-90 transition-opacity cursor-pointer"
         title="Nhấp để xem avatar"
         onClick={(e) => e.stopPropagation()}
       >
-        <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
+        <img src={user.avatarUrl || userAvatar} alt="Avatar" className="w-full h-full object-cover" />
       </a>
     );
   };

@@ -195,7 +195,7 @@ router.get('/messages', authRequired, async (req, res) => {
     const messages = await query(`
       SELECT 
         cm.id, cm.userId, cm.content, cm.attachmentUrl, cm.attachmentType, cm.createdAt,
-        u.id as user_id, u.name as user_name, u.email as user_email
+        u.id as user_id, u.name as user_name, u.email as user_email, u.avatarUrl as user_avatar
       FROM ChatMessage cm
       JOIN User u ON cm.userId = u.id
       ${whereClause}
@@ -214,7 +214,8 @@ router.get('/messages', authRequired, async (req, res) => {
       user: {
         id: m.user_id,
         name: m.user_name,
-        email: m.user_email
+        email: m.user_email,
+        avatarUrl: m.user_avatar
       }
     }));
     
@@ -260,7 +261,7 @@ router.post(
       const created = await queryOne(`
         SELECT 
           cm.id, cm.userId, cm.content, cm.attachmentUrl, cm.attachmentType, cm.createdAt,
-          u.id as user_id, u.name as user_name, u.email as user_email
+          u.id as user_id, u.name as user_name, u.email as user_email, u.avatarUrl as user_avatar
         FROM ChatMessage cm
         JOIN User u ON cm.userId = u.id
         WHERE cm.id = ?
@@ -276,7 +277,8 @@ router.post(
         user: {
           id: created.user_id,
           name: created.user_name,
-          email: created.user_email
+          email: created.user_email,
+          avatarUrl: created.user_avatar
         }
       };
 

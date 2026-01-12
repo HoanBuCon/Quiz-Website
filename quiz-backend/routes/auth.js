@@ -12,7 +12,7 @@ const router = express.Router();
 router.get('/me', authRequired, async (req, res) => {
   try {
     const user = await queryOne(
-      'SELECT id, email, name, lastLoginAt, createdAt, passwordChangedAt FROM User WHERE id = ?',
+      'SELECT id, email, name, avatarUrl, lastLoginAt, createdAt, passwordChangedAt FROM User WHERE id = ?',
       [req.user.id]
     );
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -50,7 +50,7 @@ router.post('/login', async (req, res) => {
   if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
   const normalizedEmail = email.toLowerCase().trim();
   
-  const user = await queryOne('SELECT id, email, name, passwordHash FROM User WHERE email = ?', [normalizedEmail]);
+  const user = await queryOne('SELECT id, email, name, avatarUrl, passwordHash FROM User WHERE email = ?', [normalizedEmail]);
   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
   
   const ok = await bcrypt.compare(password, user.passwordHash);
@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
     );
   } catch (_) {}
   
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name, lastLoginAt: now } });
+  res.json({ token, user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, lastLoginAt: now } });
 });
 
 // Logout

@@ -25,6 +25,7 @@ const Sidebar: React.FC = () => {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
     const [userName, setUserName] = useState<string | null>(null);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [unreadCount, setUnreadCount] = useState(0);
     const navRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -78,12 +79,15 @@ const Sidebar: React.FC = () => {
                     const { AuthAPI } = await import("../../utils/api");
                     const response = await AuthAPI.me(token);
                     setUserName(response.user.name || response.user.email.split("@")[0]);
+                    setAvatarUrl(response.user.avatarUrl || null);
                 } catch (error) {
                     console.error("Failed to load user info:", error);
                     setUserName(null);
+                    setAvatarUrl(null);
                 }
             } else {
                 setUserName(null);
+                setAvatarUrl(null);
             }
         };
 
@@ -93,7 +97,25 @@ const Sidebar: React.FC = () => {
     }, [isLoggedIn]);
 
     useEffect(() => {
-        const checkAuth = () => setIsLoggedIn(!!getToken());
+        const checkAuth = () => {
+            const hasToken = !!getToken();
+            setIsLoggedIn(hasToken);
+            if (hasToken) {
+                // Reload user info even if already logged in, to update avatar/name
+                const load = async () => {
+                    try {
+                        const { AuthAPI } = await import("../../utils/api");
+                        const token = getToken();
+                        if (token) {
+                            const response = await AuthAPI.me(token);
+                            setUserName(response.user.name || response.user.email.split("@")[0]);
+                            setAvatarUrl(response.user.avatarUrl || null);
+                        }
+                    } catch { }
+                };
+                load();
+            }
+        };
         const handleAuthChange = () => checkAuth();
         window.addEventListener("authChange", handleAuthChange);
         window.addEventListener("storage", handleAuthChange);
@@ -368,7 +390,7 @@ const Sidebar: React.FC = () => {
                     <div className="flex items-center gap-3 pl-[15px] pr-3 h-14 rounded-xl bg-white/10 dark:bg-gray-800/30 border border-white/10 dark:border-gray-700/50 justify-start overflow-hidden group/profile relative transition-colors duration-500 ease-out hover:bg-blue-800/40 dark:hover:bg-gray-800/50">
                         <div className="w-6 h-6 flex-shrink-0 flex items-center justify-center transition-transform duration-500 ease-out origin-center">
                             <div className="w-6 h-6 rounded-full overflow-hidden shadow-sm leading-none">
-                                <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                                <img src={avatarUrl || userAvatar} alt="Avatar" className="w-full h-full object-cover" />
                             </div>
                         </div>
 

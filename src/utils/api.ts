@@ -388,7 +388,7 @@ export const AuthAPI = {
       body: JSON.stringify(data),
     }),
   me: (token: string) =>
-    apiRequest<{ user: { id: string; email: string; name: string } }>(
+    apiRequest<{ user: { id: string; email: string; name: string; avatarUrl?: string | null } }>(
       `/auth/me`,
       { token }
     ),

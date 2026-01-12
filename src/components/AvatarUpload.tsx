@@ -180,73 +180,85 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatarUrl, onAvatarC
 
             {/* Crop Modal */}
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden transform transition-all scale-100 animate-scaleIn border border-gray-100 dark:border-gray-700">
+
                         {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Cắt ảnh avatar</h3>
+                        <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Cập nhật Avatar</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Kéo khung để chọn vùng hiển thị</p>
+                            </div>
                             <button
                                 onClick={handleClose}
-                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                className="p-2 -mr-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
                             >
-                                <FaTimes className="text-gray-500 dark:text-gray-400" />
+                                <FaTimes className="w-5 h-5" />
                             </button>
                         </div>
 
                         {/* Crop Area */}
-                        <div className="p-6">
+                        <div className="p-8 flex justify-center bg-gray-50 dark:bg-gray-900/50">
                             {imageSrc && (
-                                <ReactCrop
-                                    crop={crop}
-                                    onChange={(c) => setCrop(c)}
-                                    onComplete={(c) => setCompletedCrop(c)}
-                                    aspect={1}
-                                    circularCrop
-                                    className="max-w-full"
-                                >
-                                    <img
-                                        ref={imgRef}
-                                        src={imageSrc}
-                                        alt="Crop preview"
-                                        className="max-w-full h-auto"
-                                        onLoad={() => {
-                                            // Initialize crop on image load
-                                            if (imgRef.current) {
-                                                const { width, height } = imgRef.current;
-                                                const size = Math.min(width, height) * 0.9;
-                                                setCrop({
-                                                    unit: 'px',
-                                                    width: size,
-                                                    height: size,
-                                                    x: (width - size) / 2,
-                                                    y: (height - size) / 2
-                                                });
-                                            }
-                                        }}
-                                    />
-                                </ReactCrop>
+                                <div className="shadow-xl rounded-lg overflow-hidden ring-4 ring-white dark:ring-gray-700">
+                                    <ReactCrop
+                                        crop={crop}
+                                        onChange={(c) => setCrop(c)}
+                                        onComplete={(c) => setCompletedCrop(c)}
+                                        aspect={1}
+                                        circularCrop
+                                        keepSelection
+                                        className="max-w-full max-h-[50vh]"
+                                    >
+                                        <img
+                                            ref={imgRef}
+                                            src={imageSrc}
+                                            alt="Crop preview"
+                                            className="max-w-full h-auto object-contain max-h-[50vh]"
+                                            onLoad={() => {
+                                                // Initialize crop on image load
+                                                if (imgRef.current) {
+                                                    const { width, height } = imgRef.current;
+                                                    const size = Math.min(width, height) * 0.8;
+                                                    const pixelCrop = {
+                                                        unit: 'px' as const,
+                                                        width: size,
+                                                        height: size,
+                                                        x: (width - size) / 2,
+                                                        y: (height - size) / 2
+                                                    };
+                                                    setCrop(pixelCrop);
+                                                    setCompletedCrop(pixelCrop);
+                                                }
+                                            }}
+                                        />
+                                    </ReactCrop>
+                                </div>
                             )}
                         </div>
 
                         {/* Footer */}
-                        <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+                        <div className="px-8 py-6 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
                             <button
                                 onClick={handleClose}
                                 disabled={uploading}
-                                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-semibold transition-all disabled:opacity-50"
+                                className="px-6 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all disabled:opacity-50"
                             >
-                                Hủy
+                                Hủy bỏ
                             </button>
                             <button
                                 onClick={handdleSaveAvatar}
                                 disabled={uploading || !completedCrop}
-                                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-2 px-8 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                             >
                                 {uploading ? (
-                                    <>Đang lưu...</>
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Đang lưu...</span>
+                                    </>
                                 ) : (
                                     <>
-                                        <FaCheck /> Lưu avatar
+                                        <span>Lưu thay đổi</span>
                                     </>
                                 )}
                             </button>

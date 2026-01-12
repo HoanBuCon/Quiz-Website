@@ -58,6 +58,7 @@ const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(!!getToken());
   const [userName, setUserName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
 
@@ -90,13 +91,16 @@ const Header: React.FC = () => {
           const { AuthAPI } = await import("../../utils/api");
           const response = await AuthAPI.me(token);
           setUserName(response.user.name || response.user.email.split("@")[0]);
+          setAvatarUrl(response.user.avatarUrl || null);
         } catch (error) {
           // console.error("Failed to load user info:", error);
           // Fallback to email prefix if name not available
           setUserName(null);
+          setAvatarUrl(null);
         }
       } else {
         setUserName(null);
+        setAvatarUrl(null);
       }
     };
 
@@ -107,7 +111,25 @@ const Header: React.FC = () => {
 
   // Update auth state when token changes
   useEffect(() => {
-    const checkAuth = () => setIsLoggedIn(!!getToken());
+    const checkAuth = () => {
+      const hasToken = !!getToken();
+      setIsLoggedIn(hasToken);
+      if (hasToken) {
+        // Force reload user info
+        const load = async () => {
+          try {
+            const { AuthAPI } = await import("../../utils/api");
+            const token = getToken();
+            if (token) {
+              const response = await AuthAPI.me(token);
+              setUserName(response.user.name || response.user.email.split("@")[0]);
+              setAvatarUrl(response.user.avatarUrl || null);
+            }
+          } catch { }
+        };
+        load();
+      }
+    };
 
     const handleAuthChange = () => checkAuth();
 
@@ -407,7 +429,7 @@ const Header: React.FC = () => {
                     `}
                   >
                     <div className="w-8 h-8 flex-shrink-0 rounded-full overflow-hidden shadow-sm">
-                      <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={avatarUrl || userAvatar} alt="Avatar" className="w-full h-full object-cover" />
                     </div>
                     <span className="hidden sm:inline truncate max-w-[150px]">{userName || "Tài khoản"}</span>
                   </button>
