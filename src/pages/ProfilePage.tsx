@@ -851,7 +851,7 @@ const ProfilePage: React.FC = () => {
                                             <div className="w-full md:w-auto flex flex-col items-center justify-between p-6 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-inner min-w-[200px]">
                                                 <div className="relative group/edit mb-4">
                                                     <div className="absolute inset-0 bg-blue-500 rounded-full blur-xl opacity-0 group-hover/edit:opacity-20 transition-opacity"></div>
-                                                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1.5 bg-gradient-to-br from-blue-400 to-purple-500 dark:from-gray-600 dark:to-gray-800 shadow-xl overflow-hidden ring-4 ring-white dark:ring-gray-800">
+                                                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden ring-4 ring-white dark:ring-gray-800 shadow-xl">
                                                         <img
                                                             src={profile.avatarUrl || userAvatar}
                                                             alt="Avatar"

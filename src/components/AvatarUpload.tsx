@@ -29,7 +29,7 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatarUrl, onAvatarC
 
     const API_URL = getApiBaseUrl();
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -45,7 +45,13 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatarUrl, onAvatarC
             return;
         }
 
-        // Read and display image
+        // If GIF, upload directly to preserve animation
+        if (file.type === 'image/gif') {
+            await uploadAvatarBlob(file);
+            return;
+        }
+
+        // Read and display image for cropping
         const reader = new FileReader();
         reader.onload = () => {
             setImageSrc(reader.result as string);
@@ -88,19 +94,11 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatarUrl, onAvatarC
         });
     }, [completedCrop]);
 
-    const handdleSaveAvatar = async () => {
+    const uploadAvatarBlob = async (blob: Blob) => {
         try {
             setUploading(true);
-
-            const croppedBlob = await getCroppedImg();
-            if (!croppedBlob) {
-                toast.error('Không thể crop ảnh');
-                return;
-            }
-
-            // Create FormData and append the cropped image
             const formData = new FormData();
-            formData.append('avatar', croppedBlob, 'avatar.jpg');
+            formData.append('avatar', blob, blob instanceof File ? blob.name : 'avatar.jpg');
 
             const token = getToken();
             const response = await fetch(`${API_URL}/profile/avatar`, {
@@ -125,6 +123,15 @@ const AvatarUpload: React.FC<AvatarUploadProps> = ({ currentAvatarUrl, onAvatarC
         } finally {
             setUploading(false);
         }
+    };
+
+    const handdleSaveAvatar = async () => {
+        const croppedBlob = await getCroppedImg();
+        if (!croppedBlob) {
+            toast.error('Không thể crop ảnh');
+            return;
+        }
+        await uploadAvatarBlob(croppedBlob);
     };
 
     const handleRemoveAvatar = async () => {
