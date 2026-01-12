@@ -1754,13 +1754,20 @@ const ProfilePage: React.FC = () => {
                                                                 <tr key={s.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200 relative gradient-row-divider">
                                                                     <td className="py-4 px-6 align-middle">
                                                                         <div className="flex items-center gap-3">
-                                                                            <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0">
+                                                                            <a
+                                                                                href={(s as any).avatarUrl || userAvatar}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="w-10 h-10 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                                                                title="Xem ảnh đại diện"
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                            >
                                                                                 <img
                                                                                     src={(s as any).avatarUrl || userAvatar}
                                                                                     alt={s.userName}
                                                                                     className="w-full h-full object-cover"
                                                                                 />
-                                                                            </div>
+                                                                            </a>
                                                                             <span className="font-medium text-gray-900 dark:text-white">{s.userName}</span>
                                                                         </div>
                                                                     </td>
@@ -1814,9 +1821,20 @@ const ProfilePage: React.FC = () => {
                                                     {quizDetails.sessions.map((s: any) => (
                                                         <div key={s.id} className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 space-y-3 relative gradient-row-divider">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shadow-md flex-shrink-0">
-                                                                    {s.userName.charAt(0).toUpperCase()}
-                                                                </div>
+                                                                <a
+                                                                    href={(s as any).avatarUrl || userAvatar}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="w-10 h-10 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                                                    title="Xem ảnh đại diện"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <img
+                                                                        src={(s as any).avatarUrl || userAvatar}
+                                                                        alt={s.userName}
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                </a>
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="font-bold text-gray-900 dark:text-white truncate">{s.userName}</div>
                                                                     <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">{formatDateTime(s.completedAt)}</div>
@@ -1896,9 +1914,20 @@ const ProfilePage: React.FC = () => {
                                                             <tr key={a.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors relative gradient-row-divider">
                                                                 <td className="py-4 px-6 align-middle">
                                                                     <div className="flex items-center gap-3">
-                                                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-md">
-                                                                            {a.name.charAt(0).toUpperCase()}
-                                                                        </div>
+                                                                        <a
+                                                                            href={(a as any).avatarUrl || userAvatar}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="w-10 h-10 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                                                            title="Xem ảnh đại diện"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                        >
+                                                                            <img
+                                                                                src={(a as any).avatarUrl || userAvatar}
+                                                                                alt={a.name}
+                                                                                className="w-full h-full object-cover"
+                                                                            />
+                                                                        </a>
                                                                         <span className="font-medium text-gray-900 dark:text-white">{a.name}</span>
                                                                     </div>
                                                                 </td>
