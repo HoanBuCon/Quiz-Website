@@ -1963,7 +1963,21 @@ const ProfilePage: React.FC = () => {
                                             {quizDetails.accessList && quizDetails.accessList.length > 0 ? (
                                                 quizDetails.accessList.map((a: any) => (
                                                     <div key={a.id} className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 space-y-3 relative gradient-row-divider">
-                                                        <div>
+                                                        <div className="flex items-center gap-3">
+                                                            <a
+                                                                href={(a as any).avatarUrl || userAvatar}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="w-10 h-10 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                                                title="Xem ảnh đại diện"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <img
+                                                                    src={(a as any).avatarUrl || userAvatar}
+                                                                    alt={a.name}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            </a>
                                                             <div className="font-bold text-gray-900 dark:text-white">{a.name}</div>
                                                         </div>
                                                         <div className="flex items-center justify-between">
