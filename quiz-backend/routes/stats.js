@@ -73,14 +73,14 @@ router.get('/owner/quiz/:quizId/stats', authRequired, async (req, res) => {
 
     // 1. Get Access List (SharedAccess)
     const accessList = await query(
-      `SELECT u.id, u.name, u.email, sa.accessLevel, sa.createdAt as joinedAt
+      `SELECT u.id, u.name, u.email, u.avatarUrl, sa.accessLevel, sa.createdAt as joinedAt
        FROM SharedAccess sa
        JOIN User u ON sa.userId = u.id
        WHERE sa.targetType = 'quiz' AND sa.targetId = ?
        
        UNION
        
-       SELECT u.id, u.name, u.email, sa.accessLevel, sa.createdAt as joinedAt
+       SELECT u.id, u.name, u.email, u.avatarUrl, sa.accessLevel, sa.createdAt as joinedAt
        FROM SharedAccess sa
        JOIN User u ON sa.userId = u.id
        JOIN Quiz q ON q.id = ?
@@ -92,7 +92,7 @@ router.get('/owner/quiz/:quizId/stats', authRequired, async (req, res) => {
     // 2. Get Sessions (Attempts)
     const sessions = await query(
       `SELECT s.id, s.userId, s.score, s.totalQuestions, s.timeSpent, s.completedAt, 
-        u.name as userName, u.email as userEmail
+        u.name as userName, u.email as userEmail, u.avatarUrl
        FROM QuizSession s
        JOIN User u ON s.userId = u.id
        WHERE s.quizId = ?

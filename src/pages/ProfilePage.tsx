@@ -1754,8 +1754,12 @@ const ProfilePage: React.FC = () => {
                                                                 <tr key={s.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200 relative gradient-row-divider">
                                                                     <td className="py-4 px-6 align-middle">
                                                                         <div className="flex items-center gap-3">
-                                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-md">
-                                                                                {s.userName.charAt(0).toUpperCase()}
+                                                                            <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm border border-gray-200 dark:border-gray-600 flex-shrink-0">
+                                                                                <img
+                                                                                    src={(s as any).avatarUrl || userAvatar}
+                                                                                    alt={s.userName}
+                                                                                    className="w-full h-full object-cover"
+                                                                                />
                                                                             </div>
                                                                             <span className="font-medium text-gray-900 dark:text-white">{s.userName}</span>
                                                                         </div>
