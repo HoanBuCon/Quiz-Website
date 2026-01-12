@@ -85,8 +85,20 @@ const QuizResumer: React.FC = () => {
         setShowModal(false);
     };
 
-    const handleNo = () => {
+    const handleNo = async () => {
         if (savedData?.type === 'quiz') {
+            // Nếu người dùng từ chối tiếp tục làm bài, gọi API báo hiệu kết thúc attempt cũ
+            if (savedData.attemptId) {
+                try {
+                    const { SessionsAPI } = await import("../utils/api");
+                    const token = getToken();
+                    if (token) {
+                        await SessionsAPI.endAttempt(savedData.attemptId, token);
+                    }
+                } catch (e) {
+                    // console.error("Failed to end attempt:", e);
+                }
+            }
             localStorage.removeItem(QUIZ_PROGRESS_KEY);
         } else if (savedData?.type === 'edit') {
             localStorage.removeItem(QUIZ_EDIT_PROGRESS_KEY);

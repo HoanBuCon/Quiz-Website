@@ -28,9 +28,10 @@ console.log(`
 3. Hiển thị toàn bộ người dùng (dạng rút gọn)
 4. Hiển thị toàn bộ người dùng (đầy đủ chi tiết)
 5. Xuất toàn bộ người dùng ra file TXT (full)
+6. Monitoring Online Users (Realtime - 2s update)
 `);
 
-rl.question("Nhập lựa chọn (1/2/3/4/5): ", async (choice) => {
+rl.question("Nhập lựa chọn (1/2/3/4/5/6): ", async (choice) => {
   try {
     switch (choice.trim()) {
       case "1": {
@@ -126,8 +127,115 @@ rl.question("Nhập lựa chọn (1/2/3/4/5): ", async (choice) => {
         break;
       }
 
+      case "6": {
+        console.log("\n📡 ĐANG THEO DÕI USER ONLINE (Update mỗi 2s) - Ấn Ctrl+C để dừng...");
+        
+        const checkOnline = async () => {
+          try {
+            // Lấy user hoạt động trong 5 phút gần nhất
+            // Nếu có env ONLINE_WINDOW_MINUTES thì dùng, không thì default 5
+            const onlineWindowMinutes = Number(process.env.ONLINE_WINDOW_MINUTES || 5);
+            const timeThreshold = new Date(Date.now() - onlineWindowMinutes * 60 * 1000);
+            
+            const users = await query(
+              "SELECT id, name, email, lastActivityAt FROM User WHERE lastActivityAt >= ? ORDER BY lastActivityAt DESC",
+              [timeThreshold]
+            );
+
+            // Lấy thông tin Quiz đang làm (nếu có)
+            const usersWithStatus = await Promise.all(users.map(async (u) => {
+                // Tính trạng thái Active/Idle trước
+                const diffSec = (Date.now() - new Date(u.lastActivityAt).getTime()) / 1000;
+                let status = "🟡 Idle";
+                if (diffSec < 60) status = "🟢 Active";
+                
+                // Chỉ hiển thị Quiz nếu user đang Active (xanh) HOẶC quiz mới bắt đầu < 5 phút
+                // Điều này tránh hiển thị quiz bị treo khi user đã thoát nhưng k gọi api end
+                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                
+                const activeAttempt = await queryOne(`
+                    SELECT q.title, qa.startedAt, qa.quizId
+                    FROM QuizAttempt qa
+                    JOIN Quiz q ON qa.quizId = q.id
+                    WHERE qa.userId = ? 
+                      AND qa.endedAt IS NULL
+                    ORDER BY qa.startedAt DESC
+                    LIMIT 1
+                `, [u.id]);
+                
+                let currentQuiz = null;
+                if (activeAttempt) {
+                    const startedAt = new Date(activeAttempt.startedAt);
+                    const minutesSinceStart = Math.floor((Date.now() - startedAt.getTime()) / 60000);
+                    const label = `${activeAttempt.title} (${minutesSinceStart}p)`;
+                    
+                    // Logic 1: Timeout (Zombie Check) - 4 giờ
+                    if (minutesSinceStart > 240) {
+                        currentQuiz = null; 
+                    } 
+                    // Logic 2: Check active status
+                    else if (status !== "🟢 Active" && minutesSinceStart > 5) {
+                        currentQuiz = null;
+                    } 
+                    else {
+                        // Logic 3: Check Finished (Đã nộp bài nhưng Attempt chưa update status)
+                        // Kiem tra trong bang QuizSession xem có bai nop nao sau khi attempt nay start khong
+                        const finishedSession = await queryOne(`
+                            SELECT id FROM QuizSession 
+                            WHERE quizId = ? AND userId = ? AND startedAt >= ?
+                            LIMIT 1
+                        `, [activeAttempt.quizId, u.id, activeAttempt.startedAt]);
+                        
+                        if (finishedSession) {
+                            currentQuiz = null; // Đã xong rồi -> Không còn đang làm
+                        } else {
+                            currentQuiz = label;
+                        }
+                    }
+                }
+                
+                return {
+                    ...u,
+                    currentQuiz,
+                    status
+                };
+            }));
+
+            console.clear(); 
+            console.log(`\n============== ${new Date().toLocaleTimeString()} (Window: ${onlineWindowMinutes}m) ==============`);
+            console.log(`⚡ REAL-TIME MONITORING: ${users.length} users online`);
+            
+            if (users.length > 0) {
+              console.table(usersWithStatus.map(u => ({
+                ID: u.id,
+                Name: u.name,
+                Email: u.email,
+                "Last Active": u.lastActivityAt ? new Date(u.lastActivityAt).toLocaleTimeString() : 'N/A',
+                "Status": u.status,
+                "Quiz": u.currentQuiz ? `📝 ${u.currentQuiz}` : "---"
+              })));
+            } else {
+              console.log("... Không có ai đang online ...");
+            }
+            console.log("===============================================================");
+            console.log("Tip: Nhấn Ctrl+C để thoát.");
+          } catch (err) {
+            console.error("Lỗi check online:", err);
+          }
+        };
+
+        // Chạy ngay lần đầu
+        await checkOnline();
+
+        // Set interval 2s (Real-time feel)
+        setInterval(checkOnline, 2000);
+        
+        // Không đóng connection và rl ở đây vì đang loop
+        break;
+      }
+
       default:
-        console.log("❌ Lựa chọn không hợp lệ. Vui lòng chọn 1–5.");
+        console.log("❌ Lựa chọn không hợp lệ. Vui lòng chọn 1–6.");
         rl.close();
         await close();
         break;
