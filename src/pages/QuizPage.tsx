@@ -223,7 +223,10 @@ const QuizPage: React.FC = () => {
           // Check for saved progress (priority)
           const savedRaw = localStorage.getItem(QUIZ_PROGRESS_KEY);
           let restored = false;
-          if (savedRaw) {
+          // [MODIFIED] If this is a retry attempt (manualResult), do not restore from localStorage
+          // because localStorage might contain full-quiz data or previous session data.
+          // We want to force a fresh init with filtered questions.
+          if (savedRaw && !(location.state as any)?.retryMode) {
             try {
               const saved = JSON.parse(savedRaw);
               if (saved && saved.quizId === quizId) {
@@ -262,10 +265,23 @@ const QuizPage: React.FC = () => {
           if (!restored) {
             setQuizTitle(found.title);
             setClassName(found.className || (location.state as any)?.className || "");
-            // Lưu câu hỏi gốc
             const loadedQuestions = found.questions || [];
             setOriginalQuestions(loadedQuestions);
-            setQuestions(loadedQuestions);
+
+            // [MODIFIED] Handle Retry Mode
+            if ((location.state as any)?.retryMode && Array.isArray((location.state as any)?.incorrectOrder)) {
+              const incorrectIds = (location.state as any).incorrectOrder as string[];
+              // Filter questions
+              const filteredQs = loadedQuestions.filter((q: Question) => incorrectIds.includes(q.id));
+              // Also sort them to match the incorrectOrder
+              const sortedQs = incorrectIds.map(id => filteredQs.find((q: Question) => q.id === id)).filter(Boolean) as Question[];
+              setQuestions(sortedQs);
+              setOriginalQuestions(sortedQs);
+            } else {
+              setQuestions(loadedQuestions);
+              setOriginalQuestions(loadedQuestions);
+            }
+
             setEffectiveQuizId(found.id);
           }
         } else {
@@ -298,6 +314,10 @@ const QuizPage: React.FC = () => {
   useEffect(() => {
     if (!effectiveQuizId) return;
     if (attemptRef.current) return; // Prevent restart if restored
+
+    // [MODIFIED] Skip starting session if Retry Mode
+    if ((location.state as any)?.retryMode) return;
+
     let cancelled = false;
     (async () => {
       try {
@@ -1204,6 +1224,86 @@ const QuizPage: React.FC = () => {
 
         // Clear saved progress before submitting
         localStorage.removeItem(QUIZ_PROGRESS_KEY);
+
+        // [MODIFIED] Handle Retry Mode Submission (Local only)
+        if ((location.state as any)?.retryMode) {
+          const qid = effectiveQuizId || quizId!;
+
+          // Calculate score locally
+          let localScore = 0;
+          questions.forEach(q => {
+            // Reuse logic from ResultsPage (duplicated essentially, but needed for local calc)
+            // Simplification: We assume ResultsPage will re-calculate score if we pass answers
+            // BUT ResultsPage expects 'score' in result object.
+            // Let's implement basic scoring here or just pass needed data.
+            // Actually ResultsPage expects 'score' and 'totalQuestions' in result object.
+
+            // Reuse helper isAnswerIncorrect from this component?
+            // Note: isAnswerIncorrect uses getCurrentAnswer -> userAnswers state
+
+            // Important: isAnswerIncorrect doesn't check composite sub-questions deeply for score, 
+            // it's for UI highlighting.
+            // Let's do a robust check similar to ResultsPage
+
+            const getStatus = (question: Question) => {
+              const ua = answersMap[question.id];
+              // Basic check
+              if (!ua) return false;
+
+              if (question.type === 'text') {
+                const val = typeof ua === 'object' ? ua[0] : ua;
+                const userText = String(val || '').trim().toLowerCase();
+                const ca = Array.isArray(question.correctAnswers) ? question.correctAnswers : [];
+                return ca.some((a: string) => a.trim().toLowerCase() === userText);
+              } else if (question.type === 'drag') {
+                // Drag check
+                const correctMap = question.correctAnswers as Record<string, string>;
+                const userMap = ua as Record<string, string>;
+                const items = ((question.options as any)?.items || []) as DragItem[];
+                return items.every(item => {
+                  const u = userMap[item.id] || undefined;
+                  const c = correctMap[item.id] || undefined;
+                  return u === c;
+                });
+              } else {
+                // Single/Multiple
+                const uaArr = Array.isArray(ua) ? ua : [ua];
+                const caArr = Array.isArray(question.correctAnswers) ? question.correctAnswers : [];
+                return uaArr.length === caArr.length && uaArr.every((a: string) => caArr.includes(a));
+              }
+            };
+
+            if (q.type === 'composite') {
+              const subs = (q as any).subQuestions || [];
+              const allSubsCorrect = subs.every((sub: any) => getStatus(sub));
+              if (allSubsCorrect) localScore++;
+            } else {
+              if (getStatus(q)) localScore++;
+            }
+          });
+
+          const manualResult = {
+            quizId: qid,
+            quizTitle: `${quizTitle} (Làm lại câu sai)`,
+            userAnswers: answersMap,
+            score: localScore,
+            totalQuestions: questions.length,
+            timeSpent,
+            completedAt: new Date(),
+            quizSnapshot: {
+              quizTitle: `${quizTitle} (Làm lại câu sai)`,
+              questions: questions
+            }
+          };
+
+          navigate(`/results/${qid}`, {
+            state: {
+              manualResult,
+              isRetryResult: true
+            }
+          });
+          return;
+        }
 
         const { SessionsAPI } = await import("../utils/api");
         const qid = effectiveQuizId || quizId!;

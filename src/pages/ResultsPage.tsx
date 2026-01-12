@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaLightbulb, FaRedo, FaHistory, FaChalkboardTeacher, FaHome } from "react-icons/fa";
 import { Quiz, Question, DragItem, DragTarget } from "../types";
 import MathText from "../components/MathText";
 import ImageModal from "../components/ImageModal";
@@ -110,6 +110,17 @@ const ResultsPage: React.FC = () => {
       navigate("/");
       return;
     }
+
+    // [MODIFIED] Check for manual result (from Retry Mode)
+    if (location.state?.manualResult) {
+      setResult(location.state.manualResult);
+      if (location.state.manualResult.quizSnapshot) {
+        setQuiz(location.state.manualResult.quizSnapshot);
+      }
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       try {
         const { getToken } = await import("../utils/auth");
@@ -287,6 +298,28 @@ const ResultsPage: React.FC = () => {
     return !getAnswerStatus(q, ua).isCorrect;
   };
 
+  const handleRetryIncorrect = () => {
+    if (!quiz || !result) return;
+
+    // Calculate incorrect questions
+    const incorrectQs = displayQuestions.filter(q => isQuestionWrongForResult(q));
+    const incorrectIds = incorrectQs.map(q => q.id);
+
+    if (incorrectIds.length === 0) {
+      alert("Bạn đã làm đúng tất cả các câu hỏi!");
+      return;
+    }
+
+    navigate(`/quiz/${quizId}`, {
+      state: {
+        retryMode: true,
+        incorrectOrder: incorrectIds,
+        className: (quiz as any)?.className,
+        // Pass original questions if needed, but quiz page should refetch or reuse
+      }
+    });
+  };
+
   if (loading) {
     const Spinner = require("../components/SpinnerLoading").default;
     return (
@@ -414,11 +447,13 @@ const ResultsPage: React.FC = () => {
       </div>
 
       {/* Nút điều khiển */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      {/* Nút điều khiển */}
+      <div className={`grid grid-cols-2 ${!location.state?.isRetryResult ? 'xl:grid-cols-5 md:grid-cols-3' : 'xl:grid-cols-4 md:grid-cols-2'} gap-3 mb-8`}>
         <button
           onClick={() => setShowExplanations(!showExplanations)}
-          className="w-full inline-flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition"
+          className="w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition"
         >
+          <FaLightbulb />
           {showExplanations ? "Ẩn giải thích" : "Hiện giải thích"}
         </button>
         <button
@@ -427,14 +462,27 @@ const ResultsPage: React.FC = () => {
               state: { className: (quiz as any)?.className },
             })
           }
-          className="btn-primary w-full inline-flex items-center justify-center"
+          className="btn-primary w-full inline-flex items-center justify-center gap-2"
         >
-          {fromProfile ? "Làm Quiz" : "Làm lại Quiz"}
+          <FaHistory />
+          {location.state?.isRetryResult ? "Làm lại từ đầu" : (fromProfile ? "Làm Quiz" : "Làm lại Quiz")}
         </button>
-        <Link to="/classes" className="btn-secondary w-full inline-flex items-center justify-center">
+
+        {!location.state?.isRetryResult && (
+          <button
+            onClick={handleRetryIncorrect}
+            className="w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition"
+          >
+            <FaRedo />
+            Làm lại câu sai
+          </button>
+        )}
+        <Link to="/classes" className="btn-secondary w-full inline-flex items-center justify-center gap-2">
+          <FaChalkboardTeacher />
           Xem lớp học khác
         </Link>
-        <Link to="/" className="btn-secondary w-full inline-flex items-center justify-center">
+        <Link to="/" className="btn-secondary w-full inline-flex items-center justify-center gap-2">
+          <FaHome />
           Về trang chủ
         </Link>
       </div>
@@ -868,29 +916,44 @@ const ResultsPage: React.FC = () => {
 
           {/* Nút dưới cùng (làm lại, xem lớp, về trang chủ) */}
           <div className="mt-8 text-center">
-            <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className={`w-full grid grid-cols-2 ${!location.state?.isRetryResult ? 'xl:grid-cols-5 md:grid-cols-3' : 'xl:grid-cols-4 md:grid-cols-2'} gap-3`}>
               <button
                 onClick={() => setShowExplanations(!showExplanations)}
-                className="w-full inline-flex items-center justify-center bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                className="w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition"
               >
+                <FaLightbulb />
                 {showExplanations ? "Ẩn giải thích" : "Hiện giải thích"}
               </button>
               <button
                 onClick={() => navigate(`/quiz/${quizId}`)}
-                className="btn-primary w-full inline-flex items-center justify-center"
+                className="btn-primary w-full inline-flex items-center justify-center gap-2"
               >
-                Làm lại Quiz
+                <FaHistory />
+                {location.state?.isRetryResult ? "Làm lại từ đầu" : "Làm lại Quiz"}
               </button>
+
+              {!location.state?.isRetryResult && (
+                <button
+                  onClick={handleRetryIncorrect}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                >
+                  <FaRedo />
+                  Làm lại câu sai
+                </button>
+              )}
+
               <Link
                 to="/classes"
-                className="btn-secondary w-full inline-flex items-center justify-center"
+                className="btn-secondary w-full inline-flex items-center justify-center gap-2"
               >
+                <FaChalkboardTeacher />
                 Xem lớp học khác
               </Link>
               <Link
                 to="/"
-                className="btn-secondary w-full inline-flex items-center justify-center"
+                className="btn-secondary w-full inline-flex items-center justify-center gap-2"
               >
+                <FaHome />
                 Về trang chủ
               </Link>
             </div>
