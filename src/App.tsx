@@ -250,7 +250,7 @@ function App() {
                 path="/"
                 element={
                   <MaintenanceGuard>
-                    <SidebarLayout>
+                    <SidebarLayout noPadding={true}>
                       <HomePage />
                     </SidebarLayout>
                   </MaintenanceGuard>
@@ -260,7 +260,7 @@ function App() {
                 path="/classes"
                 element={
                   <MaintenanceGuard>
-                    <SidebarLayout>
+                    <SidebarLayout noPadding={true}>
                       <ClassesPage />
                     </SidebarLayout>
                   </MaintenanceGuard>
@@ -280,7 +280,7 @@ function App() {
                 path="/create"
                 element={
                   <MaintenanceGuard>
-                    <SidebarLayout>
+                    <SidebarLayout noPadding={true}>
                       <CreateClassPage />
                     </SidebarLayout>
                   </MaintenanceGuard>
@@ -300,7 +300,7 @@ function App() {
                 path="/documents"
                 element={
                   <MaintenanceGuard>
-                    <SidebarLayout>
+                    <SidebarLayout noPadding={true}>
                       <DocumentsPage />
                     </SidebarLayout>
                   </MaintenanceGuard>

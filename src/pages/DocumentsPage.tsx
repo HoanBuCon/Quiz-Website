@@ -696,18 +696,17 @@ const DocumentsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <div>
       {/* Hero Section (Unified) */}
-      <div className="mb-8 lg:mb-12">
-        <div className="relative overflow-hidden group rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 dark:from-blue-900 dark:via-slate-900 dark:to-slate-950 p-8 sm:p-12 shadow-2xl animate-slideDownIn">
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-          {/* Overlay pattern */}
-          <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
-          {/* Shimmer effect */}
-          <div
-            className="
+      <div className="mb-8 lg:mb-12 w-full relative overflow-hidden group bg-gradient-to-bl from-blue-600 via-blue-700 to-blue-900 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideDownIn">
+        {/* Decorative elements */}
+        {/* <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div> */}
+        {/* <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div> */}
+        {/* Overlay pattern */}
+        <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_1px_1px,_#fff_1px,_transparent_0)] bg-[size:24px_24px] rounded-2xl pointer-events-none"></div>
+        {/* Shimmer effect */}
+        <div
+          className="
               absolute inset-0
               opacity-30
               bg-gradient-to-r from-transparent via-white/65 to-transparent
@@ -717,192 +716,27 @@ const DocumentsPage: React.FC = () => {
               mix-blend-overlay
               rounded-2xl pointer-events-none
             "
-          ></div>
-          <div className="relative z-10">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight">
-              Tài liệu của tôi
-            </h1>
-            <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed">
-              Lưu trữ và quản lý tài liệu của bạn
-            </p>
-          </div>
+        ></div>
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-bold text-white mb-4 tracking-tight text-center lg:text-left">
+            Tài liệu của tôi
+          </h1>
+          <p className="text-base font-mono sm:text-lg text-blue-100 dark:text-blue-200 max-w-2xl leading-relaxed text-center lg:text-left mx-auto lg:mx-0">
+            Lưu trữ và quản lý tài liệu của bạn
+          </p>
         </div>
       </div>
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12">
 
 
-      {/* Mobile/Tablet Right Section - Kho tài liệu & Thống kê (View < 1280px) */}
-      <div className="xl:hidden mb-6 space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6">
-        {/* Kho tài liệu học tập */}
-        <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 h-full">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-3">
-              <svg
-                className="w-6 h-6 text-indigo-600 dark:text-indigo-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              Kho tài liệu học tập
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Độ khó: Liemdaidary🔥
-            </p>
-            <a
-              href="https://lms.liemsdai.is-best.net/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block text-sm font-mono text-indigo-600 dark:text-indigo-400 hover:underline break-all"
-            >
-              lms.liemsdai.is-best.net
-            </a>
-          </div>
-
-          <div className="flex items-center justify-center">
-            <div
-              className="perspective-1000 w-full"
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-            >
-              <a
-                href="https://lms.liemsdai.is-best.net/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative group block"
-              >
-                <img
-                  src={
-                    isDarkMode
-                      ? require("../assets/liemdai_dark.png")
-                      : require("../assets/liemdai_light.png")
-                  }
-                  alt={isDarkMode ? "liemdai_dark" : "liemdai_light"}
-                  className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
-                  style={{
-                    maxHeight: 280,
-                    transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1
-                      }deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0
-                        ? "20px"
-                        : "0px"
-                      })`,
-                    border: "2px solid transparent",
-                    backgroundImage: isDarkMode
-                      ? "linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)"
-                      : "linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)",
-                    backgroundSize: "400% 400%",
-                    animation: "neonBorder 3s ease-in-out infinite",
-                    backgroundClip: "border-box",
-                    borderRadius: "12px",
-                  }}
-                />
-                {/* Tooltip */}
-                <div
-                  className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
-                    ? "bg-gray-800 text-white border border-gray-700"
-                    : "bg-white text-gray-900 border border-gray-200"
-                    }`}
-                >
-                  Click để chuyển đến trang →
-                </div>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Thống kê tài liệu - Tablet Only (1024px - 1280px) */}
-        <div className="hidden lg:block h-full card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
-              <svg
-                className="w-6 h-6 text-purple-600 dark:text-purple-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-              Thống kê tài liệu
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Tổng quan tài liệu của bạn
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Số lượng tài liệu
-              </span>
-              <span className="text-lg font-bold text-gray-900 dark:text-white">
-                {documents.length}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Tài liệu mới nhất
-              </span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                {documents.length > 0
-                  ? formatDate(documents[0].uploadedAt)
-                  : "N/A"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Tổng dung lượng
-              </span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                {formatFileSize(
-                  documents.reduce((total, doc) => total + doc.size, 0)
-                )}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-              <span className="text-sm text-green-700 dark:text-green-400">
-                Lớp đã tạo
-              </span>
-              <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                {totalClasses}
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <span className="text-sm text-blue-700 dark:text-blue-400">
-                Bài kiểm tra
-              </span>
-              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                {totalQuizzes}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
-        {/* Left Section - Main Content */}
-        <div className="xl:w-[70%] min-w-0 order-1">
-
-
-          {/* Upload Area */}
-          <div className="card p-6 lg:p-8 mb-6 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500 hover:-translate-y-[1px] transition-all duration-300 animate-slideUpIn anim-delay-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
+        {/* Mobile/Tablet Right Section - Kho tài liệu & Thống kê (View < 1280px) */}
+        <div className="xl:hidden mb-6 space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6">
+          {/* Kho tài liệu học tập */}
+          <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 h-full">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-3">
                 <svg
-                  className="w-6 h-6 text-primary-600 dark:text-primary-400"
+                  className="w-6 h-6 text-indigo-600 dark:text-indigo-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -911,28 +745,163 @@ const DocumentsPage: React.FC = () => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                Tải lên tài liệu mới
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                Kho tài liệu học tập
               </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Độ khó: Liemdaidary🔥
+              </p>
+              <a
+                href="https://lms.liemsdai.is-best.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-sm font-mono text-indigo-600 dark:text-indigo-400 hover:underline break-all"
+              >
+                lms.liemsdai.is-best.net
+              </a>
             </div>
-            <div
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${dragActive
-                ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 scale-[1.02]"
-                : "border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500"
-                }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <div className="space-y-4">
-                <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+
+            <div className="flex items-center justify-center">
+              <div
+                className="perspective-1000 w-full"
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+              >
+                <a
+                  href="https://lms.liemsdai.is-best.net/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative group block"
+                >
+                  <img
+                    src={
+                      isDarkMode
+                        ? require("../assets/liemdai_dark.png")
+                        : require("../assets/liemdai_light.png")
+                    }
+                    alt={isDarkMode ? "liemdai_dark" : "liemdai_light"}
+                    className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
+                    style={{
+                      maxHeight: 280,
+                      transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1
+                        }deg) rotateX(${-mousePosition.y * 0.1}deg) translateZ(${Math.abs(mousePosition.x) + Math.abs(mousePosition.y) > 0
+                          ? "20px"
+                          : "0px"
+                        })`,
+                      border: "2px solid transparent",
+                      backgroundImage: isDarkMode
+                        ? "linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)"
+                        : "linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)",
+                      backgroundSize: "400% 400%",
+                      animation: "neonBorder 3s ease-in-out infinite",
+                      backgroundClip: "border-box",
+                      borderRadius: "12px",
+                    }}
+                  />
+                  {/* Tooltip */}
+                  <div
+                    className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
+                      ? "bg-gray-800 text-white border border-gray-700"
+                      : "bg-white text-gray-900 border border-gray-200"
+                      }`}
+                  >
+                    Click để chuyển đến trang →
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Thống kê tài liệu - Tablet Only (1024px - 1280px) */}
+          <div className="hidden lg:block h-full card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
+                <svg
+                  className="w-6 h-6 text-purple-600 dark:text-purple-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                Thống kê tài liệu
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Tổng quan tài liệu của bạn
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Số lượng tài liệu
+                </span>
+                <span className="text-lg font-bold text-gray-900 dark:text-white">
+                  {documents.length}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Tài liệu mới nhất
+                </span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {documents.length > 0
+                    ? formatDate(documents[0].uploadedAt)
+                    : "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Tổng dung lượng
+                </span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {formatFileSize(
+                    documents.reduce((total, doc) => total + doc.size, 0)
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <span className="text-sm text-green-700 dark:text-green-400">
+                  Lớp đã tạo
+                </span>
+                <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {totalClasses}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <span className="text-sm text-blue-700 dark:text-blue-400">
+                  Bài kiểm tra
+                </span>
+                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  {totalQuizzes}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col xl:flex-row gap-4 xl:gap-8">
+          {/* Left Section - Main Content */}
+          <div className="xl:w-[70%] min-w-0 order-1">
+
+
+            {/* Upload Area */}
+            <div className="card p-6 lg:p-8 mb-6 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500 hover:-translate-y-[1px] transition-all duration-300 animate-slideUpIn anim-delay-100">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
                   <svg
-                    className="w-8 h-8 text-gray-400"
+                    className="w-6 h-6 text-primary-600 dark:text-primary-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -945,18 +914,24 @@ const DocumentsPage: React.FC = () => {
                     />
                   </svg>
                 </div>
-
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Kéo thả File vào đây hoặc click để chọn File
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    Hỗ trợ File .txt, .json, .doc, .docx
-                  </p>
-
-                  <label className="btn-primary cursor-pointer inline-flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Tải lên tài liệu mới
+                </h3>
+              </div>
+              <div
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${dragActive
+                  ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 scale-[1.02]"
+                  : "border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500"
+                  }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <div className="space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
                     <svg
-                      className="w-5 h-5"
+                      className="w-8 h-8 text-gray-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -965,797 +940,822 @@ const DocumentsPage: React.FC = () => {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                       />
                     </svg>
-                    Chọn File
-                    <input
-                      type="file"
-                      multiple
-                      accept=".txt,.json,.doc,.docx"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
+                  </div>
 
-            {/* Upload Progress */}
-            {isUploading && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {processingFile
-                      ? `Đang xử lý ${processingFile}...`
-                      : "Đang tải lên..."}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    100%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div className="bg-primary-600 h-2 rounded-full transition-all duration-300"></div>
-                </div>
-              </div>
-            )}
-          </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      Kéo thả File vào đây hoặc click để chọn File
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Hỗ trợ File .txt, .json, .doc, .docx
+                    </p>
 
-          {/* Filter and Search Bar Row */}
-          <div className="mb-6 flex gap-2 animate-slideUpIn">
-            <div className="relative" ref={sortMenuRef}>
-              <button
-                onClick={() => setShowSortMenu(!showSortMenu)}
-                className="flex items-center justify-center px-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 active:scale-95 rounded-lg transition-all shadow-sm text-gray-900 dark:text-gray-100"
-              >
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
-                </svg>
-              </button>
-
-              <div className={`absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden transition-all duration-200 ease-out origin-top-left ${showSortMenu ? 'opacity-100 scale-100 translate-y-0 visible pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 invisible pointer-events-none'}`}>
-                {[
-                  { id: 'date-desc' as const, label: 'Mới nhất' },
-                  { id: 'date-asc' as const, label: 'Cũ nhất' },
-                  { id: 'name-asc' as const, label: 'Tên (A → Z)' },
-                  { id: 'name-desc' as const, label: 'Tên (Z → A)' }
-                ].map(option => (
-                  <button
-                    key={option.id}
-                    onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
-                    className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
-                      }`}
-                  >
-                    <span>{option.label}</span>
-                    {sortBy === option.id && (
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <label className="btn-primary cursor-pointer inline-flex items-center gap-2">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                        />
                       </svg>
-                    )}
-                  </button>
-                ))}
+                      Chọn File
+                      <input
+                        type="file"
+                        multiple
+                        accept=".txt,.json,.doc,.docx"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* Search Bar */}
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Tìm kiếm tài liệu..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:ring-0 outline-none transition-all shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
-              />
-              <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+              {/* Upload Progress */}
+              {isUploading && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {processingFile
+                        ? `Đang xử lý ${processingFile}...`
+                        : "Đang tải lên..."}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      100%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="bg-primary-600 h-2 rounded-full transition-all duration-300"></div>
+                  </div>
+                </div>
               )}
             </div>
-          </div>
 
-          {loading ? (
-            <div className="py-8 flex items-center justify-center">
-              {(() => {
-                const SpinnerLoading = require("../components/SpinnerLoading").default;
-                return <div style={{ transform: 'scale(0.435)' }}><SpinnerLoading /></div>;
-              })()}
-            </div>
-          ) : (
-            // Danh sách tài liệu
-            <div className="space-y-4">
-              {/* Bulk Actions Header */}
-              {/* Bulk Actions Header REMOVED - Replaced by FAB */}
-              {[...documents]
-                .sort((a, b) => {
-                  switch (sortBy) {
-                    case 'name-asc':
-                      return a.name.localeCompare(b.name);
-                    case 'name-desc':
-                      return b.name.localeCompare(a.name);
-                    case 'date-desc':
-                      return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
-                    case 'date-asc':
-                      return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
-                    default:
-                      return 0;
-                  }
-                })
-                .filter(doc => !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map((doc, index) => (
-                  <div
-                    key={doc.id}
-                    onClick={() => {
-                      if (selectedIds.size > 0) {
-                        toggleSelection(doc.id);
-                      }
-                    }}
-                    className={`group card p-4 sm:p-6 transition-all duration-300 border-l-4 animate-slideUpIn anim-delay-200
-                    ${selectedIds.has(doc.id)
-                        ? "bg-blue-50 dark:bg-blue-900/10 border-blue-500 ring-1 ring-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:shadow-xl hover:scale-[1.01]"
-                        : selectedIds.size > 0
-                          ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-xl hover:scale-[1.01] border-l-gray-300 dark:border-l-gray-600"
-                          : "hover:shadow-xl hover:scale-[1.01] border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500"
-                      }`}
-                    style={{ animationDelay: `${(index % 5) * 0.1 + 0.2}s` }}
+            {/* Filter and Search Bar Row */}
+            <div className="mb-6 flex gap-2 animate-slideUpIn">
+              <div className="relative" ref={sortMenuRef}>
+                <button
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="flex items-center justify-center px-4 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-200 dark:hover:border-gray-600 active:scale-95 rounded-lg transition-all shadow-sm text-gray-900 dark:text-gray-100"
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
+                  </svg>
+                </button>
+
+                <div className={`absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden transition-all duration-200 ease-out origin-top-left ${showSortMenu ? 'opacity-100 scale-100 translate-y-0 visible pointer-events-auto' : 'opacity-0 scale-95 -translate-y-2 invisible pointer-events-none'}`}>
+                  {[
+                    { id: 'date-desc' as const, label: 'Mới nhất' },
+                    { id: 'date-asc' as const, label: 'Cũ nhất' },
+                    { id: 'name-asc' as const, label: 'Tên (A → Z)' },
+                    { id: 'name-desc' as const, label: 'Tên (Z → A)' }
+                  ].map(option => (
+                    <button
+                      key={option.id}
+                      onClick={() => { setSortBy(option.id); setShowSortMenu(false); }}
+                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between ${sortBy === option.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                    >
+                      <span>{option.label}</span>
+                      {sortBy === option.id && (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm tài liệu..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 text-sm bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-800 rounded-lg focus:ring-0 outline-none transition-all shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-500"
+                />
+                <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">
-                      {/* Selection Overlay for entire card click (optional) */}
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
 
-                      <div className="flex items-center space-x-3 sm:space-x-4 overflow-hidden">
-                        {/* Custom Checkbox */}
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSelection(doc.id);
-                          }}
-                          className={`relative w-6 h-6 flex-shrink-0 cursor-pointer rounded-full border-2 flex items-center justify-center transition-all duration-200
+            {loading ? (
+              <div className="py-8 flex items-center justify-center">
+                {(() => {
+                  const SpinnerLoading = require("../components/SpinnerLoading").default;
+                  return <div style={{ transform: 'scale(0.435)' }}><SpinnerLoading /></div>;
+                })()}
+              </div>
+            ) : (
+              // Danh sách tài liệu
+              <div className="space-y-4">
+                {/* Bulk Actions Header */}
+                {/* Bulk Actions Header REMOVED - Replaced by FAB */}
+                {[...documents]
+                  .sort((a, b) => {
+                    switch (sortBy) {
+                      case 'name-asc':
+                        return a.name.localeCompare(b.name);
+                      case 'name-desc':
+                        return b.name.localeCompare(a.name);
+                      case 'date-desc':
+                        return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+                      case 'date-asc':
+                        return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
+                      default:
+                        return 0;
+                    }
+                  })
+                  .filter(doc => !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((doc, index) => (
+                    <div
+                      key={doc.id}
+                      onClick={() => {
+                        if (selectedIds.size > 0) {
+                          toggleSelection(doc.id);
+                        }
+                      }}
+                      className={`group card p-4 sm:p-6 transition-all duration-300 border-l-4 animate-slideUpIn anim-delay-200
+                    ${selectedIds.has(doc.id)
+                          ? "bg-blue-50 dark:bg-blue-900/10 border-blue-500 ring-1 ring-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:shadow-xl hover:scale-[1.01]"
+                          : selectedIds.size > 0
+                            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 hover:shadow-xl hover:scale-[1.01] border-l-gray-300 dark:border-l-gray-600"
+                            : "hover:shadow-xl hover:scale-[1.01] border-l-gray-300 dark:border-l-gray-600 hover:border-l-primary-500 dark:hover:border-l-primary-500"
+                        }`}
+                      style={{ animationDelay: `${(index % 5) * 0.1 + 0.2}s` }}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">
+                        {/* Selection Overlay for entire card click (optional) */}
+
+                        <div className="flex items-center space-x-3 sm:space-x-4 overflow-hidden">
+                          {/* Custom Checkbox */}
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSelection(doc.id);
+                            }}
+                            className={`relative w-6 h-6 flex-shrink-0 cursor-pointer rounded-full border-2 flex items-center justify-center transition-all duration-200
                           ${selectedIds.has(doc.id)
-                              ? "bg-blue-600 border-blue-600 scale-105"
-                              : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-blue-400"
-                            }
+                                ? "bg-blue-600 border-blue-600 scale-105"
+                                : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-blue-400"
+                              }
                         `}
-                        >
-                          <svg
-                            className={`w-3.5 h-3.5 text-white transition-all duration-200 ${selectedIds.has(doc.id) ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {getFileIcon(doc.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
-                            {doc.name}
-                          </h3>
-                          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                            <span>{formatFileSize(doc.size)}</span>
-                            <span>•</span>
-                            <span>Tải lên: {formatDate(doc.uploadedAt, true)}</span>
-                            <span>•</span>
-                            <span className="uppercase">{doc.type}</span>
+                            <svg
+                              className={`w-3.5 h-3.5 text-white transition-all duration-200 ${selectedIds.has(doc.id) ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <div className="flex-shrink-0">
+                            {getFileIcon(doc.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">
+                              {doc.name}
+                            </h3>
+                            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                              <span>{formatFileSize(doc.size)}</span>
+                              <span>•</span>
+                              <span>Tải lên: {formatDate(doc.uploadedAt, true)}</span>
+                              <span>•</span>
+                              <span className="uppercase">{doc.type}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2 sm:flex-shrink-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownload(doc);
-                          }}
-                          className="btn-secondary text-sm flex items-center flex-1 sm:flex-initial justify-center"
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        <div className="flex items-center space-x-2 sm:flex-shrink-0">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownload(doc);
+                            }}
+                            className="btn-secondary text-sm flex items-center flex-1 sm:flex-initial justify-center"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          Tải về
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCreateClass(doc);
-                          }}
-                          className="btn-primary text-sm flex items-center flex-1 sm:flex-initial justify-center"
-                        >
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            Tải về
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCreateClass(doc);
+                            }}
+                            className="btn-primary text-sm flex items-center flex-1 sm:flex-initial justify-center"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                            />
-                          </svg>
-                          Tạo Quiz
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/document/${doc.id}`);
-                          }}
-                          className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-2"
-                          title="Xem tài liệu"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteFile(doc.id, doc.name);
-                          }}
-                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2"
-                          title="Xóa tài liệu"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                              />
+                            </svg>
+                            Tạo Quiz
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/document/${doc.id}`);
+                            }}
+                            className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 p-2"
+                            title="Xem tài liệu"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                        </button>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFile(doc.id, doc.name);
+                            }}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2"
+                            title="Xóa tài liệu"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-            </div>
-          )}
-
-          {/* Stats Card - Mobile Only (hiển thị ở cuối) */}
-          <div className="lg:hidden mt-6">
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
-                  <svg
-                    className="w-6 h-6 text-purple-600 dark:text-purple-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                  Thống kê tài liệu
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tổng quan tài liệu của bạn
-                </p>
+                  ))}
               </div>
+            )}
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Số lượng tài liệu
-                  </span>
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
-                    {documents.length}
-                  </span>
+            {/* Stats Card - Mobile Only (hiển thị ở cuối) */}
+            <div className="lg:hidden mt-6">
+              <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
+                    <svg
+                      className="w-6 h-6 text-purple-600 dark:text-purple-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    Thống kê tài liệu
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Tổng quan tài liệu của bạn
+                  </p>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Tài liệu mới nhất
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {documents.length > 0
-                      ? formatDate(documents[0].uploadedAt)
-                      : "N/A"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Tổng dung lượng
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatFileSize(
-                      documents.reduce((total, doc) => total + doc.size, 0)
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <span className="text-sm text-green-700 dark:text-green-400">
-                    Lớp đã tạo
-                  </span>
-                  <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                    {totalClasses}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <span className="text-sm text-blue-700 dark:text-blue-400">
-                    Bài kiểm tra
-                  </span>
-                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {totalQuizzes}
-                  </span>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Số lượng tài liệu
+                    </span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">
+                      {documents.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Tài liệu mới nhất
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {documents.length > 0
+                        ? formatDate(documents[0].uploadedAt)
+                        : "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Tổng dung lượng
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {formatFileSize(
+                        documents.reduce((total, doc) => total + doc.size, 0)
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <span className="text-sm text-green-700 dark:text-green-400">
+                      Lớp đã tạo
+                    </span>
+                    <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                      {totalClasses}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <span className="text-sm text-blue-700 dark:text-blue-400">
+                      Bài kiểm tra
+                    </span>
+                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      {totalQuizzes}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Section - Desktop Only (XL and above) */}
-        <div className="hidden xl:block xl:w-[30%] lg:flex-shrink-0 order-2">
-          <div className="lg:sticky lg:top-4 space-y-6">
-            {/* Stats Card */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-200">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
-                  <svg
-                    className="w-6 h-6 text-purple-600 dark:text-purple-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
+          {/* Right Section - Desktop Only (XL and above) */}
+          <div className="hidden xl:block xl:w-[30%] lg:flex-shrink-0 order-2">
+            <div className="lg:sticky lg:top-4 space-y-6">
+              {/* Stats Card */}
+              <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-200">
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-3">
+                    <svg
+                      className="w-6 h-6 text-purple-600 dark:text-purple-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    Thống kê tài liệu
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Tổng quan tài liệu của bạn
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                  Thống kê tài liệu
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tổng quan tài liệu của bạn
-                </p>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Số lượng tài liệu
+                    </span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">
+                      {documents.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Tài liệu mới nhất
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {documents.length > 0
+                        ? formatDate(documents[0].uploadedAt)
+                        : "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Tổng dung lượng
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {formatFileSize(
+                        documents.reduce((total, doc) => total + doc.size, 0)
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <span className="text-sm text-green-700 dark:text-green-400">
+                      Lớp đã tạo
+                    </span>
+                    <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                      {totalClasses}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <span className="text-sm text-blue-700 dark:text-blue-400">
+                      Bài kiểm tra
+                    </span>
+                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      {totalQuizzes}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Số lượng tài liệu
-                  </span>
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
-                    {documents.length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Tài liệu mới nhất
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {documents.length > 0
-                      ? formatDate(documents[0].uploadedAt)
-                      : "N/A"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Tổng dung lượng
-                  </span>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {formatFileSize(
-                      documents.reduce((total, doc) => total + doc.size, 0)
-                    )}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                  <span className="text-sm text-green-700 dark:text-green-400">
-                    Lớp đã tạo
-                  </span>
-                  <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                    {totalClasses}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <span className="text-sm text-blue-700 dark:text-blue-400">
-                    Bài kiểm tra
-                  </span>
-                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {totalQuizzes}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Kho tài liệu học tập */}
-            <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-300">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-3">
-                  <svg
-                    className="w-6 h-6 text-indigo-600 dark:text-indigo-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  Kho tài liệu học tập
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Độ khó: Liemdaidary🔥
-                </p>
-                <a
-                  href="https://lms.liemsdai.is-best.net/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block text-sm font-mono text-indigo-600 dark:text-indigo-400 hover:underline break-all"
-                >
-                  lms.liemsdai.is-best.net
-                </a>
-              </div>
-
-              <div className="flex items-center justify-center">
-                <div
-                  className="perspective-1000 w-full"
-                  onMouseMove={handleMouseMove}
-                  onMouseLeave={handleMouseLeave}
-                >
+              {/* Kho tài liệu học tập */}
+              <div className="card p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 animate-slideLeftIn anim-delay-300">
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-3">
+                    <svg
+                      className="w-6 h-6 text-indigo-600 dark:text-indigo-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    Kho tài liệu học tập
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Độ khó: Liemdaidary🔥
+                  </p>
                   <a
                     href="https://lms.liemsdai.is-best.net/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="relative group block"
+                    className="inline-block text-sm font-mono text-indigo-600 dark:text-indigo-400 hover:underline break-all"
                   >
-                    <img
-                      src={
-                        isDarkMode
-                          ? require("../assets/liemdai_dark.png")
-                          : require("../assets/liemdai_light.png")
-                      }
-                      alt={isDarkMode ? "liemdai_dark" : "liemdai_light"}
-                      className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
-                      style={{
-                        maxHeight: 280,
-                        transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1
-                          }deg) rotateX(${-mousePosition.y * 0.1
-                          }deg) translateZ(${Math.abs(mousePosition.x) +
-                            Math.abs(mousePosition.y) >
-                            0
-                            ? "20px"
-                            : "0px"
-                          })`,
-                        border: "2px solid transparent",
-                        backgroundImage: isDarkMode
-                          ? "linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)"
-                          : "linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)",
-                        backgroundSize: "400% 400%",
-                        animation: "neonBorder 3s ease-in-out infinite",
-                        backgroundClip: "border-box",
-                        borderRadius: "12px",
-                      }}
-                    />
-                    {/* Tooltip */}
-                    <div
-                      className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
-                        ? "bg-gray-800 text-white border border-gray-700"
-                        : "bg-white text-gray-900 border border-gray-200"
-                        }`}
-                    >
-                      Click để chuyển đến trang →
-                    </div>
+                    lms.liemsdai.is-best.net
                   </a>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Modal tạo lớp */}
-      {showClassModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Tạo lớp từ tài liệu: {selectedFile?.name}
-            </h3>
-
-            {/* Radio buttons */}
-            <div className="mb-6">
-              <div className="space-y-3">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="classOption"
-                    checked={isCreateNewClass}
-                    onChange={() => setIsCreateNewClass(true)}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-gray-700 dark:text-gray-300">
-                    Tạo lớp học mới
-                  </span>
-                </label>
-
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="classOption"
-                    checked={!isCreateNewClass}
-                    onChange={() => setIsCreateNewClass(false)}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-gray-700 dark:text-gray-300">
-                    Chọn lớp học có sẵn
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            {/* Form fields */}
-            {isCreateNewClass ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tên lớp học <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={className}
-                    onChange={(e) => setClassName(e.target.value)}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                    placeholder="Nhập tên lớp học"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Mô tả lớp học <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={classDescription}
-                    onChange={(e) => setClassDescription(e.target.value)}
-                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                    rows={3}
-                    placeholder="Nhập mô tả lớp học"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Chọn lớp học <span className="text-red-500">*</span>
-                </label>
-                <div className="relative custom-class-dropdown">
-                  <button
-                    type="button"
-                    onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
-                    className={`w-full px-4 py-3 flex items-center justify-between rounded-xl border-2 transition-all duration-200 bg-white dark:bg-slate-700 text-gray-900 dark:text-white ${isClassDropdownOpen
-                      ? "border-blue-500 ring-2 ring-blue-500/20"
-                      : "border-gray-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400"
-                      }`}
+                <div className="flex items-center justify-center">
+                  <div
+                    className="perspective-1000 w-full"
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
                   >
-                    <span className={`font-medium flex-1 text-left ${!selectedClassId ? "text-gray-500 dark:text-gray-400" : ""}`}>
-                      {selectedClassId
-                        ? existingClasses.find((cls) => cls.id === selectedClassId)?.name
-                        : "-- Chọn lớp học --"}
-                    </span>
-                    <svg
-                      className={`w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isClassDropdownOpen ? "rotate-180" : ""
-                        }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    <a
+                      href="https://lms.liemsdai.is-best.net/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative group block"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
+                      <img
+                        src={
+                          isDarkMode
+                            ? require("../assets/liemdai_dark.png")
+                            : require("../assets/liemdai_light.png")
+                        }
+                        alt={isDarkMode ? "liemdai_dark" : "liemdai_light"}
+                        className="w-full h-auto rounded-xl shadow-2xl transition-all duration-300 ease-out cursor-pointer hover:shadow-3xl"
+                        style={{
+                          maxHeight: 280,
+                          transform: `perspective(1000px) rotateY(${mousePosition.x * 0.1
+                            }deg) rotateX(${-mousePosition.y * 0.1
+                            }deg) translateZ(${Math.abs(mousePosition.x) +
+                              Math.abs(mousePosition.y) >
+                              0
+                              ? "20px"
+                              : "0px"
+                            })`,
+                          border: "2px solid transparent",
+                          backgroundImage: isDarkMode
+                            ? "linear-gradient(45deg, #0ea5e9, #06b6d4, #10b981, #84cc16)"
+                            : "linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b)",
+                          backgroundSize: "400% 400%",
+                          animation: "neonBorder 3s ease-in-out infinite",
+                          backgroundClip: "border-box",
+                          borderRadius: "12px",
+                        }}
                       />
-                    </svg>
-                  </button>
-
-                  {isClassDropdownOpen && (
-                    <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
-                      <div className="p-1 max-h-60 overflow-y-auto custom-scrollbar space-y-1">
-
-                        {existingClasses.map((cls, idx) => (
-                          <button
-                            key={cls.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedClassId(cls.id);
-                              setIsClassDropdownOpen(false);
-                            }}
-                            className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors duration-200 flex items-center justify-between group ${selectedClassId === cls.id
-                              ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                              : "hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300"
-                              }`}
-                          >
-                            <div className="flex items-start gap-3 flex-1 min-w-0">
-                              <div className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold mt-0.5 ${selectedClassId === cls.id
-                                ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
-                                : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                                }`}>
-                                {idx + 1}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate">{cls.name}</div>
-                                {cls.description && (
-                                  <div className={`text-xs mt-0.5 truncate ${selectedClassId === cls.id
-                                    ? "text-blue-500 dark:text-blue-400"
-                                    : "text-gray-500 dark:text-gray-500"
-                                    }`}>
-                                    {cls.description}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {selectedClassId === cls.id && (
-                              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </button>
-                        ))}
+                      {/* Tooltip */}
+                      <div
+                        className={`opacity-0 group-hover:opacity-100 pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-3 text-xs rounded-lg px-4 py-2 shadow-xl transition-opacity duration-200 z-20 whitespace-nowrap font-medium ${isDarkMode
+                          ? "bg-gray-800 text-white border border-gray-700"
+                          : "bg-white text-gray-900 border border-gray-200"
+                          }`}
+                      >
+                        Click để chuyển đến trang →
                       </div>
-                    </div>
-                  )}
+                    </a>
+                  </div>
                 </div>
               </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={handleModalSubmit}
-                disabled={isProcessing}
-                className="flex-1 btn-primary flex items-center justify-center"
-              >
-                {isProcessing ? (
-                  <div className="flex items-center gap-2">
-                    {(() => {
-                      const SpinnerLoading = require("../components/SpinnerLoading").default;
-                      return (
-                        <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                          <div style={{ transform: 'scale(0.065)' }}>
-                            <SpinnerLoading />
-                          </div>
-                        </div>
-                      );
-                    })()}
-                    <span>Đang xử lý...</span>
-                  </div>
-                ) : (
-                  "Tiếp tục"
-                )}
-              </button>
-              <button
-                onClick={handleCloseModal}
-                disabled={isProcessing}
-                className="flex-1 btn-secondary"
-              >
-                Hủy
-              </button>
             </div>
           </div>
         </div>
-      )}
 
+        {/* Modal tạo lớp */}
+        {showClassModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Tạo lớp từ tài liệu: {selectedFile?.name}
+              </h3>
 
-      {/* Floating Action Bar (FAB) for Bulk Actions */}
-      <div
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 transition-all duration-500 ease-out transform ${selectedIds.size > 0
-          ? "translate-y-0 opacity-100 scale-100"
-          : "translate-y-20 opacity-0 scale-95 pointer-events-none"
-          }`}
-      >
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 min-w-[320px] justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSelectedIds(new Set())}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
-              title="Bỏ chọn tất cả"
-            >
-              <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <span className="font-semibold text-gray-900 dark:text-white text-lg">
-              {selectedIds.size}
-            </span>
+              {/* Radio buttons */}
+              <div className="mb-6">
+                <div className="space-y-3">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="classOption"
+                      checked={isCreateNewClass}
+                      onChange={() => setIsCreateNewClass(true)}
+                      className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    />
+                    <span className="ml-2 text-gray-700 dark:text-gray-300">
+                      Tạo lớp học mới
+                    </span>
+                  </label>
+
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="classOption"
+                      checked={!isCreateNewClass}
+                      onChange={() => setIsCreateNewClass(false)}
+                      className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    />
+                    <span className="ml-2 text-gray-700 dark:text-gray-300">
+                      Chọn lớp học có sẵn
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Form fields */}
+              {isCreateNewClass ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tên lớp học <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={className}
+                      onChange={(e) => setClassName(e.target.value)}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                      placeholder="Nhập tên lớp học"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Mô tả lớp học <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={classDescription}
+                      onChange={(e) => setClassDescription(e.target.value)}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+                      rows={3}
+                      placeholder="Nhập mô tả lớp học"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Chọn lớp học <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative custom-class-dropdown">
+                    <button
+                      type="button"
+                      onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
+                      className={`w-full px-4 py-3 flex items-center justify-between rounded-xl border-2 transition-all duration-200 bg-white dark:bg-slate-700 text-gray-900 dark:text-white ${isClassDropdownOpen
+                        ? "border-blue-500 ring-2 ring-blue-500/20"
+                        : "border-gray-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400"
+                        }`}
+                    >
+                      <span className={`font-medium flex-1 text-left ${!selectedClassId ? "text-gray-500 dark:text-gray-400" : ""}`}>
+                        {selectedClassId
+                          ? existingClasses.find((cls) => cls.id === selectedClassId)?.name
+                          : "-- Chọn lớp học --"}
+                      </span>
+                      <svg
+                        className={`w-5 h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${isClassDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {isClassDropdownOpen && (
+                      <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
+                        <div className="p-1 max-h-60 overflow-y-auto custom-scrollbar space-y-1">
+
+                          {existingClasses.map((cls, idx) => (
+                            <button
+                              key={cls.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedClassId(cls.id);
+                                setIsClassDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors duration-200 flex items-center justify-between group ${selectedClassId === cls.id
+                                ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                                : "hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300"
+                                }`}
+                            >
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                <div className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold mt-0.5 ${selectedClassId === cls.id
+                                  ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
+                                  : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                                  }`}>
+                                  {idx + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{cls.name}</div>
+                                  {cls.description && (
+                                    <div className={`text-xs mt-0.5 truncate ${selectedClassId === cls.id
+                                      ? "text-blue-500 dark:text-blue-400"
+                                      : "text-gray-500 dark:text-gray-500"
+                                      }`}>
+                                      {cls.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {selectedClassId === cls.id && (
+                                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={handleModalSubmit}
+                  disabled={isProcessing}
+                  className="flex-1 btn-primary flex items-center justify-center"
+                >
+                  {isProcessing ? (
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const SpinnerLoading = require("../components/SpinnerLoading").default;
+                        return (
+                          <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                            <div style={{ transform: 'scale(0.065)' }}>
+                              <SpinnerLoading />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      <span>Đang xử lý...</span>
+                    </div>
+                  ) : (
+                    "Tiếp tục"
+                  )}
+                </button>
+                <button
+                  onClick={handleCloseModal}
+                  disabled={isProcessing}
+                  className="flex-1 btn-secondary"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
           </div>
+        )}
 
-          <div className="h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
 
-          <div className="flex items-center gap-2">
+        {/* Floating Action Bar (FAB) for Bulk Actions */}
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 transition-all duration-500 ease-out transform ${selectedIds.size > 0
+            ? "translate-y-0 opacity-100 scale-100"
+            : "translate-y-20 opacity-0 scale-95 pointer-events-none"
+            }`}
+        >
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 min-w-[320px] justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
+                title="Bỏ chọn tất cả"
+              >
+                <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <span className="font-semibold text-gray-900 dark:text-white text-lg">
+                {selectedIds.size}
+              </span>
+            </div>
 
-            <button
-              onClick={handleSelectAll}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group relative overflow-hidden"
-              title={(() => {
-                const filteredDocs = documents.filter(doc =>
-                  !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-                );
-                const allFilteredSelected = filteredDocs.length > 0 &&
-                  filteredDocs.every(doc => selectedIds.has(doc.id));
-                return allFilteredSelected ? "Hủy chọn tất cả" : "Chọn tất cả";
-              })()}
-            >
-              <div className="relative z-10">
-                {(() => {
+            <div className="h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+
+            <div className="flex items-center gap-2">
+
+              <button
+                onClick={handleSelectAll}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group relative overflow-hidden"
+                title={(() => {
                   const filteredDocs = documents.filter(doc =>
                     !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase())
                   );
                   const allFilteredSelected = filteredDocs.length > 0 &&
                     filteredDocs.every(doc => selectedIds.has(doc.id));
-
-                  return allFilteredSelected ? (
-                    <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <svg className="w-6 h-6 group-hover:text-blue-500 transition-colors" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7.53 12L9 10.5l1.4-1.41 2.07 2.08L17.17 6.5l1.41 1.41L12.47 14zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z" />
-                    </svg>
-                  );
+                  return allFilteredSelected ? "Hủy chọn tất cả" : "Chọn tất cả";
                 })()}
-              </div>
-            </button>
+              >
+                <div className="relative z-10">
+                  {(() => {
+                    const filteredDocs = documents.filter(doc =>
+                      !searchQuery.trim() || doc.name.toLowerCase().includes(searchQuery.toLowerCase())
+                    );
+                    const allFilteredSelected = filteredDocs.length > 0 &&
+                      filteredDocs.every(doc => selectedIds.has(doc.id));
 
-            <button
-              onClick={handleBulkDownload}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
-              title="Tải xuống File đã chọn"
-            >
-              <svg className="w-6 h-6 group-hover:text-green-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </button>
+                    return allFilteredSelected ? (
+                      <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    ) : (
+                      <svg className="w-6 h-6 group-hover:text-blue-500 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7.53 12L9 10.5l1.4-1.41 2.07 2.08L17.17 6.5l1.41 1.41L12.47 14zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z" />
+                      </svg>
+                    );
+                  })()}
+                </div>
+              </button>
 
-            <button
-              onClick={handleBulkDelete}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
-              title="Xóa File đã chọn"
-            >
-              <svg className="w-6 h-6 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
+              <button
+                onClick={handleBulkDownload}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
+                title="Tải xuống File đã chọn"
+              >
+                <svg className="w-6 h-6 group-hover:text-green-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+
+              <button
+                onClick={handleBulkDelete}
+                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
+                title="Xóa File đã chọn"
+              >
+                <svg className="w-6 h-6 group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-    </div>
+      </div>
+    </div >
   );
 };
 
