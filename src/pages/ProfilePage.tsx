@@ -1124,22 +1124,23 @@ const ProfilePage: React.FC = () => {
                                             </div>
 
                                             <div className="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto mt-2 md:mt-0 pt-4 md:pt-0 border-t md:border-0 border-gray-100 dark:border-gray-700 z-10">
-                                                <div className="text-center group-hover:scale-105 transition-transform duration-300">
-                                                    <span className="block text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-1">Điểm số</span>
-                                                    <span className="font-semibold text-2xl text-gray-900 dark:text-white">
-                                                        {session.score}<span className="text-gray-400 text-sm">/{session.totalQuestions}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-gray-900 dark:text-white text-lg">
+                                                        {session.score}/{session.totalQuestions}
                                                     </span>
-                                                </div>
-
-                                                <div className="text-center min-w-[60px]">
-                                                    <div className={`
-                                                        w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm shadow-inner
-                                                        ${session.percentage >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 ring-2 ring-green-500/10' :
-                                                            session.percentage >= 50 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 ring-2 ring-yellow-500/10' :
-                                                                'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 ring-2 ring-red-500/10'
-                                                        }
-                                                    `}>
-                                                        {session.percentage}%
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${session.percentage >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                                        session.percentage >= 50 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                                                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                        }`}>
+                                                        {Math.round(session.percentage)}%
+                                                    </span>
+                                                    <div className="relative h-1.5 w-16 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`absolute top-0 left-0 h-full rounded-full ${session.percentage >= 80 ? 'bg-green-500' :
+                                                                session.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                }`}
+                                                            style={{ width: `${session.percentage}%` }}
+                                                        ></div>
                                                     </div>
                                                 </div>
 
@@ -1195,16 +1196,34 @@ const ProfilePage: React.FC = () => {
                                                         {myClasses.length === 0 ? (
                                                             <div className="px-4 py-3 text-gray-500 text-sm">Bạn chưa có lớp học nào</div>
                                                         ) : (
-                                                            myClasses.map(c => (
+                                                            [...myClasses].reverse().map((c, idx) => (
                                                                 <button
                                                                     key={c.id}
                                                                     onClick={() => {
                                                                         setSelectedClassId(c.id);
                                                                         setOpenDropdown(null);
                                                                     }}
-                                                                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${selectedClassId === c.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                                                                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors duration-200 group flex items-start gap-3 ${selectedClassId === c.id
+                                                                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                                                                        : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                                                                        }`}
                                                                 >
-                                                                    <span className="text-left">{c.name}</span>
+                                                                    <div className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold mt-0.5 bg-blue-600 text-white shadow-sm">
+                                                                        {idx + 1}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <span className={`block font-medium text-sm truncate ${selectedClassId === c.id
+                                                                            ? 'text-blue-700 dark:text-blue-300'
+                                                                            : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                                                            }`}>
+                                                                            {c.name}
+                                                                        </span>
+                                                                    </div>
+                                                                    {selectedClassId === c.id && (
+                                                                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                        </svg>
+                                                                    )}
                                                                 </button>
                                                             ))
                                                         )}
@@ -1244,16 +1263,34 @@ const ProfilePage: React.FC = () => {
                                                         {classQuizzes.length === 0 ? (
                                                             <div className="px-4 py-3 text-gray-500 text-sm">Lớp chưa có quiz nào</div>
                                                         ) : (
-                                                            classQuizzes.map(q => (
+                                                            [...classQuizzes].reverse().map((q, idx) => (
                                                                 <button
                                                                     key={q.id}
                                                                     onClick={() => {
                                                                         setSelectedQuizId(q.id);
                                                                         setOpenDropdown(null);
                                                                     }}
-                                                                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${selectedQuizId === q.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+                                                                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors duration-200 group flex items-start gap-3 ${selectedQuizId === q.id
+                                                                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                                                                        : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                                                                        }`}
                                                                 >
-                                                                    <span className="text-left">{q.title}</span>
+                                                                    <div className="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold mt-0.5 bg-blue-600 text-white shadow-sm">
+                                                                        {idx + 1}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <span className={`block font-medium text-sm truncate ${selectedQuizId === q.id
+                                                                            ? 'text-blue-700 dark:text-blue-300'
+                                                                            : 'text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                                                                            }`}>
+                                                                            {q.title}
+                                                                        </span>
+                                                                    </div>
+                                                                    {selectedQuizId === q.id && (
+                                                                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                        </svg>
+                                                                    )}
                                                                 </button>
                                                             ))
                                                         )}

@@ -1070,10 +1070,10 @@ const ClassesPage: React.FC = () => {
               {showSortMenu && (
                 <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
                   {[
-                    { id: 'name-asc' as const, label: 'Tên (A → Z)' },
-                    { id: 'name-desc' as const, label: 'Tên (Z → A)' },
                     { id: 'date-desc' as const, label: 'Mới nhất' },
-                    { id: 'date-asc' as const, label: 'Cũ nhất' }
+                    { id: 'date-asc' as const, label: 'Cũ nhất' },
+                    { id: 'name-asc' as const, label: 'Tên (A → Z)' },
+                    { id: 'name-desc' as const, label: 'Tên (Z → A)' }
                   ].map(option => (
                     <button
                       key={option.id}

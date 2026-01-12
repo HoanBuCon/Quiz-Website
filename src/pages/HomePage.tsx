@@ -279,10 +279,10 @@ const HomePage: React.FC = () => {
                 {showSortMenu && (
                   <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
                     {[
-                      { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
-                      { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' },
                       { id: 'date-desc' as const, label: 'Mới nhất', icon: '↓' },
-                      { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' }
+                      { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' },
+                      { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
+                      { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' }
                     ].map(option => (
                       <button
                         key={option.id}
@@ -344,10 +344,10 @@ const HomePage: React.FC = () => {
                 {showSortMenu && (
                   <div className="absolute top-full mt-2 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] overflow-hidden">
                     {[
-                      { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
-                      { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' },
                       { id: 'date-desc' as const, label: 'Mới nhất', icon: '↓' },
-                      { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' }
+                      { id: 'date-asc' as const, label: 'Cũ nhất', icon: '↑' },
+                      { id: 'name-asc' as const, label: 'Tên (A → Z)', icon: '↑' },
+                      { id: 'name-desc' as const, label: 'Tên (Z → A)', icon: '↓' }
                     ].map(option => (
                       <button
                         key={option.id}
