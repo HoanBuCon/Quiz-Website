@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { MAINTENANCE_MESSAGE, MAINTENANCE_VIDEO_URL, IS_MAINTENANCE_MODE } from '../utils/maintenanceConfig';
@@ -92,6 +92,36 @@ const MaintenancePage: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [isExiting, setIsExiting] = useState(false);
 
+  // Typewriter effect states
+  const [displayedText, setDisplayedText] = useState('');
+  const [showCursor, setShowCursor] = useState(true);
+
+  // Generate particles configuration once and memoize it
+  const particles = useMemo(() => {
+    return Array.from({ length: 18 }, (_, i) => {
+      const size = Math.random() * 2 + 2; // 2-4px (small square)
+      // Distribute particles more evenly across the width
+      const basePosition = (i / 18) * 100; // Divide into 18 sections
+      const randomOffset = (Math.random() - 0.5) * 10; // Random offset ±5%
+      const startX = Math.max(0, Math.min(100, basePosition + randomOffset));
+      
+      // Random visual properties
+      const opacity = 0.3 + Math.random() * 0.5; // 0.3-0.8
+      const glowIntensity = 4 + Math.random() * 8; // 4-12px glow
+      const brightness = 0.6 + Math.random() * 0.4; // 0.6-1.0
+      
+      return {
+        size,
+        startX,
+        duration: 2 + Math.random() * 1.5, // 2-3.5s (faster for more density)
+        delay: Math.random() * 2, // 0-2s (shorter delay for more density)
+        opacity,
+        glowIntensity,
+        brightness,
+      };
+    });
+  }, []); // Empty dependency array - only calculate once
+
   useEffect(() => {
     // Check authentication status with cookie-based auth
     const initAuth = async () => {
@@ -129,6 +159,35 @@ const MaintenancePage: React.FC = () => {
 
     window.addEventListener('authChange', handleAuthChange);
     return () => window.removeEventListener('authChange', handleAuthChange);
+  }, []);
+
+  // Typewriter effect
+  useEffect(() => {
+    if (activeTab === 'start' && currentUser?.name && isPlaying) {
+      const fullText = `Xin chào ${currentUser.name}!`;
+      let currentIndex = 0;
+      setDisplayedText('');
+
+      const typingInterval = setInterval(() => {
+        if (currentIndex <= fullText.length) {
+          setDisplayedText(fullText.slice(0, currentIndex));
+          currentIndex++;
+        } else {
+          clearInterval(typingInterval);
+        }
+      }, 80); // 80ms per character
+
+      return () => clearInterval(typingInterval);
+    }
+  }, [activeTab, currentUser, isPlaying]);
+
+  // Cursor blinking effect
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 530); // Blink every 530ms
+
+    return () => clearInterval(cursorInterval);
   }, []);
 
   const handleStart = () => {
@@ -314,6 +373,35 @@ const MaintenancePage: React.FC = () => {
         0% { opacity: 1; transform: scale(1); filter: blur(0px); }
         100% { opacity: 0; transform: scale(2); filter: blur(10px); }
       }
+      /* Typewriter Effect */
+      .typewriter-text {
+        font-family: 'Consolas', 'Courier New', monospace;
+        display: inline;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        line-height: 1.5;
+        text-shadow: 
+          0 0 7px rgba(0, 255, 255, 0.75),
+          0 0 10px rgba(0, 255, 255, 0.50),
+          0 0 15px rgba(0, 255, 255, 0.25);
+      }
+      .typewriter-cursor {
+        display: inline;
+        color: currentColor;
+        margin-left: 2px;
+        font-weight: bold;
+        text-shadow: 
+          0 0 7px rgba(0, 255, 255, 0.75),
+          0 0 10px rgba(0, 255, 255, 0.50);
+        animation: none;
+      }
+      .typewriter-cursor.blink {
+        opacity: 1;
+      }
+      .typewriter-cursor.hidden {
+        opacity: 0;
+      }
       /* Hide default password toggle in Edge/IE */
       input::-ms-reveal,
       input::-ms-clear {
@@ -491,9 +579,14 @@ const MaintenancePage: React.FC = () => {
                   {/* START SCREEN (Logged In) */}
                   {activeTab === 'start' && (
                     <div className="text-center space-y-6 animate-fadeIn">
-                      <h3 className="text-2xl font-sans italic text-white my-6">
-                        Xin chào {currentUser?.name}!
-                      </h3>
+                      <div className="flex justify-center my-6">
+                        <h3 className="font-mono text-white max-w-md" style={{ fontSize: '24px' }}>
+                          <span className="typewriter-text">
+                            {displayedText}
+                          </span>
+                          <span className={`typewriter-cursor ${showCursor ? 'blink' : 'hidden'}`}>|</span>
+                        </h3>
+                      </div>
                       <button
                         onClick={handleEnterWebsite}
                         className="
@@ -521,8 +614,8 @@ const MaintenancePage: React.FC = () => {
                           className="
                             absolute inset-0
                             -translate-x-full group-hover:translate-x-full
-                            transition-transform duration-[1200ms] ease-out
-                            bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent
+                            transition-transform duration-[1000ms] ease-out
+                            bg-gradient-to-r from-transparent via-cyan-200/10 to-transparent
                           "
                         />
 
@@ -537,20 +630,21 @@ const MaintenancePage: React.FC = () => {
 
                         {/* Particle Layer */}
                         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                          {[...Array(14)].map((_, i) => (
+                          {particles.map((particle, i) => (
                             <div
                               key={i}
-                              className={`
-                                absolute bg-cyan-300/40 rounded-full
-                                animate-particleFloat
-                              `}
+                              className="absolute animate-particleFloat"
                               style={{
-                                width: Math.random() * 2 + 1 + "px",
-                                height: Math.random() * 2 + 1 + "px",
-                                top: Math.random() * 100 + "%",
-                                left: Math.random() * 100 + "%",
-                                animationDelay: Math.random() * 3 + "s",
-                                animationDuration: 3 + Math.random() * 5 + "s",
+                                width: `${particle.size}px`,
+                                height: `${particle.size}px`,
+                                left: `${particle.startX}%`,
+                                bottom: `-20px`,
+                                animationDelay: `${particle.delay}s`,
+                                animationDuration: `${particle.duration}s`,
+                                backgroundColor: `rgba(0, 255, 255, ${particle.opacity * particle.brightness})`,
+                                boxShadow: `0 0 ${particle.glowIntensity}px rgba(0, 255, 255, ${particle.opacity * 0.8}), inset 0 0 ${particle.glowIntensity * 0.5}px rgba(0, 255, 255, ${particle.opacity * 0.4})`,
+                                border: `1px solid rgba(0, 255, 255, ${particle.opacity * 0.5})`,
+                                opacity: particle.opacity,
                               }}
                             />
                           ))}
