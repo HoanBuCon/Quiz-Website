@@ -350,7 +350,7 @@ const QuizPage: React.FC = () => {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       // best-effort end on unmount
-      sendEnd();
+      // sendEnd(); // [MODIFIED] Removed to allow Resume logic
     };
   }, []);
 

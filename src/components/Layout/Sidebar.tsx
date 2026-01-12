@@ -149,7 +149,22 @@ const Sidebar: React.FC = () => {
         };
     }, []);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        // Check for active quiz attempt and close it on backend
+        try {
+            const quizRaw = localStorage.getItem("quiz_progress");
+            if (quizRaw) {
+                const data = JSON.parse(quizRaw);
+                if (data && data.attemptId) {
+                    const { SessionsAPI } = await import("../../utils/api");
+                    const token = getToken();
+                    if (token) {
+                        await SessionsAPI.endAttempt(data.attemptId, token);
+                    }
+                }
+            }
+        } catch { }
+
         clearToken();
         setIsLoggedIn(false);
         setUserName(null);
