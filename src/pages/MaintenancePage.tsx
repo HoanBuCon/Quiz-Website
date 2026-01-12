@@ -100,7 +100,7 @@ const MaintenancePage: React.FC = () => {
   // Generate particles configuration once and memoize it
   const particles = useMemo(() => {
     return Array.from({ length: 36 }, (_, i) => {
-      const size = Math.random() * 4 + 5; // 5-9px (larger squares)
+      const size = Math.random() * 2 + 2; // 2-4px (small square)
       // Distribute particles more evenly across the width
       const basePosition = (i / 36) * 100; // Divide into 36 sections
       const randomOffset = (Math.random() - 0.5) * 10; // Random offset ±5%
@@ -108,7 +108,7 @@ const MaintenancePage: React.FC = () => {
       
       // Random visual properties
       const opacity = 0.3 + Math.random() * 0.5; // 0.3-0.8
-      const glowIntensity = 6 + Math.random() * 12; // 6-18px glow (stronger)
+      const glowIntensity = 4 + Math.random() * 8; // 4-12px glow
       const brightness = 0.6 + Math.random() * 0.4; // 0.6-1.0
       
       return {
