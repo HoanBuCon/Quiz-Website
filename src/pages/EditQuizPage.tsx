@@ -3036,12 +3036,23 @@ const EditQuizPage: React.FC = () => {
             groupsByTarget[target.id] = [];
           });
 
+          // FIX: Build lookup map to convert item IDs to Labels for text generation
+          const idToLabel: Record<string, string> = {};
+          if (dragOptions.items) {
+            dragOptions.items.forEach((item: any) => {
+              idToLabel[item.id] = item.label || item.id;
+            });
+          }
+
           if (mapping) {
             Object.entries(mapping).forEach(([itemId, targetId]) => {
+              // Use the label if available (to match result: parsing logic), fallback to ID
+              const valToUse = idToLabel[itemId] || itemId;
+
               if (groupsByTarget[targetId]) {
-                groupsByTarget[targetId].push(itemId);
+                groupsByTarget[targetId].push(valToUse);
               } else {
-                groupsByTarget[targetId] = [itemId];
+                groupsByTarget[targetId] = [valToUse];
               }
             });
           }
@@ -6213,7 +6224,7 @@ const EditQuizPage: React.FC = () => {
                           Chưa có câu hỏi nào
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400">
-                          Thêm câu hỏi đầu tiên để bắt đầu tạo Quiz
+                          Bạn có thể tạo câu hỏi bằng cách bấm nút "Thêm câu hỏi" hoặc soạn trực tiếp trong "Editor"
                         </p>
                       </div>
                     )}

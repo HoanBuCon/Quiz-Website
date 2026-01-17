@@ -1040,7 +1040,7 @@ const QuizPreview: React.FC<QuizPreviewProps> = ({
               }
             }}
             className="w-full h-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg editor-focus-ring bg-white dark:bg-gray-700 dark:text-white font-mono text-sm resize-none custom-scrollbar"
-            placeholder="Chỉnh sửa nội dung file..."
+            placeholder="Editor biên soạn câu hỏi..."
           />
         ) : (
           <div className="w-full h-full text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words custom-scrollbar overflow-auto p-4 border border-transparent">
