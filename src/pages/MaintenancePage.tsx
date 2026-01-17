@@ -525,7 +525,7 @@ const MaintenancePage: React.FC = () => {
             <div className="flex justify-between items-end mb-3 font-mono text-xs tracking-wider">
               <div className="flex items-center gap-2 text-orange-400/80">
                 <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-ping" />
-                <span>SYSTEM_INITIALIZATION</span>
+                <span>SYSTEM INITIALIZATION</span>
               </div>
               <span className="text-orange-400 font-semibold">{Math.round(loadingProgress)}%</span>
             </div>
