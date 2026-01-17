@@ -95,6 +95,7 @@ const MaintenancePage: React.FC = () => {
   // Typewriter effect states
   const [displayedText, setDisplayedText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
   const [triggerShieldScan, setTriggerShieldScan] = useState(0);
 
   // Generate particles configuration once and memoize it
@@ -105,12 +106,12 @@ const MaintenancePage: React.FC = () => {
       const basePosition = (i / 36) * 100; // Divide into 36 sections
       const randomOffset = (Math.random() - 0.5) * 10; // Random offset ±5%
       const startX = Math.max(0, Math.min(100, basePosition + randomOffset));
-      
+
       // Random visual properties
       const opacity = 0.3 + Math.random() * 0.5; // 0.3-0.8
       const glowIntensity = 4 + Math.random() * 8; // 4-12px glow
       const brightness = 0.6 + Math.random() * 0.4; // 0.6-1.0
-      
+
       return {
         size,
         startX,
@@ -169,12 +170,14 @@ const MaintenancePage: React.FC = () => {
       const fullText = `Xin chào ${currentUser.name}!`;
       let currentIndex = 0;
       setDisplayedText(''); // Reset text
+      setIsTyping(true);
 
       const typingInterval = setInterval(() => {
         if (currentIndex <= fullText.length) {
           setDisplayedText(fullText.slice(0, currentIndex));
           currentIndex++;
         } else {
+          setIsTyping(false);
           clearInterval(typingInterval);
         }
       }, 80); // 80ms per character
@@ -185,12 +188,17 @@ const MaintenancePage: React.FC = () => {
 
   // Cursor blinking effect
   useEffect(() => {
+    if (isTyping) {
+      setShowCursor(true);
+      return;
+    }
+
     const cursorInterval = setInterval(() => {
       setShowCursor(prev => !prev);
     }, 530); // Blink every 530ms
 
     return () => clearInterval(cursorInterval);
-  }, []);
+  }, [isTyping]);
 
   // Shield scan effect - trigger every 5 seconds
   useEffect(() => {
@@ -640,7 +648,7 @@ const MaintenancePage: React.FC = () => {
                             background: 'linear-gradient(90deg, transparent 0%, rgba(0, 255, 255, 0.025) 15%, rgba(0, 255, 255, 0.042) 30%, rgba(0, 255, 255, 0.07) 40%, rgba(0, 255, 255, 0.077) 50%, rgba(0, 255, 255, 0.07) 60%, rgba(0, 255, 255, 0.049) 70%, rgba(0, 255, 255, 0.025) 85%, transparent 100%)',
                           }}
                         />
-                        
+
                         {/* Hexagonal grid overlay for shimmer */}
                         <div
                           className="
