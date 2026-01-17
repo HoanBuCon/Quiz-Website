@@ -822,7 +822,8 @@ const MaintenancePage: React.FC = () => {
                             checked={rememberMe}
                             onChange={(e) => setRememberMe(e.target.checked)}
                             tabIndex={-1}
-                            className="w-4 h-4 rounded border-2 border-gray-600 bg-gray-700 accent-orange-500 cursor-pointer transition-all hover:border-orange-500 hover:outline hover:outline-1 hover:outline-orange-500/50 focus:ring-0 focus:ring-offset-0"
+                            className="w-4 h-4 rounded border border-white/10 bg-white/5 checked:bg-orange-500 checked:border-orange-500 appearance-none cursor-pointer transition-all hover:border-orange-500 hover:outline hover:outline-1 hover:outline-orange-500/50 focus:ring-0 focus:ring-offset-0 relative"
+                            style={{ backgroundImage: rememberMe ? `url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e")` : 'none', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundSize: '100%' }}
                           />
                           <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
                             Lưu đăng nhập
@@ -862,7 +863,7 @@ const MaintenancePage: React.FC = () => {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         maxLength={30}
-                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0c0 .884-.95 2-2.5 2H10" /></svg>}
+                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
                       />
 
                       <InputField
@@ -886,7 +887,7 @@ const MaintenancePage: React.FC = () => {
                         placeholder="Xác nhận mật khẩu"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
                       />
 
                       <button
@@ -943,7 +944,7 @@ const MaintenancePage: React.FC = () => {
                             placeholder="Mã OTP"
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
-                            icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
+                            icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>}
                           />
                           <InputField
                             type="password"
@@ -957,7 +958,7 @@ const MaintenancePage: React.FC = () => {
                             placeholder="Xác nhận mật khẩu mới"
                             value={confirmNewPassword}
                             onChange={(e) => setConfirmNewPassword(e.target.value)}
-                            icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                            icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
                           />
                           <button
                             type="submit"
