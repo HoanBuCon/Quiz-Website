@@ -527,7 +527,7 @@ const MaintenancePage: React.FC = () => {
                 <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-ping" />
                 <span>SYSTEM_INITIALIZATION</span>
               </div>
-              <span className="text-white font-semibold">{Math.round(loadingProgress)}%</span>
+              <span className="text-orange-400 font-semibold">{Math.round(loadingProgress)}%</span>
             </div>
 
             {/* Progress Track */}
