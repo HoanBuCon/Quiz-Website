@@ -518,37 +518,56 @@ const MaintenancePage: React.FC = () => {
           </div>
         )}
 
-        {/* CASE 2: THANH LOADING (Đang chạy 5s) - BỔ SUNG MỚI */}
+        {/* CASE 2: THANH LOADING (Đang chạy 5s) - REFINED TECH & ELEGANT */}
         {isProcessStarting && (
-          <div className="w-full max-w-xl px-8 animate-fadeIn">
-            {/* Tech Text */}
-            <div className="flex justify-between text-xs font-mono text-orange-400/80 mb-2 tracking-widest">
-              <span>SYSTEM_INIT</span>
-              <span>{Math.round(loadingProgress)}%</span>
+          <div className="w-full max-w-xl px-8 animate-fadeIn relative z-20">
+            {/* Tech Header Info */}
+            <div className="flex justify-between items-end mb-3 font-mono text-xs tracking-wider">
+              <div className="flex items-center gap-2 text-orange-400/80">
+                <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-ping" />
+                <span>SYSTEM_INITIALIZATION</span>
+              </div>
+              <span className="text-white font-semibold">{Math.round(loadingProgress)}%</span>
             </div>
 
             {/* Progress Track */}
-            <div className="h-2 w-full bg-gray-900 rounded-full overflow-hidden border border-white/10 relative shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-              {/* Progress Fill */}
+            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-visible relative">
+              {/* Glow Container */}
+              <div className="absolute -inset-1 bg-orange-500/10 blur-md rounded-full" />
+
+              {/* Main Progress Bar with Segmented Look */}
               <div
-                className="h-full bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400 transition-all duration-75 ease-linear relative"
+                className="relative h-full bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400 rounded-full transition-all duration-75 ease-linear overflow-hidden"
                 style={{ width: `${loadingProgress}%` }}
               >
-                {/* Glare effect on the bar */}
-                <div className="absolute inset-0 bg-white/30 w-full animate-scanline" />
-                {/* Glow tip */}
-                <div className="absolute right-0 top-0 bottom-0 w-2 bg-white blur-[2px]" />
+                {/* Scanline/Shimmer Effect */}
+                <div className="absolute inset-0 w-full h-full bg-white/20 animate-scanline" />
+
+                {/* Segmented Mask Overlay for Tech Feel */}
+                <div
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  style={{
+                    backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)'
+                  }}
+                />
               </div>
+
+              {/* Leading Head Glow (Follows the bar) */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 h-3 w-1 bg-white blur-[2px] rounded-full z-10 transition-all duration-75 ease-linear"
+                style={{ left: `${loadingProgress}%`, opacity: loadingProgress > 0 ? 1 : 0 }}
+              />
             </div>
 
-            {/* Random Tech Loading Text */}
-            <div className="mt-4 text-center">
-              <p className="text-gray-400 font-mono text-sm animate-pulse">
-                {loadingProgress < 30 ? "Đang kết nối máy chủ vệ tinh..." :
-                  loadingProgress < 60 ? "Đang tải tài nguyên siêu cấp..." :
-                    loadingProgress < 90 ? "Đồng bộ hóa dữ liệu người dùng..." :
-                      "Hoàn tất thiết lập..."}
-              </p>
+            {/* Footer Status Text */}
+            <div className="mt-4 flex justify-between items-center text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+              <span>Sequence: 0x{Math.round(loadingProgress * 2.55).toString(16).toUpperCase().padStart(2, '0')}</span>
+              <span className="animate-pulse">
+                {loadingProgress < 30 ? "Kết nối đến máy chủ vệ tinh..." :
+                  loadingProgress < 60 ? "Tải gói tài nguyên..." :
+                    loadingProgress < 90 ? "Đồng bộ dữ liệu..." :
+                      "Sẵn sàng"}
+              </span>
             </div>
           </div>
         )}
