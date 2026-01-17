@@ -63,6 +63,20 @@ const InputField = ({
   );
 };
 
+const RandomChar = React.memo(({ speed }: { speed: number }) => {
+  const [char, setChar] = useState('0');
+
+  useEffect(() => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const interval = setInterval(() => {
+      setChar(chars[Math.floor(Math.random() * chars.length)]);
+    }, speed);
+    return () => clearInterval(interval);
+  }, [speed]);
+
+  return <>{char}</>;
+});
+
 const MaintenancePage: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -561,7 +575,10 @@ const MaintenancePage: React.FC = () => {
 
             {/* Footer Status Text */}
             <div className="mt-4 flex justify-between items-center text-[10px] font-mono text-gray-400 uppercase tracking-widest max-[400px]:flex-col max-[400px]:gap-1">
-              <span>ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}{Math.floor(Math.random() * 100)}</span>
+              <span>ID: {[600, 250, 100, 600, 40, 100, 40, 100, 250, 40].map((speed, i) => (
+                <RandomChar key={i} speed={speed} />
+              ))}
+              </span>
               <span className="animate-pulse">
                 {loadingProgress < 30 ? "Kết nối đến máy chủ vệ tinh..." :
                   loadingProgress < 60 ? "Tải gói tài nguyên..." :
