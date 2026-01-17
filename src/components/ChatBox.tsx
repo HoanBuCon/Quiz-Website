@@ -282,7 +282,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
       } catch { }
     };
 
-    fetchNewMessages(); // Gọi ngay lần đầu
+    // fetchNewMessages(); // Removed immediate call to prevent race condition with loadInitial
     const intervalId = setInterval(fetchNewMessages, 3000);
 
     return () => {
@@ -298,9 +298,13 @@ const ChatBox: React.FC<ChatBoxProps> = ({ hideOnDesktop = false }) => {
       const data = await ChatAPI.list({ limit: PAGE_SIZE }, token);
       setMessages(() => mergeMessages([], data));
       setHasMore((data?.length || 0) === PAGE_SIZE);
-      requestAnimationFrame(() => {
-        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "auto" });
-      });
+      // Sử dụng setTimeout để đảm bảo DOM đã được cập nhật hoàn toàn (bao gồm layout của 10 tin nhắn)
+      // trước khi thực hiện scroll. requestAnimationFrame đôi khi chạy quá sớm.
+      setTimeout(() => {
+        if (listRef.current) {
+          listRef.current.scrollTop = listRef.current.scrollHeight;
+        }
+      }, 100);
     } catch { }
   };
 
