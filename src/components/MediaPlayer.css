@@ -877,7 +877,7 @@ body.dark-mode .playlist-selector select {
 
 .dark .loop-options,
 body.dark-mode .loop-options {
-  background: rgba(40, 40, 40, 0.95);
+  background: var(--mp-panel-bg);
 }
 
 .loop-options button {
@@ -968,4 +968,53 @@ body.dark-mode .loop-btn.active {
 .dark .loop-options .active,
 body.dark-mode .loop-options .active {
   color: #0af16b;
+}
+/* Custom Scrollbar for Dropdowns */
+.track-panel-content,
+.playlist-dropdown-menu {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--mp-border) transparent !important;
+}
+
+.dark .track-panel-content,
+.dark .playlist-dropdown-menu,
+body.dark-mode .track-panel-content,
+body.dark-mode .playlist-dropdown-menu {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent !important;
+}
+
+.track-panel-content::-webkit-scrollbar,
+.playlist-dropdown-menu::-webkit-scrollbar {
+  width: 4px !important;
+  height: 4px !important;
+}
+
+.track-panel-content::-webkit-scrollbar-track,
+.playlist-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.track-panel-content::-webkit-scrollbar-thumb,
+.playlist-dropdown-menu::-webkit-scrollbar-thumb {
+  background-color: var(--mp-border) !important;
+  border-radius: 4px !important;
+}
+
+.track-panel-content:hover::-webkit-scrollbar-thumb,
+.playlist-dropdown-menu:hover::-webkit-scrollbar-thumb {
+  background-color: var(--mp-muted) !important;
+}
+
+.dark .track-panel-content::-webkit-scrollbar-thumb,
+.dark .playlist-dropdown-menu::-webkit-scrollbar-thumb,
+body.dark-mode .track-panel-content::-webkit-scrollbar-thumb,
+body.dark-mode .playlist-dropdown-menu::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark .track-panel-content:hover::-webkit-scrollbar-thumb,
+.dark .playlist-dropdown-menu:hover::-webkit-scrollbar-thumb,
+body.dark-mode .track-panel-content:hover::-webkit-scrollbar-thumb,
+body.dark-mode .playlist-dropdown-menu:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.4) !important;
 }
