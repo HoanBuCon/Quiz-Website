@@ -1223,11 +1223,11 @@ const ResultDragDropView: React.FC<{
             key={t.id}
             className="border-2 border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-200/40 dark:bg-gray-900/30 shadow-sm"
           >
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-300/50 dark:border-gray-700">
-              <h3 className="font-bold text-gray-800 dark:text-gray-100">
+            <div className="flex items-start justify-between mb-4 pb-2 border-b border-gray-300/50 dark:border-gray-700">
+              <h3 className="font-bold text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
                 {t.label}
               </h3>
-              <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-1 rounded-full font-medium">
+              <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2.5 py-1 rounded-full font-medium whitespace-nowrap flex-shrink-0 ml-2">
                 {(itemsByTarget[t.id] || []).length} đáp án
               </span>
             </div>
