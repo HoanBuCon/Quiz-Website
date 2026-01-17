@@ -560,8 +560,8 @@ const MaintenancePage: React.FC = () => {
             </div>
 
             {/* Footer Status Text */}
-            <div className="mt-4 flex justify-between items-center text-[10px] font-mono text-gray-400 uppercase tracking-widest">
-              <span>Sequence: 0x{Math.round(loadingProgress * 2.55).toString(16).toUpperCase().padStart(2, '0')}</span>
+            <div className="mt-4 flex justify-between items-center text-[10px] font-mono text-gray-400 uppercase tracking-widest max-[400px]:flex-col max-[400px]:gap-1">
+              <span>ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}{Math.floor(Math.random() * 100)}</span>
               <span className="animate-pulse">
                 {loadingProgress < 30 ? "Kết nối đến máy chủ vệ tinh..." :
                   loadingProgress < 60 ? "Tải gói tài nguyên..." :
