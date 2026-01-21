@@ -1,57 +1,111 @@
-# PROMPT: Thiết kế lại giao diện trang #EditClassPage
+# PROMPT: Refactor UI/UX trang EditClassPage theo style ProfilePage
 
 ## 🎯 Vai trò
-Bạn là **chuyên gia thiết kế UI/UX**.
+Bạn là **lập trình viên UI/UX giàu kinh nghiệm**.
 
 ## 🧩 Bối cảnh
-Dự án hiện đã có các trang và tài nguyên giao diện như:
-- `#ProfilePage`
-- `#HomePage`
-- `index.css`
+Dự án hiện có trang **Thống Kê / ProfilePage (`ProfilePage.tsx`)** với:
+- Hệ thống bảng (table)
+- Nút (button)
+- Màu sắc
+- Spacing
+- Typography
 
-Những trang này đang thể hiện phong cách UI/UX chủ đạo của toàn bộ hệ thống.  
-Nhiệm vụ của bạn là **phân tích và kế thừa phong cách hiện có**, sau đó **thiết kế lại giao diện cho trang `#EditClassPage`**.
+Trang này đã thể hiện **phong cách UI chuẩn của toàn bộ hệ thống**.
 
----
-
-## 🎨 Yêu cầu thiết kế
-
-### 1. Tính nhất quán & đồng bộ
-- Giao diện `#EditClassPage` phải **tương đồng về phong cách** với:
-  - Màu sắc
-  - Typography
-  - Spacing
-  - Component UI
-- Không tạo ra phong cách mới tách biệt khỏi hệ thống hiện tại.
-
-### 2. Trải nghiệm người dùng (UX)
-- Thiết kế theo hướng **tinh gọn, dễ sử dụng**
-- Giảm thao tác dư thừa
-- Luồng sử dụng rõ ràng, trực quan cho Owner quản lý Class / Quiz
-
-### 3. Thẩm mỹ (UI)
-- Phong cách **sang trọng, hiện đại, clean**
-- Ưu tiên layout rõ ràng, thoáng
-- Tránh rối mắt hoặc lạm dụng hiệu ứng không cần thiết
-
-### 4. Chức năng
-- **Giữ nguyên 100% các chức năng hiện có** của trang `#EditClassPage`
-- Chỉ thay đổi về mặt giao diện và cách trình bày
-- Không được làm mất hoặc làm sai hành vi chức năng hiện tại
+Nhiệm vụ của bạn là:
+- Đọc hiểu **logic frontend UI** của `ProfilePage.tsx`
+- Kế thừa và áp dụng **toàn bộ style đó** cho trang:
+  - `EditClassPage.tsx`
+- **KHÔNG thay đổi logic nghiệp vụ hiện tại** của `EditClassPage.tsx`
 
 ---
 
-## 🧠 Yêu cầu khi thiết kế
-- Giải thích lý do sắp xếp layout
-- Chỉ rõ cách kế thừa style từ `#ProfilePage`, `#HomePage`, `index.css`
-- Ưu tiên khả năng mở rộng UI trong tương lai
+## 🎨 Yêu cầu thiết kế UI
+
+### 1. Đồng bộ & tương đồng style
+- Áp dụng lại từ `ProfilePage.tsx`:
+  - Kiểu bảng (table layout, header, row)
+  - Button style (primary / secondary / danger)
+  - Màu sắc chủ đạo
+  - Spacing & padding
+  - Typography (font size, font weight)
+- Không tạo style mới gây lệch hệ thống
+- Giao diện phải nhìn là nhận ra cùng một sản phẩm
+
+---
+
+### 2. Clean & tinh gọn
+- Giảm tối đa:
+  - Border không cần thiết
+  - Box lồng nhau gây rối mắt
+- Ưu tiên:
+  - Whitespace hợp lý
+  - Phân cấp thị giác rõ ràng
+- Giao diện hướng tới:
+  - Dễ đọc
+  - Dễ thao tác
+  - Chuyên nghiệp
+
+---
+
+## 📱 Responsive Mobile (BẮT BUỘC)
+
+### Yêu cầu
+- Thiết kế lại layout **mobile-first** cho `EditClassPage.tsx`
+- Mục tiêu:
+  - **Tiết kiệm width**
+  - Không bị tràn ngang
+  - Không cần zoom để thao tác
+
+### Gợi ý (không bắt buộc)
+- Table → chuyển sang:
+  - Card list
+  - Hoặc row dạng stack
+- Button:
+  - Icon-only hoặc icon + text ngắn
+- Các action:
+  - Gom vào menu (`⋮`) nếu cần
+
+---
+
+## 🧹 Chỉnh sửa UI chi tiết
+
+### CLASS BAN label
+- Hiện tại:
+  - Có border
+  - Có background
+- Yêu cầu mới:
+  - ❌ Bỏ toàn bộ border
+  - ❌ Bỏ background
+  - ✅ Chỉ giữ:
+    - Icon
+    - Text
+- Style phải:
+  - Nhẹ
+  - Không gây nhiễu thị giác
+  - Phù hợp với tổng thể clean UI
+
+---
+
+## ⚠️ Ràng buộc quan trọng
+- ❌ Không thay đổi logic frontend
+- ❌ Không làm mất chức năng
+- ❌ Không làm sai hành vi UI hiện tại
+- Chỉ refactor:
+  - Style
+  - Layout
+  - Responsive behavior
 
 ---
 
 ## ✅ Kết quả mong muốn
-- Giao diện `#EditClassPage` mới:
-  - Đồng bộ với toàn hệ thống
-  - Dễ dùng cho người quản lý
-  - Gọn gàng nhưng vẫn chuyên nghiệp
-- Có thể triển khai trực tiếp bởi developer mà không cần suy đoán thêm
+- `EditClassPage.tsx`:
+  - Có style đồng bộ với `ProfilePage.tsx`
+  - Clean, gọn, dễ dùng
+  - Responsive tốt trên mobile
+- UI có thể merge trực tiếp vào codebase mà không cần chỉnh lại logic
 
+---
+
+**BẮT ĐẦU THỰC HIỆN TỪ VIỆC PHÂN TÍCH ProfilePage.tsx.**

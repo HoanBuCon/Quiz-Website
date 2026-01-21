@@ -6,6 +6,8 @@ import {
   FaTimes,
   FaShareAlt,
   FaCopy,
+  FaShieldAlt,
+  FaKey,
   FaUserShield,
   FaHistory,
   FaEdit,
@@ -36,6 +38,7 @@ const EditClassPage: React.FC = () => {
   const [loadingShare, setLoadingShare] = useState(true);
 
   const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [classPublished, setClassPublished] = useState<boolean>(stateClass?.isPublic || false);
 
   // If classRoom not provided via state, fetch from backend (mine)
   useEffect(() => {
@@ -62,6 +65,7 @@ const EditClassPage: React.FC = () => {
           }
           setName(found.name || "");
           setDescription(found.description || "");
+          setClassPublished(found.isPublic || false);
         }
 
         // Fetch quizzes
@@ -175,7 +179,7 @@ const EditClassPage: React.FC = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           {saving ? (
             <>Running...</>
@@ -193,11 +197,15 @@ const EditClassPage: React.FC = () => {
         <div className="space-y-6">
           {/* Card 1: General Info */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-              <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <FaChalkboardTeacher className="text-blue-500" />
-                Thông tin chung
-              </h3>
+            <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
+              <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
+                <FaChalkboardTeacher className="text-blue-200 text-2xl" />
+              </div>
+              <div className="flex-1 pl-4 pr-6 py-4">
+                <h3 className="font-bold text-white dark:text-gray-100">
+                  Thông tin chung
+                </h3>
+              </div>
             </div>
             <div className="p-6 space-y-5">
               <div>
@@ -214,7 +222,7 @@ const EditClassPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Mô tả
+                  Mô tả <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none resize-y min-h-[100px]"
@@ -230,50 +238,55 @@ const EditClassPage: React.FC = () => {
 
           {/* Card 2: Access Control */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                  <FaUserShield className="text-purple-500" />
-                  Quản lý quyền truy cập lớp học
-                </h3>
-
-
-                {/* Simple Toggle Switch */}
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <span className={`text-sm font-medium transition-colors ${shareData?.isShareable ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                    {shareData?.isShareable ? 'Đang bật' : 'Đang tắt'}
-                  </span>
-                  <div className="relative">
-                    <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loadingShare} />
-                    <div className={`block w-12 h-7 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                    <div className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-5' : ''}`}></div>
-                  </div>
-                </label>
+            <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
+              <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
+                <FaShieldAlt className="text-purple-300 text-2xl" />
               </div>
+              <div className="flex-1 pl-4 pr-6 py-4">
+                <div className="flex md:flex-row flex-col md:justify-between gap-3 md:gap-4">
+                  <div className="flex-1 overflow-hidden">
+                    <h3 className="font-bold text-white dark:text-gray-100 mb-2 truncate md:overflow-visible md:whitespace-normal">
+                      Quản lý quyền truy cập lớp học
+                    </h3>
+                    {/* Class Info */}
+                    <p className="text-xs text-blue-100 dark:text-gray-400">
+                      {quizzes.length} bài kiểm tra • {classPublished ? 'Public' : 'Private'}
+                    </p>
+                  </div>
 
-              {/* Class Info */}
-              {shareData?.isShareable && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
-                  {name} • {quizzes.length} bài kiểm tra • Public
-                </p>
-              )}
+                  {/* Simple Toggle Switch */}
+                  <label className="flex items-center gap-3 cursor-pointer group flex-shrink-0">
+                    <span className={`text-sm font-medium transition-colors ${shareData?.isShareable ? 'text-white dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {shareData?.isShareable ? 'Đang bật' : 'Đang tắt'}
+                    </span>
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loadingShare} />
+                      <div className={`block w-12 h-7 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                      <div className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-5' : ''}`}></div>
+                    </div>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="p-6">
               {/* Share Code Section */}
               <div className={`transition-all duration-500 ease-in-out overflow-hidden ${shareData?.isShareable ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-5 border border-blue-100 dark:border-blue-800/30 mb-8">
+                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-5 max-[490px]:p-3 border border-blue-100 dark:border-blue-800/30 mb-8">
                   <div className="flex-1">
                     <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider mb-2">
-                      Access ID
+                      CLASS Access ID
                     </h4>
                     <p className="text-sm text-blue-700 dark:text-blue-400 mb-3 block">
-                      Mã tham gia lớp học
+                      Mã truy cập lớp học
                     </p>
                     <div className="flex items-center gap-3 w-full mb-3">
-                      <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-700 rounded-lg text-xl font-mono font-bold text-blue-600 dark:text-blue-400 tracking-wider select-all text-center">
+                      <code className="flex-1 px-3 py-2 max-[490px]:px-2 bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-700 rounded-lg text-xl max-[490px]:text-sm font-mono font-bold text-blue-600 dark:text-blue-400 tracking-wider select-all text-center">
                         {shareData?.code || "WAITING..."}
                       </code>
+                    </div>
+
+                    <div className="flex items-center gap-2 justify-end">
                       <button
                         onClick={() => {
                           if (shareData?.code) {
@@ -286,14 +299,13 @@ const EditClassPage: React.FC = () => {
                       >
                         <FaCopy /> Copy
                       </button>
+                      <button
+                        onClick={handleResetCode}
+                        className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-medium transition-all duration-200 shadow-sm active:scale-95"
+                      >
+                        <FaHistory /> Reset ID
+                      </button>
                     </div>
-
-                    <button
-                      onClick={handleResetCode}
-                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-medium transition-all duration-200 shadow-sm active:scale-95"
-                    >
-                      <FaHistory /> Reset ID
-                    </button>
                   </div>
                 </div>
 
@@ -301,7 +313,7 @@ const EditClassPage: React.FC = () => {
                 <div className="mb-4">
                   <h4 className="font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-4">
                     <FaUsers className="text-gray-500" />
-                    Danh sách thành viên
+                    Danh sách truy cập Class
                   </h4>
                   <UserAccessList classId={classId!} />
                 </div>
@@ -310,7 +322,7 @@ const EditClassPage: React.FC = () => {
               {!shareData?.isShareable && (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
                   <FaLock className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  Bật tính năng chia sẻ để quản lý mã truy cập và thành viên.
+                  Bật tính năng chia sẻ để quản lý mã truy cập lớp học.
                 </div>
               )}
             </div>
@@ -321,14 +333,18 @@ const EditClassPage: React.FC = () => {
         <div className="space-y-6 lg:sticky lg:top-4 lg:self-start">
           {/* Card 3: Quiz Access Control */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden lg:max-h-[calc(100vh-120px)]">
-            <div className="px-6 py-6 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-              <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <FaGlobe className="text-green-500" />
-                Quản lý quyền truy cập bài kiểm tra
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
-                Cấu hình quyền truy cập riêng lẻ cho từng bài kiểm tra
-              </p>
+            <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
+              <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
+                <FaKey className="text-green-300 text-2xl" />
+              </div>
+              <div className="flex-1 pl-4 pr-6 py-6">
+                <h3 className="font-bold text-white dark:text-gray-100">
+                  Quản lý quyền truy cập bài kiểm tra
+                </h3>
+                <p className="text-xs text-blue-100 dark:text-gray-400 mt-1">
+                  Cấu hình quyền truy cập cho từng bài kiểm tra
+                </p>
+              </div>
             </div>
 
             <div className="p-6 overflow-y-auto custom-scrollbar lg:max-h-[calc(100vh-240px)]">
@@ -430,51 +446,77 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
       <div
-        className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors"
+        className="px-6 py-4 max-[490px]:p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${quiz.published ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
-            {quiz.published ? <FaGlobe /> : <FaLock />}
-          </div>
-          <div>
-            <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm flex items-center gap-2">
-              {quiz.title}
-              {shareData?.isShareable && (
-                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-[10px] font-bold rounded-md uppercase tracking-wider">
-                  Shared
-                </span>
-              )}
-            </h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
-              {quiz.questionCount ?? 0} câu hỏi • {quiz.published ? "Public" : "Private"}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Toggle Switch */}
-          <label className="flex items-center gap-2 cursor-pointer group" onClick={(e) => e.stopPropagation()}>
-            <span className={`text-xs font-medium transition-colors ${shareData?.isShareable ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-              {shareData?.isShareable ? 'Đang bật' : 'Đang tắt'}
-            </span>
-            <div className="relative">
-              <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loading} />
-              <div className={`block w-10 h-6 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-              <div className={`absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-4' : ''}`}></div>
+        <div className="flex md:flex-row flex-col md:items-center items-start justify-between gap-3">
+          {/* Quiz Info Section */}
+          <div className="flex items-center gap-3 flex-1 min-w-0 md:flex-1 w-full md:w-auto">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 ${quiz.published ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+              {quiz.published ? <FaGlobe /> : <FaLock />}
             </div>
-          </label>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm truncate">
+                {quiz.title}
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                {quiz.questionCount ?? 0} câu hỏi • {quiz.published ? "Public" : "Private"}
+              </p>
+            </div>
+          </div>
 
-          <button className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-md transition-colors duration-200 ${expanded ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
-            <svg
-              className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+          {/* Toggle and Arrow Section - Desktop */}
+          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+            {/* Toggle Switch */}
+            <label className="flex items-center gap-2 cursor-pointer group" onClick={(e) => e.stopPropagation()}>
+              <span className={`text-xs font-medium transition-colors ${shareData?.isShareable ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+                {shareData?.isShareable ? 'Đang bật' : 'Đang tắt'}
+              </span>
+              <div className="relative">
+                <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loading} />
+                <div className={`block w-10 h-6 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                <div className={`absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-4' : ''}`}></div>
+              </div>
+            </label>
+
+            <button className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-md transition-colors duration-200 ${expanded ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
+              <svg
+                className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile Controls - Full Width Row */}
+          <div className="md:hidden w-full flex items-center justify-between">
+            {/* Toggle Switch - Right */}
+            <label className="flex items-center gap-2 cursor-pointer group ml-auto" onClick={(e) => e.stopPropagation()}>
+              <span className={`text-xs font-medium transition-colors ${shareData?.isShareable ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+                {shareData?.isShareable ? 'Đang bật' : 'Đang tắt'}
+              </span>
+              <div className="relative">
+                <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loading} />
+                <div className={`block w-10 h-6 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                <div className={`absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-4' : ''}`}></div>
+              </div>
+            </label>
+
+            {/* Arrow Button - Center (absolute) */}
+            <button className={`absolute left-1/2 -translate-x-1/2 text-xs font-medium w-6 h-6 flex items-center justify-center rounded-md transition-colors duration-200 ${expanded ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
+              <svg
+                className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -483,18 +525,21 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
         <div className="p-6">
           <div className={`transition-all duration-500 ease-in-out overflow-hidden ${shareData?.isShareable ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
             {/* Code Display Section - Similar to Class */}
-            <div className="bg-green-50 dark:bg-green-900/10 rounded-xl p-5 border border-green-100 dark:border-green-800/30 mb-6">
+            <div className="bg-green-50 dark:bg-green-900/10 rounded-xl p-5 max-[490px]:p-3 border border-green-100 dark:border-green-800/30 mb-6">
               <div className="flex-1 w-full">
                 <h4 className="text-sm font-bold text-green-800 dark:text-green-300 uppercase tracking-wider mb-2">
                   Quiz Access ID
                 </h4>
                 <p className="text-sm text-green-700 dark:text-green-400 mb-3">
-                  Mã truy cập riêng cho quiz này
+                  Mã truy cập riêng cho Quiz
                 </p>
                 <div className="flex items-center gap-3 w-full mb-3">
-                  <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 rounded-lg text-xl font-mono font-bold text-green-600 dark:text-green-400 tracking-wider select-all text-center">
+                  <code className="flex-1 px-3 py-2 max-[490px]:px-2 bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 rounded-lg text-xl max-[490px]:text-sm font-mono font-bold text-green-600 dark:text-green-400 tracking-wider select-all text-center">
                     {shareData?.code || "WAITING..."}
                   </code>
+                </div>
+
+                <div className="flex items-center gap-2 justify-end">
                   <button
                     onClick={() => {
                       if (shareData?.code) {
@@ -507,15 +552,14 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
                   >
                     <FaCopy /> Copy
                   </button>
+                  <button
+                    onClick={handleResetCode}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-medium transition-all duration-200 shadow-sm active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    <FaHistory /> Reset ID
+                  </button>
                 </div>
-
-                <button
-                  onClick={handleResetCode}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-medium transition-all duration-200 shadow-sm active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  <FaHistory /> Reset ID
-                </button>
               </div>
             </div>
 
@@ -532,7 +576,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
           {!shareData?.isShareable && (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
               <FaLock className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              Bật tính năng chia sẻ để quản lý mã truy cập Quiz.
+              Bật tính năng chia sẻ để quản lý mã truy cập bài kiểm tra.
             </div>
           )}
         </div>
@@ -609,53 +653,90 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
         {loading && users.active.length === 0 ? (
           <div className="text-center text-xs text-gray-400 py-2">Loading...</div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
-            <div className="max-h-80 overflow-y-auto custom-scrollbar">
+          <>
+            {/* Mobile View */}
+            <div className="md:hidden space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
               {users.active.length === 0 ? (
-                <div className="text-center py-4 text-xs text-gray-400 italic">Chưa có người dùng nào truy cập.</div>
+                <div className="text-center py-4 text-xs text-gray-400 italic bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl">Chưa có người dùng nào truy cập.</div>
               ) : (
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
-                    <tr>
-                      <th className="px-4 py-2">User</th>
-                      <th className="px-4 py-2 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                    {users.active.map(u => (
-                      <tr key={u.userId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                        <td className="px-4 py-2">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={u.avatarUrl || userAvatar}
-                              alt=""
-                              className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = userAvatar;
-                              }}
-                            />
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white text-sm">{u.name}</div>
-                              <div className="text-xs text-gray-500">{u.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          <button
-                            onClick={() => handleBan(u.userId)}
-                            className="flex items-center gap-1.5 px-2 py-1 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-all duration-200 text-xs font-medium border border-red-200 dark:border-red-800 active:scale-95 ml-auto"
-                            title="Ban User"
-                          >
-                            <FaBan style={{ fontSize: '14px', width: '14px', height: '14px', display: 'inline-block' }} /> Ban
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                users.active.map(u => (
+                  <div key={u.userId} className="bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl p-4 max-[490px]:p-2 flex items-center justify-between gap-3 max-[490px]:gap-2">
+                    <div className="flex items-center gap-3 max-[490px]:gap-2 overflow-hidden">
+                      <img
+                        src={u.avatarUrl || userAvatar}
+                        alt=""
+                        className="w-10 h-10 max-[490px]:w-8 max-[490px]:h-8 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = userAvatar;
+                        }}
+                      />
+                      <div className="min-w-0">
+                        <div className="font-medium text-gray-900 dark:text-white truncate max-[490px]:text-xs">{u.name}</div>
+                        <div className="text-xs text-gray-500 truncate max-[490px]:text-[10px]">{u.email}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleBan(u.userId)}
+                      className="p-2 max-[490px]:p-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-colors border border-red-200 dark:border-red-800 flex-shrink-0"
+                      title="Ban User"
+                    >
+                      <FaBan />
+                    </button>
+                  </div>
+                ))
               )}
             </div>
-          </div>
+
+            {/* Desktop View */}
+            <div className="hidden md:block bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+              <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                {users.active.length === 0 ? (
+                  <div className="text-center py-4 text-xs text-gray-400 italic">Chưa có người dùng nào truy cập.</div>
+                ) : (
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold shadow-sm">
+                      <tr>
+                        <th className="py-4 px-6">User</th>
+                        <th className="py-4 px-6 text-right">Action</th>
+                      </tr>
+                      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
+                    </thead>
+                    <tbody>
+                      {users.active.map(u => (
+                        <tr key={u.userId} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200 relative gradient-row-divider">
+                          <td className="py-4 px-6 align-middle">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={u.avatarUrl || userAvatar}
+                                alt=""
+                                className="w-10 h-10 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = userAvatar;
+                                }}
+                              />
+                              <div>
+                                <div className="font-medium text-gray-900 dark:text-white">{u.name}</div>
+                                <div className="text-xs text-gray-500">{u.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 align-middle text-right">
+                            <button
+                              onClick={() => handleBan(u.userId)}
+                              className="flex items-center gap-1.5 px-2 py-1 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-all duration-200 text-xs font-medium border border-red-200 dark:border-red-800 active:scale-95 ml-auto"
+                              title="Ban User"
+                            >
+                              <FaBan /> Ban
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -666,60 +747,103 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
             <FaExclamationTriangle />
             Banned Users ({users.banned.length})
           </h4>
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
-            <div className="max-h-80 overflow-y-auto custom-scrollbar">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-4 py-2">User</th>
-                    <th className="px-4 py-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {users.banned.map(u => (
-                    <tr key={u.userId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                      <td className="px-4 py-2">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={u.avatarUrl || userAvatar}
-                            alt=""
-                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = userAvatar;
-                            }}
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-red-600 dark:text-red-400 text-sm">{u.name}</span>
-                              {u.source === 'class' && (
-                                <span className="inline-flex items-center gap-1 text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 rounded font-bold border border-amber-300 dark:border-amber-700/50">
-                                  <FaExclamationTriangle className="text-[8px]" /> CLASS BAN
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-red-600 dark:text-red-400">{u.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <button
-                          onClick={() => handleUnban(u.userId)}
-                          disabled={targetType === 'quiz' && u.source === 'class'}
-                          title={targetType === 'quiz' && u.source === 'class' ? 'Cần Unban người dùng trong class' : 'Bỏ chặn người dùng này'}
-                          className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 text-xs font-medium border active:scale-95 ml-auto ${targetType === 'quiz' && u.source === 'class'
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
-                            : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-900/30'
-                            }`}
-                        >
-                          <FaCheck style={{ fontSize: '14px', width: '14px', height: '14px', display: 'inline-block' }} /> Unban
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <>
+            {/* Mobile View */}
+            <div className="md:hidden space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+              {users.banned.map(u => (
+                <div key={u.userId} className="bg-red-50/30 dark:bg-red-900/10 border border-gray-100 dark:border-gray-700/50 rounded-xl p-4 max-[490px]:p-2 flex items-center justify-between gap-3 max-[490px]:gap-2">
+                  <div className="flex items-center gap-3 max-[490px]:gap-2 overflow-hidden">
+                    <img
+                      src={u.avatarUrl || userAvatar}
+                      alt=""
+                      className="w-10 h-10 max-[490px]:w-8 max-[490px]:h-8 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = userAvatar;
+                      }}
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-red-600 dark:text-red-400 truncate max-[490px]:text-xs">{u.name}</span>
+                        {u.source === 'class' && (
+                          <span className="inline-flex items-center gap-1 text-[10px] max-[490px]:text-[8px] text-amber-600 dark:text-amber-500 font-bold">
+                            <FaExclamationTriangle className="text-[10px] max-[490px]:text-[8px]" /> CLASS BAN
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-red-600 dark:text-red-400 truncate max-[490px]:text-[10px]">{u.email}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleUnban(u.userId)}
+                    disabled={targetType === 'quiz' && u.source === 'class'}
+                    className={`p-2 max-[490px]:p-1.5 rounded-lg transition-colors border flex-shrink-0 ${targetType === 'quiz' && u.source === 'class'
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
+                      : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-900/30'
+                      }`}
+                  >
+                    <FaCheck />
+                  </button>
+                </div>
+              ))}
             </div>
-          </div>
+
+            {/* Desktop View */}
+            <div className="hidden md:block bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+              <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold shadow-sm">
+                    <tr>
+                      <th className="py-4 px-6">User</th>
+                      <th className="py-4 px-6 text-right">Action</th>
+                    </tr>
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
+                  </thead>
+                  <tbody>
+                    {users.banned.map(u => (
+                      <tr key={u.userId} className="hover:bg-red-50/30 dark:hover:bg-red-900/10 transition-colors duration-200 relative gradient-row-divider">
+                        <td className="py-4 px-6 align-middle">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={u.avatarUrl || userAvatar}
+                              alt=""
+                              className="w-10 h-10 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = userAvatar;
+                              }}
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-red-600 dark:text-red-400">{u.name}</span>
+                                {u.source === 'class' && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-500 font-bold ml-1">
+                                    <FaExclamationTriangle className="text-[10px]" /> CLASS BAN
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-red-600 dark:text-red-400">{u.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 align-middle text-right">
+                          <button
+                            onClick={() => handleUnban(u.userId)}
+                            disabled={targetType === 'quiz' && u.source === 'class'}
+                            title={targetType === 'quiz' && u.source === 'class' ? 'Cần Unban người dùng trong class' : 'Bỏ chặn người dùng này'}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 text-xs font-medium border active:scale-95 ml-auto ${targetType === 'quiz' && u.source === 'class'
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
+                              : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-900/30'
+                              }`}
+                          >
+                            <FaCheck style={{ fontSize: '14px', width: '14px', height: '14px', display: 'inline-block' }} /> Unban
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         </div>
       )}
     </div>
