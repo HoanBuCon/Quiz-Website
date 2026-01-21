@@ -483,6 +483,55 @@ router.post('/share/reset', authRequired, async (req, res) => {
     console.log(`Resetting share code for ${targetType} ${targetId} -> ${newCode}`);
     
     await transaction(async (conn) => {
+      // NEW REQUIREMENT: If Reset Quiz -> Remove users from Class if they have no other quizzes
+      if (targetType === 'quiz') {
+         // 1. Get Class ID
+         const [quiz] = await conn.execute('SELECT classId FROM Quiz WHERE id = ?', [targetId]);
+         if (quiz && quiz.length > 0) {
+             const classId = quiz[0].classId;
+             
+             // 2. Get users who currently have access to this quiz
+             const [users] = await conn.execute(
+                 'SELECT userId FROM SharedAccess WHERE targetType = "quiz" AND targetId = ?',
+                 [targetId]
+             );
+             
+             for (const u of users) {
+                 const userId = u.userId;
+                 
+                 // 3. Check if user has access to OTHER quizzes in this class
+                 // We don't count the current quiz because we are about to reset it (kick user out)
+                 const [otherAccess] = await conn.execute(
+                     `SELECT sa.id FROM SharedAccess sa
+                      JOIN Quiz q ON sa.targetId = q.id
+                      WHERE sa.userId = ? 
+                      AND sa.targetType = 'quiz' 
+                      AND q.classId = ? 
+                      AND sa.targetId != ?`,
+                     [userId, classId, targetId]
+                 );
+                 
+                 if (!otherAccess || otherAccess.length === 0) {
+                     // 4. User has NO other quiz access -> Check if they have navigationOnly class access
+                     // If 'full', they joined via Class ID -> Don't touch
+                     const [classAccess] = await conn.execute(
+                         'SELECT id FROM SharedAccess WHERE userId = ? AND targetType = "class" AND targetId = ? AND accessLevel = "navigationOnly"',
+                         [userId, classId]
+                     );
+                     
+                     if (classAccess && classAccess.length > 0) {
+                         // Remove Class Access (Clean cleanup)
+                         await conn.execute(
+                             'DELETE FROM SharedAccess WHERE id = ?',
+                             [classAccess[0].id]
+                         );
+                         console.log(`Removed Class Access for user ${userId} (Clean cleanup after Quiz Reset)`);
+                     }
+                 }
+             }
+         }
+      }
+
       // FIX BUG 1: Revoke ALL existing access sessions for this target
       // This ensures that users with the old code/link are kicked out
       await conn.execute(
@@ -508,6 +557,12 @@ router.post('/share/reset', authRequired, async (req, res) => {
              const { clause, params } = buildWhereIn(qIds);
              await conn.execute(
                  `DELETE FROM BannedAccess WHERE targetType = 'quiz' AND targetId ${clause}`,
+                 params
+             );
+
+             // 3. Remove 'hidden' access for quizzes (Cleanup stale "deleted" states)
+             await conn.execute(
+                 `DELETE FROM SharedAccess WHERE targetType = 'quiz' AND accessLevel = 'hidden' AND targetId ${clause}`,
                  params
              );
          }
@@ -1027,7 +1082,7 @@ router.get('/access/users', authRequired, async (req, res) => {
       JOIN SharedAccess sa ON sa.userId = u.id
       WHERE 
         (
-          (sa.targetType = 'quiz' AND sa.targetId = ?)
+          (sa.targetType = 'quiz' AND sa.targetId = ? AND sa.accessLevel != 'hidden')
           OR
           (
             sa.targetType = 'class' AND sa.targetId = ? 

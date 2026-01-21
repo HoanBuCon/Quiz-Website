@@ -369,7 +369,7 @@ const EditClassPage: React.FC = () => {
                       key={q.id}
                       quiz={q}
                       refreshTrigger={quizRefreshTrigger}
-                      onUpdate={() => { }}
+                      onUpdate={() => setQuizRefreshTrigger(prev => prev + 1)}
                     />
                   );
                 })}
@@ -452,6 +452,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
       setShareData(prev => prev ? ({ ...prev, code: res.code }) : null);
       toast.success("Đã reset Quiz Access ID!");
       setLocalRefresh(prev => prev + 1);
+      if (onUpdate) onUpdate();
     } catch (e) {
       toast.error("Lỗi khi reset");
     } finally {
