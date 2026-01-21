@@ -133,6 +133,7 @@ const EditClassPage: React.FC = () => {
       // Refresh status to get code if enabled
       const status = await VisibilityAPI.getShareStatus('class', classId!, token);
       setShareData(status);
+      setQuizRefreshTrigger(prev => prev + 1);
       toast.success(newState ? "Đã bật chia sẻ lớp học" : "Đã tắt chia sẻ lớp học");
     } catch (e) {
       toast.error("Không thể thay đổi trạng thái chia sẻ");

@@ -36,8 +36,8 @@ router.get('/', authRequired, async (req, res) => {
          AND ba.targetType = 'class'
          AND ba.targetId = sa.targetId
          AND (
-            ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId)
-            OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId)
+            ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId AND isEnabled = 1)
+            OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId AND isEnabled = 1)
          )
        )`,
       [req.user.id]
@@ -79,7 +79,7 @@ router.get('/', authRequired, async (req, res) => {
     if (ownedIds.length > 0) {
       const { clause, params } = buildWhereIn(ownedIds);
       const shareItems = await query(
-        `SELECT targetId FROM ShareItem WHERE targetType = ? AND targetId ${clause}`,
+        `SELECT targetId FROM ShareItem WHERE targetType = ? AND targetId ${clause} AND isEnabled = 1`,
         ['class', ...params]
       );
       shareMap = new Set(shareItems.map(s => s.targetId));
@@ -134,7 +134,7 @@ router.get('/', authRequired, async (req, res) => {
   
   // Get share items to mark which classes are shareable
   const shareItems = await query(
-    'SELECT targetId, code FROM ShareItem WHERE targetType = ?',
+    'SELECT targetId, code FROM ShareItem WHERE targetType = ? AND isEnabled = 1',
     ['class']
   );
   

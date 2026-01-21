@@ -277,7 +277,8 @@ router.post('/share', authRequired, async (req, res) => {
         
         await transaction(async (conn) => {
           // Upsert ShareItem for Class
-           const [existing] = await conn.execute(
+          // Upsert ShareItem for Class
+          const [existing] = await conn.execute(
             'SELECT id FROM ShareItem WHERE targetType = ? AND targetId = ?',
             ['class', targetId]
           );
@@ -285,9 +286,15 @@ router.post('/share', authRequired, async (req, res) => {
           if (!existing || existing.length === 0) {
             const shareItemId = generateCuid();
             await conn.execute(
-              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt, isEnabled) VALUES (?, ?, ?, ?, ?, ?, 1)',
               [shareItemId, 'class', targetId, req.user.id, generateAccessCode(), now]
             );
+          } else {
+             // Re-enable
+             await conn.execute(
+               'UPDATE ShareItem SET isEnabled = 1 WHERE id = ?',
+               [existing[0].id]
+             );
           }
           
           // Get ALL quizzes in this class
@@ -298,7 +305,7 @@ router.post('/share', authRequired, async (req, res) => {
           
           console.log(`Found ${quizzes.length} quizzes in class`);
           
-          // Create ShareItem for ALL quizzes
+          // Create/Enable ShareItem for ALL quizzes
           for (const quiz of quizzes) {
             const [qzExisting] = await conn.execute(
               'SELECT id FROM ShareItem WHERE targetType = ? AND targetId = ?',
@@ -308,12 +315,17 @@ router.post('/share', authRequired, async (req, res) => {
             if (!qzExisting || qzExisting.length === 0) {
               const qzShareItemId = generateCuid();
               await conn.execute(
-                'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+                'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt, isEnabled) VALUES (?, ?, ?, ?, ?, ?, 1)',
                 [qzShareItemId, 'quiz', quiz.id, req.user.id, generateAccessCode(), now]
               );
+            } else {
+               await conn.execute(
+                 'UPDATE ShareItem SET isEnabled = 1 WHERE id = ?',
+                 [qzExisting[0].id]
+               );
             }
             
-            console.log(`  Quiz ${quiz.id} → Shareable`);
+            console.log(`  Quiz ${quiz.id} → Shareable (Enabled)`);
           }
           
           console.log('[SHARE CASE 1] Complete');
@@ -331,13 +343,13 @@ router.post('/share', authRequired, async (req, res) => {
           );
           console.log('  Removed all SharedAccess for class');
           
-          // Remove ShareItem for Class
+          // Disable ShareItem for Class (Do not delete)
           await conn.execute(
-            'DELETE FROM ShareItem WHERE targetType = ? AND targetId = ?',
+            'UPDATE ShareItem SET isEnabled = 0 WHERE targetType = ? AND targetId = ?',
             ['class', targetId]
           );
           
-          // Get ALL quizzes and check if they are shareable
+          // Get ALL quizzes 
           const [quizzes] = await conn.execute(
             'SELECT id FROM Quiz WHERE classId = ?',
             [targetId]
@@ -345,28 +357,17 @@ router.post('/share', authRequired, async (req, res) => {
           
           console.log(`Found ${quizzes.length} quizzes in class`);
           
-          // Remove ShareItem + SharedAccess for shareable quizzes
+          // Disable ShareItem + Remove SharedAccess for shareable quizzes
           for (const quiz of quizzes) {
-            const [shareItem] = await conn.execute(
-              'SELECT id FROM ShareItem WHERE targetType = ? AND targetId = ?',
-              ['quiz', quiz.id]
-            );
-            
-            if (shareItem && shareItem.length > 0) {
-              await conn.execute(
-                'DELETE FROM ShareItem WHERE targetType = ? AND targetId = ?',
+             await conn.execute(
+                'UPDATE ShareItem SET isEnabled = 0 WHERE targetType = ? AND targetId = ?',
                 ['quiz', quiz.id]
-              );
+             );
               
-              await conn.execute(
+             await conn.execute(
                 'DELETE FROM SharedAccess WHERE targetType = ? AND targetId = ?',
                 ['quiz', quiz.id]
-              );
-              
-              console.log(`  Quiz ${quiz.id}: Shareable → Not Shareable`);
-            } else {
-              console.log(`  Quiz ${quiz.id}: Not Shareable → Keep Not Shareable`);
-            }
+             );
           }
           
           console.log('[SHARE CASE 3] Complete');
@@ -398,12 +399,17 @@ router.post('/share', authRequired, async (req, res) => {
           if (!classShareItem) {
             const clsShareItemId = generateCuid();
             await conn.execute(
-              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt, isEnabled) VALUES (?, ?, ?, ?, ?, ?, 1)',
               [clsShareItemId, 'class', quiz.classId, req.user.id, generateAccessCode(), now]
             );
             console.log(`  Class ${quiz.classId}: Not Shareable → Shareable`);
           } else {
-            console.log(`  Class ${quiz.classId}: Already Shareable`);
+             // Ensure class is enabled
+             await conn.execute(
+                'UPDATE ShareItem SET isEnabled = 1 WHERE id = ?',
+                [classShareItem.id]
+             );
+             console.log(`  Class ${quiz.classId}: Shareable (Enabled)`);
           }
           
           // Make THIS Quiz Shareable
@@ -415,9 +421,14 @@ router.post('/share', authRequired, async (req, res) => {
           if (!qzExisting || qzExisting.length === 0) {
             const qzShareItemId = generateCuid();
             await conn.execute(
-              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt, isEnabled) VALUES (?, ?, ?, ?, ?, ?, 1)',
               [qzShareItemId, 'quiz', targetId, req.user.id, generateQuizAccessCode(), now]
             );
+          } else {
+             await conn.execute(
+                'UPDATE ShareItem SET isEnabled = 1 WHERE id = ?',
+                [qzExisting[0].id]
+             );
           }
           
           console.log(`  Quiz ${targetId}: Not Shareable → Shareable`);
@@ -435,13 +446,13 @@ router.post('/share', authRequired, async (req, res) => {
         );
         console.log(`  Removed all SharedAccess for quiz ${targetId}`);
         
-        // Remove ShareItem for THIS Quiz
+        // Disable ShareItem for THIS Quiz (Update isEnabled = 0)
         await query(
-          'DELETE FROM ShareItem WHERE targetType = ? AND targetId = ?',
+          'UPDATE ShareItem SET isEnabled = 0 WHERE targetType = ? AND targetId = ?',
           ['quiz', targetId]
         );
         
-        console.log(`  Quiz ${targetId}: Shareable → Not Shareable`);
+        console.log(`  Quiz ${targetId}: Shareable → Not Shareable (Disabled)`);
         console.log(`  Class ${quiz.classId}: Stays Shareable`);
         console.log('[SHARE CASE 4] Complete');
       }
@@ -596,8 +607,8 @@ router.post('/claim', authRequired, async (req, res) => {
   let targetId = null;
 
   if (code) {
-    const share = await queryOne('SELECT targetType, targetId, code FROM ShareItem WHERE code = ?', [code]);
-    if (!share) return res.status(404).json({ message: 'Share not found' });
+    const share = await queryOne('SELECT targetType, targetId, code, isEnabled FROM ShareItem WHERE code = ?', [code]);
+    if (!share || !intToBool(share.isEnabled)) return res.status(404).json({ message: 'Liên kết không tồn tại hoặc đã bị đóng' });
     targetType = share.targetType;
     targetId = share.targetId;
 
@@ -615,10 +626,10 @@ router.post('/claim', authRequired, async (req, res) => {
     if (!cls) return res.status(404).json({ message: 'Class not found' });
     
     const exists = await queryOne(
-      'SELECT id FROM ShareItem WHERE targetType = ? AND targetId = ?',
+      'SELECT id, isEnabled FROM ShareItem WHERE targetType = ? AND targetId = ?',
       ['class', classId]
     );
-    if (!exists) return res.status(403).json({ message: 'Class is not share-enabled' });
+    if (!exists || !intToBool(exists.isEnabled)) return res.status(403).json({ message: 'Lớp học chưa được chia sẻ hoặc đã bị đóng' });
     
     targetType = 'class';
     targetId = classId;
@@ -627,10 +638,10 @@ router.post('/claim', authRequired, async (req, res) => {
     if (!qz) return res.status(404).json({ message: 'Quiz not found' });
     
     const exists = await queryOne(
-      'SELECT id FROM ShareItem WHERE targetType = ? AND targetId = ?',
+      'SELECT id, isEnabled FROM ShareItem WHERE targetType = ? AND targetId = ?',
       ['quiz', quizId]
     );
-    if (!exists) return res.status(403).json({ message: 'Quiz is not share-enabled' });
+    if (!exists || !intToBool(exists.isEnabled)) return res.status(403).json({ message: 'Quiz chưa được chia sẻ hoặc đã bị đóng' });
     
     targetType = 'quiz';
     targetId = quizId;
@@ -908,7 +919,7 @@ router.get('/public/quizzes', authRequired, async (req, res) => {
 // List all shared classes
 router.get('/shared/classes', authRequired, async (req, res) => {
   const shared = await query(
-    'SELECT targetId FROM ShareItem WHERE targetType = ?',
+    'SELECT targetId FROM ShareItem WHERE targetType = ? AND isEnabled = 1',
     ['class']
   );
   const ids = shared.map(s => s.targetId);
@@ -935,7 +946,7 @@ router.get('/shared/classes', authRequired, async (req, res) => {
 // List all shared quizzes
 router.get('/shared/quizzes', authRequired, async (req, res) => {
   const shared = await query(
-    'SELECT targetId FROM ShareItem WHERE targetType = ?',
+    'SELECT targetId FROM ShareItem WHERE targetType = ? AND isEnabled = 1',
     ['quiz']
   );
   const ids = shared.map(s => s.targetId);
@@ -986,12 +997,12 @@ router.get('/share/status', authRequired, async (req, res) => {
   }
 
   const shareItem = await queryOne(
-    'SELECT id, code FROM ShareItem WHERE targetType = ? AND targetId = ?',
+    'SELECT id, code, isEnabled FROM ShareItem WHERE targetType = ? AND targetId = ?',
     [targetType, targetId]
   );
 
   res.json({ 
-    isShareable: !!shareItem,
+    isShareable: !!shareItem && intToBool(shareItem.isEnabled),
     code: shareItem?.code || null
   });
 });

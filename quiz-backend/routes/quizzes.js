@@ -34,7 +34,10 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   const isBanned = await queryOne(`
     SELECT 1 FROM BannedAccess 
     WHERE userId = ? AND targetType = 'class' AND targetId = ?
-    AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ?))
+    AND (
+      bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ? AND isEnabled = 1) 
+      OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ? AND isEnabled = 1)
+    )
   `, [req.user.id, classId, classId, classId]);
 
   if (isBanned) {
@@ -56,7 +59,7 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   if (quizIds.length > 0) {
     const { clause, params } = buildWhereIn(quizIds);
     shareItems = await query(
-      `SELECT targetId FROM ShareItem WHERE targetType = ? AND targetId ${clause}`,
+      `SELECT targetId FROM ShareItem WHERE targetType = ? AND targetId ${clause} AND isEnabled = 1`,
       ['quiz', ...params]
     );
   }
@@ -65,7 +68,7 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   
   // Filter out Banned Quizzes first
   const bannedQuizItems = await query(
-    'SELECT targetId FROM BannedAccess WHERE userId = ? AND targetType = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = ? AND targetId = BannedAccess.targetId) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = ? AND targetId = BannedAccess.targetId))',
+    'SELECT targetId FROM BannedAccess WHERE userId = ? AND targetType = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = ? AND targetId = BannedAccess.targetId AND isEnabled = 1) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = ? AND targetId = BannedAccess.targetId AND isEnabled = 1))',
     [req.user.id, 'quiz', 'quiz', 'quiz']
   );
   const bannedQuizIds = new Set(bannedQuizItems.map(b => b.targetId));
@@ -459,9 +462,10 @@ router.get('/:id', authRequired, async (req, res) => {
       SELECT 1 FROM BannedAccess 
       WHERE userId = ? 
       AND (
-        (targetType = 'class' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ?)))
+      AND (
+        (targetType = 'class' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ? AND isEnabled = 1) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ? AND isEnabled = 1)))
         OR
-        (targetType = 'quiz' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?)))
+        (targetType = 'quiz' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ? AND isEnabled = 1) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'quiz' AND targetId = ? AND isEnabled = 1)))
       )
     `, [req.user.id, quiz.classId, quiz.classId, quiz.classId, quiz.id, quiz.id, quiz.id]);
 
