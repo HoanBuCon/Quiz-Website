@@ -55,17 +55,18 @@ const EditClassPage: React.FC = () => {
         const { ClassesAPI, VisibilityAPI, QuizzesAPI } = await import("../utils/api");
 
         // Fetch class info
-        if (!stateClass) {
-          const mine = await ClassesAPI.listMine(token);
-          const found = mine.find((c: any) => c.id === classId);
-          if (!found) {
-            toast.error("Không tìm thấy lớp học!");
-            navigate(-1);
-            return;
-          }
+        // Fetch class info - Always fetch to ensure data is fresh
+        const mine = await ClassesAPI.listMine(token);
+        const found = mine.find((c: any) => c.id === classId);
+
+        if (found) {
           setName(found.name || "");
           setDescription(found.description || "");
           setClassPublished(found.isPublic || false);
+        } else if (!stateClass) {
+          toast.error("Không tìm thấy lớp học!");
+          navigate(-1);
+          return;
         }
 
         // Fetch quizzes
@@ -165,7 +166,7 @@ const EditClassPage: React.FC = () => {
   return (
     <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-3">
+        <h1 className="text-lg md:text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 md:gap-3">
           <button
             onClick={() => navigate(-1)}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -176,19 +177,7 @@ const EditClassPage: React.FC = () => {
           <span>Chỉnh sửa lớp học: <span className="text-blue-600 dark:text-blue-400">{name}</span></span>
         </h1>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
-        >
-          {saving ? (
-            <>Running...</>
-          ) : (
-            <>
-              <FaSave className="text-lg" /> Lưu thay đổi
-            </>
-          )}
-        </button>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
@@ -232,6 +221,21 @@ const EditClassPage: React.FC = () => {
                   disabled={saving}
                   placeholder="Mô tả về lớp học này..."
                 />
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium shadow hover:shadow-md active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  {saving ? (
+                    <>Running...</>
+                  ) : (
+                    <>
+                      <FaSave /> Lưu thay đổi
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -297,13 +301,13 @@ const EditClassPage: React.FC = () => {
                         className="flex items-center gap-2 px-3 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800/50 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-300 rounded-xl transition-all duration-200 font-medium text-sm active:scale-95"
                         title="Copy ID"
                       >
-                        <FaCopy /> Copy
+                        <FaCopy className="w-4 h-4" /> Copy
                       </button>
                       <button
                         onClick={handleResetCode}
                         className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-medium transition-all duration-200 shadow-sm active:scale-95"
                       >
-                        <FaHistory /> Reset ID
+                        <FaHistory className="w-4 h-4" /> Reset ID
                       </button>
                     </div>
                   </div>
@@ -550,14 +554,14 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
                     className="flex items-center gap-2 px-3 py-2 bg-green-100 hover:bg-green-200 dark:bg-green-800/50 dark:hover:bg-green-800 text-green-600 dark:text-green-300 rounded-xl transition-all duration-200 font-medium text-sm active:scale-95"
                     title="Copy ID"
                   >
-                    <FaCopy /> Copy
+                    <FaCopy className="w-4 h-4" /> Copy
                   </button>
                   <button
                     onClick={handleResetCode}
                     disabled={loading}
                     className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-medium transition-all duration-200 shadow-sm active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
                   >
-                    <FaHistory /> Reset ID
+                    <FaHistory className="w-4 h-4" /> Reset ID
                   </button>
                 </div>
               </div>
