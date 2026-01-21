@@ -32,6 +32,8 @@ const EditClassPage: React.FC = () => {
   const [loading, setLoading] = useState(!stateClass);
   const [name, setName] = useState(stateClass?.name || "");
   const [description, setDescription] = useState(stateClass?.description || "");
+  const [initialName, setInitialName] = useState(stateClass?.name || "");
+  const [initialDescription, setInitialDescription] = useState(stateClass?.description || "");
   const [saving, setSaving] = useState(false);
 
   const [shareData, setShareData] = useState<{ isShareable: boolean; code?: string } | null>(null);
@@ -39,6 +41,7 @@ const EditClassPage: React.FC = () => {
 
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [classPublished, setClassPublished] = useState<boolean>(stateClass?.isPublic || false);
+  const [quizRefreshTrigger, setQuizRefreshTrigger] = useState(0);
 
   // If classRoom not provided via state, fetch from backend (mine)
   useEffect(() => {
@@ -62,6 +65,8 @@ const EditClassPage: React.FC = () => {
         if (found) {
           setName(found.name || "");
           setDescription(found.description || "");
+          setInitialName(found.name || "");
+          setInitialDescription(found.description || "");
           setClassPublished(found.isPublic || false);
         } else if (!stateClass) {
           toast.error("Không tìm thấy lớp học!");
@@ -100,6 +105,8 @@ const EditClassPage: React.FC = () => {
       const { ClassesAPI } = await import("../utils/api");
       await ClassesAPI.update(classId!, { name, description }, token);
       toast.success("Đã cập nhật lớp học thành công!");
+      setInitialName(name);
+      setInitialDescription(description);
       // navigate(-1); // Optional: stay on page to continue editing
     } catch (e) {
       toast.error("Có lỗi xảy ra khi lưu.");
@@ -185,7 +192,7 @@ const EditClassPage: React.FC = () => {
         {/* LEFT COLUMN: General Info & Class Access */}
         <div className="space-y-6">
           {/* Card 1: General Info */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-none overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-transparent overflow-hidden">
             <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
               <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
                 <FaChalkboardTeacher className="text-blue-200 text-2xl" />
@@ -222,26 +229,28 @@ const EditClassPage: React.FC = () => {
                   placeholder="Mô tả về lớp học này..."
                 />
               </div>
-              <div className="flex justify-end pt-2">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium shadow hover:shadow-md active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  {saving ? (
-                    <>Running...</>
-                  ) : (
-                    <>
-                      <FaSave /> Lưu thay đổi
-                    </>
-                  )}
-                </button>
-              </div>
+              {(name !== initialName || description !== initialDescription) && (
+                <div className="flex justify-end pt-2 animate-fadeIn">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium shadow hover:shadow-md active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {saving ? (
+                      <>Running...</>
+                    ) : (
+                      <>
+                        <FaSave /> Lưu thay đổi
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Card 2: Access Control */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-none overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-transparent overflow-hidden">
             <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
               <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
                 <FaShieldAlt className="text-purple-300 text-2xl" />
@@ -319,7 +328,7 @@ const EditClassPage: React.FC = () => {
                     <FaUsers className="text-gray-500" />
                     Danh sách truy cập Class
                   </h4>
-                  <UserAccessList classId={classId!} />
+                  <UserAccessList classId={classId!} onRefresh={() => setQuizRefreshTrigger(prev => prev + 1)} />
                 </div>
               </div>
 
@@ -336,7 +345,7 @@ const EditClassPage: React.FC = () => {
         {/* RIGHT COLUMN: Quiz Access */}
         <div className="space-y-6 lg:sticky lg:top-4 lg:self-start">
           {/* Card 3: Quiz Access Control */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-none overflow-hidden lg:max-h-[calc(100vh-120px)]">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-transparent overflow-hidden lg:max-h-[calc(100vh-120px)]">
             <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
               <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
                 <FaKey className="text-green-300 text-2xl" />
@@ -358,6 +367,7 @@ const EditClassPage: React.FC = () => {
                     <QuizAccessCard
                       key={q.id}
                       quiz={q}
+                      refreshTrigger={quizRefreshTrigger}
                       onUpdate={() => { }}
                     />
                   );
@@ -380,7 +390,7 @@ const EditClassPage: React.FC = () => {
 // HELPER COMPONENTS (Styled)
 // ----------------------------------------------------------------------
 
-const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, onUpdate }) => {
+const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger?: number }> = ({ quiz, onUpdate, refreshTrigger }) => {
   const [shareData, setShareData] = useState<{ isShareable: boolean; code?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -573,7 +583,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
                 <FaUsers className="text-gray-500" />
                 Danh sách truy cập Quiz
               </h4>
-              <UserAccessList classId={quiz.id} targetType="quiz" />
+              <UserAccessList classId={quiz.id} targetType="quiz" refreshTrigger={refreshTrigger} />
             </div>
           </div>
 
@@ -589,7 +599,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
   );
 };
 
-const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' }> = ({ classId, targetType = 'class' }) => {
+const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz'; onRefresh?: () => void; refreshTrigger?: number }> = ({ classId, targetType = 'class', onRefresh, refreshTrigger }) => {
   const [users, setUsers] = useState<{ active: any[]; banned: any[] }>({ active: [], banned: [] });
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -617,7 +627,7 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
 
   useEffect(() => {
     if (token) fetchUsers();
-  }, [classId, targetType, token]);
+  }, [classId, targetType, token, refreshTrigger]);
 
   const handleBan = async (userId: string) => {
     if (!token) return;
@@ -627,6 +637,7 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
       await VisibilityAPI.banUser({ targetType, targetId: classId, userId }, token);
       toast.success("Đã chặn người dùng");
       fetchUsers();
+      if (targetType === 'class' && onRefresh) onRefresh();
     } catch (e) {
       toast.error("Lỗi khi ban user");
     }
@@ -640,6 +651,7 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
       await VisibilityAPI.unbanUser({ targetType, targetId: classId, userId }, token);
       toast.success("Đã bỏ chặn");
       fetchUsers();
+      if (targetType === 'class' && onRefresh) onRefresh();
     } catch (e) {
       toast.error("Lỗi khi unban user");
     }
@@ -669,14 +681,14 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                       <img
                         src={u.avatarUrl || userAvatar}
                         alt=""
-                        className="w-10 h-10 max-[490px]:w-8 max-[490px]:h-8 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0"
+                        className="w-10 h-10 max-[490px]:w-8 max-[490px]:h-8 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0 cursor-pointer"
+                        onClick={() => window.open(u.avatarUrl || userAvatar, '_blank')}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = userAvatar;
                         }}
                       />
                       <div className="min-w-0">
                         <div className="font-medium text-gray-900 dark:text-white truncate max-[490px]:text-xs">{u.name}</div>
-                        <div className="text-xs text-gray-500 truncate max-[490px]:text-[10px]">{u.email}</div>
                       </div>
                     </div>
                     <button
@@ -713,14 +725,14 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                               <img
                                 src={u.avatarUrl || userAvatar}
                                 alt=""
-                                className="w-10 h-10 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0"
+                                className="w-10 h-10 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0 cursor-pointer"
+                                onClick={() => window.open(u.avatarUrl || userAvatar, '_blank')}
                                 onError={(e) => {
                                   (e.target as HTMLImageElement).src = userAvatar;
                                 }}
                               />
                               <div>
                                 <div className="font-medium text-gray-900 dark:text-white">{u.name}</div>
-                                <div className="text-xs text-gray-500">{u.email}</div>
                               </div>
                             </div>
                           </td>
@@ -760,7 +772,8 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                     <img
                       src={u.avatarUrl || userAvatar}
                       alt=""
-                      className="w-10 h-10 max-[490px]:w-8 max-[490px]:h-8 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0"
+                      className="w-10 h-10 max-[490px]:w-8 max-[490px]:h-8 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0 cursor-pointer"
+                      onClick={() => window.open(u.avatarUrl || userAvatar, '_blank')}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = userAvatar;
                       }}
@@ -774,7 +787,6 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-red-600 dark:text-red-400 truncate max-[490px]:text-[10px]">{u.email}</div>
                     </div>
                   </div>
                   <button
@@ -810,7 +822,8 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                             <img
                               src={u.avatarUrl || userAvatar}
                               alt=""
-                              className="w-10 h-10 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0"
+                              className="w-10 h-10 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 object-cover flex-shrink-0 cursor-pointer"
+                              onClick={() => window.open(u.avatarUrl || userAvatar, '_blank')}
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = userAvatar;
                               }}
@@ -824,7 +837,6 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs text-red-600 dark:text-red-400">{u.email}</div>
                             </div>
                           </div>
                         </td>
@@ -832,7 +844,7 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                           <button
                             onClick={() => handleUnban(u.userId)}
                             disabled={targetType === 'quiz' && u.source === 'class'}
-                            title={targetType === 'quiz' && u.source === 'class' ? 'Cần Unban người dùng trong class' : 'Bỏ chặn người dùng này'}
+                            title={targetType === 'quiz' && u.source === 'class' ? 'Cần Unban người dùng trong Class' : 'Bỏ chặn người dùng này'}
                             className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200 text-xs font-medium border active:scale-95 ml-auto ${targetType === 'quiz' && u.source === 'class'
                               ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed dark:bg-gray-800 dark:text-gray-500 dark:border-gray-700'
                               : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-900/30'
