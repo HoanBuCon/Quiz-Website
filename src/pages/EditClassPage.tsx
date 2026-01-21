@@ -19,6 +19,7 @@ import {
   FaUsers
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+import userAvatar from "../assets/user_avatar.gif";
 
 const EditClassPage: React.FC = () => {
   const { classId } = useParams<{ classId: string }>();
@@ -270,10 +271,10 @@ const EditClassPage: React.FC = () => {
                             toast.success("Đã copy ID!");
                           }
                         }}
-                        className="p-3 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800/50 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-300 rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800/50 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-300 rounded-lg transition-colors font-medium text-sm"
                         title="Copy ID"
                       >
-                        <FaCopy />
+                        <FaCopy /> Copy
                       </button>
                     </div>
                   </div>
@@ -281,7 +282,7 @@ const EditClassPage: React.FC = () => {
                   <div className="flex-shrink-0 self-start sm:self-center mt-2 sm:mt-0">
                     <button
                       onClick={handleResetCode}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-medium transition-all shadow-sm"
+                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-all shadow-sm"
                     >
                       <FaHistory /> Reset ID
                     </button>
@@ -393,7 +394,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
 
       const status = await VisibilityAPI.getShareStatus('quiz', quiz.id, token);
       setShareData(status);
-      toast.success(newState ? `Đã bật ID cho quiz: ${quiz.title}` : `Đã tắt ID cho quiz: ${quiz.title}`);
+      toast.success(newState ? `Đã bật chia sẻ cho quiz: ${quiz.title}` : `Đã tắt chia sẻ cho quiz: ${quiz.title}`);
     } catch (e) {
       toast.error("Không thể thay đổi trạng thái chia sẻ quiz");
     } finally {
@@ -418,82 +419,111 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
   };
 
   return (
-    <div className={`
-       rounded-xl border transition-all duration-300
-       ${expanded
-        ? 'bg-white dark:bg-gray-800 border-blue-500 ring-1 ring-blue-500 shadow-md'
-        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700'
-      }
-    `}>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+      {/* Header */}
       <div
-        className="p-4 flex items-center justify-between cursor-pointer"
+        className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-4">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${quiz.published ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
-            {quiz.published ? <FaCheck /> : <FaLock />}
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${quiz.published ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+            {quiz.published ? <FaGlobe /> : <FaLock />}
           </div>
           <div>
-            <h4 className="font-bold text-gray-800 dark:text-gray-100 text-base">{quiz.title}</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              {quiz.questionCount ?? 0} câu hỏi • {quiz.published ? "Public ✅" : "Private 🔒"}
+            <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm flex items-center gap-2">
+              {quiz.title}
+              {shareData?.isShareable && (
+                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-[10px] font-bold rounded-md uppercase tracking-wider">
+                  Shared
+                </span>
+              )}
+            </h4>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+              {quiz.questionCount ?? 0} câu hỏi • {quiz.published ? "Public" : "Private"}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {shareData?.isShareable && (
-            <span className="hidden sm:inline-block px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs font-bold rounded-md uppercase tracking-wider">
-              Shared
+          {/* Toggle Switch */}
+          <label className="flex items-center gap-2 cursor-pointer group" onClick={(e) => e.stopPropagation()}>
+            <span className={`text-xs font-medium transition-colors ${shareData?.isShareable ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+              {shareData?.isShareable ? 'Bật' : 'Tắt'}
             </span>
-          )}
-          <button className={`text-sm font-medium transition-colors ${expanded ? 'text-blue-600' : 'text-gray-400'}`}>
-            {expanded ? 'Thu gọn' : 'Cấu hình'}
+            <div className="relative">
+              <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loading} />
+              <div className={`block w-10 h-6 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+              <div className={`absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-4' : ''}`}></div>
+            </div>
+          </label>
+
+          <button className={`text-xs font-medium px-2 py-1 rounded transition-colors ${expanded ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
+            {expanded ? '▲' : '▼'}
           </button>
         </div>
       </div>
 
+      {/* Expanded Content */}
       {expanded && (
-        <div className="px-4 pb-4 pt-0">
-          <div className="h-px w-full bg-gray-100 dark:bg-gray-700 mb-4"></div>
-
-          <div className="flex flex-col sm:flex-row gap-6">
-            <div className="flex-1">
-              <label className="flex items-center gap-3 cursor-pointer mb-3">
-                <div className="relative">
-                  <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loading} />
-                  <div className={`block w-10 h-6 rounded-full transition-colors ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-200 dark:bg-gray-600'}`}></div>
-                  <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${shareData?.isShareable ? 'transform translate-x-4' : ''}`}></div>
+        <div className="p-6">
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${shareData?.isShareable ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            {/* Code Display Section - Similar to Class */}
+            <div className="bg-purple-50 dark:bg-purple-900/10 rounded-xl p-5 border border-purple-100 dark:border-purple-800/30 mb-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex-1 w-full">
+                  <h4 className="text-sm font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wider mb-2">
+                    Quiz Access ID
+                  </h4>
+                  <p className="text-sm text-purple-700 dark:text-purple-400 mb-3">
+                    Mã truy cập riêng cho quiz này
+                  </p>
+                  <div className="flex items-center gap-3 w-full">
+                    <code className="flex-1 px-3 py-2 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-lg text-xl font-mono font-bold text-purple-600 dark:text-purple-400 tracking-wider select-all text-center">
+                      {shareData?.code || "WAITING..."}
+                    </code>
+                    <button
+                      onClick={() => {
+                        if (shareData?.code) {
+                          navigator.clipboard.writeText(shareData.code);
+                          toast.success("Đã copy Quiz ID!");
+                        }
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 dark:bg-purple-800/50 dark:hover:bg-purple-800 text-purple-600 dark:text-purple-300 rounded-lg transition-colors font-medium text-sm"
+                      title="Copy ID"
+                    >
+                      <FaCopy /> Copy
+                    </button>
+                  </div>
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cho phép truy cập riêng qua Quiz ID</span>
-              </label>
 
-              {shareData?.isShareable && shareData.code && (
-                <div className="flex items-center gap-2 mt-2">
-                  <code className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded px-2 py-1 font-mono text-sm text-purple-600 dark:text-purple-400 font-bold">
-                    {shareData.code}
-                  </code>
-                  <button onClick={() => { navigator.clipboard.writeText(shareData.code!); toast.success("Copied!") }} className="text-gray-400 hover:text-gray-600">
-                    <FaCopy />
-                  </button>
-                  <button onClick={handleResetCode} disabled={loading} className="text-xs text-red-500 hover:text-red-600 underline ml-2">
-                    Reset ID
+                <div className="flex-shrink-0 self-start sm:self-center mt-2 sm:mt-0">
+                  <button
+                    onClick={handleResetCode}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    <FaHistory /> Reset ID
                   </button>
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="flex-1 border-t sm:border-t-0 sm:border-l border-dashed border-gray-200 dark:border-gray-700 pt-4 sm:pt-0 sm:pl-6">
-              {shareData?.isShareable ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-bold text-gray-500 uppercase">Danh sách truy cập Quiz</p>
-                  <UserAccessList classId={quiz.id} targetType="quiz" />
-                </div>
-              ) : (
-                <p className="text-xs text-gray-400 italic">Bật chia sẻ để xem danh sách quyền truy cập cho Quiz này.</p>
-              )}
+            {/* User List */}
+            <div>
+              <h4 className="font-bold text-gray-800 dark:text-white flex items-center gap-2 mb-4">
+                <FaUsers className="text-gray-500" />
+                Danh sách truy cập Quiz
+              </h4>
+              <UserAccessList classId={quiz.id} targetType="quiz" />
             </div>
           </div>
+
+          {!shareData?.isShareable && (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400 italic bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+              <FaLock className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              Bật tính năng chia sẻ để quản lý mã truy cập Quiz.
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -586,11 +616,11 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                         <td className="px-4 py-2">
                           <div className="flex items-center gap-3">
                             <img
-                              src={u.avatarUrl || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
+                              src={u.avatarUrl || userAvatar}
                               alt=""
                               className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
+                                (e.target as HTMLImageElement).src = userAvatar;
                               }}
                             />
                             <div>
@@ -602,10 +632,10 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                         <td className="px-4 py-2 text-right">
                           <button
                             onClick={() => handleBan(u.userId)}
-                            className="text-white bg-red-400 hover:bg-red-500 p-1.5 rounded-md transition-colors text-xs"
+                            className="flex items-center gap-1.5 px-2 py-1 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md transition-colors text-xs font-medium border border-red-200 dark:border-red-800"
                             title="Ban User"
                           >
-                            <FaBan />
+                            <FaBan className="text-xs" /> Ban
                           </button>
                         </td>
                       </tr>
@@ -635,8 +665,8 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-red-900 dark:text-red-200 text-sm">{u.name}</span>
                           {u.source === 'class' && (
-                            <span className="text-[10px] bg-red-200 text-red-800 px-1.5 py-0.5 rounded font-bold border border-red-300">
-                              CLASS BAN
+                            <span className="inline-flex items-center gap-1 text-[10px] bg-red-200 text-red-800 px-1.5 py-0.5 rounded font-bold border border-red-300">
+                              <FaExclamationTriangle className="text-[8px]" /> CLASS BAN
                             </span>
                           )}
                         </div>
@@ -644,19 +674,13 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
                       <td className="px-4 py-2 text-right">
                         <button
                           onClick={() => handleUnban(u.userId)}
-                          // logic: if targetType is 'quiz' but user is banned by 'class', we can't unban here easily?
-                          // Logic from previous code: "disabled={u.source === 'class'}"
-                          // Wait, if I am in Quiz Access View, and user is banned from Class, they shouldn't even appear as "Active" in quiz?
-                          // They appear in "Banned" list of Quiz?
-                          // If they are banned from Class, they are banned from ALL quizzes.
-                          // If I am managing Quiz Access, I probably can't unban a Class-level ban.
                           disabled={targetType === 'quiz' && u.source === 'class'}
-                          className={`text-xs font-semibold px-2 py-1 rounded border ${targetType === 'quiz' && u.source === 'class'
+                          className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded border ${targetType === 'quiz' && u.source === 'class'
                             ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                            : 'bg-white text-green-600 border-green-200 hover:bg-green-50'
+                            : 'bg-white text-green-600 border-green-200 hover:bg-green-50 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-900/30'
                             }`}
                         >
-                          Unban
+                          <FaCheck className="text-[10px]" /> Unban
                         </button>
                       </td>
                     </tr>
