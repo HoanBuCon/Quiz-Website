@@ -206,3 +206,14 @@ model QuizAttempt {
 
   @@index([userId, quizId, startedAt])
 }
+
+model BannedAccess {
+  id          String   @id @default(cuid())
+  userId      String
+  targetType  TargetType 
+  targetId    String
+  bannedCode  String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, targetType, targetId, bannedCode])
+}

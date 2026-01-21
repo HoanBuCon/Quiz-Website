@@ -1,7 +1,7 @@
 const express = require('express');
 const { authRequired } = require('../middleware/auth');
 const { query, queryOne, transaction } = require('../utils/db');
-const { generateCuid, formatDateForMySQL, buildWhereIn, boolToInt, intToBool } = require('../utils/helpers');
+const { generateCuid, generateAccessCode, generateQuizAccessCode, formatDateForMySQL, buildWhereIn, boolToInt, intToBool } = require('../utils/helpers');
 const router = express.Router();
 
 // Toggle public listing for class/quiz
@@ -285,8 +285,8 @@ router.post('/share', authRequired, async (req, res) => {
           if (!existing || existing.length === 0) {
             const shareItemId = generateCuid();
             await conn.execute(
-              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, createdAt) VALUES (?, ?, ?, ?, ?)',
-              [shareItemId, 'class', targetId, req.user.id, now]
+              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+              [shareItemId, 'class', targetId, req.user.id, generateAccessCode(), now]
             );
           }
           
@@ -308,8 +308,8 @@ router.post('/share', authRequired, async (req, res) => {
             if (!qzExisting || qzExisting.length === 0) {
               const qzShareItemId = generateCuid();
               await conn.execute(
-                'INSERT INTO ShareItem (id, targetType, targetId, ownerId, createdAt) VALUES (?, ?, ?, ?, ?)',
-                [qzShareItemId, 'quiz', quiz.id, req.user.id, now]
+                'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+                [qzShareItemId, 'quiz', quiz.id, req.user.id, generateAccessCode(), now]
               );
             }
             
@@ -398,8 +398,8 @@ router.post('/share', authRequired, async (req, res) => {
           if (!classShareItem) {
             const clsShareItemId = generateCuid();
             await conn.execute(
-              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, createdAt) VALUES (?, ?, ?, ?, ?)',
-              [clsShareItemId, 'class', quiz.classId, req.user.id, now]
+              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+              [clsShareItemId, 'class', quiz.classId, req.user.id, generateAccessCode(), now]
             );
             console.log(`  Class ${quiz.classId}: Not Shareable → Shareable`);
           } else {
@@ -415,8 +415,8 @@ router.post('/share', authRequired, async (req, res) => {
           if (!qzExisting || qzExisting.length === 0) {
             const qzShareItemId = generateCuid();
             await conn.execute(
-              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, createdAt) VALUES (?, ?, ?, ?, ?)',
-              [qzShareItemId, 'quiz', targetId, req.user.id, now]
+              'INSERT INTO ShareItem (id, targetType, targetId, ownerId, code, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+              [qzShareItemId, 'quiz', targetId, req.user.id, generateQuizAccessCode(), now]
             );
           }
           
@@ -454,6 +454,56 @@ router.post('/share', authRequired, async (req, res) => {
   }
 });
 
+// Reset share code (INVALIDATES OLD LINKS/CODES)
+router.post('/share/reset', authRequired, async (req, res) => {
+  const { targetType, targetId } = req.body || {};
+  if (!['class', 'quiz'].includes(targetType)) {
+    return res.status(400).json({ message: 'Invalid targetType' });
+  }
+  if (!targetId) return res.status(400).json({ message: 'targetId required' });
+
+  // Verify ownership
+  let ownerId = null;
+  if (targetType === 'class') {
+    const cls = await queryOne('SELECT ownerId FROM Class WHERE id = ?', [targetId]);
+    if (!cls) return res.status(404).json({ message: 'Class not found' });
+    ownerId = cls.ownerId;
+  } else {
+    const qz = await queryOne('SELECT ownerId FROM Quiz WHERE id = ?', [targetId]);
+    if (!qz) return res.status(404).json({ message: 'Quiz not found' });
+    ownerId = qz.ownerId;
+  }
+  
+  if (ownerId !== req.user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  try {
+    const newCode = targetType === 'quiz' ? generateQuizAccessCode() : generateAccessCode();
+    console.log(`Resetting share code for ${targetType} ${targetId} -> ${newCode}`);
+    
+    await transaction(async (conn) => {
+      // FIX BUG 1: Revoke ALL existing access sessions for this target
+      // This ensures that users with the old code/link are kicked out
+      await conn.execute(
+        'DELETE FROM SharedAccess WHERE targetType = ? AND targetId = ?',
+        [targetType, targetId]
+      );
+      
+      // Update the code
+      await conn.execute(
+        'UPDATE ShareItem SET code = ? WHERE targetType = ? AND targetId = ?',
+        [newCode, targetType, targetId]
+      );
+    });
+    
+    res.json({ ok: true, code: newCode });
+  } catch (error) {
+    console.error('Reset code error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Claim access by id or share code
 router.post('/claim', authRequired, async (req, res) => {
   const { classId, quizId, code } = req.body || {};
@@ -462,10 +512,20 @@ router.post('/claim', authRequired, async (req, res) => {
   let targetId = null;
 
   if (code) {
-    const share = await queryOne('SELECT targetType, targetId FROM ShareItem WHERE code = ?', [code]);
+    const share = await queryOne('SELECT targetType, targetId, code FROM ShareItem WHERE code = ?', [code]);
     if (!share) return res.status(404).json({ message: 'Share not found' });
     targetType = share.targetType;
     targetId = share.targetId;
+
+    // Check BAN status
+    const banned = await queryOne(
+      'SELECT id FROM BannedAccess WHERE userId = ? AND targetType = ? AND targetId = ? AND bannedCode = ?',
+      [req.user.id, targetType, targetId, share.code]
+    );
+
+    if (banned) {
+      return res.status(403).json({ message: 'Bạn đã bị chặn truy cập vào liên kết này' });
+    }
   } else if (classId) {
     const cls = await queryOne('SELECT id FROM Class WHERE id = ?', [classId]);
     if (!cls) return res.status(404).json({ message: 'Class not found' });
@@ -780,11 +840,152 @@ router.get('/share/status', authRequired, async (req, res) => {
   }
 
   const shareItem = await queryOne(
-    'SELECT id FROM ShareItem WHERE targetType = ? AND targetId = ?',
+    'SELECT id, code FROM ShareItem WHERE targetType = ? AND targetId = ?',
     [targetType, targetId]
   );
 
-  res.json({ isShareable: !!shareItem });
+  res.json({ 
+    isShareable: !!shareItem,
+    code: shareItem?.code || null
+  });
+});
+
+// List users with access
+router.get('/access/users', authRequired, async (req, res) => {
+  const { targetType, targetId } = req.query;
+  
+  if (!['class', 'quiz'].includes(targetType)) {
+    return res.status(400).json({ message: 'Invalid targetType' });
+  }
+
+  // Verify ownership
+  let ownerId = null;
+  if (targetType === 'class') {
+    const cls = await queryOne('SELECT ownerId FROM Class WHERE id = ?', [targetId]);
+    if (!cls) return res.status(404).json({ message: 'Class not found' });
+    ownerId = cls.ownerId;
+  } else {
+    const qz = await queryOne('SELECT ownerId FROM Quiz WHERE id = ?', [targetId]);
+    if (!qz) return res.status(404).json({ message: 'Quiz not found' });
+    ownerId = qz.ownerId;
+  }
+  
+  if (ownerId !== req.user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  // Get active SharedAccess users
+  const activeUsers = await query(`
+    SELECT sa.*, u.name, u.email, u.id as userId
+    FROM SharedAccess sa
+    JOIN User u ON sa.userId = u.id
+    WHERE sa.targetType = ? AND sa.targetId = ?
+    AND NOT EXISTS (
+      SELECT 1 FROM BannedAccess ba 
+      WHERE ba.userId = sa.userId 
+      AND ba.targetType = sa.targetType 
+      AND ba.targetId = sa.targetId
+      AND ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = sa.targetType AND targetId = sa.targetId)
+    )
+  `, [targetType, targetId]);
+
+  // Get Banned users FOR CURRENT CODE (Or all?) -> Requirement: "Auto Unban" on reset means ban is tied to code.
+  // So we list bans for the CURRENT code.
+  
+  const shareItem = await queryOne('SELECT code FROM ShareItem WHERE targetType = ? AND targetId = ?', [targetType, targetId]);
+  const currentCode = shareItem?.code;
+
+  let bannedUsers = [];
+  if (currentCode) {
+    bannedUsers = await query(`
+      SELECT ba.*, u.name, u.email, u.id as userId
+      FROM BannedAccess ba
+      JOIN User u ON ba.userId = u.id
+      WHERE ba.targetType = ? AND ba.targetId = ? AND ba.bannedCode = ?
+    `, [targetType, targetId, currentCode]);
+  }
+
+  res.json({
+    active: activeUsers,
+    banned: bannedUsers
+  });
+});
+
+// Ban user
+router.post('/access/ban', authRequired, async (req, res) => {
+  const { targetType, targetId, userId } = req.body;
+  if (!userId) return res.status(400).json({ message: 'userId required' });
+
+  // Ownership check (reuse logic or refactor - sticking to inline for now)
+  let ownerId = null;
+  if (targetType === 'class') {
+    const cls = await queryOne('SELECT ownerId FROM Class WHERE id = ?', [targetId]);
+    if (!cls) return res.status(404).json({ message: 'Class not found' });
+    ownerId = cls.ownerId;
+  } else {
+    const qz = await queryOne('SELECT ownerId FROM Quiz WHERE id = ?', [targetId]);
+    if (!qz) return res.status(404).json({ message: 'Quiz not found' });
+    ownerId = qz.ownerId;
+  }
+  
+  if (ownerId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+
+  // Get current code
+  const shareItem = await queryOne('SELECT code FROM ShareItem WHERE targetType = ? AND targetId = ?', [targetType, targetId]);
+  if (!shareItem || !shareItem.code) {
+    return res.status(400).json({ message: 'Cannot ban: No active share code' });
+  }
+
+  const banId = generateCuid();
+  try {
+    // 1. Add to BannedAccess
+    await query(
+      'INSERT INTO BannedAccess (id, userId, targetType, targetId, bannedCode) VALUES (?, ?, ?, ?, ?)',
+      [banId, userId, targetType, targetId, shareItem.code]
+    );
+
+    // 2. Remove from SharedAccess (Kick them out) -> FIX BUG 2: DO NOT DELETE SharedAccess
+    // We want to keep the record so Unban restores it instantly.
+    // Instead, access is blocked by middleware checking BannedAccess.
+    /* 
+    await query(
+      'DELETE FROM SharedAccess WHERE userId = ? AND targetType = ? AND targetId = ?',
+      [userId, targetType, targetId]
+    ); 
+    */
+
+    res.json({ Ok: true });
+  } catch (e) {
+    console.error('Ban error:', e);
+    if (e.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: 'User already banned' });
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Unban user
+router.post('/access/unban', authRequired, async (req, res) => {
+  const { targetType, targetId, userId } = req.body;
+  
+  // Ownership check
+   let ownerId = null;
+  if (targetType === 'class') {
+    const cls = await queryOne('SELECT ownerId FROM Class WHERE id = ?', [targetId]);
+    if (!cls) return res.status(404).json({ message: 'Class not found' });
+    ownerId = cls.ownerId;
+  } else {
+    const qz = await queryOne('SELECT ownerId FROM Quiz WHERE id = ?', [targetId]);
+    if (!qz) return res.status(404).json({ message: 'Quiz not found' });
+    ownerId = qz.ownerId;
+  }
+  if (ownerId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+
+  // Remove from BannedAccess
+  await query(
+    'DELETE FROM BannedAccess WHERE userId = ? AND targetType = ? AND targetId = ?',
+    [userId, targetType, targetId]
+  );
+  
+  res.json({ ok: true });
 });
 
 module.exports = router;

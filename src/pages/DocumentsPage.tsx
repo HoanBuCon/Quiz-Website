@@ -1683,7 +1683,7 @@ const DocumentsPage: React.FC = () => {
               <button
                 onClick={() => setSelectedIds(new Set())}
                 className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-all active:scale-95 group"
-                title="Bỏ chọn tất cả"
+                title="Hủy chọn tất cả"
               >
                 <svg className="w-6 h-6 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

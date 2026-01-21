@@ -30,6 +30,17 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
+  // Check if Banned from Class
+  const isBanned = await queryOne(`
+    SELECT 1 FROM BannedAccess 
+    WHERE userId = ? AND targetType = 'class' AND targetId = ?
+    AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+  `, [req.user.id, classId, classId]);
+
+  if (isBanned) {
+    return res.status(403).json({ message: 'Forbidden: You are banned from this class' });
+  }
+
   // Fetch quizzes with question count
   const quizzes = await query(`
     SELECT 
@@ -414,6 +425,21 @@ router.get('/:id', authRequired, async (req, res) => {
 
     if (!hasAccess) {
       return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Check Bans
+    const isBanned = await queryOne(`
+      SELECT 1 FROM BannedAccess 
+      WHERE userId = ? 
+      AND (
+        (targetType = 'class' AND targetId = ? AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?))
+        OR
+        (targetType = 'quiz' AND targetId = ? AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?))
+      )
+    `, [req.user.id, quiz.classId, quiz.classId, quiz.id, quiz.id]);
+
+    if (isBanned) {
+      return res.status(403).json({ message: 'Forbidden: You are banned' });
     }
 
     // Get all questions

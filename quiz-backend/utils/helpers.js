@@ -14,6 +14,50 @@ function generateCuid() {
 }
 
 /**
+ * Generate Access Code with LIGMA format
+ * Format: LIGMA + 7 chars (A-Z) + 3 digits (0-9)
+ * Example: LIGMAABCDEFG123
+ */
+function generateAccessCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const digits = '0123456789';
+  
+  let randomText = '';
+  for (let i = 0; i < 7; i++) {
+    randomText += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  let randomDigits = '';
+  for (let i = 0; i < 3; i++) {
+    randomDigits += digits.charAt(Math.floor(Math.random() * digits.length));
+  }
+  
+  return `LIGMA${randomText}${randomDigits}`;
+}
+
+/**
+ * Generate Access Code for Quiz with SUGMA format
+ * Format: SUGMA + 7 chars (A-Z) + 3 digits (0-9)
+ */
+function generateQuizAccessCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const digits = '0123456789';
+  
+  let randomText = '';
+  for (let i = 0; i < 7; i++) {
+    randomText += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  
+  let randomDigits = '';
+  for (let i = 0; i < 3; i++) {
+    randomDigits += digits.charAt(Math.floor(Math.random() * digits.length));
+  }
+  
+  return `SUGMA${randomText}${randomDigits}`;
+}
+
+
+/**
  * Format date for MySQL DATETIME
  */
 function formatDateForMySQL(date = new Date()) {
@@ -95,6 +139,8 @@ function buildPagination(page = 1, limit = 20) {
 
 module.exports = {
   generateCuid,
+  generateAccessCode,
+  generateQuizAccessCode,
   formatDateForMySQL,
   parseMySQLDate,
   parseJSON,

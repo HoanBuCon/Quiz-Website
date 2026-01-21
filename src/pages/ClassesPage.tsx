@@ -37,6 +37,7 @@ const ClassesPage: React.FC = () => {
   const [shareData, setShareData] = useState<{
     type: "class" | "quiz";
     id: string;
+    code?: string;
   } | null>(null);
 
   // Import modal state
@@ -219,6 +220,7 @@ const ClassesPage: React.FC = () => {
   };
 
   const handleShareClass = async (classId: string) => {
+    let code = "";
     try {
       const { getToken } = await import("../utils/auth");
       const token = getToken();
@@ -228,13 +230,17 @@ const ClassesPage: React.FC = () => {
           { targetType: "class", targetId: classId, enabled: true },
           token
         );
+        // Fetch the code
+        const status = await VisibilityAPI.getShareStatus("class", classId, token);
+        if (status && status.code) code = status.code;
       }
     } catch { }
-    setShareData({ type: "class", id: classId });
+    setShareData({ type: "class", id: classId, code });
     setShareOpen(true);
   };
 
   const handleShareQuiz = async (quizId: string) => {
+    let code = "";
     try {
       const { getToken } = await import("../utils/auth");
       const token = getToken();
@@ -244,9 +250,12 @@ const ClassesPage: React.FC = () => {
           { targetType: "quiz", targetId: quizId, enabled: true },
           token
         );
+        // Fetch the code
+        const status = await VisibilityAPI.getShareStatus("quiz", quizId, token);
+        if (status && status.code) code = status.code;
       }
     } catch { }
-    setShareData({ type: "quiz", id: quizId });
+    setShareData({ type: "quiz", id: quizId, code });
     setShareOpen(true);
   };
 
@@ -485,8 +494,8 @@ const ClassesPage: React.FC = () => {
     };
   }, [isImportDropdownOpen]);
 
-  const buildShareLink = (type: "class" | "quiz", id: string) =>
-    `${window.location.origin}/${type === "class" ? "class" : "quiz"}/${id}`;
+  const buildShareLink = (type: "class" | "quiz", id: string, code?: string) =>
+    `${window.location.origin}/${type === "class" ? "class" : "quiz"}/${code || id}`;
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -518,7 +527,7 @@ const ClassesPage: React.FC = () => {
       };
 
       let usedType: "class" | "quiz" | null = null;
-      let payload: { classId?: string; quizId?: string } = {};
+      let payload: { classId?: string; quizId?: string; code?: string } = {};
       let didImport = false;
 
       // Fallback: clone from public by frontend if backend import route is unavailable
@@ -728,8 +737,15 @@ const ClassesPage: React.FC = () => {
           payload.quizId = idPart;
           usedType = "quiz";
         }
+      } else if (raw.toUpperCase().startsWith("LIGMA")) {
+        payload.code = raw;
+        usedType = "class";
+      } else if (raw.toUpperCase().startsWith("SUGMA")) {
+        payload.code = raw;
+        usedType = "quiz";
       } else {
         // Unknown format, try quiz then class (one-shot)
+        // Only if NOT looking like a code
         try {
           await ClassesAPI.import({ quizId: raw }, token);
           didImport = true;
@@ -739,26 +755,41 @@ const ClassesPage: React.FC = () => {
         }
       }
 
-      if (!didImport && usedType && (payload.classId || payload.quizId)) {
+      if (!didImport && usedType && (payload.classId || payload.quizId || payload.code)) {
         try {
-          const { VisibilityAPI } = await import("../utils/api");
-          await VisibilityAPI.claim(payload as any, token);
-          didImport = true;
-        } catch (err: any) {
           try {
-            await ClassesAPI.import(payload, token);
+            const { VisibilityAPI } = await import("../utils/api");
+            await VisibilityAPI.claim(payload as any, token);
             didImport = true;
-          } catch (err2: any) {
-            // Backend route missing -> fallback to client clone
-            if (usedType === "class" && payload.classId) {
-              await doClientClone("class", payload.classId);
-              didImport = true;
-            } else if (usedType === "quiz" && payload.quizId) {
-              await doClientClone("quiz", payload.quizId);
-              didImport = true;
+            // Refresh list
+            // setRefresh(prev => !prev);
+          } catch (err: any) {
+            // Only fallback to import if it was an ID-based lookup, NOT a code claim
+            if (!payload.code) {
+              try {
+                await ClassesAPI.import(payload, token);
+                didImport = true;
+              } catch {
+                // Ignore import error, throw original claim error or generic
+                throw err;
+              }
             } else {
-              throw err2;
+              // It was a code claim and it failed (e.g. 404/403)
+              // Do NOT try import (which would just multiple 404s)
+              console.error(err);
+              throw new Error("Mã truy cập không hợp lệ hoặc đã hết hạn (Code Invalid)");
             }
+          }
+        } catch (err2: any) {
+          // Backend route missing -> fallback to client clone
+          if (usedType === "class" && payload.classId) {
+            await doClientClone("class", payload.classId);
+            didImport = true;
+          } else if (usedType === "quiz" && payload.quizId) {
+            await doClientClone("quiz", payload.quizId);
+            didImport = true;
+          } else {
+            throw err2;
           }
         }
       }
@@ -3315,13 +3346,13 @@ const ClassesPage: React.FC = () => {
                         <div className="relative flex-1">
                           <input
                             readOnly
-                            value={buildShortId(shareData.id)}
+                            value={shareData.code || buildShortId(shareData.id)}
                             className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/50 text-gray-900 dark:text-white font-mono text-center font-bold tracking-widest focus:border-purple-500 dark:focus:border-purple-400 focus:ring-4 focus:ring-purple-500/20 transition-all outline-none cursor-text select-all"
                             onClick={(e) => e.currentTarget.select()}
                           />
                         </div>
                         <button
-                          onClick={() => copyToClipboard(buildShortId(shareData.id))}
+                          onClick={() => copyToClipboard(shareData.code || buildShortId(shareData.id))}
                           className="px-4 py-3 rounded-xl font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 border-2 border-purple-200 dark:border-purple-500/30 transition-all flex items-center gap-2 whitespace-nowrap active:scale-95"
                           title="Sao chép ID"
                         >
@@ -3352,7 +3383,7 @@ const ClassesPage: React.FC = () => {
                         <div className="relative flex-1">
                           <input
                             readOnly
-                            value={buildShareLink(shareData.type, shareData.id)}
+                            value={buildShareLink(shareData.type, shareData.id, shareData.code)}
                             className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/50 text-gray-600 dark:text-gray-300 text-sm focus:border-purple-500 dark:focus:border-purple-400 focus:ring-4 focus:ring-purple-500/20 transition-all outline-none cursor-text select-all truncate"
                             onClick={(e) => e.currentTarget.select()}
                           />
@@ -3360,7 +3391,7 @@ const ClassesPage: React.FC = () => {
                         <button
                           onClick={() =>
                             copyToClipboard(
-                              buildShareLink(shareData.type, shareData.id)
+                              buildShareLink(shareData.type, shareData.id, shareData.code)
                             )
                           }
                           className="px-4 py-3 rounded-xl font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 border-2 border-purple-200 dark:border-purple-500/30 transition-all flex items-center gap-2 whitespace-nowrap active:scale-95"

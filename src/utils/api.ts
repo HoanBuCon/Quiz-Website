@@ -177,13 +177,23 @@ export const VisibilityAPI = {
     token: string
   ) => {
     try {
-      return await apiRequest<{ isShareable: boolean }>(
+      return await apiRequest<{ isShareable: boolean; code?: string }>(
         `/visibility/share/status?targetType=${targetType}&targetId=${targetId}`,
         { token }
       );
     } catch {
       return { isShareable: false };
     }
+  },
+  resetShareCode: async (
+    payload: { targetType: "class" | "quiz"; targetId: string },
+    token: string
+  ) => {
+    return await apiRequest<{ code: string }>(`/visibility/share/reset`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    });
   },
   claim: (
     payload: { classId?: string; quizId?: string; code?: string },
@@ -207,6 +217,36 @@ export const VisibilityAPI = {
     apiRequest<any[]>(`/visibility/shared/classes`, { token }),
   listSharedQuizzes: (token: string) =>
     apiRequest<any[]>(`/visibility/shared/quizzes`, { token }),
+  getAccessUsers: async (
+    targetType: "class" | "quiz",
+    targetId: string,
+    token: string
+  ) => {
+    return await apiRequest<{ active: any[]; banned: any[] }>(
+      `/visibility/access/users?targetType=${targetType}&targetId=${targetId}`,
+      { token }
+    );
+  },
+  banUser: async (
+    payload: { targetType: "class" | "quiz"; targetId: string; userId: string },
+    token: string
+  ) => {
+    return await apiRequest<void>(`/visibility/access/ban`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    });
+  },
+  unbanUser: async (
+    payload: { targetType: "class" | "quiz"; targetId: string; userId: string },
+    token: string
+  ) => {
+    return await apiRequest<void>(`/visibility/access/unban`, {
+      method: "POST",
+      token,
+      body: JSON.stringify(payload),
+    });
+  },
 };
 export const SessionsAPI = {
   start: (quizId: string, token: string) =>

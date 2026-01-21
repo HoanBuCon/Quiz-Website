@@ -18,8 +18,16 @@ router.get('/', authRequired, async (req, res) => {
     
     // Get shared access for this user
     const sharedAccess = await query(
-      'SELECT targetId FROM SharedAccess WHERE userId = ? AND targetType = ?',
-      [req.user.id, 'class']
+      `SELECT sa.targetId FROM SharedAccess sa
+       WHERE sa.userId = ? AND sa.targetType = 'class'
+       AND NOT EXISTS (
+         SELECT 1 FROM BannedAccess ba
+         WHERE ba.userId = sa.userId
+         AND ba.targetType = 'class'
+         AND ba.targetId = sa.targetId
+         AND ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId)
+       )`,
+      [req.user.id]
     );
     
     const sharedIds = sharedAccess.map(s => s.targetId);
