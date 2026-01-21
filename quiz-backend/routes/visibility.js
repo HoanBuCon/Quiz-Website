@@ -609,6 +609,19 @@ router.post('/claim', authRequired, async (req, res) => {
       const quiz = await queryOne('SELECT classId FROM Quiz WHERE id = ?', [targetId]);
       if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
       
+      // CHECK IF BANNED FROM CLASS
+      const bannedFromClass = await queryOne(
+        'SELECT id FROM BannedAccess WHERE userId = ? AND targetType = ? AND targetId = ? AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = ? AND targetId = ?)',
+        [req.user.id, 'class', quiz.classId, 'class', quiz.classId]
+      );
+      
+      if (bannedFromClass) {
+         console.log(`[CLAIM QUIZ] REJECTED: User banned from Class ${quiz.classId}`);
+         return res.status(403).json({ message: 'Bạn đã bị chặn khỏi Lớp học này, không thể truy cập Quiz.' });
+      }
+      
+
+      
       const now = formatDateForMySQL();
       
       await transaction(async (conn) => {
@@ -940,6 +953,7 @@ router.get('/access/users', authRequired, async (req, res) => {
           OR
           (
             sa.targetType = 'class' AND sa.targetId = ? 
+            AND sa.accessLevel = 'full'
             AND NOT EXISTS (
                SELECT 1 FROM BannedAccess ba_cls 
                WHERE ba_cls.userId = u.id 

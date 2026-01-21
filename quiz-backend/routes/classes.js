@@ -20,6 +20,16 @@ router.get('/', authRequired, async (req, res) => {
     const sharedAccess = await query(
       `SELECT sa.targetId FROM SharedAccess sa
        WHERE sa.userId = ? AND sa.targetType = 'class'
+       AND (
+         sa.accessLevel = 'full'
+         OR EXISTS (
+            SELECT 1 FROM Quiz q
+            JOIN SharedAccess sa_q ON sa_q.targetId = q.id
+            WHERE q.classId = sa.targetId
+            AND sa_q.userId = sa.userId
+            AND sa_q.targetType = 'quiz'
+         )
+       )
        AND NOT EXISTS (
          SELECT 1 FROM BannedAccess ba
          WHERE ba.userId = sa.userId

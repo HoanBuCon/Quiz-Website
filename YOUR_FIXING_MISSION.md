@@ -1,169 +1,156 @@
-# PROMPT: Mở rộng & SỬA LỖI cơ chế quản lý ID & Link truy cập cho Quiz-Website
+# PROMPT: Chuẩn hóa & SỬA LOGIC Access Control cho Class / Quiz (Scope-based)
 
-## 🎯 Vai trò & Nguyên tắc
+## 🎯 Vai trò
 Bạn là **lập trình viên Fullstack giàu kinh nghiệm**.
 
-Yêu cầu bắt buộc:
-- Đọc hiểu **logic hiện tại**
-- **KHÔNG phá logic gốc**
-- Khi phát hiện hành vi sai → **sửa theo đúng yêu cầu mô tả**
-- Sau mỗi task phải có **REVIEW & giải thích nguyên nhân bug**
+Mục tiêu:
+- Giữ nguyên logic gốc public/private
+- Giữ nguyên cơ chế ID/Link đã thiết kế
+- **SỬA & CHUẨN HÓA các lỗi access liên quan đến SCOPE (Class vs Quiz)**
+
+Sau mỗi task / bug fix:
+- Phải có **REVIEW + giải thích root-cause**
 
 ---
 
-## 🧩 TRẠNG THÁI HIỆN TẠI (TÓM TẮT)
+## 🧩 KHÁI NIỆM CỐT LÕI (BẮT BUỘC ÁP DỤNG)
 
-- Class:
-  - Có ID / Link truy cập
-  - Có reset ID / Link
-- Quiz:
-  - Đang được mở rộng thêm ID / Link
-- Hệ thống có:
-  - Cơ chế BAN / UNBAN user
-  - Nhưng tồn tại **2 BUG LOGIC NGHIÊM TRỌNG** (mô tả bên dưới)
+### 🔑 Access có SCOPE
+Access KHÔNG mặc định là toàn Class.
+
+| Scope | Ý nghĩa |
+|-----|--------|
+| `CLASS` | User truy cập toàn bộ Class |
+| `QUIZ` | User chỉ truy cập 1 Quiz cụ thể |
+
+👉 Mọi access record **PHẢI gắn scope**
 
 ---
 
-## 🐞 BUG 1: Reset ID/Link KHÔNG gỡ quyền user cũ (BUG NGHIÊM TRỌNG)
+## 🐞 BUG / YÊU CẦU 1  
+### Class rỗng sau khi reset Quiz ID vẫn hiển thị (SAI)
 
-### ❌ Hành vi hiện tại (SAI)
-- Owner reset ID / Link (Class hoặc Quiz)
-- Hệ thống generate ID / Link mới
-- ❌ Nhưng:
-  - Users đã từng nhập ID/Link cũ
-  - Vẫn có thể:
-    - Thấy Class / Quiz
-    - Tiếp tục tham gia bình thường
+### ❌ Hành vi hiện tại
+- User nhập ID/Link **Quiz**
+- Owner reset toàn bộ ID/Link của Quiz đó
+- User:
+  - Mất quyền truy cập Quiz → OK
+  - Nhưng tại `@EditClassPage.tsx`:
+    - Vẫn thấy **Class**
+    - Class rỗng (không còn quiz)
 
 ### ✅ Hành vi MONG MUỐN (BẮT BUỘC)
-- Khi Owner reset ID / Link:
-  - **TOÀN BỘ users đã từng tham gia bằng ID/Link cũ phải bị gỡ quyền**
-  - Class / Quiz:
-    - Không còn hiển thị trong `ClassesPage` của user
-- Nếu user muốn tham gia lại:
-  - **BẮT BUỘC nhập lại ID / Link MỚI**
+- Nếu user:
+  - **KHÔNG có access Class**
+  - Và **KHÔNG còn access Quiz nào thuộc Class**
+- ⇒ **ẨN HOÀN TOÀN Class**
+
+❌ Không được hiển thị Class rỗng
 
 ### 🧠 Yêu cầu kỹ thuật
-- Reset ID / Link phải đồng nghĩa với:
-  - Vô hiệu hóa **TOÀN BỘ access session cũ**
-- Không được:
-  - Chỉ đổi string ID
-  - Mà vẫn giữ access mapping user ↔ class/quiz
-
-👉 Gợi ý (không bắt buộc):
-- Dùng `access_token_version`
-- Hoặc `access_token_id` mới
-- Access hợp lệ = `(user_id, token_id)` đang active
-
-### 🔍 REVIEW SAU KHI SỬA BUG 1
-- Vì sao bug này xảy ra?
-- Bạn đã revoke access bằng cách nào?
-- Có ảnh hưởng logic public/private không?
+- Class chỉ hiển thị với user nếu:
+  - Có `CLASS access`
+  - HOẶC có ≥ 1 `QUIZ access` còn hiệu lực trong class
 
 ---
 
-## 🐞 BUG 2: UNBAN user nhưng user KHÔNG thể quay lại (BUG LOGIC)
+## 🐞 BUG / YÊU CẦU 2  
+### BAN Class nhưng vẫn nhập được ID Quiz (LOGIC MÂU THUẪN)
 
-### ❌ Hành vi hiện tại (SAI)
-1. Owner BAN user
-   - User bị gỡ quyền → OK
-2. Owner UNBAN user
-   - ❌ User:
-     - Không thấy lại Class / Quiz trong `ClassesPage`
-     - Khi nhập lại ID / Link:
-       - Bị báo **"Class Not Found"**
+### ❌ Hành vi hiện tại
+1. User nhập ID/Link Class → có access
+2. Owner BAN user khỏi Class
+3. User:
+   - Không làm được quiz trong class → OK
+   - Nhưng:
+     - Nhập ID/Link Quiz
+     - Hệ thống:
+       - Vẫn ghi nhận access (hiển thị dashboard owner)
+       - Nhưng user không truy cập được Quiz
 
-👉 Điều này xảy ra dù:
-- ID / Link **CHƯA BỊ reset**
-- User chỉ bị BAN tạm thời
+### ❌ Đây là trạng thái SAI & MÂU THUẪN
 
 ---
 
 ### ✅ Hành vi MONG MUỐN (BẮT BUỘC)
 
-#### Trường hợp 1: UNBAN + ID/Link CHƯA reset
-- Ngay khi UNBAN:
-  - User **phải thấy lại Class / Quiz**
-  - Không cần nhập lại ID / Link
-- Nếu user nhập lại ID / Link cũ:
-  - Vẫn tham gia được bình thường
+- Nếu user bị **BAN ở scope CLASS**:
+  - ❌ Không được truy cập Class
+  - ❌ Không được truy cập BẤT KỲ Quiz nào trong Class
+  - ❌ Không được nhập ID/Link Quiz để “lách”
 
-#### Trường hợp 2: UNBAN nhưng ID/Link đã reset
+👉 **BAN CLASS = chặn toàn bộ Quiz con**
+
+### 🧠 Yêu cầu kỹ thuật
+- Khi xử lý ID/Link Quiz:
+  - Phải check:
+    ```
+    NOT EXISTS class_ban(user_id, class_id)
+    ```
+- Nếu bị BAN Class:
+  - Không tạo access Quiz
+  - Không hiển thị trên dashboard
+  - Trả lỗi rõ ràng (403)
+
+---
+
+## 🐞 BUG / YÊU CẦU 3  
+### User nhập ID Quiz nhưng lại có quyền toàn Class (SAI SCOPE)
+
+### ❌ Hành vi hiện tại
+- User nhập ID/Link **Quiz**
+- Dashboard Owner:
+  - Hiển thị user đó:
+    - Ở Class
+    - Ở TẤT CẢ quiz trong class
+
+### ❌ Đây là lỗi nghiêm trọng về access scope
+
+---
+
+### ✅ Hành vi MONG MUỐN (BẮT BUỘC)
+
+#### Trường hợp: User chỉ nhập ID/Link Quiz
 - User:
-  - **KHÔNG được quay lại tự động**
-  - Phải nhập ID / Link mới
-
-👉 UNBAN ≠ reset access
-
----
-
-### 🧠 Yêu cầu kỹ thuật (RẤT QUAN TRỌNG)
-
-- BAN / UNBAN:
-  - **KHÔNG được xoá vĩnh viễn access record**
-- BAN chỉ là:
-  - Trạng thái tạm thời: `is_banned = true`
-- UNBAN:
-  - Phải:
-    - Khôi phục access cũ
-    - Nếu token/version vẫn còn hiệu lực
-
-❌ TUYỆT ĐỐI KHÔNG:
-- Xoá access mapping khi BAN
-- Khiến hệ thống hiểu user “chưa từng tham gia”
+  - ❌ KHÔNG có quyền Class
+  - ✅ Chỉ có quyền Quiz đã nhập
+- Dashboard Owner:
+  - User chỉ xuất hiện:
+    - Ở Quiz tương ứng
+    - Và Class chứa quiz đó (để hiển thị quan hệ)
+  - ❌ KHÔNG xuất hiện ở các Quiz khác
 
 ---
 
-## 🧱 PHÂN TÁCH LOGIC BẮT BUỘC
+### 🔥 BAN từ Class (ảnh hưởng đặc biệt)
 
-| Hành động | Có reset token? | User có phải nhập lại ID? |
-|---------|----------------|---------------------------|
-| BAN | ❌ | ❌ |
-| UNBAN | ❌ | ❌ |
-| Reset ID/Link | ✅ | ✅ |
-| Reset + UNBAN | ✅ | ✅ |
+- Nếu Owner:
+  - BAN user tại **Class level**
+- Thì:
+  - User mất:
+    - Mọi quyền truy cập Quiz (kể cả quiz nhập lẻ)
+  - Dù quiz đó được nhập bằng ID riêng
 
----
-
-## 🧠 ACCESS MODEL ĐÚNG (BẮT BUỘC PHẢI TUÂN THEO)
-
-Access hợp lệ khi:
-```
-user_access.token_id === current_token.id
-AND user_access.is_banned === false
-```
-❌ Không được chỉ check:
-`user_id ∈ class_users`
-
+👉 **BAN Class > BAN Quiz**
 
 ---
 
-## 🔍 REVIEW BẮT BUỘC SAU KHI SỬA 2 BUG
+## 🧠 QUY TẮC ƯU TIÊN (BẮT BUỘC)
 
-Sau khi sửa, bạn PHẢI trình bày:
-1. Root cause của từng bug
-2. Những bảng DB bị ảnh hưởng
-3. Flow mới khi:
-   - Reset ID
-   - BAN / UNBAN
-4. Vì sao logic này không phá:
-   - Public / Private
-   - Quiz / Class hiện tại
+| Quy tắc | Mô tả |
+|------|------|
+| BAN Class | Chặn toàn bộ Quiz |
+| Quiz access | KHÔNG suy ra Class access |
+| Reset Quiz ID | Chỉ revoke quiz đó |
+| Không còn quiz access | Ẩn class |
+| UNBAN Class | Khôi phục access cũ nếu token còn hiệu lực |
 
 ---
 
-## ✅ KẾT QUẢ MONG MUỐN
+## 🧱 CHECK ACCESS ĐÚNG (BẮT BUỘC)
 
-- Reset ID/Link = revoke toàn bộ access cũ
-- UNBAN = khôi phục access nếu token còn hiệu lực
-- Không còn:
-  - User “ma” không thấy class
-  - Class Not Found sai logic
-- Access control:
-  - Rõ ràng
-  - Dễ debug
-  - Dễ mở rộng
-
----
-
-**BẮT ĐẦU SỬA TỪ BUG 1 → BUG 2.**
+```ts
+function canAccessQuiz(user, quiz) {
+  if (isBannedFromClass(user, quiz.classId)) return false
+  return hasValidQuizAccess(user, quiz.id)
+}
