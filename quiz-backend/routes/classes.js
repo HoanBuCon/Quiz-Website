@@ -52,6 +52,21 @@ router.get('/', authRequired, async (req, res) => {
     const allClasses = [...owned, ...shared];
     if (allClasses.length > 0) {
       await includeMany('Quiz', allClasses, 'classId', 'quizzes');
+      
+      // FIX: Filter out "hidden" quizzes (where user clicked delete but has class access)
+      const hiddenAccess = await query(
+         "SELECT targetId FROM SharedAccess WHERE userId = ? AND targetType = 'quiz' AND accessLevel = 'hidden'",
+         [req.user.id]
+      );
+      
+      if (hiddenAccess.length > 0) {
+         const hiddenIds = new Set(hiddenAccess.map(h => h.targetId));
+         for (const cls of allClasses) {
+            if (cls.quizzes) {
+               cls.quizzes = cls.quizzes.filter(q => !hiddenIds.has(q.id));
+            }
+         }
+      }
     }
     
     // Get ShareItems for owned classes to mark which are shared

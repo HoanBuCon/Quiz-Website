@@ -489,6 +489,35 @@ router.post('/share/reset', authRequired, async (req, res) => {
         'DELETE FROM SharedAccess WHERE targetType = ? AND targetId = ?',
         [targetType, targetId]
       );
+
+      // FIX BUG 2: Unban users when code is reset (Old bans are tied to old code)
+      // Requirements:
+      // - Reset Class ID -> Unban Class Bans AND All Quiz Bans in that Class
+      // - Reset Quiz ID -> Unban Quiz Bans only
+      if (targetType === 'class') {
+         // 1. Unban Class
+         await conn.execute(
+            'DELETE FROM BannedAccess WHERE targetType = ? AND targetId = ?',
+            ['class', targetId]
+         );
+         
+         // 2. Unban All Quizzes in Class
+         const [quizzes] = await conn.execute('SELECT id FROM Quiz WHERE classId = ?', [targetId]);
+         if (quizzes.length > 0) {
+             const qIds = quizzes.map(q => q.id);
+             const { clause, params } = buildWhereIn(qIds);
+             await conn.execute(
+                 `DELETE FROM BannedAccess WHERE targetType = 'quiz' AND targetId ${clause}`,
+                 params
+             );
+         }
+      } else {
+         // 1. Unban Quiz
+         await conn.execute(
+            'DELETE FROM BannedAccess WHERE targetType = ? AND targetId = ?',
+            ['quiz', targetId]
+         );
+      }
       
       // Update the code
       await conn.execute(
@@ -591,6 +620,20 @@ router.post('/claim', authRequired, async (req, res) => {
       }
       
       console.log(`[CLAIM CLASS] Complete: User has FULL access to class`);
+
+      // FIX: If user re-claims class, restore any quizzes they might have "deleted" (hidden)
+      // We do this by removing the 'hidden' SharedAccess entries for quizzes in this class
+      const classQuizzes = await query('SELECT id FROM Quiz WHERE classId = ?', [targetId]);
+      if (classQuizzes.length > 0) {
+        const qIds = classQuizzes.map(q => q.id);
+        const { clause, params } = buildWhereIn(qIds);
+        
+        await query(
+           `DELETE FROM SharedAccess WHERE userId = ? AND targetType = 'quiz' AND accessLevel = 'hidden' AND targetId ${clause}`,
+           [req.user.id, ...params]
+        );
+        console.log(`[CLAIM CLASS] Restored ${classQuizzes.length} quizzes (if hidden)`);
+      }
       
     } else {
       // CLAIM QUIZ → Grant navigationOnly to CLASS + full to THIS QUIZ
@@ -690,6 +733,41 @@ router.delete('/access', authRequired, async (req, res) => {
   }
 
   if (quizId) {
+    // FIX: Check if user has access via Class
+    // If they have Class Access, simple DELETE won't work (quiz reappears via Class).
+    // In that case, we mark it as "hidden"
+    
+    // 1. Get Quiz info to find Class
+    const quiz = await queryOne('SELECT classId FROM Quiz WHERE id = ?', [quizId]);
+    
+    if (quiz) {
+       const hasClassAccess = await queryOne(
+         "SELECT id FROM SharedAccess WHERE userId = ? AND targetType = 'class' AND targetId = ?",
+         [req.user.id, quiz.classId]
+       );
+       
+       if (hasClassAccess) {
+         // User has Class Access -> Soft Delete (Hide) the Quiz
+         const { generateCuid, formatDateForMySQL } = require('../utils/helpers');
+         
+         const existing = await queryOne(
+           "SELECT id FROM SharedAccess WHERE userId = ? AND targetType = 'quiz' AND targetId = ?",
+           [req.user.id, quizId]
+         );
+         
+         if (existing) {
+            await query("UPDATE SharedAccess SET accessLevel = 'hidden' WHERE id = ?", [existing.id]);
+         } else {
+            await query(
+               "INSERT INTO SharedAccess (id, userId, targetType, targetId, accessLevel, createdAt) VALUES (?, ?, ?, ?, ?, ?)",
+               [generateCuid(), req.user.id, 'quiz', quizId, 'hidden', formatDateForMySQL()]
+            );
+         }
+         return res.status(204).end();
+       }
+    }
+    
+    // Standard Delete (No class access or class not found)
     const result = await query(
       'DELETE FROM SharedAccess WHERE userId = ? AND targetType = ? AND targetId = ?',
       [req.user.id, 'quiz', quizId]

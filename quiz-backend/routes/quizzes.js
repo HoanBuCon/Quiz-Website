@@ -99,8 +99,21 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
     }
   } else {
      // Owner or Public Class -> Access to all (non-banned)
-     // Note: Owners shouldn't be banned, but logic holds.
      accessibleQuizzes = quizzesNotBanned;
+  }
+
+  // FIX: Filter out "hidden" quizzes (where user clicked delete but has class access/public access)
+  // Check SharedAccess for 'hidden' status on specific quizzes
+  if (accessibleQuizzes.length > 0) {
+      const hiddenAccess = await query(
+         "SELECT targetId FROM SharedAccess WHERE userId = ? AND targetType = 'quiz' AND accessLevel = 'hidden'",
+         [req.user.id]
+      );
+      
+      if (hiddenAccess.length > 0) {
+         const hiddenIds = new Set(hiddenAccess.map(h => h.targetId));
+         accessibleQuizzes = accessibleQuizzes.filter(q => !hiddenIds.has(q.id));
+      }
   }
   
   // Map to payload

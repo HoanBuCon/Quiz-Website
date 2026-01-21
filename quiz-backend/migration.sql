@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS `SharedAccess` (
   `userId` VARCHAR(191) NOT NULL,
   `targetType` ENUM('class', 'quiz') NOT NULL,
   `targetId` VARCHAR(191) NOT NULL,
-  `accessLevel` ENUM('full', 'navigationOnly') NOT NULL DEFAULT 'full',
+  `accessLevel` ENUM('full', 'navigationOnly', 'hidden') NOT NULL DEFAULT 'full',
   `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   UNIQUE KEY `unique_access_userId_targetType_targetId` (`userId`, `targetType`, `targetId`),
   INDEX `idx_access_userId` (`userId`),
