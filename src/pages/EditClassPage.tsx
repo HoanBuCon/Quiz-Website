@@ -185,7 +185,7 @@ const EditClassPage: React.FC = () => {
         {/* LEFT COLUMN: General Info & Class Access */}
         <div className="space-y-6">
           {/* Card 1: General Info */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-none overflow-hidden">
             <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
               <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
                 <FaChalkboardTeacher className="text-blue-200 text-2xl" />
@@ -241,7 +241,7 @@ const EditClassPage: React.FC = () => {
           </div>
 
           {/* Card 2: Access Control */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-none overflow-hidden">
             <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
               <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
                 <FaShieldAlt className="text-purple-300 text-2xl" />
@@ -336,7 +336,7 @@ const EditClassPage: React.FC = () => {
         {/* RIGHT COLUMN: Quiz Access */}
         <div className="space-y-6 lg:sticky lg:top-4 lg:self-start">
           {/* Card 3: Quiz Access Control */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden lg:max-h-[calc(100vh-120px)]">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-none overflow-hidden lg:max-h-[calc(100vh-120px)]">
             <div className="bg-blue-700 dark:bg-[#1a1e3a] flex">
               <div className="bg-blue-700 dark:bg-[#1a1e3a] flex items-center justify-center flex-shrink-0 pl-6">
                 <FaKey className="text-green-300 text-2xl" />
@@ -447,10 +447,10 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className={`bg-white dark:bg-gray-800 rounded-xl overflow-hidden transition-all duration-300 ${expanded ? 'shadow-[0_0_15px_rgba(59,130,246,0.3)] dark:shadow-[0_0_20px_rgba(255,255,255,0.15)] border border-gray-200 dark:border-gray-700' : 'shadow-sm border border-gray-200 dark:border-gray-700'}`}>
       {/* Header */}
       <div
-        className="px-6 py-4 max-[490px]:p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-colors"
+        className={`px-6 py-4 max-[490px]:p-4 cursor-pointer transition-colors ${expanded ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'}`}
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex md:flex-row flex-col md:items-center items-start justify-between gap-3">
@@ -526,7 +526,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void }> = ({ quiz, o
 
       {/* Expanded Content */}
       {expanded && (
-        <div className="p-6">
+        <div className="p-6 border-t border-gray-100 dark:border-gray-700">
           <div className={`transition-all duration-500 ease-in-out overflow-hidden ${shareData?.isShareable ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}>
             {/* Code Display Section - Similar to Class */}
             <div className="bg-green-50 dark:bg-green-900/10 rounded-xl p-5 max-[490px]:p-3 border border-green-100 dark:border-green-800/30 mb-6">

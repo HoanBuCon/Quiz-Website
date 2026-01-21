@@ -3340,7 +3340,7 @@ const ClassesPage: React.FC = () => {
                     {/* ID Field */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        ID {shareData.type === "class" ? "lớp học" : "quiz"}
+                        ID chia sẻ {shareData.type === "class" ? "lớp học" : "bài kiểm tra"}
                       </label>
                       <div className="flex gap-2">
                         <div className="relative flex-1">
@@ -3377,7 +3377,7 @@ const ClassesPage: React.FC = () => {
                     {/* Link Field */}
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Liên kết chia sẻ
+                        Link chia sẻ
                       </label>
                       <div className="flex gap-2">
                         <div className="relative flex-1">
