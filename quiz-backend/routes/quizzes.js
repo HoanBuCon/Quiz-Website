@@ -34,8 +34,8 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   const isBanned = await queryOne(`
     SELECT 1 FROM BannedAccess 
     WHERE userId = ? AND targetType = 'class' AND targetId = ?
-    AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
-  `, [req.user.id, classId, classId]);
+    AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ?))
+  `, [req.user.id, classId, classId, classId]);
 
   if (isBanned) {
     return res.status(403).json({ message: 'Forbidden: You are banned from this class' });
@@ -65,8 +65,8 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   
   // Filter out Banned Quizzes first
   const bannedQuizItems = await query(
-    'SELECT targetId FROM BannedAccess WHERE userId = ? AND targetType = ? AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = ? AND targetId = BannedAccess.targetId)',
-    [req.user.id, 'quiz', 'quiz']
+    'SELECT targetId FROM BannedAccess WHERE userId = ? AND targetType = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = ? AND targetId = BannedAccess.targetId) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = ? AND targetId = BannedAccess.targetId))',
+    [req.user.id, 'quiz', 'quiz', 'quiz']
   );
   const bannedQuizIds = new Set(bannedQuizItems.map(b => b.targetId));
   const quizzesNotBanned = quizzes.filter(q => !bannedQuizIds.has(q.id));
@@ -459,11 +459,11 @@ router.get('/:id', authRequired, async (req, res) => {
       SELECT 1 FROM BannedAccess 
       WHERE userId = ? 
       AND (
-        (targetType = 'class' AND targetId = ? AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?))
+        (targetType = 'class' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ?)))
         OR
-        (targetType = 'quiz' AND targetId = ? AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?))
+        (targetType = 'quiz' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?)))
       )
-    `, [req.user.id, quiz.classId, quiz.classId, quiz.id, quiz.id]);
+    `, [req.user.id, quiz.classId, quiz.classId, quiz.classId, quiz.id, quiz.id, quiz.id]);
 
     if (isBanned) {
       return res.status(403).json({ message: 'Forbidden: You are banned' });

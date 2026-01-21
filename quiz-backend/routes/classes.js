@@ -35,7 +35,10 @@ router.get('/', authRequired, async (req, res) => {
          WHERE ba.userId = sa.userId
          AND ba.targetType = 'class'
          AND ba.targetId = sa.targetId
-         AND ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId)
+         AND (
+            ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId)
+            OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId)
+         )
        )`,
       [req.user.id]
     );

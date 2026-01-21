@@ -1035,10 +1035,13 @@ router.get('/access/users', authRequired, async (req, res) => {
         WHERE ba.userId = sa.userId 
         AND ba.targetType = 'class' 
         AND ba.targetId = ?
-        AND ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+        AND (
+           ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+           OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+        )
       )
     `;
-    activeParams = [targetId, targetId, targetId];
+    activeParams = [targetId, targetId, targetId, targetId];
   } else {
     // QUIZ: Include users with direct quiz access OR class access
     const quiz = await queryOne('SELECT classId FROM Quiz WHERE id = ?', [targetId]);
@@ -1092,7 +1095,10 @@ router.get('/access/users', authRequired, async (req, res) => {
                WHERE ba_cls.userId = u.id 
                AND ba_cls.targetType = 'class' 
                AND ba_cls.targetId = ?
-               AND ba_cls.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+               AND (
+                  ba_cls.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+                  OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+               )
             )
           )
         )
@@ -1101,10 +1107,13 @@ router.get('/access/users', authRequired, async (req, res) => {
           WHERE ba_qz.userId = u.id 
           AND ba_qz.targetType = 'quiz' 
           AND ba_qz.targetId = ?
-          AND ba_qz.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?)
+          AND (
+             ba_qz.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?)
+             OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?)
+          )
         )
     `;
-    activeParams = [targetId, classId, classId, classId, targetId, targetId];
+    activeParams = [targetId, classId, classId, classId, classId, targetId, targetId, targetId];
   }
 
   const activeUsers = await query(activeQuery, activeParams);
@@ -1114,53 +1123,64 @@ router.get('/access/users', authRequired, async (req, res) => {
   const currentCode = shareItem?.code;
 
   let bannedUsers = [];
-  if (currentCode) {
-    if (targetType === 'class') {
-      bannedUsers = await query(`
+  if (targetType === 'class') {
+    // Should verify if shareItem exists to filter by code, OR return all if share disabled
+    const codeClause = currentCode ? "AND ba.bannedCode = ?" : "";
+    const params = [targetId];
+    if (currentCode) params.push(currentCode);
+    
+    bannedUsers = await query(`
         SELECT ba.*, u.name, u.email, u.id as userId, 'class' as source
         FROM BannedAccess ba
         JOIN User u ON ba.userId = u.id
-        WHERE ba.targetType = 'class' AND ba.targetId = ? AND ba.bannedCode = ?
-      `, [targetId, currentCode]);
-    } else {
-      // For Quiz: Get bans from Quiz AND Class
-      const quiz = await queryOne('SELECT classId FROM Quiz WHERE id = ?', [targetId]);
-      if (quiz) {
+        WHERE ba.targetType = 'class' AND ba.targetId = ? ${codeClause}
+    `, params);
+  } else {
+    // For Quiz: Get bans from Quiz AND Class
+    const quiz = await queryOne('SELECT classId FROM Quiz WHERE id = ?', [targetId]);
+    if (quiz) {
          const classId = quiz.classId;
-         // Get Class Share Code to check class bans
+         // Get Class Share Code 
          const classShare = await queryOne('SELECT code FROM ShareItem WHERE targetType = "class" AND targetId = ?', [classId]);
          const classCode = classShare?.code;
+         
+         const qCodeClause = currentCode ? "AND ba.bannedCode = ?" : "";
+         const cCodeClause = classCode ? "AND ba.bannedCode = ?" : "";
+         
+         // Build params
+         let sqlParams = [targetId];
+         if (currentCode) sqlParams.push(currentCode);
+         sqlParams.push(classId);
+         if (classCode) sqlParams.push(classCode);
          
          // UNION query
          let sql = `
             SELECT ba.*, u.name, u.email, u.id as userId, 'quiz' as source
             FROM BannedAccess ba
             JOIN User u ON ba.userId = u.id
-            WHERE ba.targetType = 'quiz' AND ba.targetId = ? AND ba.bannedCode = ?
+            WHERE ba.targetType = 'quiz' AND ba.targetId = ? ${qCodeClause}
+            
+            UNION
+            
+            SELECT ba.*, u.name, u.email, u.id as userId, 'class' as source
+            FROM BannedAccess ba
+            JOIN User u ON ba.userId = u.id
+            WHERE ba.targetType = 'class' AND ba.targetId = ? ${cCodeClause}
          `;
-         let params = [targetId, currentCode];
          
-         if (classCode) {
-           sql += `
-             UNION
-             SELECT ba.*, u.name, u.email, u.id as userId, 'class' as source
-             FROM BannedAccess ba
-             JOIN User u ON ba.userId = u.id
-             WHERE ba.targetType = 'class' AND ba.targetId = ? AND ba.bannedCode = ?
-           `;
-           params.push(classId, classCode);
-         }
-         
-         bannedUsers = await query(sql, params);
-      } else {
-         // Fallback if quiz structure invalid
+         bannedUsers = await query(sql, sqlParams);
+    } else {
+         // Fallback 
+         const codeClause = currentCode ? "AND ba.bannedCode = ?" : "";
+         const params = [targetId];
+         if (currentCode) params.push(currentCode);
+
          bannedUsers = await query(`
             SELECT ba.*, u.name, u.email, u.id as userId, 'quiz' as source
             FROM BannedAccess ba
             JOIN User u ON ba.userId = u.id
-            WHERE ba.targetType = 'quiz' AND ba.targetId = ? AND ba.bannedCode = ?
-         `, [targetId, currentCode]);
-      }
+            WHERE ba.targetType = 'quiz' AND ba.targetId = ? ${codeClause}
+         `, params);
     }
   }
 
