@@ -982,12 +982,53 @@ router.get('/access/users', authRequired, async (req, res) => {
 
   let bannedUsers = [];
   if (currentCode) {
-    bannedUsers = await query(`
-      SELECT ba.*, u.name, u.email, u.id as userId
-      FROM BannedAccess ba
-      JOIN User u ON ba.userId = u.id
-      WHERE ba.targetType = ? AND ba.targetId = ? AND ba.bannedCode = ?
-    `, [targetType, targetId, currentCode]);
+    if (targetType === 'class') {
+      bannedUsers = await query(`
+        SELECT ba.*, u.name, u.email, u.id as userId, 'class' as source
+        FROM BannedAccess ba
+        JOIN User u ON ba.userId = u.id
+        WHERE ba.targetType = 'class' AND ba.targetId = ? AND ba.bannedCode = ?
+      `, [targetId, currentCode]);
+    } else {
+      // For Quiz: Get bans from Quiz AND Class
+      const quiz = await queryOne('SELECT classId FROM Quiz WHERE id = ?', [targetId]);
+      if (quiz) {
+         const classId = quiz.classId;
+         // Get Class Share Code to check class bans
+         const classShare = await queryOne('SELECT code FROM ShareItem WHERE targetType = "class" AND targetId = ?', [classId]);
+         const classCode = classShare?.code;
+         
+         // UNION query
+         let sql = `
+            SELECT ba.*, u.name, u.email, u.id as userId, 'quiz' as source
+            FROM BannedAccess ba
+            JOIN User u ON ba.userId = u.id
+            WHERE ba.targetType = 'quiz' AND ba.targetId = ? AND ba.bannedCode = ?
+         `;
+         let params = [targetId, currentCode];
+         
+         if (classCode) {
+           sql += `
+             UNION
+             SELECT ba.*, u.name, u.email, u.id as userId, 'class' as source
+             FROM BannedAccess ba
+             JOIN User u ON ba.userId = u.id
+             WHERE ba.targetType = 'class' AND ba.targetId = ? AND ba.bannedCode = ?
+           `;
+           params.push(classId, classCode);
+         }
+         
+         bannedUsers = await query(sql, params);
+      } else {
+         // Fallback if quiz structure invalid
+         bannedUsers = await query(`
+            SELECT ba.*, u.name, u.email, u.id as userId, 'quiz' as source
+            FROM BannedAccess ba
+            JOIN User u ON ba.userId = u.id
+            WHERE ba.targetType = 'quiz' AND ba.targetId = ? AND ba.bannedCode = ?
+         `, [targetId, currentCode]);
+      }
+    }
   }
 
   res.json({
@@ -1063,6 +1104,28 @@ router.post('/access/unban', authRequired, async (req, res) => {
     ownerId = qz.ownerId;
   }
   if (ownerId !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+
+  // STRICT HIERARCHY CHECK
+  if (targetType === 'quiz') {
+      // Check if user is banned from Class
+      const quiz = await queryOne('SELECT classId FROM Quiz WHERE id = ?', [targetId]);
+      if (quiz) {
+         const classShare = await queryOne('SELECT code FROM ShareItem WHERE targetType = "class" AND targetId = ?', [quiz.classId]);
+         if (classShare) {
+            const classBan = await queryOne(
+               'SELECT id FROM BannedAccess WHERE userId = ? AND targetType = "class" AND targetId = ? AND bannedCode = ?',
+               [userId, quiz.classId, classShare.code]
+            );
+            
+            if (classBan) {
+               return res.status(403).json({ 
+                 message: 'User đang bị chặn từ cấp Class. Vui lòng bỏ chặn tại Class.',
+                 code: 'CLASS_LEVEL_BAN' 
+               });
+            }
+         }
+      }
+  }
 
   // Remove from BannedAccess
   await query(

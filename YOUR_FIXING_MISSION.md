@@ -1,156 +1,150 @@
-# PROMPT: Chuẩn hóa & SỬA LOGIC Access Control cho Class / Quiz (Scope-based)
+# PROMPT: Chuẩn hóa hành vi BAN / UNBAN theo cấp Class → Quiz (Hierarchy-aware)
 
 ## 🎯 Vai trò
 Bạn là **lập trình viên Fullstack giàu kinh nghiệm**.
 
 Mục tiêu:
 - Giữ nguyên logic gốc public/private
-- Giữ nguyên cơ chế ID/Link đã thiết kế
-- **SỬA & CHUẨN HÓA các lỗi access liên quan đến SCOPE (Class vs Quiz)**
+- Giữ nguyên access scope (CLASS / QUIZ)
+- **Chuẩn hóa hành vi BAN / UNBAN theo thứ bậc (Hierarchy)**
+- Tránh các thao tác UNBAN sai cấp gây bug logic
 
-Sau mỗi task / bug fix:
-- Phải có **REVIEW + giải thích root-cause**
-
----
-
-## 🧩 KHÁI NIỆM CỐT LÕI (BẮT BUỘC ÁP DỤNG)
-
-### 🔑 Access có SCOPE
-Access KHÔNG mặc định là toàn Class.
-
-| Scope | Ý nghĩa |
-|-----|--------|
-| `CLASS` | User truy cập toàn bộ Class |
-| `QUIZ` | User chỉ truy cập 1 Quiz cụ thể |
-
-👉 Mọi access record **PHẢI gắn scope**
+Sau mỗi thay đổi:
+- BẮT BUỘC có **REVIEW + giải thích lý do thiết kế**
 
 ---
 
-## 🐞 BUG / YÊU CẦU 1  
-### Class rỗng sau khi reset Quiz ID vẫn hiển thị (SAI)
+## 🧩 NGUYÊN TẮC CỐT LÕI (BẮT BUỘC)
 
-### ❌ Hành vi hiện tại
-- User nhập ID/Link **Quiz**
-- Owner reset toàn bộ ID/Link của Quiz đó
-- User:
-  - Mất quyền truy cập Quiz → OK
-  - Nhưng tại `@EditClassPage.tsx`:
-    - Vẫn thấy **Class**
-    - Class rỗng (không còn quiz)
-
-### ✅ Hành vi MONG MUỐN (BẮT BUỘC)
-- Nếu user:
-  - **KHÔNG có access Class**
-  - Và **KHÔNG còn access Quiz nào thuộc Class**
-- ⇒ **ẨN HOÀN TOÀN Class**
-
-❌ Không được hiển thị Class rỗng
-
-### 🧠 Yêu cầu kỹ thuật
-- Class chỉ hiển thị với user nếu:
-  - Có `CLASS access`
-  - HOẶC có ≥ 1 `QUIZ access` còn hiệu lực trong class
-
----
-
-## 🐞 BUG / YÊU CẦU 2  
-### BAN Class nhưng vẫn nhập được ID Quiz (LOGIC MÂU THUẪN)
-
-### ❌ Hành vi hiện tại
-1. User nhập ID/Link Class → có access
-2. Owner BAN user khỏi Class
-3. User:
-   - Không làm được quiz trong class → OK
-   - Nhưng:
-     - Nhập ID/Link Quiz
-     - Hệ thống:
-       - Vẫn ghi nhận access (hiển thị dashboard owner)
-       - Nhưng user không truy cập được Quiz
-
-### ❌ Đây là trạng thái SAI & MÂU THUẪN
-
----
-
-### ✅ Hành vi MONG MUỐN (BẮT BUỘC)
-
-- Nếu user bị **BAN ở scope CLASS**:
-  - ❌ Không được truy cập Class
-  - ❌ Không được truy cập BẤT KỲ Quiz nào trong Class
-  - ❌ Không được nhập ID/Link Quiz để “lách”
-
-👉 **BAN CLASS = chặn toàn bộ Quiz con**
-
-### 🧠 Yêu cầu kỹ thuật
-- Khi xử lý ID/Link Quiz:
-  - Phải check:
-    ```
-    NOT EXISTS class_ban(user_id, class_id)
-    ```
-- Nếu bị BAN Class:
-  - Không tạo access Quiz
-  - Không hiển thị trên dashboard
-  - Trả lỗi rõ ràng (403)
-
----
-
-## 🐞 BUG / YÊU CẦU 3  
-### User nhập ID Quiz nhưng lại có quyền toàn Class (SAI SCOPE)
-
-### ❌ Hành vi hiện tại
-- User nhập ID/Link **Quiz**
-- Dashboard Owner:
-  - Hiển thị user đó:
-    - Ở Class
-    - Ở TẤT CẢ quiz trong class
-
-### ❌ Đây là lỗi nghiêm trọng về access scope
-
----
-
-### ✅ Hành vi MONG MUỐN (BẮT BUỘC)
-
-#### Trường hợp: User chỉ nhập ID/Link Quiz
-- User:
-  - ❌ KHÔNG có quyền Class
-  - ✅ Chỉ có quyền Quiz đã nhập
-- Dashboard Owner:
-  - User chỉ xuất hiện:
-    - Ở Quiz tương ứng
-    - Và Class chứa quiz đó (để hiển thị quan hệ)
-  - ❌ KHÔNG xuất hiện ở các Quiz khác
-
----
-
-### 🔥 BAN từ Class (ảnh hưởng đặc biệt)
-
-- Nếu Owner:
-  - BAN user tại **Class level**
-- Thì:
-  - User mất:
-    - Mọi quyền truy cập Quiz (kể cả quiz nhập lẻ)
-  - Dù quiz đó được nhập bằng ID riêng
+### 🔒 BAN có phân cấp (Hierarchy)
+- **BAN ở Class level**
+  - Có hiệu lực cao nhất
+  - Chặn toàn bộ Quiz con
+- **BAN ở Quiz level**
+  - Chỉ chặn Quiz đó
+  - Không ảnh hưởng Quiz khác
 
 👉 **BAN Class > BAN Quiz**
 
 ---
 
-## 🧠 QUY TẮC ƯU TIÊN (BẮT BUỘC)
-
-| Quy tắc | Mô tả |
-|------|------|
-| BAN Class | Chặn toàn bộ Quiz |
-| Quiz access | KHÔNG suy ra Class access |
-| Reset Quiz ID | Chỉ revoke quiz đó |
-| Không còn quiz access | Ẩn class |
-| UNBAN Class | Khôi phục access cũ nếu token còn hiệu lực |
+## 🐞 / YÊU CẦU MỚI  
+### Hiển thị user bị BAN Class tại Quiz, nhưng KHÔNG cho UNBAN tại Quiz
 
 ---
 
-## 🧱 CHECK ACCESS ĐÚNG (BẮT BUỘC)
+## ❌ Hành vi hiện tại (chưa đúng)
+- User bị BAN khỏi Class
+- Tại Dashboard Quiz:
+  - Có thể:
+    - Không hiển thị user
+    - Hoặc hiển thị nhưng vẫn cho UNBAN
+- Điều này gây:
+  - UNBAN sai cấp
+  - Mâu thuẫn trạng thái access
 
-```ts
-function canAccessQuiz(user, quiz) {
-  if (isBannedFromClass(user, quiz.classId)) return false
-  return hasValidQuizAccess(user, quiz.id)
-}
+---
+
+## ✅ Hành vi MONG MUỐN (BẮT BUỘC)
+
+### 1️⃣ Hiển thị
+- Những user bị **BAN khỏi Class**:
+  - VẪN được hiển thị:
+    - Trong danh sách **BAN của từng Quiz**
+  - Áp dụng cho:
+    - Tất cả quiz (nếu user từng nhập ID Class)
+    - Các quiz riêng lẻ (nếu user từng nhập ID Quiz)
+
+👉 Mục đích:
+- Owner nhìn thấy đầy đủ user đang bị chặn ở Quiz
+- Tránh hiểu nhầm user “biến mất”
+
+---
+
+### 2️⃣ UNBAN tại Quiz (BỊ VÔ HIỆU)
+
+- Với user bị **BAN tại Class**:
+  - Nút **UNBAN tại Quiz**:
+    - ❌ BỊ DISABLE
+    - ❌ KHÔNG cho click
+- Khi hover / focus vào nút UNBAN:
+  - Hiển thị tooltip / nhãn:
+    ```
+    Phải UNBAN user này tại Class
+    ```
+
+---
+
+### 3️⃣ UNBAN đúng cấp (BẮT BUỘC)
+
+| Hành động | Kết quả |
+|---------|--------|
+| UNBAN tại Quiz | ❌ Không cho phép nếu user bị BAN Class |
+| UNBAN tại Class | ✅ Gỡ toàn bộ hiệu lực BAN (Class + Quiz) |
+| UNBAN Quiz khi KHÔNG bị BAN Class | ✅ Hợp lệ |
+
+---
+
+## 🧠 YÊU CẦU KỸ THUẬT
+
+### Backend (Logic)
+- Khi xử lý UNBAN Quiz:
+  - Phải check:
+    ```ts
+    if (isBannedAtClassLevel(userId, classId)) {
+      throw Forbidden("Must unban at Class level")
+    }
+    ```
+- Trạng thái BAN Quiz:
+  - Có thể tồn tại song song với BAN Class
+  - Nhưng **BAN Class luôn được ưu tiên**
+
+---
+
+### Frontend (UI – `@EditClassPage.tsx`)
+- Với mỗi user trong danh sách BAN của Quiz:
+  - Nếu user bị BAN Class:
+    - Disable nút UNBAN
+    - Gắn tooltip rõ ràng
+- UI **KHÔNG được cho phép**
+  - Thao tác UNBAN sai cấp
+
+---
+
+## 🧠 QUY TẮC TỔNG HỢP (BẮT BUỘC)
+
+| Trạng thái user | UNBAN tại Quiz | UNBAN tại Class |
+|---------------|--------------|----------------|
+| Bị BAN Quiz | ✅ | ❌ (không liên quan) |
+| Bị BAN Class | ❌ | ✅ |
+| Bị BAN cả Class & Quiz | ❌ | ✅ |
+| Không bị BAN | — | — |
+
+---
+
+## 🔍 REVIEW BẮT BUỘC
+
+Sau khi implement yêu cầu này, bạn PHẢI:
+1. Giải thích vì sao cần hierarchy BAN
+2. Mô tả rõ:
+   - UI disable hoạt động thế nào
+   - Backend chặn ra sao
+3. Chỉ ra:
+   - Bug nào được loại bỏ nhờ thiết kế này
+4. Chứng minh:
+   - Không còn UNBAN sai cấp
+   - Trạng thái Dashboard nhất quán
+
+---
+
+## ✅ KẾT QUẢ MONG MUỐN
+
+- BAN / UNBAN rõ ràng theo cấp
+- Owner không thao tác sai logic
+- UI & Backend đồng bộ
+- Không phát sinh access “nửa vời”
+- Dễ mở rộng trong tương lai (Role / Group)
+
+---
+
+**BẮT ĐẦU TRIỂN KHAI YÊU CẦU NÀY TRƯỚC.**

@@ -501,9 +501,23 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
               <tbody>
                 {users.banned.map(u => (
                   <tr key={u.userId} className="border-b dark:border-gray-700">
-                    <td className="px-2 py-1">{u.name}</td>
+                    <td className="px-2 py-1">
+                      {u.name}
+                      {u.source === 'class' && (
+                        <span className="ml-2 text-[10px] bg-red-100 text-red-800 px-1 py-0.5 rounded border border-red-200">
+                          Class Ban
+                        </span>
+                      )}
+                    </td>
                     <td className="px-2 py-1 text-right">
-                      <button onClick={() => handleUnban(u.userId)} className="text-blue-500 hover:underline">Unban</button>
+                      <button
+                        onClick={() => handleUnban(u.userId)}
+                        className={`text-xs hover:underline ${u.source === 'class' ? 'text-gray-400 cursor-not-allowed' : 'text-blue-500'}`}
+                        disabled={u.source === 'class'}
+                        title={u.source === 'class' ? "Phải UNBAN user này tại Class" : "Bỏ chặn"}
+                      >
+                        Unban
+                      </button>
                     </td>
                   </tr>
                 ))}
