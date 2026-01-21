@@ -30,6 +30,10 @@ router.get('/', authRequired, async (req, res) => {
             AND sa_q.targetType = 'quiz'
          )
        )
+       AND EXISTS (
+          SELECT 1 FROM ShareItem 
+          WHERE targetType = 'class' AND targetId = sa.targetId AND isEnabled = 1
+       )
        AND NOT EXISTS (
          SELECT 1 FROM BannedAccess ba
          WHERE ba.userId = sa.userId

@@ -336,12 +336,12 @@ router.post('/share', authRequired, async (req, res) => {
         console.log('[SHARE CASE 3] Disable Share Class');
         
         await transaction(async (conn) => {
-          // Remove ALL SharedAccess for this Class
-          await conn.execute(
-            'DELETE FROM SharedAccess WHERE targetType = ? AND targetId = ?',
-            ['class', targetId]
-          );
-          console.log('  Removed all SharedAccess for class');
+          // DO NOT Remove SharedAccess anymore - keep it for when sharing is re-enabled
+          // await conn.execute(
+          //   'DELETE FROM SharedAccess WHERE targetType = ? AND targetId = ?',
+          //   ['class', targetId]
+          // );
+          console.log('  Preserved SharedAccess records for class');
           
           // Disable ShareItem for Class (Do not delete)
           await conn.execute(
@@ -357,17 +357,13 @@ router.post('/share', authRequired, async (req, res) => {
           
           console.log(`Found ${quizzes.length} quizzes in class`);
           
-          // Disable ShareItem + Remove SharedAccess for shareable quizzes
+          // Disable ShareItem for shareable quizzes
           for (const quiz of quizzes) {
              await conn.execute(
                 'UPDATE ShareItem SET isEnabled = 0 WHERE targetType = ? AND targetId = ?',
                 ['quiz', quiz.id]
              );
-              
-             await conn.execute(
-                'DELETE FROM SharedAccess WHERE targetType = ? AND targetId = ?',
-                ['quiz', quiz.id]
-             );
+             // DO NOT delete SharedAccess here either
           }
           
           console.log('[SHARE CASE 3] Complete');
@@ -439,12 +435,12 @@ router.post('/share', authRequired, async (req, res) => {
         // CASE 4: Disable Share Quiz
         console.log('[SHARE CASE 4] Disable Share Quiz');
         
-        // Remove ALL SharedAccess for THIS Quiz
-        await query(
-          'DELETE FROM SharedAccess WHERE targetType = ? AND targetId = ?',
-          ['quiz', targetId]
-        );
-        console.log(`  Removed all SharedAccess for quiz ${targetId}`);
+        // DO NOT delete SharedAccess - preserve it
+        // await query(
+        //   'DELETE FROM SharedAccess WHERE targetType = ? AND targetId = ?',
+        //   ['quiz', targetId]
+        // );
+        console.log(`  Preserved SharedAccess records for quiz ${targetId}`);
         
         // Disable ShareItem for THIS Quiz (Update isEnabled = 0)
         await query(

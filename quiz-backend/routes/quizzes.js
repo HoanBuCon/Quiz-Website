@@ -20,10 +20,12 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   
   const isPublic = intToBool(cls.isPublic) || !!hasPublicItem;
   
-  const hasShared = await queryOne(
-    'SELECT id, accessLevel FROM SharedAccess WHERE userId = ? AND targetType = ? AND targetId = ?',
-    [req.user.id, 'class', classId]
-  );
+   const hasShared = await queryOne(
+     `SELECT id, accessLevel FROM SharedAccess sa
+      WHERE sa.userId = ? AND sa.targetType = 'class' AND sa.targetId = ?
+      AND EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId AND isEnabled = 1)`,
+     [req.user.id, classId]
+   );
   
   // Allow access if: Owner, Public class, or has SharedAccess
   if (!isOwner && !isPublic && !hasShared) {
@@ -432,12 +434,14 @@ router.get('/:id', authRequired, async (req, res) => {
     );
     
     const hasQuizShared = await queryOne(
-      'SELECT id FROM SharedAccess WHERE userId = ? AND targetType = ? AND targetId = ?',
+      `SELECT id FROM SharedAccess sa WHERE userId = ? AND targetType = ? AND targetId = ?
+       AND EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'quiz' AND targetId = sa.targetId AND isEnabled = 1)`,
       [req.user.id, 'quiz', quiz.id]
     );
     
     const hasClassShared = await queryOne(
-      'SELECT id, accessLevel FROM SharedAccess WHERE userId = ? AND targetType = ? AND targetId = ?',
+      `SELECT id, accessLevel FROM SharedAccess sa WHERE userId = ? AND targetType = ? AND targetId = ?
+       AND EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = sa.targetId AND isEnabled = 1)`,
       [req.user.id, 'class', quiz.classId]
     );
     
@@ -458,16 +462,15 @@ router.get('/:id', authRequired, async (req, res) => {
     }
 
     // Check Bans
-    const isBanned = await queryOne(`
-      SELECT 1 FROM BannedAccess 
-      WHERE userId = ? 
-      AND (
-      AND (
-        (targetType = 'class' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ? AND isEnabled = 1) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ? AND isEnabled = 1)))
-        OR
-        (targetType = 'quiz' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ? AND isEnabled = 1) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'quiz' AND targetId = ? AND isEnabled = 1)))
-      )
-    `, [req.user.id, quiz.classId, quiz.classId, quiz.classId, quiz.id, quiz.id, quiz.id]);
+     const isBanned = await queryOne(`
+       SELECT 1 FROM BannedAccess 
+       WHERE userId = ? 
+       AND (
+         (targetType = 'class' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ? AND isEnabled = 1) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'class' AND targetId = ? AND isEnabled = 1)))
+         OR
+         (targetType = 'quiz' AND targetId = ? AND (bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ? AND isEnabled = 1) OR NOT EXISTS (SELECT 1 FROM ShareItem WHERE targetType = 'quiz' AND targetId = ? AND isEnabled = 1)))
+       )
+     `, [req.user.id, quiz.classId, quiz.classId, quiz.classId, quiz.id, quiz.id, quiz.id]);
 
     if (isBanned) {
       return res.status(403).json({ message: 'Forbidden: You are banned' });
