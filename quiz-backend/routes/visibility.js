@@ -875,23 +875,94 @@ router.get('/access/users', authRequired, async (req, res) => {
   }
 
   // Get active SharedAccess users
-  const activeUsers = await query(`
-    SELECT sa.*, u.name, u.email, u.id as userId
-    FROM SharedAccess sa
-    JOIN User u ON sa.userId = u.id
-    WHERE sa.targetType = ? AND sa.targetId = ?
-    AND NOT EXISTS (
-      SELECT 1 FROM BannedAccess ba 
-      WHERE ba.userId = sa.userId 
-      AND ba.targetType = sa.targetType 
-      AND ba.targetId = sa.targetId
-      AND ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = sa.targetType AND targetId = sa.targetId)
-    )
-  `, [targetType, targetId]);
+  let activeQuery = '';
+  let activeParams = [];
 
-  // Get Banned users FOR CURRENT CODE (Or all?) -> Requirement: "Auto Unban" on reset means ban is tied to code.
-  // So we list bans for the CURRENT code.
-  
+  if (targetType === 'class') {
+    activeQuery = `
+      SELECT DISTINCT sa.userId, u.name, u.email, u.avatarUrl
+      FROM SharedAccess sa
+      JOIN User u ON sa.userId = u.id
+      WHERE sa.targetType = 'class' AND sa.targetId = ?
+      AND NOT EXISTS (
+        SELECT 1 FROM BannedAccess ba 
+        WHERE ba.userId = sa.userId 
+        AND ba.targetType = 'class' 
+        AND ba.targetId = ?
+        AND ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+      )
+    `;
+    activeParams = [targetId, targetId, targetId];
+  } else {
+    // QUIZ: Include users with direct quiz access OR class access
+    const quiz = await queryOne('SELECT classId FROM Quiz WHERE id = ?', [targetId]);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    const classId = quiz.classId;
+
+    activeQuery = `
+      SELECT DISTINCT u.id as userId, u.name, u.email, u.avatarUrl
+      FROM User u
+      JOIN SharedAccess sa ON sa.userId = u.id
+      WHERE 
+      (
+        (sa.targetType = 'quiz' AND sa.targetId = ?)
+        OR 
+        (sa.targetType = 'class' AND sa.targetId = ?)
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM BannedAccess ba 
+        WHERE ba.userId = u.id 
+        AND ba.targetType = 'quiz' 
+        AND ba.targetId = ?
+        AND ba.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?)
+      )
+    `;
+    // Note: We only exclude if banned from QUIZ here, because if banned from CLASS they shouldn't even show up? 
+    // Actually, if banned from CLASS, they effectively don't have access.
+    // The query above filters access. If they are banned from class, they might still show up if they have direct quiz access?
+    // Let's refine: A user is active if they have valid access.
+    // Valid access = (Direct Quiz Access AND NOT Quiz Ban) OR (Class Access AND NOT Class Ban AND NOT Quiz Ban)
+    // Simplify: Just show anyone who "could" access if not for THIS quiz ban.
+    // But for "Ban" UI, we want to see people who HAVE access currently.
+    
+    // Correct Logic:
+    // User is in list if:
+    // 1. Has Quiz ShareAccess AND is NOT Banned from Quiz
+    // 2. Has Class ShareAccess AND is NOT Banned from Class AND is NOT Banned from Quiz.
+    
+    activeQuery = `
+      SELECT DISTINCT u.id as userId, u.name, u.email, u.avatarUrl
+      FROM User u
+      JOIN SharedAccess sa ON sa.userId = u.id
+      WHERE 
+        (
+          (sa.targetType = 'quiz' AND sa.targetId = ?)
+          OR
+          (
+            sa.targetType = 'class' AND sa.targetId = ? 
+            AND NOT EXISTS (
+               SELECT 1 FROM BannedAccess ba_cls 
+               WHERE ba_cls.userId = u.id 
+               AND ba_cls.targetType = 'class' 
+               AND ba_cls.targetId = ?
+               AND ba_cls.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'class' AND targetId = ?)
+            )
+          )
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM BannedAccess ba_qz
+          WHERE ba_qz.userId = u.id 
+          AND ba_qz.targetType = 'quiz' 
+          AND ba_qz.targetId = ?
+          AND ba_qz.bannedCode = (SELECT code FROM ShareItem WHERE targetType = 'quiz' AND targetId = ?)
+        )
+    `;
+    activeParams = [targetId, classId, classId, classId, targetId, targetId];
+  }
+
+  const activeUsers = await query(activeQuery, activeParams);
+
+  // Get Banned users FOR CURRENT CODE
   const shareItem = await queryOne('SELECT code FROM ShareItem WHERE targetType = ? AND targetId = ?', [targetType, targetId]);
   const currentCode = shareItem?.code;
 

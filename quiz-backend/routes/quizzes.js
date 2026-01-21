@@ -63,18 +63,28 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
   
   const sharedSet = new Set(shareItems.map(s => s.targetId));
   
+  // Filter out Banned Quizzes first
+  const bannedQuizItems = await query(
+    'SELECT targetId FROM BannedAccess WHERE userId = ? AND targetType = ? AND bannedCode = (SELECT code FROM ShareItem WHERE targetType = ? AND targetId = BannedAccess.targetId)',
+    [req.user.id, 'quiz', 'quiz']
+  );
+  const bannedQuizIds = new Set(bannedQuizItems.map(b => b.targetId));
+  const quizzesNotBanned = quizzes.filter(q => !bannedQuizIds.has(q.id));
+
   // Filter quizzes based on access level
-  let accessibleQuizzes = quizzes;
+  let accessibleQuizzes = []; // Default to empty for safety
   
   if (!isOwner && !isPublic && hasShared) {
     const classAccessLevel = hasShared.accessLevel;
     
     if (classAccessLevel === 'full') {
-      // User has full access to ALL quizzes
-      accessibleQuizzes = quizzes;
-    } else if (classAccessLevel === 'navigationOnly') {
+      // User has full access to ALL (non-banned) quizzes
+      accessibleQuizzes = quizzesNotBanned;
+    } else {
+      // 'navigationOnly' OR any other unknown state -> Strict filtering
       // User only has access to specific quizzes they've claimed
       let userQuizAccess = [];
+      const quizIds = quizzesNotBanned.map(q => q.id);
       
       if (quizIds.length > 0) {
         const { clause, params } = buildWhereIn(quizIds);
@@ -85,8 +95,12 @@ router.get('/by-class/:classId', authRequired, async (req, res) => {
       }
       
       const accessibleQuizIds = new Set(userQuizAccess.map(a => a.targetId));
-      accessibleQuizzes = quizzes.filter(q => accessibleQuizIds.has(q.id));
+      accessibleQuizzes = quizzesNotBanned.filter(q => accessibleQuizIds.has(q.id));
     }
+  } else {
+     // Owner or Public Class -> Access to all (non-banned)
+     // Note: Owners shouldn't be banned, but logic holds.
+     accessibleQuizzes = quizzesNotBanned;
   }
   
   // Map to payload

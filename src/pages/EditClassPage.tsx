@@ -467,7 +467,17 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz' 
               <tbody>
                 {users.active.map(u => (
                   <tr key={u.userId} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                    <td className="px-2 py-1">{u.name} <span className="text-gray-400">({u.email})</span></td>
+                    <td className="px-2 py-1 flex items-center gap-2">
+                      <img
+                        src={u.avatarUrl || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"}
+                        alt="Avatar"
+                        className="w-6 h-6 rounded-full object-cover border border-gray-200"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
+                        }}
+                      />
+                      <span>{u.name} <span className="text-gray-400 text-xs">({u.email})</span></span>
+                    </td>
                     <td className="px-2 py-1 text-right">
                       <button onClick={() => handleBan(u.userId)} className="text-red-500 hover:underline">Ban</button>
                     </td>
