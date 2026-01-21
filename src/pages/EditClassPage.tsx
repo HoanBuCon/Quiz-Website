@@ -154,6 +154,7 @@ const EditClassPage: React.FC = () => {
 
       setShareData(prev => prev ? ({ ...prev, code: res.code }) : null);
       toast.success("Đã reset code thành công!");
+      setQuizRefreshTrigger(prev => prev + 1);
     } catch (e) {
       toast.error("Lỗi khi reset code");
     }
@@ -328,7 +329,7 @@ const EditClassPage: React.FC = () => {
                     <FaUsers className="text-gray-500" />
                     Danh sách truy cập Class
                   </h4>
-                  <UserAccessList classId={classId!} onRefresh={() => setQuizRefreshTrigger(prev => prev + 1)} />
+                  <UserAccessList classId={classId!} refreshTrigger={quizRefreshTrigger} onRefresh={() => setQuizRefreshTrigger(prev => prev + 1)} />
                 </div>
               </div>
 
@@ -397,6 +398,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
 
   // Local token fetch
   const [token, setToken] = useState<string | null>(null);
+  const [localRefresh, setLocalRefresh] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -416,7 +418,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
         console.error(e);
       }
     })();
-  }, [quiz.id, token]);
+  }, [quiz.id, token, refreshTrigger, localRefresh]);
 
   const handleToggleShare = async () => {
     if (!shareData || !token) return;
@@ -449,6 +451,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
       const res = await VisibilityAPI.resetShareCode({ targetType: 'quiz', targetId: quiz.id }, token);
       setShareData(prev => prev ? ({ ...prev, code: res.code }) : null);
       toast.success("Đã reset Quiz Access ID!");
+      setLocalRefresh(prev => prev + 1);
     } catch (e) {
       toast.error("Lỗi khi reset");
     } finally {
@@ -583,7 +586,7 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
                 <FaUsers className="text-gray-500" />
                 Danh sách truy cập Quiz
               </h4>
-              <UserAccessList classId={quiz.id} targetType="quiz" refreshTrigger={refreshTrigger} />
+              <UserAccessList classId={quiz.id} targetType="quiz" refreshTrigger={(refreshTrigger || 0) + localRefresh} />
             </div>
           </div>
 

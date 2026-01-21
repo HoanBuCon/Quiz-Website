@@ -1641,7 +1641,7 @@ const ProfilePage: React.FC = () => {
                                     </div>
 
                                     {/* Results Table */}
-                                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+                                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
                                         <div className="p-6 relative flex justify-between items-center">
                                             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                             <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4">
@@ -1788,8 +1788,8 @@ const ProfilePage: React.FC = () => {
                                         </div>
 
                                         {quizDetails.sessions.length === 0 ? (
-                                            <div className="p-12 text-center text-gray-500">
-                                                Chưa có dữ liệu bài làm nào.
+                                            <div className="p-12 text-center items-center italic text-gray-500" style={{ fontStyle: 'italic' }}>
+                                                Chưa có dữ liệu bài làm.
                                             </div>
                                         ) : (
                                             <>
@@ -2086,7 +2086,7 @@ const ProfilePage: React.FC = () => {
                                                         ))
                                                     ) : (
                                                         <tr>
-                                                            <td colSpan={3} className="py-8 text-center text-gray-500 italic">Chưa có thành viên nào trong danh sách truy cập.</td>
+                                                            <td colSpan={4} className="py-8 text-center items-center text-gray-500 italic">Chưa có thành viên nào trong danh sách truy cập.</td>
                                                         </tr>
                                                     )}
                                                 </tbody>
@@ -2139,7 +2139,7 @@ const ProfilePage: React.FC = () => {
                                                     </div>
                                                 ))
                                             ) : (
-                                                <div className="py-8 text-center text-gray-500 italic">Chưa có thành viên nào trong danh sách truy cập.</div>
+                                                <div className="py-8 text-center items-center text-gray-500 italic">Chưa có thành viên nào trong danh sách truy cập.</div>
                                             )}
                                         </div>
                                     </div>
@@ -2163,4 +2163,4 @@ const ProfilePage: React.FC = () => {
     );
 };
 
-export default ProfilePage;
+export default ProfilePage; 
