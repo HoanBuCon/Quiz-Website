@@ -1,111 +1,120 @@
-# PROMPT: Refactor UI/UX trang EditClassPage theo style ProfilePage
+# PROMPT: Tinh chỉnh UI/UX trang ProfilePage
 
 ## 🎯 Vai trò
-Bạn là **lập trình viên UI/UX giàu kinh nghiệm**.
+Bạn là **UI/UX Designer giàu kinh nghiệm**, có khả năng đọc và hiểu mã nguồn frontend React/TypeScript.
 
-## 🧩 Bối cảnh
-Dự án hiện có trang **Thống Kê / ProfilePage (`ProfilePage.tsx`)** với:
-- Hệ thống bảng (table)
-- Nút (button)
-- Màu sắc
-- Spacing
-- Typography
-
-Trang này đã thể hiện **phong cách UI chuẩn của toàn bộ hệ thống**.
-
-Nhiệm vụ của bạn là:
-- Đọc hiểu **logic frontend UI** của `ProfilePage.tsx`
-- Kế thừa và áp dụng **toàn bộ style đó** cho trang:
-  - `EditClassPage.tsx`
-- **KHÔNG thay đổi logic nghiệp vụ hiện tại** của `EditClassPage.tsx`
+## 🧩 Phạm vi
+- Trang: `ProfilePage.tsx`
+- Phạm vi chỉnh sửa: **UI/UX & style**
+- ❌ Không thay đổi logic nghiệp vụ
+- ❌ Không làm mất chức năng hiện có
 
 ---
 
-## 🎨 Yêu cầu thiết kế UI
+## 🛠️ YÊU CẦU CHỈNH SỬA CỤ THỂ
 
-### 1. Đồng bộ & tương đồng style
-- Áp dụng lại từ `ProfilePage.tsx`:
-  - Kiểu bảng (table layout, header, row)
-  - Button style (primary / secondary / danger)
-  - Màu sắc chủ đạo
-  - Spacing & padding
-  - Typography (font size, font weight)
-- Không tạo style mới gây lệch hệ thống
-- Giao diện phải nhìn là nhận ra cùng một sản phẩm
+### 1️⃣ Tắt hiệu ứng hover scaling (Banner & Avatar)
+
+#### ❌ Hành vi hiện tại
+- Khi hover:
+  - Banner bị scale
+  - Avatar bị scale
+- Gây:
+  - Mất tập trung
+  - Cảm giác UI không đủ “clean”
+
+#### ✅ Yêu cầu mới
+- **Loại bỏ hoàn toàn hiệu ứng hover scaling** đối với:
+  - Avatar
+  - Banner
+- Vẫn giữ:
+  - Hiệu ứng hover khác nếu có (opacity, shadow nhẹ…) nhưng **KHÔNG scale**
 
 ---
 
-### 2. Clean & tinh gọn
-- Giảm tối đa:
-  - Border không cần thiết
-  - Box lồng nhau gây rối mắt
+### 2️⃣ Căn chỉnh Avatar tròn chính xác (UI polish)
+
+#### ❌ Vấn đề hiện tại
+- Avatar tròn:
+  - Không nằm chính giữa border tròn
+  - Khoảng cách giữa avatar và border không đều
+- Gây cảm giác lệch, thiếu tinh tế
+
+#### ✅ Yêu cầu mới
+- Avatar phải:
+  - Nằm **chính giữa tuyệt đối**
+  - Khoảng cách tới border tròn **đều 360°**
 - Ưu tiên:
-  - Whitespace hợp lý
-  - Phân cấp thị giác rõ ràng
-- Giao diện hướng tới:
-  - Dễ đọc
+  - Dùng flex/grid centering
+  - Tránh hard-code margin lệch
+
+👉 Mục tiêu: cảm giác **cân đối – cao cấp – chuẩn chỉnh**
+
+---
+
+### 3️⃣ Bổ sung Search & Sort cho container “Danh sách quyền truy cập”
+
+#### 📦 Khu vực áp dụng
+- Container: **Danh sách quyền truy cập**
+
+---
+
+#### 🔍 SearchBar
+- Thêm **SearchBar** phía trên danh sách
+- Chức năng:
+  - Tìm theo **tên user**
+- UX:
+  - Placeholder rõ ràng
+  - Không chiếm quá nhiều chiều cao
+
+---
+
+#### 🔃 Button Lọc / Sắp xếp
+- Thêm nút **Lọc / Sort**
+- Các chế độ sắp xếp bắt buộc:
+  1. **Tên A → Z**
+  2. **Ngày tham gia gần nhất**
+  3. **Ngày tham gia sớm nhất**
+
+- UX:
+  - Có icon gợi ý (↕, A–Z, clock…)
+  - Có trạng thái active rõ ràng
+
+---
+
+## 🎨 Yêu cầu UI/UX chung
+- Giữ phong cách:
+  - Clean
+  - Gọn
+  - Đồng bộ với UI hiện tại
+- Không làm layout bị chật hoặc rối
+- Các control mới phải:
+  - Dễ hiểu
   - Dễ thao tác
-  - Chuyên nghiệp
-
----
-
-## 📱 Responsive Mobile (BẮT BUỘC)
-
-### Yêu cầu
-- Thiết kế lại layout **mobile-first** cho `EditClassPage.tsx`
-- Mục tiêu:
-  - **Tiết kiệm width**
-  - Không bị tràn ngang
-  - Không cần zoom để thao tác
-
-### Gợi ý (không bắt buộc)
-- Table → chuyển sang:
-  - Card list
-  - Hoặc row dạng stack
-- Button:
-  - Icon-only hoặc icon + text ngắn
-- Các action:
-  - Gom vào menu (`⋮`) nếu cần
-
----
-
-## 🧹 Chỉnh sửa UI chi tiết
-
-### CLASS BAN label
-- Hiện tại:
-  - Có border
-  - Có background
-- Yêu cầu mới:
-  - ❌ Bỏ toàn bộ border
-  - ❌ Bỏ background
-  - ✅ Chỉ giữ:
-    - Icon
-    - Text
-- Style phải:
-  - Nhẹ
-  - Không gây nhiễu thị giác
-  - Phù hợp với tổng thể clean UI
+  - Phù hợp desktop & mobile
 
 ---
 
 ## ⚠️ Ràng buộc quan trọng
-- ❌ Không thay đổi logic frontend
-- ❌ Không làm mất chức năng
-- ❌ Không làm sai hành vi UI hiện tại
-- Chỉ refactor:
+- ❌ Không chỉnh sửa business logic
+- ❌ Không làm thay đổi dữ liệu backend
+- Chỉ tập trung:
+  - UI
+  - UX
+  - Interaction
   - Style
-  - Layout
-  - Responsive behavior
 
 ---
 
 ## ✅ Kết quả mong muốn
-- `EditClassPage.tsx`:
-  - Có style đồng bộ với `ProfilePage.tsx`
-  - Clean, gọn, dễ dùng
-  - Responsive tốt trên mobile
-- UI có thể merge trực tiếp vào codebase mà không cần chỉnh lại logic
+- ProfilePage:
+  - Không còn hover scaling gây nhiễu
+  - Avatar cân đối, chuẩn chỉnh
+  - Danh sách quyền truy cập:
+    - Có Search
+    - Có Sort rõ ràng
+    - Dễ quản lý khi danh sách dài
 
 ---
 
-**BẮT ĐẦU THỰC HIỆN TỪ VIỆC PHÂN TÍCH ProfilePage.tsx.**
+**BẮT ĐẦU TỪ VIỆC PHÂN TÍCH ProfilePage.tsx.**

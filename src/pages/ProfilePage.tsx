@@ -169,6 +169,11 @@ const ProfilePage: React.FC = () => {
     const [statsSelectedPreset, setStatsSelectedPreset] = useState<number | null | 'custom'>(null);
     const [showStatsFilter, setShowStatsFilter] = useState(false);
 
+    // Access List filter states
+    const [accessSearch, setAccessSearch] = useState('');
+    const [accessSortOrder, setAccessSortOrder] = useState<'a-z' | 'z-a' | 'newest' | 'oldest'>('a-z');
+    const [showAccessFilter, setShowAccessFilter] = useState(false);
+
     // Edit states
     const [editingName, setEditingName] = useState(false);
     const [editingEmail, setEditingEmail] = useState(false);
@@ -262,6 +267,9 @@ const ProfilePage: React.FC = () => {
             }
             if (showStatsFilter && !target.closest('.stats-filter-container')) {
                 setShowStatsFilter(false);
+            }
+            if (showAccessFilter && !target.closest('.access-filter-container')) {
+                setShowAccessFilter(false);
             }
         };
 
@@ -440,6 +448,31 @@ const ProfilePage: React.FC = () => {
 
     // --- End Stats Filter Logic ---
 
+    // --- Access List Filter Logic ---
+    const filteredAccessList = React.useMemo(() => {
+        if (!quizDetails?.accessList) return [];
+        let list = [...quizDetails.accessList];
+
+        // Search
+        if (accessSearch) {
+            const term = accessSearch.toLowerCase();
+            list = list.filter((a: any) => a.name.toLowerCase().includes(term));
+        }
+
+        // Sort
+        list.sort((a: any, b: any) => {
+            switch (accessSortOrder) {
+                case 'a-z': return a.name.localeCompare(b.name);
+                case 'z-a': return b.name.localeCompare(a.name);
+                case 'newest': return new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime();
+                case 'oldest': return new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime();
+                default: return 0;
+            }
+        });
+
+        return list;
+    }, [quizDetails, accessSearch, accessSortOrder]);
+
     const handleUpdateEmail = async () => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
             toast.error('Email không hợp lệ');
@@ -592,7 +625,7 @@ const ProfilePage: React.FC = () => {
                                         modal.classList.toggle('hidden');
                                     }
                                 }}
-                                className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-br from-blue-400 to-purple-500 dark:from-gray-500 dark:to-gray-700 shadow-2xl overflow-hidden group-hover/avatar:scale-105 transition-transform duration-500 cursor-pointer"
+                                className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-gradient-to-br from-blue-400 to-purple-500 dark:from-gray-500 dark:to-gray-700 shadow-2xl overflow-hidden transition-transform duration-500 cursor-pointer flex items-center justify-center"
                             >
                                 <div className="relative block w-full h-full rounded-full overflow-hidden">
                                     <img
@@ -716,7 +749,7 @@ const ProfilePage: React.FC = () => {
                                 {profile.lastLoginAt && (
                                     <span className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-md rounded-full text-[10px] sm:text-xs text-green-100 font-medium border border-green-500/20 transition-colors shadow-lg flex items-center gap-2 cursor-default">
                                         <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
-                                        Hoạt động: {profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString('en-GB') : 'Vừa xong'}
+                                        Đăng nhập: {profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString('en-GB') : 'Vừa xong'}
                                     </span>
                                 )}
                             </div>
@@ -1913,11 +1946,90 @@ const ProfilePage: React.FC = () => {
                                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
                                         <div className="p-6 relative">
                                             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
-                                            <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
-                                                <FaUsers className="text-blue-500" /> Danh sách quyền truy cập
-                                                <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">{quizDetails.accessList?.length || 0}</span>
-                                            </h3>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Những người dùng được cấp quyền truy cập riêng tư</p>
+                                            <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4">
+                                                <div>
+                                                    <h3 className="text-lg font-bold dark:text-white flex items-center gap-2">
+                                                        <FaUsers className="text-blue-500" /> Danh sách quyền truy cập
+                                                        <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">{filteredAccessList.length}</span>
+                                                    </h3>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Những người dùng được cấp quyền truy cập riêng tư</p>
+                                                </div>
+
+                                                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                                                    {/* Access Search Bar */}
+                                                    <div className="relative flex-1 sm:w-56">
+                                                        <input
+                                                            type="text"
+                                                            value={accessSearch}
+                                                            onChange={(e) => setAccessSearch(e.target.value)}
+                                                            placeholder="Tìm kiếm người dùng..."
+                                                            className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 border-0 focus:outline-none focus:ring-0 transition-shadow shadow-sm hover:shadow-md text-sm"
+                                                        />
+                                                        <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                        </svg>
+                                                        {accessSearch && (
+                                                            <button
+                                                                onClick={() => setAccessSearch('')}
+                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                                            >
+                                                                <FaTimes className="text-xs" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Access Filter Button */}
+                                                    <div className="relative access-filter-container">
+                                                        <button
+                                                            onClick={() => setShowAccessFilter(!showAccessFilter)}
+                                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100/50 dark:bg-gray-700/50 transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+                                                        >
+                                                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h14M3 10h10M3 15h10M17 10v10m0 0l-3-3m3 3l3-3" />
+                                                            </svg>
+                                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                                Lọc & Sắp xếp
+                                                            </span>
+                                                            <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-300 ${showAccessFilter ? 'rotate-180 text-blue-500' : ''}`} />
+                                                        </button>
+
+                                                        {/* Access Filter Dropdown */}
+                                                        {showAccessFilter && (
+                                                            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-4 z-50 animate-slideUp text-left">
+                                                                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+                                                                    Sắp xếp theo
+                                                                </h3>
+                                                                <div className="space-y-1">
+                                                                    {[
+                                                                        { id: 'a-z', label: 'Tên (A → Z)' },
+                                                                        { id: 'z-a', label: 'Tên (Z → A)' },
+                                                                        { id: 'newest', label: 'Mới nhất' },
+                                                                        { id: 'oldest', label: 'Cũ nhất' }
+                                                                    ].map((opt) => (
+                                                                        <button
+                                                                            key={opt.id}
+                                                                            onClick={() => {
+                                                                                setAccessSortOrder(opt.id as any);
+                                                                                setShowAccessFilter(false);
+                                                                            }}
+                                                                            className={`
+                                                                                w-full text-left px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between
+                                                                                ${accessSortOrder === opt.id
+                                                                                    ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
+                                                                                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'
+                                                                                }
+                                                                            `}
+                                                                        >
+                                                                            {opt.label}
+                                                                            {accessSortOrder === opt.id && <FaCheck className="text-xs" />}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         {/* Desktop Table View */}
                                         <div className="hidden md:block overflow-x-auto max-h-[400px] overflow-y-auto custom-scrollbar">
@@ -1932,8 +2044,8 @@ const ProfilePage: React.FC = () => {
                                                     <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                                 </thead>
                                                 <tbody>
-                                                    {quizDetails.accessList && quizDetails.accessList.length > 0 ? (
-                                                        quizDetails.accessList.map((a: any) => (
+                                                    {filteredAccessList.length > 0 ? (
+                                                        filteredAccessList.map((a: any) => (
                                                             <tr key={a.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors relative gradient-row-divider">
                                                                 <td className="py-4 px-6 align-middle">
                                                                     <div className="flex items-center gap-3">
@@ -1983,8 +2095,8 @@ const ProfilePage: React.FC = () => {
 
                                         {/* Mobile Card View */}
                                         <div className="md:hidden p-4 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
-                                            {quizDetails.accessList && quizDetails.accessList.length > 0 ? (
-                                                quizDetails.accessList.map((a: any) => (
+                                            {filteredAccessList.length > 0 ? (
+                                                filteredAccessList.map((a: any) => (
                                                     <div key={a.id} className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 space-y-3 relative gradient-row-divider">
                                                         <div className="flex items-center gap-3">
                                                             <a
