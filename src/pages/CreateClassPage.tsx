@@ -56,7 +56,8 @@ const CreateClassPage: React.FC = () => {
       try {
         const { ClassesAPI } = await import("../utils/api");
         const mine = await ClassesAPI.listMine(token);
-        setExistingClasses(mine);
+        // Only show classes owned by the user, not shared ones
+        setExistingClasses(mine.filter((c: any) => c.accessType === 'owner'));
       } catch (e) {
         // console.error("Failed to load classes:", e);
       }

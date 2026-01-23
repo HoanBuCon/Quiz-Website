@@ -206,7 +206,8 @@ const DocumentsPage: React.FC = () => {
 
       // Load classes and quizzes stats
       const mine = await ClassesAPI.listMine(token);
-      setExistingClasses(mine);
+      // Only show classes owned by the user, not shared ones
+      setExistingClasses(mine.filter((c: any) => c.accessType === 'owner'));
       setTotalClasses(mine.length);
 
       let quizCount = 0;

@@ -618,26 +618,20 @@ router.post('/claim', authRequired, async (req, res) => {
       return res.status(403).json({ message: 'Bạn đã bị chặn truy cập vào liên kết này' });
     }
   } else if (classId) {
-    const cls = await queryOne('SELECT id FROM Class WHERE id = ?', [classId]);
-    if (!cls) return res.status(404).json({ message: 'Class not found' });
-    
-    const exists = await queryOne(
-      'SELECT id, isEnabled FROM ShareItem WHERE targetType = ? AND targetId = ?',
-      ['class', classId]
-    );
-    if (!exists || !intToBool(exists.isEnabled)) return res.status(403).json({ message: 'Lớp học chưa được chia sẻ hoặc đã bị đóng' });
+    // ID-ONLY CLAIM -> Only allowed if PUBLIC
+    const isPublic = await queryOne('SELECT id FROM PublicItem WHERE targetType = ? AND targetId = ?', ['class', classId]);
+    if (!isPublic) {
+      return res.status(403).json({ message: 'Mã truy cập là bắt buộc để tham gia lớp học này' });
+    }
     
     targetType = 'class';
     targetId = classId;
   } else if (quizId) {
-    const qz = await queryOne('SELECT id FROM Quiz WHERE id = ?', [quizId]);
-    if (!qz) return res.status(404).json({ message: 'Quiz not found' });
-    
-    const exists = await queryOne(
-      'SELECT id, isEnabled FROM ShareItem WHERE targetType = ? AND targetId = ?',
-      ['quiz', quizId]
-    );
-    if (!exists || !intToBool(exists.isEnabled)) return res.status(403).json({ message: 'Quiz chưa được chia sẻ hoặc đã bị đóng' });
+    // ID-ONLY CLAIM -> Only allowed if PUBLIC
+    const isPublic = await queryOne('SELECT id FROM PublicItem WHERE targetType = ? AND targetId = ?', ['quiz', quizId]);
+    if (!isPublic) {
+      return res.status(403).json({ message: 'Mã truy cập là bắt buộc để tham gia Quiz này' });
+    }
     
     targetType = 'quiz';
     targetId = quizId;
