@@ -1641,7 +1641,7 @@ const ProfilePage: React.FC = () => {
                                     </div>
 
                                     {/* Results Table */}
-                                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
                                         <div className="p-6 relative flex justify-between items-center">
                                             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                             <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4">
@@ -1652,7 +1652,7 @@ const ProfilePage: React.FC = () => {
 
                                                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                                                     {/* Search Bar */}
-                                                    <div className="relative flex-1 sm:w-64">
+                                                    <div className="relative flex-1 sm:w-56">
                                                         <input
                                                             type="text"
                                                             value={statsSearch}
@@ -1943,7 +1943,7 @@ const ProfilePage: React.FC = () => {
                                     </div>
 
                                     {/* Access List */}
-                                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
                                         <div className="p-6 relative">
                                             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent"></div>
                                             <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-4">
