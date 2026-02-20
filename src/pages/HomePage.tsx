@@ -248,6 +248,7 @@ const HomePage: React.FC = () => {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Section - Main Content */}
+          {/* Vấn đề nằm ở Left-Section */}
           <div className="lg:w-[70%] order-2 lg:order-1">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 border-b border-gray-200 dark:border-gray-800 pb-4">
               <div>
@@ -757,6 +758,7 @@ const HomePage: React.FC = () => {
 
                       {/* Danh sách quiz trong lớp */}
                       {classRoom.quizzes && classRoom.quizzes.length > 0 && (
+                        // Vấn đề gây lỗi Footer thực sự: Animation span
                         <div className={`grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out ${expandedClasses[classRoom.id] ? "grid-rows-[1fr] opacity-100" : ""}`}>
                           {/* OLD HOVER LOGIC: sm:group-hover:grid-rows-[1fr] sm:group-hover:opacity-100 */}
                           <div className="overflow-hidden">
