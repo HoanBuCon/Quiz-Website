@@ -39,21 +39,23 @@ const fileFilter = (req, file, cb) => {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
     'application/msword', // .doc
     'text/plain', // .txt
-    'application/json' // .json
+    'application/json', // .json
+    'application/pdf', // .pdf
+    'binary/octet-stream', // fallback for some PDF uploads
   ];
   
   if (allowedTypes.includes(file.mimetype) || 
-      file.originalname.match(/\.(doc|docx|txt|json)$/i)) {
+      file.originalname.match(/\.(doc|docx|txt|json|pdf)$/i)) {
     cb(null, true);
   } else {
-    cb(new Error('Chỉ chấp nhận file .doc, .docx, .txt, .json'));
+    cb(new Error('Chỉ chấp nhận file .doc, .docx, .txt, .json, .pdf'));
   }
 };
 
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit (for PDF)
 });
 
 // Upload document
@@ -86,6 +88,7 @@ router.post('/upload', authRequired, upload.single('file'), async (req, res) => 
     let fileType = 'txt';
     if (ext === '.doc' || ext === '.docx') fileType = 'docs';
     else if (ext === '.json') fileType = 'json';
+    else if (ext === '.pdf') fileType = 'pdf';
     
     // Store in database with file path
     await query(

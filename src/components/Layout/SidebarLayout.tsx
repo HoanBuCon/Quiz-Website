@@ -44,7 +44,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children, noPadding = fal
                     <main className="flex-1 pt-16">
                         {children}
                     </main>
-                    <Footer />
+                    {/* <Footer /> */}
                 </div>
             ) : (
                 /* Desktop Layout */

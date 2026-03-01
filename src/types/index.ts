@@ -73,7 +73,7 @@ export interface QuizSession {
 export interface UploadedFile {
   id: string;
   name: string;
-  type: "docs" | "json" | "txt";
+  type: "docs" | "json" | "txt" | "pdf";
   size: number;
   uploadedAt: Date;
   content?: string;
