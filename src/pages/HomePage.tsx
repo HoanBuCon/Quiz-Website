@@ -28,7 +28,67 @@ const HomePage: React.FC = () => {
   const filterRefDesktop = useRef<HTMLDivElement>(null);
   const filterRefMobile = useRef<HTMLDivElement>(null);
   const bannerVideoRef = useRef<HTMLVideoElement>(null);
+  const bannerContainerRef = useRef<HTMLDivElement>(null);
   const [isBannerExpanded, setIsBannerExpanded] = useState(false);
+  const isInitialMount = useRef(true);
+
+  // Xử lý animation cho banner (trượt mượt mà thay vì giật)
+  useEffect(() => {
+    // Không chạy ở lần render đầu tiên
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const el = bannerContainerRef.current;
+    if (!el) return;
+
+    if (isBannerExpanded) {
+      // 1. Đo height tự nhiên hiện tại
+      const currentHeight = el.offsetHeight;
+
+      // 2. Ép height thành px cố định 
+      el.style.height = `${currentHeight}px`;
+
+      // 3. Force reflow để trình duyệt ghi nhận height bắt đầu
+      void el.offsetHeight;
+
+      // 4. Kích hoạt thuộc tính thay đổi height
+      el.style.height = `${window.innerHeight}px`;
+
+      // 5. Khi animation kết thúc (700ms), chuyển sang 100vh để response theo màn hình
+      const timer = setTimeout(() => {
+        if (bannerContainerRef.current) bannerContainerRef.current.style.height = '100vh';
+      }, 700);
+      return () => clearTimeout(timer);
+
+    } else {
+      // Đang thu nhỏ
+      // 1. Lấy height hiện tại tính bằng px
+      const currentHeight = el.offsetHeight;
+
+      // 2. Chuyển tạm về auto, tắt transition để lấy height gốc
+      el.style.transition = 'none';
+      el.style.height = 'auto';
+      const targetHeight = el.offsetHeight;
+
+      // 3. Set lại state xuất phát (height cũ)
+      el.style.height = `${currentHeight}px`;
+
+      // 4. Force reflow
+      void el.offsetHeight;
+
+      // 5. Bật lại transition và chạy xuống height tự nhiên
+      el.style.transition = '';
+      el.style.height = `${targetHeight}px`;
+
+      // 6. Hoàn thành thì đổi về auto
+      const timer = setTimeout(() => {
+        if (bannerContainerRef.current) bannerContainerRef.current.style.height = 'auto';
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [isBannerExpanded]);
 
   // State bật/tắt video nền Banner — mặc định bật, lưu localStorage
   const [isBannerVideoOn, setIsBannerVideoOn] = useState<boolean>(() => {
@@ -205,8 +265,8 @@ const HomePage: React.FC = () => {
     <div className="animate-fadeIn">
       {/* Hero Section */}
       <div
-        className={`mb-8 lg:mb-12 w-full relative overflow-hidden flex flex-col justify-center group bg-gradient-to-bl from-blue-600 via-blue-700 to-blue-900 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideDownIn transition-[height,min-height] duration-700 ease-in-out ${isBannerExpanded ? 'min-h-[100vh]' : 'min-h-[auto]'
-          }`}
+        ref={bannerContainerRef}
+        className="mb-8 lg:mb-12 w-full relative overflow-hidden flex flex-col justify-center group bg-gradient-to-bl from-blue-600 via-blue-700 to-blue-900 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideDownIn transition-[height] duration-700 ease-in-out"
       >
         {/* Video nền Banner */}
         <video
