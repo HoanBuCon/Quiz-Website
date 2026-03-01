@@ -1144,9 +1144,11 @@ const DocumentsPage: React.FC = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleCreateClass(doc);
+                              if (doc.type !== 'pdf') handleCreateClass(doc);
                             }}
-                            className="btn-primary text-sm flex items-center flex-1 sm:flex-initial justify-center"
+                            disabled={doc.type === 'pdf'}
+                            title={doc.type === 'pdf' ? 'Không hỗ trợ tạo Quiz từ file PDF' : 'Tạo Quiz từ tài liệu này'}
+                            className={`btn-primary text-sm flex items-center flex-1 sm:flex-initial justify-center ${doc.type === 'pdf' ? 'opacity-40 cursor-not-allowed' : ''}`}
                           >
                             <svg
                               className="w-4 h-4 mr-1"
