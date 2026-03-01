@@ -6,6 +6,8 @@ interface MusicContextType {
   toggleMusicPlayer: () => void;
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
+  isBannerVideoPlaying: boolean;
+  setIsBannerVideoPlaying: (playing: boolean) => void;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -17,6 +19,7 @@ interface MusicProviderProps {
 export const MusicProvider: React.FC<MusicProviderProps> = ({ children }) => {
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBannerVideoPlaying, setIsBannerVideoPlaying] = useState(false);
 
   const toggleMusicPlayer = () => {
     setShowMusicPlayer(prev => !prev);
@@ -28,7 +31,9 @@ export const MusicProvider: React.FC<MusicProviderProps> = ({ children }) => {
       setShowMusicPlayer,
       toggleMusicPlayer,
       isPlaying,
-      setIsPlaying
+      setIsPlaying,
+      isBannerVideoPlaying,
+      setIsBannerVideoPlaying
     }}>
       {children}
     </MusicContext.Provider>

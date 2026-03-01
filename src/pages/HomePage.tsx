@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { ClassRoom, Quiz } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import { useMusic } from "../context/MusicContext";
 import { formatDate } from "../utils/fileUtils";
 import ContributionGraph from "../components/ContributionGraph";
 import publicIcon from "../assets/public_icon.gif";
+import { MAINTENANCE_VIDEO_URL } from "../utils/maintenanceConfig";
 
 // Component trang chủ
 const HomePage: React.FC = () => {
@@ -18,12 +20,25 @@ const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { isDarkMode } = useTheme();
+  const { setIsBannerVideoPlaying } = useMusic();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [expandedClasses, setExpandedClasses] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<'name-asc' | 'name-desc' | 'date-asc' | 'date-desc'>('date-desc');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const filterRefDesktop = useRef<HTMLDivElement>(null);
   const filterRefMobile = useRef<HTMLDivElement>(null);
+  const bannerVideoRef = useRef<HTMLVideoElement>(null);
+  const [isBannerExpanded, setIsBannerExpanded] = useState(false);
+
+  // State bật/tắt video nền Banner — mặc định bật, lưu localStorage
+  const [isBannerVideoOn, setIsBannerVideoOn] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('bannerVideoEnabled');
+      return saved === null ? true : saved === 'true';
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -150,10 +165,83 @@ const HomePage: React.FC = () => {
     };
   }, []);
 
+  // Điều khiển video banner theo state
+  useEffect(() => {
+    const video = bannerVideoRef.current;
+    if (!video) return;
+
+    // Set âm lượng mặc định 10% cho video banner
+    video.volume = 0.1;
+
+    if (isBannerVideoOn) {
+      // Khôi phục thời gian video nếu có từ MaintenancePage
+      const savedTime = sessionStorage.getItem('bannerVideoTime');
+      if (savedTime) {
+        video.currentTime = parseFloat(savedTime);
+        sessionStorage.removeItem('bannerVideoTime'); // Xóa sau khi đã lấy để không ảnh hưởng lần sau
+      }
+
+      video.play().catch(() => { });
+    } else {
+      video.pause();
+    }
+
+    // Đồng bộ state sang MusicContext
+    setIsBannerVideoPlaying(isBannerVideoOn);
+
+    try {
+      localStorage.setItem('bannerVideoEnabled', String(isBannerVideoOn));
+    } catch { }
+  }, [isBannerVideoOn, setIsBannerVideoPlaying]);
+
+  // Reset khi unmount
+  useEffect(() => {
+    return () => {
+      setIsBannerVideoPlaying(false);
+    };
+  }, [setIsBannerVideoPlaying]);
+
   return (
     <div className="animate-fadeIn">
       {/* Hero Section */}
-      <div className="mb-8 lg:mb-12 w-full relative overflow-hidden group bg-gradient-to-bl from-blue-600 via-blue-700 to-blue-900 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideDownIn">
+      <div
+        className={`mb-8 lg:mb-12 w-full relative overflow-hidden flex flex-col justify-center group bg-gradient-to-bl from-blue-600 via-blue-700 to-blue-900 dark:from-slate-800 dark:via-slate-900 dark:to-slate-950 shadow-2xl animate-slideDownIn transition-[height,min-height] duration-700 ease-in-out ${isBannerExpanded ? 'min-h-[100vh]' : 'min-h-[auto]'
+          }`}
+      >
+        {/* Video nền Banner */}
+        <video
+          ref={bannerVideoRef}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${isBannerVideoOn ? 'opacity-30' : 'opacity-0'}`}
+          loop
+          playsInline
+          preload="auto"
+          autoPlay
+        >
+          <source src={MAINTENANCE_VIDEO_URL} type="video/mp4" />
+        </video>
+
+        {/* Nút toggle video nền */}
+        <button
+          onClick={() => setIsBannerVideoOn(prev => !prev)}
+          title={isBannerVideoOn ? 'Tắt video nền' : 'Bật video nền'}
+          className="absolute top-3 right-3 z-20 flex items-center justify-center gap-1.5 min-w-0 min-h-0 w-6 h-6 md:w-auto md:h-auto md:px-2.5 md:py-1.5 rounded-md md:rounded-lg text-xs font-mono font-semibold backdrop-blur-sm transition-all duration-200 select-none opacity-50 hover:opacity-100 bg-black/30 hover:bg-black/50 text-white/80 hover:text-white border border-white/10 hover:border-white/30"
+        >
+          {isBannerVideoOn ? (
+            <>
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553.106A1 1 0 0014 7v6a1 1 0 00.553.894l2 1A1 1 0 0018 14V6a1 1 0 00-1.447-.894l-2 1z" />
+              </svg>
+            </>
+          ) : (
+            <>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" />
+              </svg>
+            </>
+          )}
+        </button>
+
         {/* Decorative elements */}
         {/* <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div> */}
         {/* <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div> */}
@@ -172,7 +260,7 @@ const HomePage: React.FC = () => {
               rounded-2xl pointer-events-none
             "
         ></div>
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10 lg:flex lg:items-start lg:gap-6 lg:justify-between">
+        <div className="max-w-screen-2xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10 lg:flex lg:items-start lg:gap-6 lg:justify-between">
           <div className="text-center lg:text-left lg:max-w-xs flex-shrink-0">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-mono font-medium text-white mb-4 tracking-tight">
               <div className="relative inline-block logo-main-wrapper">
@@ -221,7 +309,7 @@ const HomePage: React.FC = () => {
           {/* Contribution Graph - Only show if logged in */}
           {isLoggedIn && (
             <div className="mt-8 lg:mt-0 flex-1 min-w-0 flex justify-center lg:justify-end">
-              <div className="dark:bg-slate-950/5 dark:backdrop-blur-xl rounded-2xl p-6 w-fit max-w-full overflow-hidden">
+              <div className="dark:bg-slate-950/5 dark:backdrop-blur-xl rounded-2xl p-6 w-fit max-w-full overflow-x-auto overflow-y-hidden">
                 <h3 className="text-xs font-bold text-blue-100/80 dark:text-blue-200 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <svg
                     className="w-4 h-4"
@@ -243,6 +331,17 @@ const HomePage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Nút span "v" mở rộng banner */}
+        <button
+          onClick={() => setIsBannerExpanded(prev => !prev)}
+          title={isBannerExpanded ? 'Thu nhỏ' : 'Mở rộng toàn màn hình'}
+          className="absolute bottom-3 right-3 z-20 flex items-center justify-center gap-1.5 min-w-0 min-h-0 w-6 h-6 md:w-auto md:h-auto md:px-2.5 md:py-1.5 rounded-md md:rounded-lg text-xs font-mono font-semibold backdrop-blur-sm transition-all duration-200 select-none opacity-50 hover:opacity-100 bg-black/30 hover:bg-black/50 text-white/80 hover:text-white border border-white/10 hover:border-white/30"
+        >
+          <svg className={`w-4 h-4 transition-transform duration-700 ${isBannerExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
       </div>
 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12">

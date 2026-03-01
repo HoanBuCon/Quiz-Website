@@ -94,8 +94,48 @@ const BackgroundMusic = () => {
   const hasUserInteracted = useRef(false);
 
   const { isDarkMode } = useTheme();
-  const { showMusicPlayer, setShowMusicPlayer, setIsPlaying: setCtxIsPlaying } = useMusic();
+  const { showMusicPlayer, setShowMusicPlayer, setIsPlaying: setCtxIsPlaying, isBannerVideoPlaying } = useMusic();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // Sync isBannerVideoPlaying sang ref để listener luôn lấy giá trị mới nhất
+  const isBannerVideoPlayingRef = useRef(isBannerVideoPlaying);
+  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    isBannerVideoPlayingRef.current = isBannerVideoPlaying;
+
+    // Nếu vừa đổi trang về Home (video banner ĐANG CHẠY) và nhạc đang bật
+    // -> Tạm dừng nhạc mượt mà (Fade Out), ưu tiên video.
+    // Nếu user bấm bật lại nhạc bằng tay, do không phụ thuộc 'isPlaying' nên sẽ không tự động tắt nữa.
+    if (isBannerVideoPlaying && audioRef.current && !audioRef.current.paused) {
+      const audioEl = audioRef.current;
+      const initialVolume = audioEl.volume;
+      const fadeDuration = 1000; // 1 giây fade out
+      const stepTime = 50; // mỗi 50ms giảm 1 lần
+      const steps = fadeDuration / stepTime;
+      const volumeStep = initialVolume / steps;
+
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+
+      fadeIntervalRef.current = setInterval(() => {
+        if (audioEl.volume > volumeStep) {
+          audioEl.volume -= volumeStep;
+        } else {
+          // Khi volume giảm gần hết -> tắt nhạc
+          if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+          audioEl.pause();
+          audioEl.volume = initialVolume; // Khôi phục lại âm lượng gốc để bật lại sau
+          setIsPlaying(false);
+          setIsStopped(true);
+        }
+      }, stepTime);
+    }
+
+    return () => {
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBannerVideoPlaying]);
 
   // Helper: lấy volume đã lưu (0-100), mặc định 50
   const getSavedVolumePercent = () => {
@@ -190,6 +230,9 @@ const BackgroundMusic = () => {
   // Effect để lắng nghe tương tác đầu tiên của user (KHÔNG bao gồm click vào Music button)
   useEffect(() => {
     const handleFirstInteraction = (e: Event) => {
+      // Nếu trạng thái đang phát video banner thì không nhận tương tác ở đây
+      if (isBannerVideoPlayingRef.current) return;
+
       // Nếu click vào Music button hoặc player box, không xử lý ở đây
       const target = e.target as Node | null;
       if ((target && musicButtonRef.current?.contains(target)) ||

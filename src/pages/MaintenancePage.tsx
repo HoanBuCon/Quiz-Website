@@ -281,6 +281,11 @@ const MaintenancePage: React.FC = () => {
     // Kích hoạt animation biến mất
     setIsExiting(true);
 
+    // Lưu thời gian hiện tại của video để HomePage phát tiếp diễn
+    if (videoRef.current) {
+      sessionStorage.setItem('bannerVideoTime', String(videoRef.current.currentTime));
+    }
+
     enterWebsite();
 
     // Đợi 0.8s cho animation chạy xong rồi mới navigate
