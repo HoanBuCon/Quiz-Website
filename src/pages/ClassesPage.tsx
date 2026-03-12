@@ -3472,7 +3472,7 @@ const ClassesPage: React.FC = () => {
                             }`}
                         >
                           <span className="font-medium flex-1 text-left">
-                            {importType === "auto" && "Tự động (dựa theo link)"}
+                            {importType === "auto" && "Tự động"}
                             {importType === "class" && "Lớp học"}
                             {importType === "quiz" && "Quiz"}
                           </span>
@@ -3496,9 +3496,9 @@ const ClassesPage: React.FC = () => {
                           <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
                             <div className="p-1 space-y-1">
                               {[
-                                { value: "auto", label: "Tự động (dựa theo link)", desc: "Tự động nhận diện link lớp hoặc quiz" },
-                                { value: "class", label: "Lớp học", desc: "Nhập mã hoặc link lớp học" },
-                                { value: "quiz", label: "Quiz", desc: "Nhập mã hoặc link bài quiz" }
+                                { value: "auto", label: "Tự động", desc: "Tự động nhận diện ID/link lớp hoặc quiz" },
+                                { value: "class", label: "Lớp học", desc: "Nhập ID hoặc link lớp học" },
+                                { value: "quiz", label: "Quiz", desc: "Nhập ID hoặc link bài quiz" }
                               ].map((option) => (
                                 <button
                                   key={option.value}
