@@ -147,24 +147,14 @@ export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated
               <SpinnerLoading />
             </div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-3.5 h-3.5 rounded-full bg-primary-500 animate-blink"></div>
-              <span className="text-xl font-bold text-gray-700 dark:text-gray-200">Đang xử lý...</span>
+              <div className="w-2 h-2 rounded-full bg-purple-500 animate-ping"></div>
+              <span className="text-xl font-mono font-bold text-gray-700 dark:text-gray-200">Đang xử lý...</span>
             </div>
-
-            <style>{`
-              @keyframes blink {
-                0%, 100% { opacity: 1; transform: scale(1); }
-                50% { opacity: 0.3; transform: scale(0.85); }
-              }
-              .animate-blink {
-                animation: blink 1.0s infinite ease-in-out;
-              }
-            `}</style>
             <button
               onClick={handleCancel}
               className="mt-6 px-6 py-2 rounded-full bg-gray-100/50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 hover:bg-gray-200/80 dark:hover:bg-gray-600/80 transition-colors text-sm font-medium"
             >
-              Hủy quá trình
+              Hủy
             </button>
           </div>
         )}
@@ -187,8 +177,8 @@ export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated
           <div className="space-y-6">
             {/* File Upload Region */}
             <div
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-                ${files.length > 0 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500'}`}
+              className={`group border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+                ${files.length > 0 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10' : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500 active:border-primary-500 dark:active:border-primary-400'}`}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
@@ -201,7 +191,7 @@ export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated
                 accept=".txt,.pdf,.docx"
                 onChange={handleFileChange}
               />
-              <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className={`mx-auto h-12 w-12 mb-3 transition-colors ${files.length > 0 ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 group-hover:text-primary-500 dark:group-hover:text-primary-400 group-active:text-primary-600 dark:group-active:text-primary-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               {files.length > 0 ? (

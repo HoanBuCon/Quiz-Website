@@ -871,7 +871,7 @@ const DocumentsPage: React.FC = () => {
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
                   <svg
-                    className="w-6 h-6 text-primary-600 dark:text-primary-400"
+                    className="w-6 h-6 text-blue-600 dark:text-blue-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -901,7 +901,7 @@ const DocumentsPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
                     <svg
-                      className="w-8 h-8 text-gray-400"
+                      className="w-8 h-8 text-blue-600 dark:text-blue-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -923,7 +923,7 @@ const DocumentsPage: React.FC = () => {
                       Hỗ trợ File .txt, .json, .doc, .docx, .pdf
                     </p>
 
-                    <label className="btn-primary cursor-pointer inline-flex items-center gap-2">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-colors duration-200">
                       <svg
                         className="w-5 h-5"
                         fill="none"
