@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import SpinnerLoading from './SpinnerLoading';
 import { getToken } from '../utils/auth'; // Ensure token is passed
+import { getApiBaseUrl } from '../utils/api';
 
 interface AIGeneratorModalProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated
       formData.append('config', JSON.stringify(config));
 
       const token = getToken();
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+      const API_URL = getApiBaseUrl();
 
       const response = await fetch(`${API_URL}/ai/generate`, {
         method: 'POST',
