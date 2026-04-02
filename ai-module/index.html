@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Quiz Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.7.2/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.3.136/build/pdf.min.mjs" type="module"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --font-sans: 'Inter', sans-serif;
+        
+        /* Dark Theme */
+        --c-bg-base-100: #111827; /* Main Background */
+        --c-bg-base-200: #1f2937; /* Card, Modal Background */
+        --c-bg-base-300: #374151; /* Hover, Input, Subtle Borders */
+        --c-bg-base-300-hover: #4b5563;
+
+        --c-text-main: #f9fafb;
+        --c-text-subtle: #9ca3af;
+        --c-text-inverted: #111827;
+
+        --c-brand-primary: #3b82f6;
+        --c-brand-primary-hover: #2563eb;
+        --c-brand-secondary: #60a5fa;
+        --c-brand-secondary-hover: #3b82f6;
+        
+        --c-border-color: #374151;
+        
+        --c-error-text: #fca5a5;
+        --c-error-bg: rgba(220, 38, 38, 0.2);
+        --c-error-border: #ef4444;
+
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.15);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+      }
+      html.light {
+        --c-bg-base-100: #f9fafb;
+        --c-bg-base-200: #ffffff;
+        --c-bg-base-300: #f3f4f6;
+        --c-bg-base-300-hover: #e5e7eb;
+
+        --c-text-main: #111827;
+        --c-text-subtle: #6b7280;
+        --c-text-inverted: #ffffff;
+        
+        --c-brand-primary: #2563eb;
+        --c-brand-primary-hover: #1d4ed8;
+        --c-brand-secondary: #3b82f6;
+        --c-brand-secondary-hover: #2563eb;
+
+        --c-border-color: #e5e7eb;
+
+        --c-error-text: #b91c1c;
+        --c-error-bg: #fee2e2;
+        --c-error-border: #fca5a5;
+        
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      }
+
+      * {
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+      }
+
+       body {
+        font-family: var(--font-sans);
+        background-color: var(--c-bg-base-100);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+       }
+
+       .main-bg-gradient {
+          background-image: radial-gradient(circle at 1px 1px, var(--c-border-color) 1px, transparent 0);
+          background-size: 2rem 2rem;
+       }
+
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: var(--c-bg-base-300);
+        border-radius: 3px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: var(--c-bg-base-300-hover);
+      }
+      .form-checkbox {
+        color: var(--c-brand-primary);
+      }
+
+       /* --- Animated Theme Toggle Styles --- */
+      .theme-toggle-container {
+        position: relative;
+        width: 64px;
+        height: 32px;
+        overflow: hidden;
+        border-radius: 16px;
+        background: #273462;
+        transition: background 0.5s ease-in-out;
+        cursor: pointer;
+        border: 1px solid var(--c-border-color);
+      }
+      html.light .theme-toggle-container {
+        background: #87CEEB;
+      }
+      .theme-toggle-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background-color: #fde047; /* Sun color */
+        transition: transform 0.4s ease-in-out;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        transform-style: preserve-3d;
+      }
+      html.dark .theme-toggle-thumb {
+        background-color: #f1f5f9; /* Moon color */
+        transform: translateX(32px);
+      }
+      .theme-icon {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        top: 50%;
+        left: 50%;
+        transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+      }
+      .sun-icon {
+        color: #f59e0b;
+      }
+      .moon-icon {
+        color: #e2e8f0;
+      }
+      html.light .sun-icon {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      }
+      html.light .moon-icon {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5) rotate(-90deg);
+      }
+      html.dark .sun-icon {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5) rotate(90deg);
+      }
+      html.dark .moon-icon {
+        color: #273462; /* Dark blue to contrast with the light thumb */
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      }
+      .stars {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.5s 0.2s ease-in-out, transform 0.5s 0.2s ease-in-out;
+      }
+      html.dark .stars {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .star {
+        position: absolute;
+        background-color: white;
+        border-radius: 50%;
+        animation: twinkle 3s infinite ease-in-out;
+      }
+      @keyframes twinkle {
+        0%, 100% { opacity: 0.4; transform: scale(0.8); }
+        50% { opacity: 1; transform: scale(1); }
+      }
+      /* --- Title Animated Gradient --- */
+      @keyframes title-gradient-animation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      .title-animated-gradient {
+        /* Re-using existing gradient but making it bigger and animating it */
+        background-size: 200% auto;
+        animation: title-gradient-animation 4s ease infinite;
+      }
+
+      /* --- Button Shine Effect --- */
+      .btn-shine {
+        position: relative;
+        overflow: hidden;
+      }
+      .btn-shine::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -85%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0) 100%);
+        transform: skewX(-25deg);
+        transition: left 0.8s ease-in-out;
+      }
+      .btn-shine:hover::before {
+        left: 125%;
+      }
+
+      /* --- Loading Q Animation --- */
+      .loading-q-animation-container {
+        position: relative;
+        width: 32px; /* w-8 */
+        height: 32px; /* h-8 */
+      }
+      .sparkles-wrapper, .q-wrapper {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation-duration: 4s;
+        animation-iteration-count: infinite;
+        animation-timing-function: ease-in-out;
+      }
+      .sparkles-wrapper {
+        animation-name: sparkle-cycle;
+      }
+      .q-wrapper {
+        animation-name: q-cycle;
+      }
+      .q-svg {
+        width: 100%;
+        height: 100%;
+        color: var(--c-brand-primary);
+      }
+      .q-circle-path {
+        stroke-dasharray: 101;
+        stroke-dashoffset: 101; /* Initial value */
+        animation: draw-circle-path 4s infinite ease-in-out;
+      }
+      .q-tick-path {
+        stroke-dasharray: 15;
+        stroke-dashoffset: 15; /* Initial value */
+        animation: draw-tick-path 4s infinite ease-in-out;
+      }
+      @keyframes sparkle-cycle {
+        0%, 45% { /* Stay visible */
+          opacity: 1;
+          transform: scale(1) rotate(0deg);
+        }
+        55% { /* Fade out while rotating and shrinking */
+          opacity: 0;
+          transform: scale(0.5) rotate(180deg);
+        }
+        55.01%, 95% { /* Stay hidden */
+          opacity: 0;
+          transform: scale(0.5) rotate(180deg);
+        }
+        100% { /* Fade back in, completing the rotation */
+          opacity: 1;
+          transform: scale(1) rotate(360deg);
+        }
+      }
+      @keyframes q-cycle {
+        0%, 45% { /* Start hidden, rotated */
+          opacity: 0;
+          transform: scale(0.5) rotate(-180deg);
+        }
+        55%, 95% { /* Fade in, rotate to position, and stay */
+          opacity: 1;
+          transform: scale(1) rotate(0deg);
+        }
+        100% { /* Fade out while rotating */
+          opacity: 0;
+          transform: scale(0.5) rotate(180deg);
+        }
+      }
+      @keyframes draw-circle-path {
+        0%, 45% { stroke-dashoffset: 101; } /* Hidden */
+        55%, 95% { stroke-dashoffset: 0; }  /* Draw and hold */
+        100% { stroke-dashoffset: 101; } /* Hide */
+      }
+      @keyframes draw-tick-path {
+        0%, 47% { stroke-dashoffset: 15; } /* Hidden (delayed start) */
+        57%, 95% { stroke-dashoffset: 0; }  /* Draw and hold */
+        100% { stroke-dashoffset: 15; } /* Hide */
+      }
+
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+             fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              'brand-primary': 'var(--c-brand-primary)',
+              'brand-primary-hover': 'var(--c-brand-primary-hover)',
+              'brand-secondary': 'var(--c-brand-secondary)',
+              'brand-secondary-hover': 'var(--c-brand-secondary-hover)',
+              'base-100': 'var(--c-bg-base-100)',
+              'base-200': 'var(--c-bg-base-200)',
+              'base-300': 'var(--c-bg-base-300)',
+              'base-300-hover': 'var(--c-bg-base-300-hover)',
+              'text-main': 'var(--c-text-main)',
+              'text-subtle': 'var(--c-text-subtle)',
+              'text-inverted': 'var(--c-text-inverted)',
+              'border-color': 'var(--c-border-color)',
+              'error-text': 'var(--c-error-text)',
+              'error-bg': 'var(--c-error-bg)',
+              'error-border': 'var(--c-error-border)',
+            },
+            boxShadow: {
+              'sm': 'var(--shadow-sm)',
+              'md': 'var(--shadow-md)',
+              'lg': 'var(--shadow-lg)',
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+              'fast-fade-in': 'fadeIn 0.3s ease-in-out',
+              'slide-in': 'slideIn 0.5s ease-in-out',
+              'slide-in-top': 'slideInTop 0.5s ease-in-out',
+              'slide-in-down': 'slideInDown 0.3s ease-out',
+              'scale-in': 'scaleIn 0.3s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: 0 },
+                '100%': { opacity: 1 },
+              },
+              scaleIn: {
+                '0%': { opacity: 0, transform: 'scale(0.95)' },
+                '100%': { opacity: 1, transform: 'scale(1)' },
+              },
+              slideIn: {
+                '0%': { transform: 'translateY(20px)', opacity: 0 },
+                '100%': { transform: 'translateY(0)', opacity: 1 },
+              },
+              slideInTop: {
+                '0%': { transform: 'translateY(-20px) translateX(-50%)', opacity: 0 },
+                '100%': { transform: 'translateY(0) translateX(-50%)', opacity: 1 },
+              },
+              slideInDown: {
+                '0%': { transform: 'translateY(-10px)', opacity: 0 },
+                '100%': { opacity: 1, transform: 'translateY(0)', opacity: 1 },
+              },
+            },
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-base-100 text-text-main">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            })
+            .catch(error => {
+              console.log('ServiceWorker registration failed: ', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

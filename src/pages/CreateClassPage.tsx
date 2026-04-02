@@ -10,6 +10,7 @@ import {
 } from "../utils/fileUtils";
 import { getToken } from "../utils/auth";
 import formatGuideUrl from "../assets/HUONG_DAN_DINH_DANG_WORD.docx";
+import AIGeneratorModal from "../components/AIGeneratorModal";
 
 // Component trang tạo lớp
 const CreateClassPage: React.FC = () => {
@@ -25,6 +26,30 @@ const CreateClassPage: React.FC = () => {
   const [existingClasses, setExistingClasses] = useState<any[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(!!getToken());
   const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
+  const [isAIGeneratorOpen, setAIGeneratorOpen] = useState(false);
+
+  // Handler: AI Modal returns questions -> navigate to editor with class info
+  const handleAIGeneratedForClass = (aiQuestions: any[]) => {
+    if (!isFormValid()) {
+      alert("Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz");
+      return;
+    }
+    const quizId = `ai-${Date.now()}-${Math.random()}`;
+    const mappedQuestions = aiQuestions.map((q, index) => ({
+      ...q,
+      id: `q_ai_${Date.now()}_${index}`,
+    }));
+    navigate("/edit-quiz", {
+      state: {
+        questions: mappedQuestions,
+        fileName: "Quiz AI",
+        fileId: quizId,
+        classInfo: isCreateNewClass
+          ? { isNew: true, name: className.trim(), description: classDescription.trim() }
+          : { isNew: false, classId: selectedClassId },
+      },
+    });
+  };
 
   // Click outside listener for dropdown
   useEffect(() => {
@@ -947,6 +972,88 @@ const CreateClassPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Divider before AI section */}
+              <div
+                className={`flex items-center my-8 animate-slideUpIn anim-delay-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""}`}
+              >
+                <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-600"></div>
+                <span className="px-6 text-sm font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full py-1">
+                  hoặc
+                </span>
+                <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-600"></div>
+              </div>
+
+              {/* AI Quiz Creation */}
+              <div
+                className={`group bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border-l-4 border-l-gray-300 dark:border-l-gray-600 hover:border-l-purple-500 dark:hover:border-l-purple-500 animate-slideUpIn anim-delay-500 ${!isLoggedIn ? "pointer-events-none filter blur-[2px]" : ""}`}
+              >
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        Tạo Quiz bằng AI
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Tự động tạo Quiz từ tài liệu
+                      </p>
+                    </div>
+                  </div>
+
+                  {!isFormValid() && (
+                    <div className="mb-4 flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
+                        Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz
+                      </p>
+                    </div>
+                  )}
+
+                  <div
+                    className={`border-2 border-solid rounded-xl p-8 text-center transition-all duration-300 ${!isFormValid()
+                      ? "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 opacity-50"
+                      : "border-gray-300 dark:border-gray-600 hover:border-purple-400 dark:hover:border-purple-500"
+                      }`}
+                  >
+                    <div className="space-y-4">
+                      <div className="mx-auto w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                        <svg className="w-8 h-8 text-purple-500 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className={`text-lg font-medium mb-2 ${isFormValid() ? "text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400"}`}>
+                          LIEMD.AI sẽ đọc tài liệu và tạo bài kiểm tra
+                        </h3>
+                        <p className={`mb-4 ${isFormValid() ? "text-gray-600 dark:text-gray-400" : "text-gray-500 dark:text-gray-500"}`}>
+                          Hỗ trợ File .txt, .json, .doc, .docx
+                        </p>
+                        <button
+                          onClick={() => { if (isFormValid()) setAIGeneratorOpen(true); }}
+                          disabled={!isFormValid()}
+                          className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors duration-200 ${isFormValid()
+                            ? "bg-purple-600 hover:bg-purple-700 text-white shadow-lg"
+                            : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
+                            }`}
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Mở AI Generator
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {!isLoggedIn && (
                 <div className="pointer-events-none absolute inset-0 z-[100] flex items-center justify-center">
                   <div className="px-6 py-3 rounded-xl bg-white/90 dark:bg-gray-900/90 text-gray-900 dark:text-white text-base sm:text-lg font-bold tracking-wide shadow-2xl ring-1 ring-primary-500/30">
@@ -972,6 +1079,13 @@ const CreateClassPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* AI Generator Modal */}
+            <AIGeneratorModal
+              isOpen={isAIGeneratorOpen}
+              onClose={() => setAIGeneratorOpen(false)}
+              onQuestionsGenerated={handleAIGeneratedForClass}
+            />
 
             {/* Uploaded Files List */}
             {uploadedFiles.length > 0 && (

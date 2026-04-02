@@ -207,6 +207,7 @@ const imagesRouter = require('./routes/images');
 const chatRouter = require('./routes/chat');
 const profileRouter = require('./routes/profile');
 const documentsRouter = require('./routes/documents');
+const aiRouter = require('./routes/ai');
 
 // ====== Mount routers (GIỮ NGUYÊN) ======
 console.log(`Mounting routers at: ${BASE_PATH || '(root)'}`);
@@ -220,6 +221,7 @@ app.use(`${BASE_PATH}/images`, imagesRouter);
 app.use(`${BASE_PATH}/chat`, chatRouter);
 app.use(`${BASE_PATH}/profile`, profileRouter);
 app.use(`${BASE_PATH}/documents`, documentsRouter);
+app.use(`${BASE_PATH}/ai`, aiRouter);
 app.use(`${BASE_PATH}/stats`, require('./routes/stats'));
 
 // ====== 404 handler (GIỮ NGUYÊN) ======

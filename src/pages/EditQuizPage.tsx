@@ -9,6 +9,7 @@ import UnassignedImagesGallery from "../components/UnassignedImagesGallery";
 import ImageModal from "../components/ImageModal";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { ImagesAPI } from "../utils/api";
+import AIGeneratorModal from "../components/AIGeneratorModal";
 import {
   DndContext,
   closestCenter,
@@ -408,6 +409,57 @@ const EditQuizPage: React.FC = () => {
   // Image Modal State
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageModalUrl, setImageModalUrl] = useState("");
+
+  // AI Generator Modal
+  const [isAIGeneratorOpen, setAIGeneratorOpen] = useState(false);
+  const handleAIGenerated = (newQuestions: any[]) => {
+    // Add new questions, assign new random ids.
+    const mappedQuestions = newQuestions.map(q => ({
+      ...q,
+      id: "q_ai_" + Date.now() + Math.random().toString(36).substr(2, 9),
+      isNew: true
+    }));
+    
+    setQuestions(() => {
+      const updated = [...mappedQuestions]; // Overwrite existing questions
+      
+      // Auto-save to editorState by REPLACING content
+      try {
+        const newTextContent = mappedQuestions.map((q, index) => {
+          let text = `Câu ${index + 1}: ${q.question}\n`;
+          if (q.type === 'multiple-choice') {
+            q.options?.forEach((opt: string, i: number) => {
+              const isCorrect = (opt === q.answer);
+              text += `${isCorrect ? '*' : ''}${String.fromCharCode(65 + i)}. ${opt}\n`;
+            });
+          } else if (q.type === 'multi-true-false') {
+             text += `{\n`;
+             q.subQuestions?.forEach((sub: any, subIndex: number) => {
+               text += `Câu ${subIndex + 1}: ${sub.statement}\n`;
+               if (sub.answer === 'True' || sub.answer === 'Đúng') {
+                   text += `*A. Đúng\nB. Sai\n\n`;
+               } else {
+                   text += `A. Đúng\n*B. Sai\n\n`;
+               }
+             });
+             text += `}\n`;
+          } else {
+             text += `result: "${q.answer}"\n`;
+          }
+          if (q.explanation) text += `Giải thích: ${q.explanation}\n`;
+          return text;
+        }).join('\n');
+        
+        setEditorState(editor => ({ 
+           ...editor, 
+           content: newTextContent 
+        }));
+      } catch (e) {
+        console.error("AI questions apply logic format error", e);
+      }
+      return updated;
+    });
+  };
 
   // Image Modal Handlers
   const handleImageClick = (imageUrl: string) => {
@@ -6179,6 +6231,15 @@ const EditQuizPage: React.FC = () => {
                           </svg>
                           Thêm câu hỏi
                         </button>
+                        <button
+                          onClick={() => setAIGeneratorOpen(true)}
+                          className="btn-primary flex items-center bg-indigo-600 hover:bg-indigo-700 ml-2"
+                        >
+                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Tạo bằng AI
+                        </button>
                       </div>
                     </div>
 
@@ -6273,6 +6334,15 @@ const EditQuizPage: React.FC = () => {
                         />
                       </svg>
                       Thêm câu hỏi
+                    </button>
+                    <button
+                      onClick={() => setAIGeneratorOpen(true)}
+                      className="btn-primary flex items-center bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Tạo bằng AI
                     </button>
                     <button
                       onClick={handlePublish}
@@ -6411,6 +6481,11 @@ const EditQuizPage: React.FC = () => {
         imageUrl={imageModalUrl}
         isOpen={imageModalOpen}
         onClose={handleImageModalClose}
+      />
+      <AIGeneratorModal
+        isOpen={isAIGeneratorOpen}
+        onClose={() => setAIGeneratorOpen(false)}
+        onQuestionsGenerated={handleAIGenerated}
       />
     </div>
   );

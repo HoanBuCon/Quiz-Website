@@ -1,0 +1,5 @@
+{
+  "name": "AI Quiz Generator 3.0 For Hoang",
+  "description": "Upload a document containing multiple-choice questions (.docx, .pdf), and this app will use AI to automatically generate an interactive quiz from its content.",
+  "requestFramePermissions": []
+}
