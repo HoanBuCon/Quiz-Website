@@ -49,67 +49,6 @@
   }
 }
 
-@keyframes shimmer-move {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.nav-shimmer {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 4px;
-  width: 0;
-  border-radius: 0 0 6px 6px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.0) 0%, rgba(255,255,255,0.5) 40%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.5) 60%, rgba(255,255,255,0.0) 100%);
-  background-size: 200% 100%;
-  opacity: 0.7;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.group:hover .nav-shimmer {
-  width: 100%;
-  animation: shimmer-forward 0.9s cubic-bezier(0.4,0,0.2,1) forwards;
-}
-
-.group:not(:hover) .nav-shimmer.active {
-  animation: shimmer-backward 0.9s cubic-bezier(0.4,0,0.2,1) forwards;
-}
-
-/* === SHIMMER HAI CHIỀU === */
-@keyframes shimmer-forward {
-  0% {
-    transform: translateX(-100%) rotate(0deg);
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(100%) rotate(0deg);
-    opacity: 0;
-  }
-}
-
-@keyframes shimmer-backward {
-  0% {
-    transform: translateX(100%) rotate(180deg);
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(-100%) rotate(180deg);
-    opacity: 0;
-  }
-}
-
 .nav-shimmer {
   position: absolute;
   bottom: 0;
@@ -117,32 +56,52 @@
   height: 3px;
   width: 100%;
   border-radius: 6px;
-  background: linear-gradient(
+  background-image: var(--shimmer-gradient, linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.0) 0%,
-    rgba(255, 255, 255, 0.4) 40%,
-    rgba(255, 255, 255, 0.8) 50%,
-    rgba(255, 255, 255, 0.4) 60%,
+    rgba(255, 255, 255, 0.18) 30%,
+    rgba(255, 255, 255, 0.55) 52%,
+    rgba(255, 255, 255, 0.95) 72%,
     rgba(255, 255, 255, 0.0) 100%
-  );
-  background-size: 200% 100%;
+  ));
+  background-size: 100% 100%;
   opacity: 0;
   pointer-events: none;
   z-index: 2;
-  transition: opacity 0.2s ease-in-out;
-  transform-origin: center center; /* giúp xoay mềm mượt */
+  transform: translateX(var(--shimmer-offset, -120%));
+  transition:
+    transform 0.6s linear,
+    opacity 0s;
+  will-change: transform, opacity;
 }
 
-/* Trạng thái chạy xuôi */
-.nav-shimmer.forward {
-  opacity: 1;
-  animation: shimmer-forward 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-/* Trạng thái chạy ngược + xoay 180° */
+.nav-shimmer.forward,
 .nav-shimmer.backward {
   opacity: 1;
-  animation: shimmer-backward 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.nav-shimmer.forward {
+  --shimmer-offset: 120%;
+  --shimmer-gradient: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0.12) 28%,
+    rgba(255, 255, 255, 0.42) 46%,
+    rgba(255, 255, 255, 0.98) 68%,
+    rgba(255, 255, 255, 0.0) 100%
+  );
+}
+
+.nav-shimmer.backward {
+  --shimmer-offset: -120%;
+  --shimmer-gradient: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0.98) 32%,
+    rgba(255, 255, 255, 0.42) 54%,
+    rgba(255, 255, 255, 0.12) 72%,
+    rgba(255, 255, 255, 0.0) 100%
+  );
 }
 
 /* Page Transition Animations */

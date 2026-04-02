@@ -1054,7 +1054,7 @@ const CreateClassPage: React.FC = () => {
                           LIEMD.AI sẽ đọc tài liệu và tạo bài kiểm tra
                         </h3>
                         <p className={`mb-4 ${isFormValid() ? "text-gray-600 dark:text-gray-400" : "text-gray-500 dark:text-gray-500"}`}>
-                          Hỗ trợ File .txt, .json, .doc, .docx
+                          Vui lòng không tải lên tài liệu có dung lượng quá lớn. LIEMD.AI chỉ hỗ trợ khoảng 30 câu hỏi mỗi tài liệu
                         </p>
                         <button
                           onClick={() => { if (isFormValid()) setAIGeneratorOpen(true); }}

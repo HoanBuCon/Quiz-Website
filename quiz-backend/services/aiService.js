@@ -64,44 +64,40 @@ const getExtractionPrompt = (
     const typeInstructions = {
         'multiple-choice': `
 **For 'multiple-choice' questions:**
-1.  Identify any associated context passage.
-2.  Identify the main question text.
-3.  Identify ALL the answer options provided (e.g., A, B, C, D).
-4.  Identify the single correct answer.
-5.  Assemble the JSON object:
-    - \`passage\`: The associated text passage, if any.
+1.  Identify the main question text and any context passage.
+2.  Identify ALL provided options.
+3.  Identify ALL correct answers. Some questions have multiple correct answers.
+4.  Assemble the JSON object:
+    - \`passage\`: (Optional) The context passage.
     - \`question\`: The main question text.
     - \`type\`: "multiple-choice"
-    - \`options\`: An array of strings, containing ALL options.
-    - \`answer\`: The string of the correct option. It MUST exactly match one of the strings in the \`options\` array.
+    - \`options\`: Array of strings for ALL options.
+    - \`answer\`: Array of strings for ALL correct answer(s). Each MUST match an option.
 `,
         'multi-true-false': `
-**For 'multi-true-false' questions (CRITICAL):**
-This is a common format where an instruction is followed by a list of statements.
-1.  Identify any associated context passage.
-2.  **Identify the instruction:** Find the core instruction text (e.g., "Indicate whether the following statements are true or false.", "Các nhận định sau đúng hay sai?"). This becomes the \`question\` field in the JSON.
-3.  **Identify the statements:** Find EVERY statement that follows the instruction. These are the individual items to be evaluated.
-4.  **DO NOT PUT STATEMENTS IN THE \`question\` FIELD.** The \`question\` field should ONLY contain the main instruction.
-5.  For EACH statement, determine if it is 'True' or 'False'.
-6.  Assemble the JSON object:
-    - \`passage\`: The associated text passage, if any.
-    - \`question\`: The main instruction text identified in step 2.
+**For 'multi-true-false' questions:**
+1.  Identify the main instruction and the list of statements (often in {} or numbered).
+2.  Assemble the JSON object:
+    - \`question\`: The main instruction.
     - \`type\`: "multi-true-false"
-    - \`subQuestions\`: An array of objects. Each object MUST have:
-        - \`statement\`: The full text of the individual statement (from step 3).
-        - \`answer\`: The string 'True' or 'False'.
+    - \`subQuestions\`: Array of \`{ statement: string, answer: 'True' | 'False' }\`.
+`,
+        'drag': `
+**For 'drag' (Kéo thả / Ghép nối) questions:**
+1.  Identify the matching instruction and the items/targets (often in tables or lists).
+2.  Assemble the JSON object:
+    - \`question\`: The instruction text.
+    - \`type\`: "drag"
+    - \`options\`: { "items": ["Item 1", "Item 2"], "targets": ["Category A", "Category B"] }
+    - \`answer\`: { "Item 1": "Category A", "Item 2": "Category B" }
 `,
         'short-answer': `
 **For 'short-answer' questions:**
-This could be a fill-in-the-blank or a direct question expecting a brief response.
-1.  Identify any associated context passage.
-2.  Identify the question being asked.
-3.  Identify the single, concise correct answer.
-4.  Assemble the JSON object:
-    - \`passage\`: The associated text passage, if any.
+1.  Identify the question and the concise correct answer(s).
+2.  Assemble the JSON object:
     - \`question\`: The question text.
     - \`type\`: "short-answer"
-    - \`answer\`: A string containing the exact correct answer.
+    - \`answer\`: Array of strings for correct answer(s).
 `
     };
 

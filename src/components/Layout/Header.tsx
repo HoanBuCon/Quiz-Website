@@ -68,7 +68,6 @@ const Header: React.FC = () => {
     ) as HTMLElement | null;
     if (!shimmer) return;
     shimmer.classList.remove("backward");
-    void shimmer.offsetWidth;
     shimmer.classList.add("forward");
   };
 
@@ -78,7 +77,6 @@ const Header: React.FC = () => {
     ) as HTMLElement | null;
     if (!shimmer) return;
     shimmer.classList.remove("forward");
-    void shimmer.offsetWidth;
     shimmer.classList.add("backward");
   };
 
@@ -335,8 +333,6 @@ const Header: React.FC = () => {
                           className="
                             nav-shimmer
                             block h-full bg-gradient-to-r from-transparent via-primary-400/80 to-transparent
-                            opacity-0 group-hover:opacity-100
-                            transition-opacity duration-200 ease-in-out
                           "
                         />
                       </div>
@@ -372,8 +368,6 @@ const Header: React.FC = () => {
                         className="
       nav-shimmer
       block h-full bg-gradient-to-r from-transparent via-primary-400/80 to-transparent
-      opacity-0 group-hover:opacity-100
-      transition-opacity duration-200 ease-in-out
     "
                       />
                     </div>

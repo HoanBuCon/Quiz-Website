@@ -58,7 +58,6 @@ const Sidebar: React.FC = () => {
         const shimmer = e.currentTarget.querySelector(".nav-shimmer") as HTMLElement | null;
         if (!shimmer) return;
         shimmer.classList.remove("backward");
-        void shimmer.offsetWidth;
         shimmer.classList.add("forward");
     };
 
@@ -66,7 +65,6 @@ const Sidebar: React.FC = () => {
         const shimmer = e.currentTarget.querySelector(".nav-shimmer") as HTMLElement | null;
         if (!shimmer) return;
         shimmer.classList.remove("forward");
-        void shimmer.offsetWidth;
         shimmer.classList.add("backward");
     };
 
@@ -300,7 +298,7 @@ const Sidebar: React.FC = () => {
                                 {/* Shimmer Effect */}
                                 <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
                                     <span
-                                        className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-primary-400/80 dark:via-blue-400/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out"
+                                        className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-primary-400/80 dark:via-blue-400/80 to-transparent"
                                     />
                                 </div>
                             </button>
@@ -331,7 +329,7 @@ const Sidebar: React.FC = () => {
                             {/* Shimmer Effect */}
                             <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden pointer-events-none">
                                 <span
-                                    className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-primary-400/80 dark:via-blue-400/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out"
+                                    className="nav-shimmer block h-full bg-gradient-to-r from-transparent via-primary-400/80 dark:via-blue-400/80 to-transparent"
                                 />
                             </div>
                         </Link>

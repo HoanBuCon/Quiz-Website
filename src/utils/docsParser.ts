@@ -36,7 +36,9 @@ export function questionsToStandardText(questions: any[]): string {
         // AI might return answer as a single string (single choice) or array (multiple choice)
         const isCorrect = Array.isArray(q.correctAnswers) 
           ? q.correctAnswers.includes(opt)
-          : (opt === q.answer || opt === q.correctAnswers);
+          : (Array.isArray(q.answer) 
+              ? q.answer.includes(opt) 
+              : (opt === q.answer || opt === q.correctAnswers));
         
         text += `${isCorrect ? '*' : ''}${String.fromCharCode(65 + i)}. ${opt}\n`;
       });
@@ -56,18 +58,24 @@ export function questionsToStandardText(questions: any[]): string {
     } else if (q.type === 'drag') {
       const items = q.options?.items || [];
       const targets = q.options?.targets || [];
-      const mapping = q.correctAnswers || {};
+      const mapping = q.correctAnswers || q.answer || {};
 
       // result: ["Item 1", "Item 2"]
-      const itemLabels = items.map((it: any) => it.label);
+      const itemLabels = items.map((it: any) => it.label || it);
       text += `result: ${JSON.stringify(itemLabels)}\n`;
 
       // group: ("Target 1": ["Item 1"]), ("Target 2": ["Item 2"])
-      const groupStrings = targets.map((t: any) => {
+      const targetList = Array.isArray(targets) ? targets : [];
+      const groupStrings = targetList.map((t: any) => {
+        const targetLabel = t.label || t;
+        const targetId = t.id || t;
         const targetItems = items
-          .filter((it: any) => mapping[it.id] === t.id)
-          .map((it: any) => it.label);
-        return `("${t.label}": ${JSON.stringify(targetItems)})`;
+          .filter((it: any) => {
+            const itemId = it.id || it;
+            return mapping[itemId] === targetId;
+          })
+          .map((it: any) => it.label || it);
+        return `("${targetLabel}": ${JSON.stringify(targetItems)})`;
       });
       text += `group: ${groupStrings.join(',\n ')}\n`;
     } else {
