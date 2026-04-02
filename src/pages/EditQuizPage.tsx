@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Question, Quiz } from "../types";
-import { ParsedQuestion } from "../utils/docsParser";
+import { ParsedQuestion, questionsToStandardText } from "../utils/docsParser";
 import { toast } from "react-hot-toast";
 import QuizPreview from "../components/QuizPreview";
 import MathText from "../components/MathText";
@@ -44,6 +44,7 @@ interface LocationState {
   isEdit?: boolean;
   unassignedImages?: import('../types').ExtractedImage[]; // Images not yet assigned to questions
   pastedImagesMap?: Record<string, string>; // Restore image map
+  aiTextContent?: string; // Pre-filled text from AI Theory mode
 }
 
 // Extended Question interface to support images
@@ -412,8 +413,15 @@ const EditQuizPage: React.FC = () => {
 
   // AI Generator Modal
   const [isAIGeneratorOpen, setAIGeneratorOpen] = useState(false);
-  const handleAIGenerated = (newQuestions: any[]) => {
-    // Add new questions, assign new random ids.
+  const handleAIGenerated = (newQuestions: any[], textContent?: string | null) => {
+    if (textContent) {
+      // Theory mode: AI returned raw standard text format — set editor content directly
+      setEditorState(editor => ({ ...editor, content: textContent }));
+      setQuestions([]); // Let the editor re-parse the new content on next parse
+      return;
+    }
+
+    // Extract mode: JSON questions array → map to text format
     const mappedQuestions = newQuestions.map(q => ({
       ...q,
       id: "q_ai_" + Date.now() + Math.random().toString(36).substr(2, 9),
@@ -425,30 +433,7 @@ const EditQuizPage: React.FC = () => {
       
       // Auto-save to editorState by REPLACING content
       try {
-        const newTextContent = mappedQuestions.map((q, index) => {
-          let text = `Câu ${index + 1}: ${q.question}\n`;
-          if (q.type === 'multiple-choice') {
-            q.options?.forEach((opt: string, i: number) => {
-              const isCorrect = (opt === q.answer);
-              text += `${isCorrect ? '*' : ''}${String.fromCharCode(65 + i)}. ${opt}\n`;
-            });
-          } else if (q.type === 'multi-true-false') {
-             text += `{\n`;
-             q.subQuestions?.forEach((sub: any, subIndex: number) => {
-               text += `Câu ${subIndex + 1}: ${sub.statement}\n`;
-               if (sub.answer === 'True' || sub.answer === 'Đúng') {
-                   text += `*A. Đúng\nB. Sai\n\n`;
-               } else {
-                   text += `A. Đúng\n*B. Sai\n\n`;
-               }
-             });
-             text += `}\n`;
-          } else {
-             text += `result: "${q.answer}"\n`;
-          }
-          if (q.explanation) text += `Giải thích: ${q.explanation}\n`;
-          return text;
-        }).join('\n');
+        const newTextContent = questionsToStandardText(mappedQuestions);
         
         setEditorState(editor => ({ 
            ...editor, 
@@ -481,7 +466,7 @@ const EditQuizPage: React.FC = () => {
     canUndo,
     canRedo,
   } = useUndoRedo({
-    content: "",
+    content: state?.aiTextContent || "",
     unassignedImages: state?.unassignedImages || [],
     pastedImagesMap: {} as Record<string, string>,
   });
@@ -2549,9 +2534,9 @@ const EditQuizPage: React.FC = () => {
       return;
     }
 
-    // Với file upload - cần có câu hỏi
-    if (!state?.questions || state.questions.length === 0) {
-      // console.log("No questions found, redirecting");
+    // Với file upload - cần có câu hỏi hoặc text từ AI
+    if ((!state?.questions || state.questions.length === 0) && !state?.aiTextContent) {
+      // console.log("No questions or AI text found, redirecting");
       toast.error("Không có câu hỏi nào được tải lên");
       navigate("/create");
       return;
@@ -2657,7 +2642,8 @@ const EditQuizPage: React.FC = () => {
     });
 
     // Khởi tạo preview content WITH the map
-    const initialPreviewContent = generatePreviewContent(convertedQuestions, initialImagesMap);
+    // Nếu có text từ AI (Theory mode), ưu tiên sử dụng nó thay vì generate từ questions (thường đang rỗng)
+    const initialPreviewContent = state.aiTextContent || generatePreviewContent(convertedQuestions, initialImagesMap);
 
     // FIX: Calculate initial unassignedImages using same logic as handlePreviewEdit
     // Extract all [IMAGE:id] tags from initial content to identify assigned images

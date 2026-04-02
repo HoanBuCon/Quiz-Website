@@ -6,7 +6,7 @@ import { getToken } from '../utils/auth'; // Ensure token is passed
 interface AIGeneratorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onQuestionsGenerated: (questions: any[]) => void;
+  onQuestionsGenerated: (questions: any[], textContent?: string | null) => void;
 }
 
 export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated }: AIGeneratorModalProps) {
@@ -40,7 +40,8 @@ export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated
       toast.error('Vui lòng chọn ít nhất một file (PDF, DOCX, TXT)');
       return;
     }
-    if (selectedTypes.length === 0) {
+    // Only require type selection for theory mode; extract mode uses all types automatically
+    if (mode === 'theory' && selectedTypes.length === 0) {
       toast.error('Vui lòng chọn ít nhất một loại câu hỏi');
       return;
     }
@@ -54,9 +55,10 @@ export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated
 
       const config = {
         generationMode: mode,
-        selectedTypes,
+        // In extract mode, include all types so the AI can pick freely; in theory, use selection
+        selectedTypes: mode === 'extract' ? ['multiple-choice', 'multi-true-false', 'short-answer', 'drag'] : selectedTypes,
         lang: 'vi',
-        modelName: 'gemini-flash-latest', // Automatically resolves to best standard flash model
+        modelName: 'gemini-flash-latest',
         shouldGenerateExplanations: true,
         useWebSearch: false,
         questionCountModes: {},
@@ -90,7 +92,15 @@ export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated
       }
 
       const data = await response.json();
-      onQuestionsGenerated(data.questions);
+
+      if (data.textContent) {
+        // Theory mode: AI returned raw text in the standard format → pass directly
+        onQuestionsGenerated([], data.textContent);
+      } else {
+        // Extract mode: AI returned JSON questions array
+        onQuestionsGenerated(data.questions || [], null);
+      }
+
       toast.success('Tạo câu hỏi thành công!');
       onClose();
       setFiles([]);
@@ -179,30 +189,38 @@ export default function AIGeneratorModal({ isOpen, onClose, onQuestionsGenerated
               </div>
             </div>
 
-            {/* Types Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loại câu hỏi (chọn nhiều)</label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedTypes.includes('multiple-choice') ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
-                  onClick={() => toggleType('multiple-choice')}
-                >
-                  Trắc nghiệm
-                </button>
-                <button
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedTypes.includes('multi-true-false') ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
-                  onClick={() => toggleType('multi-true-false')}
-                >
-                  Đúng/Sai
-                </button>
-                <button
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedTypes.includes('short-answer') ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
-                  onClick={() => toggleType('short-answer')}
-                >
-                  Trả lời ngắn
-                </button>
+            {/* Types Selection - only relevant for theory mode */}
+            {mode === 'theory' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Loại câu hỏi (chọn nhiều)</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedTypes.includes('multiple-choice') ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
+                    onClick={() => toggleType('multiple-choice')}
+                  >
+                    Trắc nghiệm
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedTypes.includes('multi-true-false') ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
+                    onClick={() => toggleType('multi-true-false')}
+                  >
+                    Đúng/Sai
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedTypes.includes('short-answer') ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
+                    onClick={() => toggleType('short-answer')}
+                  >
+                    Trả lời ngắn
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedTypes.includes('drag') ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
+                    onClick={() => toggleType('drag')}
+                  >
+                    Kéo thả
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
 

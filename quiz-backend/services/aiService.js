@@ -333,6 +333,108 @@ The 'answer' field for this type should ONLY contain that short, direct answer (
   `;
 };
 
+/**
+ * Builds a prompt for THEORY mode that asks Gemini to output questions
+ * directly in the application's standard text format (not JSON).
+ */
+const getTheoryTextFormatPrompt = (config, groundingInstruction, searchInstruction) => {
+    const lang = config.lang || 'vi';
+    const selectedTypes = config.selectedTypes || ['multiple-choice'];
+
+    // Build a count instruction similar to getTheoryGenerationPrompt
+    let questionCountInstruction = '';
+    for (const type of selectedTypes) {
+        const totalMode = config.questionCountModes?.[type];
+        const totalCount = config.customQuestionCounts?.[type] || 0;
+        if (totalMode === 'custom' && totalCount > 0) {
+            questionCountInstruction += `\n- For type '${type}': generate EXACTLY ${totalCount} questions.`;
+        } else {
+            questionCountInstruction += `\n- For type '${type}': generate a reasonable number of questions based on the material.`;
+        }
+    }
+
+    const typeList = selectedTypes.join(', ');
+
+    return `
+You are an expert quiz creator. Read the provided document content carefully, then generate a set of questions in the EXACT text format described below.
+
+${getLanguageInstruction(lang)}
+${groundingInstruction}
+${searchInstruction}
+
+--- QUESTION TYPES TO GENERATE ---
+Only create questions of these types: ${typeList}
+${questionCountInstruction}
+
+--- MANDATORY OUTPUT FORMAT (COPY THIS EXACTLY) ---
+Each question MUST be separated by a blank line. Follow these rules strictly:
+
+1. **Multiple choice (1 correct answer)**:
+Câu N: [Question text]
+
+*A. [Correct option]
+
+B. [Wrong option]
+
+C. [Wrong option]
+
+D. [Wrong option]
+
+Giải thích: [Explanation of why the answer is correct]
+
+2. **Multiple choice (multiple correct answers)**:
+Câu N: [Question text]
+
+*A. [Correct option]
+
+B. [Wrong option]
+
+*C. [Correct option]
+
+D. [Wrong option]
+
+Giải thích: [Explanation]
+
+3. **Short answer / fill in the blank**:
+Câu N: [Question text]
+
+result: "[Answer 1]", "[Answer 2 if multiple accepted]"
+
+Giải thích: [Explanation]
+
+4. **True/False group (multi-true-false)** — only use if 'multi-true-false' is in the type list:
+Câu N: [Main instruction / question stem]
+
+{
+Câu 1: [Statement 1]
+*A. Đúng
+B. Sai
+
+Câu 2: [Statement 2]
+A. Đúng
+*B. Sai
+}
+
+Giải thích: [Numbered explanation per statement]
+
+5. **Drag and Drop (drag)** — only use if 'drag' is in the type list:
+Câu N: [Instruction for matching/grouping]
+
+result: ["Item 1", "Item 2", "Item 3", "Item 4"]
+group: ("Group A": ["Item 1", "Item 2"]), ("Group B": ["Item 3"])
+
+Giải thích: [Explanation of the correct mapping]
+
+--- RULES ---
+1.  Mark correct answer options with a * prefix (e.g. *A., *B.).
+2.  Each question starts with "Câu N:" where N is the sequential number.
+3.  Include a "Giải thích:" line after EVERY question.
+4.  Do NOT output JSON. Output ONLY the plain text format above.
+5.  Use blank lines between options and between questions for readability.
+6.  Do NOT add any introductory or closing text outside the question format.
+`;
+};
+
 const generateQuiz = async (config) => {
     let aiClient;
     try {
@@ -362,7 +464,7 @@ const generateQuiz = async (config) => {
   
     const prompt = generationMode === 'extract'
       ? getExtractionPrompt(selectedTypes, lang, groundingInstruction, searchInstruction, explanationInstruction)
-      : getTheoryGenerationPrompt(config, groundingInstruction, searchInstruction, explanationInstruction);
+      : getTheoryTextFormatPrompt(config, groundingInstruction, searchInstruction);
   
     let contentsParts = [];
     
@@ -411,7 +513,12 @@ const generateQuiz = async (config) => {
         });
         
         console.log("Generation successful.");
-        return extractJson(response.text);
+
+        if (generationMode === 'theory') {
+            // Return raw text for theory mode — frontend will use it directly in the editor
+            return { textContent: response.text };
+        }
+        return { questions: extractJson(response.text) };
     } catch (error) {
         console.error("Error generating content:", error);
         throw error;

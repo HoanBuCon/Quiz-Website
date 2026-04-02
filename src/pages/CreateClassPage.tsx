@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UploadedFile } from "../types";
-import { parseFile } from "../utils/docsParser";
+import { parseFile, questionsToStandardText } from "../utils/docsParser";
 import {
   checkDuplicateFileName,
   showDuplicateModal,
@@ -29,21 +29,42 @@ const CreateClassPage: React.FC = () => {
   const [isAIGeneratorOpen, setAIGeneratorOpen] = useState(false);
 
   // Handler: AI Modal returns questions -> navigate to editor with class info
-  const handleAIGeneratedForClass = (aiQuestions: any[]) => {
+  const handleAIGeneratedForClass = (aiQuestions: any[], textContent?: string | null) => {
     if (!isFormValid()) {
       alert("Vui lòng tạo lớp học mới hoặc chọn lớp có sẵn trước khi tạo Quiz");
       return;
     }
     const quizId = `ai-${Date.now()}-${Math.random()}`;
+
+    if (textContent) {
+      // Theory mode: navigate with the raw text pre-loaded in editorState via quizTitle trick
+      navigate("/edit-quiz", {
+        state: {
+          questions: [],
+          fileName: "Quiz AI",
+          fileId: quizId,
+          aiTextContent: textContent, // EditQuizPage can read this from location.state
+          classInfo: isCreateNewClass
+            ? { isNew: true, name: className.trim(), description: classDescription.trim() }
+            : { isNew: false, classId: selectedClassId },
+        },
+      });
+      return;
+    }
+
     const mappedQuestions = aiQuestions.map((q, index) => ({
       ...q,
       id: `q_ai_${Date.now()}_${index}`,
     }));
+
+    // Convert JSON questions to standard text format for the editor
+    const generatedTextContent = questionsToStandardText(mappedQuestions);
     navigate("/edit-quiz", {
       state: {
-        questions: mappedQuestions,
+        questions: [], // Let editor re-parse from aiTextContent
         fileName: "Quiz AI",
         fileId: quizId,
+        aiTextContent: generatedTextContent,
         classInfo: isCreateNewClass
           ? { isNew: true, name: className.trim(), description: classDescription.trim() }
           : { isNew: false, classId: selectedClassId },

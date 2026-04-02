@@ -40,7 +40,7 @@ router.post('/generate', authRequired, upload.array('files'), async (req, res) =
             config.files = req.files;
         }
 
-        const questions = await aiService.generateQuiz(config);
+        const result = await aiService.generateQuiz(config);
 
         // Delete temporary files after generation
         if (req.files && req.files.length > 0) {
@@ -53,7 +53,8 @@ router.post('/generate', authRequired, upload.array('files'), async (req, res) =
             }
         }
 
-        res.json({ questions });
+        // result is either { textContent } (theory mode) or { questions } (extract mode)
+        res.json(result);
     } catch (error) {
         console.error('AI generate endpoint error:', error);
         

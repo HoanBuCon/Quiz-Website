@@ -22,6 +22,75 @@ export interface ParseResult {
   error?: string;
 }
 
+/**
+ * Converts an array of JSON questions back into the application's standard text format.
+ * This is used to populate the editor after AI extraction or generation.
+ */
+export function questionsToStandardText(questions: any[]): string {
+  return questions.map((q, index) => {
+    let text = `Câu ${index + 1}: ${q.question}\n`;
+
+    if (q.type === 'single' || q.type === 'multiple' || q.type === 'multiple-choice') {
+      const options = Array.isArray(q.options) ? q.options : [];
+      options.forEach((opt: string, i: number) => {
+        // AI might return answer as a single string (single choice) or array (multiple choice)
+        const isCorrect = Array.isArray(q.correctAnswers) 
+          ? q.correctAnswers.includes(opt)
+          : (opt === q.answer || opt === q.correctAnswers);
+        
+        text += `${isCorrect ? '*' : ''}${String.fromCharCode(65 + i)}. ${opt}\n`;
+      });
+    } else if (q.type === 'multi-true-false' || (q.type === 'composite' && q.subQuestions)) {
+      text += `{\n`;
+      const subQs = q.subQuestions || [];
+      subQs.forEach((sub: any, subIndex: number) => {
+        text += `Câu ${subIndex + 1}: ${sub.question || sub.statement}\n`;
+        const isTrue = sub.answer === 'True' || sub.answer === 'Đúng' || (Array.isArray(sub.correctAnswers) && sub.correctAnswers.includes('Đúng'));
+        if (isTrue) {
+          text += `*A. Đúng\nB. Sai\n\n`;
+        } else {
+          text += `A. Đúng\n*B. Sai\n\n`;
+        }
+      });
+      text += `}\n`;
+    } else if (q.type === 'drag') {
+      const items = q.options?.items || [];
+      const targets = q.options?.targets || [];
+      const mapping = q.correctAnswers || {};
+
+      // result: ["Item 1", "Item 2"]
+      const itemLabels = items.map((it: any) => it.label);
+      text += `result: ${JSON.stringify(itemLabels)}\n`;
+
+      // group: ("Target 1": ["Item 1"]), ("Target 2": ["Item 2"])
+      const groupStrings = targets.map((t: any) => {
+        const targetItems = items
+          .filter((it: any) => mapping[it.id] === t.id)
+          .map((it: any) => it.label);
+        return `("${t.label}": ${JSON.stringify(targetItems)})`;
+      });
+      text += `group: ${groupStrings.join(',\n ')}\n`;
+    } else {
+      // Short answer / text
+      const answers = Array.isArray(q.correctAnswers) 
+        ? q.correctAnswers 
+        : (q.answer ? [q.answer] : []);
+      
+      if (answers.length > 1) {
+        text += `result: ${answers.map((a: string) => `"${a}"`).join(', ')}\n`;
+      } else if (answers.length === 1) {
+        text += `result: "${answers[0]}"\n`;
+      }
+    }
+
+    if (q.explanation) {
+      text += `Giải thích: ${q.explanation}\n`;
+    }
+
+    return text;
+  }).join('\n');
+}
+
 export async function parseFile(file: File): Promise<ParseResult> {
   try {
     let content: string;
