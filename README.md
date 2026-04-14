@@ -35,6 +35,83 @@ A modern quiz website with full Dark/Light mode and responsive design. Navigatio
 - Forgot password via OTP (SMTP)
 
 ## 3. Business Logic
+
+### Overview User Workflow
+
+```mermaid
+graph TD
+    Start(("Start")) --> Login{"Login / Register"}
+    Login -->|"Authenticated"| Dash["User Dashboard"]
+    
+    Dash -->|"Create Class"| Class["Class Management<br/>(Create/Share)"]
+    Dash -->|"Create Quiz"| MakeQuiz["Quiz Editor<br/>(Manual / AI-powered)"]
+    Class -->|"Organize"| MakeQuiz
+    MakeQuiz -->|"Add Assets"| Uploads["Upload Images and Docs"]
+    
+    Dash -->|"Join via Code"| Join["Access Shared Content"]
+    Join -->|"Open"| TakeQuiz{"Take Quiz"}
+    MakeQuiz -->|"Publish and Toggle"| Pub["Public / Private"]
+    Pub -->|"Discover"| TakeQuiz
+    
+    TakeQuiz -->|"Start Session"| Session["Quiz Interface<br/>(Timer, Minimap)"]
+    Session -->|"Submit"| Review["Score and Review<br/>(Auto Scoring)"]
+    
+    style Start fill:#f9f,stroke:#333,stroke-width:2px;
+    style Review fill:#bfb,stroke:#333,stroke-width:2px;
+```
+
+### Technical Runtime Sequence
+
+```mermaid
+sequenceDiagram
+    participant FE as Frontend (React)
+    participant API as Backend API (Express)
+    participant Auth as Auth Middleware
+    participant DB as DB (Prisma/MySQL)
+    participant AI as Gemini Service
+    participant FS as File System (Multer)
+
+    %% 1. Quiz Access Control
+    rect rgb(200, 220, 240)
+    Note over FE, DB: 1. Quiz Access & Authorization Flow
+    FE->>API: Request Private Quiz (GET /api/quizzes/:id)
+    API->>Auth: Validate JWT
+    Auth-->>API: User Context
+    API->>DB: Query Quiz + Check Ownership/Public/Shared flags
+    DB-->>API: Quiz Metadata
+    API-->>FE: Quiz Payload or 403 Forbidden
+    end
+
+    %% 2. AI Question Generation
+    rect rgb(240, 220, 200)
+    Note over FE, AI: 2. AI-Powered Generation Flow
+    FE->>API: Upload File + Generate Request (POST /api/ai/generate)
+    API->>FS: Buffer/Save attachment (TXT, PDF, Word)
+    FS-->>API: Extracted raw text
+    API->>AI: Send custom Prompt + Context to Gemini API
+    AI-->>API: Respond with Structured JSON (Questions Array)
+    API->>DB: Map to single/multiple/drag/composite schema & Insert
+    DB-->>API: Success
+    API-->>FE: Return generated Questions structure for Editor
+    end
+
+    %% 3. Quiz Taking Session
+    rect rgb(200, 240, 220)
+    Note over FE, DB: 3. Session & Auto-Scoring Flow
+    FE->>API: Init Session (POST /sessions/start)
+    API->>DB: Snapshot Quiz state to prevent cheating via edits
+    DB-->>API: Return QuizSession ID
+    API-->>FE: Render Interactive UI (Minimap & Timer)
+    
+    FE->>API: Submit User Answers (POST /sessions/submit)
+    API->>DB: Fetch Snapshot & correct answers validation
+    API->>API: Point normalization & Calculation (all types)
+    API->>DB: Store final score, answers, timeSpent
+    DB-->>API: Done
+    API-->>FE: Provide comprehensive Score & Explanations Review
+    end
+```
+
 ### 3.1. Classes
 - Create: POST `/api/classes`
 - Update: PUT `/api/classes/:id` (sync `PublicItem` when `isPublic` changes)
@@ -169,7 +246,7 @@ docker-compose up -d --build
 The Frontend runs on port `8082` and Backend on `4000`. You may configure an Nginx reverse proxy.
 
 ### 6.2 Deployment via cPanel
-- **Database:** Create PostgreSQL DB on cPanel (or use Remote DB) and import schema.
+- **Database:** Create MySQL DB on cPanel (or use Remote DB) and import schema.
 - **Backend:**
   - Setup a Node.js App pointing to the `quiz-backend` directory.
   - Startup file: `index.js`.
@@ -213,6 +290,83 @@ Website quiz với giao diện hiện đại, hỗ trợ Dark/Light mode, respon
 - Quên mật khẩu qua OTP (SMTP)
 
 ## 3. Luồng/Logic nghiệp vụ
+
+### Tổng quan Workflow người dùng (User Journey)
+
+```mermaid
+graph TD
+    Start(("Bắt đầu")) --> Login{"Đăng Nhập / Đăng Ký"}
+    Login -->|"Đã xác thực"| Dash["Bảng điều khiển (Dashboard)"]
+    
+    Dash -->|"Tạo Lớp Học"| Class["Quản lý Lớp<br/>(Tạo/Xóa/Chia sẻ)"]
+    Dash -->|"Tạo Bài Thi (Quiz)"| MakeQuiz["Soạn thảo Quiz<br/>(Thủ công hoặc AI tạo)"]
+    Class -->|"Sắp xếp"| MakeQuiz
+    MakeQuiz -->|"Đính kèm"| Uploads["Tải lên Ảnh và Tài liệu"]
+    
+    Dash -->|"Nhập mã Claim"| Join["Truy cập theo mã bảo mật"]
+    Join -->|"Tham gia"| TakeQuiz{"Làm Bài Trắc Nghiệm"}
+    MakeQuiz -->|"Cấu hình quyền"| Pub["Công khai hoặc Riêng Tư"]
+    Pub -->|"Tìm kiếm và Truy cập"| TakeQuiz
+    
+    TakeQuiz -->|"Tính giờ"| Session["Giao diện Thi<br/>(Đồng hồ, Minimap)"]
+    Session -->|"Nộp bài"| Review["Chấm Điểm và Xem lại<br/>(Tự động chấm)"]
+    
+    style Start fill:#f9f,stroke:#333,stroke-width:2px;
+    style Review fill:#bfb,stroke:#333,stroke-width:2px;
+```
+
+### Biểu đồ Sequence mô tả Runtime Kỹ thuật
+
+```mermaid
+sequenceDiagram
+    participant FE as Frontend (React)
+    participant API as Backend API (Express)
+    participant Auth as Auth Middleware
+    participant DB as Database (MySQL)
+    participant AI as Gemini Service
+    participant FS as Hệ thống Tệp (Multer)
+
+    %% 1. Phân quyền và Truy cập
+    rect rgb(200, 220, 240)
+    Note over FE, DB: 1. Luồng Xác thực & Quyền Truy cập Quiz
+    FE->>API: Lấy dữ liệu Quiz (GET /api/quizzes/:id)
+    API->>Auth: Kiểm tra JWT Token
+    Auth-->>API: Dữ liệu User hiện tại
+    API->>DB: Truy vấn Quiz + Kiểm tra quyền (Chủ sở hữu / Công khai / Chia sẻ)
+    DB-->>API: Kết quả tra cứu
+    API-->>FE: Trả bản ghi Quiz hoặc báo lỗi 403 (Cấm truy cập)
+    end
+
+    %% 2. Tạo Câu hỏi AI
+    rect rgb(240, 220, 200)
+    Note over FE, AI: 2. Luồng Sinh nội dung tự động qua AI
+    FE->>API: Gửi văn bản / Tài liệu (POST /api/ai/generate)
+    API->>FS: Multer đọc tệp đính kèm (Text, PDF, Word)
+    FS-->>API: Trích xuất nội dung thô
+    API->>AI: Nạp Prompt hệ thống + Nội dung gửi cho Gemini API
+    AI-->>API: Trả về JSON cấu trúc câu hỏi
+    API->>DB: Ánh xạ loại câu hỏi (single/multiple/composite) & Lưu trữ
+    DB-->>API: Khởi tạo dữ liệu thành công
+    API-->>FE: Đưa các câu hỏi sinh ra vào Trình soạn thảo (Editor)
+    end
+
+    %% 3. Phiên kiểm tra
+    rect rgb(200, 240, 220)
+    Note over FE, DB: 3. Luồng Quản lý Phiên làm bài & Chấm điểm
+    FE->>API: Khởi động bài làm (POST /sessions/start)
+    API->>DB: Snapshot (chụp sao lưu) câu hỏi để phòng gian lận chỉnh sửa
+    DB-->>API: Tạo ID Phiên làm bài
+    API-->>FE: Cho phép mở giao diện đồng hồ & Minimap
+    
+    FE->>API: Nộp đáp án tổng (POST /sessions/submit)
+    API->>DB: Truy xuất lại Snapshot & đáp án gốc
+    API->>API: Duyệt chấm điểm tự động cho mọi loại câu hỏi
+    API->>DB: Ghi nhận Score, thời gian làm bài, đáp án user chọn
+    DB-->>API: Cập nhật thành công
+    API-->>FE: Trả kết quả kèm phần giải thích chi tiết
+    end
+```
+
 ### 3.1. Lớp học (Class)
 - Tạo lớp: POST `/api/classes`
 - Cập nhật lớp: PUT `/api/classes/:id` (có đồng bộ `PublicItem` khi đổi `isPublic`)
@@ -352,7 +506,7 @@ docker-compose up -d --build
 Frontend chạy ở port `8082` và Backend ở `4000`. Cần cấu hình thêm Nginx proxy.
 
 ### 6.2 Triển khai lên cPanel
-- **Database:** Tạo CSDL PostgreSQL trên cPanel và import schema, hoặc dùng một Remote DB.
+- **Database:** Tạo CSDL MySQL trên cPanel và import schema, hoặc dùng một Remote DB.
 - **Backend:**
   - Vào phần Node.js App trên cPanel, trỏ root vào thư mục `quiz-backend`.
   - File khởi động: `index.js`.
