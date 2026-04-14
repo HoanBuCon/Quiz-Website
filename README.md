@@ -55,9 +55,6 @@ graph TD
     
     TakeQuiz -->|"Start Session"| Session["Quiz Interface<br/>(Timer, Minimap)"]
     Session -->|"Submit"| Review["Score and Review<br/>(Auto Scoring)"]
-    
-    style Start fill:#f9f,stroke:#333,stroke-width:2px;
-    style Review fill:#bfb,stroke:#333,stroke-width:2px;
 ```
 
 ### Technical Runtime Sequence
@@ -72,7 +69,6 @@ sequenceDiagram
     participant FS as File System (Multer)
 
     %% 1. Quiz Access Control
-    rect rgb(200, 220, 240)
     Note over FE, DB: 1. Quiz Access & Authorization Flow
     FE->>API: Request Private Quiz (GET /api/quizzes/:id)
     API->>Auth: Validate JWT
@@ -80,10 +76,8 @@ sequenceDiagram
     API->>DB: Query Quiz + Check Ownership/Public/Shared flags
     DB-->>API: Quiz Metadata
     API-->>FE: Quiz Payload or 403 Forbidden
-    end
 
     %% 2. AI Question Generation
-    rect rgb(240, 220, 200)
     Note over FE, AI: 2. AI-Powered Generation Flow
     FE->>API: Upload File + Generate Request (POST /api/ai/generate)
     API->>FS: Buffer/Save attachment (TXT, PDF, Word)
@@ -93,10 +87,8 @@ sequenceDiagram
     API->>DB: Map to single/multiple/drag/composite schema & Insert
     DB-->>API: Success
     API-->>FE: Return generated Questions structure for Editor
-    end
 
     %% 3. Quiz Taking Session
-    rect rgb(200, 240, 220)
     Note over FE, DB: 3. Session & Auto-Scoring Flow
     FE->>API: Init Session (POST /sessions/start)
     API->>DB: Snapshot Quiz state to prevent cheating via edits
@@ -109,7 +101,6 @@ sequenceDiagram
     API->>DB: Store final score, answers, timeSpent
     DB-->>API: Done
     API-->>FE: Provide comprehensive Score & Explanations Review
-    end
 ```
 
 ### 3.1. Classes
@@ -310,9 +301,6 @@ graph TD
     
     TakeQuiz -->|"Tính giờ"| Session["Giao diện Thi<br/>(Đồng hồ, Minimap)"]
     Session -->|"Nộp bài"| Review["Chấm Điểm và Xem lại<br/>(Tự động chấm)"]
-    
-    style Start fill:#f9f,stroke:#333,stroke-width:2px;
-    style Review fill:#bfb,stroke:#333,stroke-width:2px;
 ```
 
 ### Biểu đồ Sequence mô tả Runtime Kỹ thuật
@@ -327,7 +315,6 @@ sequenceDiagram
     participant FS as Hệ thống Tệp (Multer)
 
     %% 1. Phân quyền và Truy cập
-    rect rgb(200, 220, 240)
     Note over FE, DB: 1. Luồng Xác thực & Quyền Truy cập Quiz
     FE->>API: Lấy dữ liệu Quiz (GET /api/quizzes/:id)
     API->>Auth: Kiểm tra JWT Token
@@ -335,10 +322,8 @@ sequenceDiagram
     API->>DB: Truy vấn Quiz + Kiểm tra quyền (Chủ sở hữu / Công khai / Chia sẻ)
     DB-->>API: Kết quả tra cứu
     API-->>FE: Trả bản ghi Quiz hoặc báo lỗi 403 (Cấm truy cập)
-    end
 
     %% 2. Tạo Câu hỏi AI
-    rect rgb(240, 220, 200)
     Note over FE, AI: 2. Luồng Sinh nội dung tự động qua AI
     FE->>API: Gửi văn bản / Tài liệu (POST /api/ai/generate)
     API->>FS: Multer đọc tệp đính kèm (Text, PDF, Word)
@@ -348,10 +333,8 @@ sequenceDiagram
     API->>DB: Ánh xạ loại câu hỏi (single/multiple/composite) & Lưu trữ
     DB-->>API: Khởi tạo dữ liệu thành công
     API-->>FE: Đưa các câu hỏi sinh ra vào Trình soạn thảo (Editor)
-    end
 
     %% 3. Phiên kiểm tra
-    rect rgb(200, 240, 220)
     Note over FE, DB: 3. Luồng Quản lý Phiên làm bài & Chấm điểm
     FE->>API: Khởi động bài làm (POST /sessions/start)
     API->>DB: Snapshot (chụp sao lưu) câu hỏi để phòng gian lận chỉnh sửa
@@ -364,7 +347,6 @@ sequenceDiagram
     API->>DB: Ghi nhận Score, thời gian làm bài, đáp án user chọn
     DB-->>API: Cập nhật thành công
     API-->>FE: Trả kết quả kèm phần giải thích chi tiết
-    end
 ```
 
 ### 3.1. Lớp học (Class)
