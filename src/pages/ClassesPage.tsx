@@ -777,7 +777,7 @@ const ClassesPage: React.FC = () => {
               // It was a code claim and it failed (e.g. 404/403)
               // Do NOT try import (which would just multiple 404s)
               console.error(err);
-              throw new Error("Mã truy cập không hợp lệ hoặc đã hết hạn (Code Invalid)");
+              throw new Error(err?.message || "Mã truy cập không hợp lệ hoặc đã hết hạn (Code Invalid)");
             }
           }
         } catch (err2: any) {
@@ -807,9 +807,12 @@ const ClassesPage: React.FC = () => {
       await loadMyClasses();
     } catch (e: any) {
       // console.error("Import failed", e);
-      alert(
-        e?.message || "Không thể nhập. Vui lòng kiểm tra ID/Link và thử lại."
-      );
+      let errMsg = e?.message || "Không thể nhập. Vui lòng kiểm tra ID/Link và thử lại.";
+      try {
+        const parsed = JSON.parse(errMsg);
+        if (parsed?.message) errMsg = parsed.message;
+      } catch (_) {}
+      alert(errMsg);
     }
   };
 

@@ -18,7 +18,10 @@ import {
   FaCheck,
   FaExclamationTriangle,
   FaArrowLeft,
-  FaUsers
+  FaUsers,
+  FaLayerGroup,
+  FaArrowRight,
+  FaMagic
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import userAvatar from "../assets/user_avatar.gif";
@@ -112,6 +115,25 @@ const EditClassPage: React.FC = () => {
       toast.error("Có lỗi xảy ra khi lưu.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleClassPublished = async () => {
+    try {
+      const { getToken } = await import("../utils/auth");
+      const token = getToken();
+      if (!token) return;
+      const { VisibilityAPI } = await import("../utils/api");
+
+      const newState = !classPublished;
+      setClassPublished(newState); // Optimistic UI update
+      setQuizzes(prev => prev.map(q => ({ ...q, published: newState })));
+      await VisibilityAPI.publicToggle({ targetType: 'class', targetId: classId!, enabled: newState }, token);
+      toast.success(newState ? "Đã đặt lớp học thành Public" : "Đã đặt lớp học thành Private");
+    } catch (e) {
+      setClassPublished(classPublished); // Revert on error
+      setQuizzes(prev => prev.map(q => ({ ...q, published: classPublished })));
+      toast.error("Không thể thay đổi trạng thái public");
     }
   };
 
@@ -269,17 +291,28 @@ const EditClassPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Simple Toggle Switch */}
-                  <label className="flex items-center gap-3 cursor-pointer group flex-shrink-0">
-                    <span className={`text-sm font-medium transition-colors ${shareData?.isShareable ? 'text-white dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
-                      {shareData?.isShareable ? 'Đang bật' : 'Đang tắt'}
-                    </span>
-                    <div className="relative">
-                      <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loadingShare} />
-                      <div className={`block w-12 h-7 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                      <div className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-5' : ''}`}></div>
-                    </div>
-                  </label>
+                  {/* Action Toggles */}
+                  <div className="flex flex-col md:flex-row items-end md:items-center gap-4 flex-shrink-0 mt-3 md:mt-0">
+                    <button
+                      onClick={handleToggleClassPublished}
+                      disabled={loadingShare}
+                      className={`flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors border active:scale-95 ${classPublished ? "bg-green-500/20 text-green-300 border-green-500/30 hover:bg-green-500/30" : "bg-gray-800/50 text-gray-400 border-gray-600 hover:text-gray-300 hover:bg-gray-700/50"}`}
+                      title={classPublished ? "Chuyển sang Private" : "Chuyển sang Public"}
+                    >
+                      {classPublished ? <><FaGlobe className="w-4 h-4" /> Public</> : <><FaLock className="w-4 h-4" /> Private</>}
+                    </button>
+                    {/* Share Switch */}
+                    <label className="flex items-center gap-3 cursor-pointer group flex-shrink-0">
+                      <span className={`text-sm font-medium transition-colors ${shareData?.isShareable ? 'text-white dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
+                        {shareData?.isShareable ? 'Đang bật Share' : 'Đang tắt Share'}
+                      </span>
+                      <div className="relative">
+                        <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loadingShare} />
+                        <div className={`block w-12 h-7 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                        <div className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-5' : ''}`}></div>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -371,6 +404,9 @@ const EditClassPage: React.FC = () => {
                       quiz={q}
                       refreshTrigger={quizRefreshTrigger}
                       onUpdate={() => setQuizRefreshTrigger(prev => prev + 1)}
+                      onPublicToggle={(st: boolean) => {
+                        if (st === true) setClassPublished(true);
+                      }}
                     />
                   );
                 })}
@@ -384,6 +420,17 @@ const EditClassPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* NEW SECTION: QUIZ MERGE */}
+      <QuizMergeSection
+        currentClassId={classId!}
+        originalQuizzes={quizzes}
+        onMergeSuccess={() => {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000); // short delay to show toast before reloading
+        }}
+      />
     </div>
   );
 };
@@ -392,10 +439,15 @@ const EditClassPage: React.FC = () => {
 // HELPER COMPONENTS (Styled)
 // ----------------------------------------------------------------------
 
-const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger?: number }> = ({ quiz, onUpdate, refreshTrigger }) => {
+const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger?: number; onPublicToggle?: (newState: boolean) => void }> = ({ quiz, onUpdate, refreshTrigger, onPublicToggle }) => {
   const [shareData, setShareData] = useState<{ isShareable: boolean; code?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [isPublished, setIsPublished] = useState(quiz.published);
+
+  useEffect(() => {
+    setIsPublished(quiz.published);
+  }, [quiz.published]);
 
   // Local token fetch
   const [token, setToken] = useState<string | null>(null);
@@ -420,6 +472,26 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
       }
     })();
   }, [quiz.id, token, refreshTrigger, localRefresh]);
+
+  const handleTogglePublished = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!token) return;
+    setLoading(true);
+    try {
+      const { VisibilityAPI } = await import("../utils/api");
+      const newState = !isPublished;
+      setIsPublished(newState); // Optimistic UI update
+      await VisibilityAPI.publicToggle({ targetType: 'quiz', targetId: quiz.id, enabled: newState }, token);
+      toast.success(newState ? `Đã đặt công khai cho quiz: ${quiz.title}` : `Đã đặt riêng tư cho quiz: ${quiz.title}`);
+      if (onPublicToggle) onPublicToggle(newState);
+      if (onUpdate) onUpdate();
+    } catch (e) {
+      setIsPublished(isPublished); // Revert on error
+      toast.error("Lỗi thay đổi trạng thái public");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleToggleShare = async () => {
     if (!shareData || !token) return;
@@ -465,31 +537,41 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
     <div className={`bg-white dark:bg-gray-800 rounded-xl overflow-hidden transition-all duration-300 ${expanded ? 'shadow-[0_0_15px_rgba(59,130,246,0.3)] dark:shadow-[0_0_20px_rgba(255,255,255,0.15)] border border-gray-200 dark:border-gray-700' : 'shadow-sm border border-gray-200 dark:border-gray-700'}`}>
       {/* Header */}
       <div
-        className={`px-6 py-4 max-[490px]:p-4 cursor-pointer transition-colors ${expanded ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'bg-gray-50/50 dark:bg-gray-800/50 hover:bg-gray-100/50 dark:hover:bg-gray-700/50'}`}
+        className={`px-6 py-4 max-[490px]:p-4 cursor-pointer transition-colors ${expanded ? 'bg-blue-50 dark:bg-blue-900' : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex md:flex-row flex-col md:items-center items-start justify-between gap-3">
           {/* Quiz Info Section */}
           <div className="flex items-center gap-3 flex-1 min-w-0 md:flex-1 w-full md:w-auto">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 ${quiz.published ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
-              {quiz.published ? <FaGlobe /> : <FaLock />}
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 ${isPublished ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+              {isPublished ? <FaGlobe /> : <FaLock />}
             </div>
             <div className="min-w-0 flex-1 overflow-hidden">
               <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm truncate">
                 {quiz.title}
               </h4>
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
-                {quiz.questionCount ?? 0} câu hỏi • {quiz.published ? "Public" : "Private"}
+                {quiz.questionCount ?? 0} câu hỏi • {isPublished ? "Public" : "Private"}
               </p>
             </div>
           </div>
 
           {/* Toggle and Arrow Section - Desktop */}
           <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+            {/* Public/Private Toggle */}
+            <button
+              onClick={handleTogglePublished}
+              disabled={loading}
+              className={`${isPublished ? "bg-green-500 text-white hover:bg-green-600 rounded shadow-sm p-1.5" : "text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"} transition-colors`}
+              title={isPublished ? "Công khai\nNhấn để chuyển sang Riêng tư" : "Riêng tư\nNhấn để chuyển sang Công khai"}
+            >
+              {isPublished ? <FaGlobe className="w-4 h-4" /> : <FaLock className="w-4 h-4" />}
+            </button>
+
             {/* Toggle Switch */}
             <label className="flex items-center gap-2 cursor-pointer group" onClick={(e) => e.stopPropagation()}>
               <span className={`text-xs font-medium transition-colors ${shareData?.isShareable ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                {shareData?.isShareable ? 'Đang bật' : 'Đang tắt'}
+                {shareData?.isShareable ? 'Đang bật Share' : 'Đang tắt Share'}
               </span>
               <div className="relative">
                 <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loading} />
@@ -511,21 +593,19 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
           </div>
 
           {/* Mobile Controls - Full Width Row */}
-          <div className="md:hidden w-full flex items-center justify-between">
-            {/* Toggle Switch - Right */}
-            <label className="flex items-center gap-2 cursor-pointer group ml-auto" onClick={(e) => e.stopPropagation()}>
-              <span className={`text-xs font-medium transition-colors ${shareData?.isShareable ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
-                {shareData?.isShareable ? 'Đang bật' : 'Đang tắt'}
-              </span>
-              <div className="relative">
-                <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loading} />
-                <div className={`block w-10 h-6 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                <div className={`absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-4' : ''}`}></div>
-              </div>
-            </label>
+          <div className="md:hidden w-full flex items-center relative py-1">
+            {/* Public/Private Toggle - Left */}
+            <button
+              onClick={handleTogglePublished}
+              disabled={loading}
+              className={`${isPublished ? "bg-green-500 text-white hover:bg-green-600 rounded shadow-sm p-1.5" : "text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 p-1"} transition-colors relative z-10`}
+              title={isPublished ? "Công khai\nNhấn để chuyển sang Riêng tư" : "Riêng tư\nNhấn để chuyển sang Công khai"}
+            >
+              {isPublished ? <FaGlobe className="w-4 h-4" /> : <FaLock className="w-4 h-4" />}
+            </button>
 
             {/* Arrow Button - Center (absolute) */}
-            <button className={`absolute left-1/2 -translate-x-1/2 text-xs font-medium w-6 h-6 flex items-center justify-center rounded-md transition-colors duration-200 ${expanded ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
+            <button className={`absolute left-1/2 -translate-x-1/2 text-xs font-medium w-6 h-6 flex items-center justify-center rounded-md transition-colors duration-200 ${expanded ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'} z-10`}>
               <svg
                 className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
                 fill="none"
@@ -535,6 +615,18 @@ const QuizAccessCard: React.FC<{ quiz: any; onUpdate: () => void; refreshTrigger
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
+
+            {/* Toggle Switch - Right */}
+            <label className="flex items-center gap-2 cursor-pointer group ml-auto relative z-10" onClick={(e) => e.stopPropagation()}>
+              <span className={`text-xs font-medium transition-colors ${shareData?.isShareable ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+                {shareData?.isShareable ? 'Đang bật Share' : 'Đang tắt Share'}
+              </span>
+              <div className="relative">
+                <input type="checkbox" className="sr-only" checked={shareData?.isShareable || false} onChange={handleToggleShare} disabled={loading} />
+                <div className={`block w-10 h-6 rounded-full transition-colors duration-300 ${shareData?.isShareable ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                <div className={`absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full transition-transform duration-300 shadow-sm ${shareData?.isShareable ? 'transform translate-x-4' : ''}`}></div>
+              </div>
+            </label>
           </div>
         </div>
       </div>
@@ -715,7 +807,7 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz';
                   <div className="text-center py-4 text-xs text-gray-400 italic">Chưa có người dùng nào truy cập.</div>
                 ) : (
                   <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold shadow-sm">
+                    <thead className="sticky top-0 z-10 bg-purple-50 dark:bg-[#2d2242] text-purple-600 dark:text-purple-300 text-xs uppercase tracking-wider font-semibold shadow-sm">
                       <tr>
                         <th className="py-4 px-6">User</th>
                         <th className="py-4 px-6 text-right">Action</th>
@@ -812,7 +904,7 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz';
             <div className="hidden md:block bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
               <div className="max-h-80 overflow-y-auto custom-scrollbar">
                 <table className="w-full text-left border-collapse">
-                  <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider font-semibold shadow-sm">
+                  <thead className="sticky top-0 z-10 bg-purple-50 dark:bg-[#2d2242] text-purple-600 dark:text-purple-300 text-xs uppercase tracking-wider font-semibold shadow-sm">
                     <tr>
                       <th className="py-4 px-6">User</th>
                       <th className="py-4 px-6 text-right">Action</th>
@@ -865,6 +957,408 @@ const UserAccessList: React.FC<{ classId: string; targetType?: 'class' | 'quiz';
               </div>
             </div>
           </>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------------
+// QUIZ MERGE COMPONENT
+// ----------------------------------------------------------------------
+const QuizMergeSection: React.FC<{
+  currentClassId: string;
+  originalQuizzes: any[];
+  onMergeSuccess: () => void;
+}> = ({ currentClassId, originalQuizzes, onMergeSuccess }) => {
+  const [sourceQuizzes, setSourceQuizzes] = useState<any[]>([]);
+  const [targetQuizzes, setTargetQuizzes] = useState<any[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const [targetClassType, setTargetClassType] = useState<'existing' | 'new'>('existing');
+  const [selectedClassId, setSelectedClassId] = useState<string>(currentClassId);
+  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
+  const [newClassName, setNewClassName] = useState('');
+  const [newClassDescription, setNewClassDescription] = useState('');
+  const [mergedQuizTitle, setMergedQuizTitle] = useState('');
+  const [mergedQuizDescription, setMergedQuizDescription] = useState('');
+  const [userClasses, setUserClasses] = useState<any[]>([]);
+
+  const [draggedQuiz, setDraggedQuiz] = useState<any>(null);
+
+  useEffect(() => {
+    const targetIds = new Set(targetQuizzes.map(q => q.id));
+    setSourceQuizzes(originalQuizzes.filter(q => !targetIds.has(q.id)));
+  }, [originalQuizzes, targetQuizzes]);
+
+  // fetch user classes when modal opens
+  useEffect(() => {
+    if (showModal) {
+      (async () => {
+        try {
+          const { getToken } = await import("../utils/auth");
+          const token = getToken();
+          if (!token) return;
+          const { ClassesAPI } = await import("../utils/api");
+          const mine = await ClassesAPI.listMine(token);
+          // Only show classes owned by the user (not shared from someone else)
+          setUserClasses(mine.filter((c: any) => c.accessType !== 'shared'));
+        } catch (e) {
+          console.error(e);
+        }
+      })();
+    }
+  }, [showModal]);
+
+  const handleDragStart = (e: React.DragEvent, quiz: any) => {
+    setDraggedQuiz(quiz);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDropToTarget = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (draggedQuiz) {
+      if (!targetQuizzes.find(q => q.id === draggedQuiz.id)) {
+        setTargetQuizzes([...targetQuizzes, draggedQuiz]);
+        setSourceQuizzes(sourceQuizzes.filter(q => q.id !== draggedQuiz.id));
+      }
+      setDraggedQuiz(null);
+    }
+  };
+
+  const handleDropToSource = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (draggedQuiz) {
+      if (!sourceQuizzes.find(q => q.id === draggedQuiz.id)) {
+        setSourceQuizzes([...sourceQuizzes, draggedQuiz]);
+        setTargetQuizzes(targetQuizzes.filter(q => q.id !== draggedQuiz.id));
+      }
+      setDraggedQuiz(null);
+    }
+  };
+
+  const moveToTarget = (quiz: any) => {
+    setTargetQuizzes([...targetQuizzes, quiz]);
+    setSourceQuizzes(sourceQuizzes.filter(q => q.id !== quiz.id));
+  };
+
+  const moveToSource = (quiz: any) => {
+    setSourceQuizzes([...sourceQuizzes, quiz]);
+    setTargetQuizzes(targetQuizzes.filter(q => q.id !== quiz.id));
+  };
+
+  const handleMergeSubmit = async () => {
+    if (!mergedQuizTitle.trim()) {
+      toast.error('Vui lòng nhập tên cho Quiz gộp');
+      return;
+    }
+    if (targetClassType === 'new') {
+      if (!newClassName.trim()) {
+        toast.error('Vui lòng nhập tên cho Class mới');
+        return;
+      }
+      if (!newClassDescription.trim()) {
+        toast.error('Vui lòng nhập mô tả cho Class mới');
+        return;
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      const { getToken } = await import("../utils/auth");
+      const token = getToken();
+      if (!token) return;
+      const { ClassesAPI, QuizzesAPI } = await import("../utils/api");
+
+      let finalClassId = selectedClassId;
+      if (targetClassType === 'new') {
+        const newClass = await ClassesAPI.create({ name: newClassName, description: newClassDescription.trim() }, token);
+        finalClassId = newClass.id;
+      }
+
+      let allQuestions: any[] = [];
+      for (const tq of targetQuizzes) {
+        const fullQuiz = await QuizzesAPI.getById(tq.id, token);
+        if (fullQuiz && fullQuiz.questions) {
+          allQuestions = [...allQuestions, ...fullQuiz.questions];
+        }
+      }
+
+      await QuizzesAPI.create({
+        classId: finalClassId,
+        title: mergedQuizTitle,
+        description: mergedQuizDescription.trim() ? mergedQuizDescription : 'Được gộp từ các quiz khác.',
+        published: false,
+        questions: allQuestions
+      }, token);
+
+      toast.success('Gộp Quiz thành công!');
+      setShowModal(false);
+      setTargetQuizzes([]);
+      setSourceQuizzes(originalQuizzes);
+      onMergeSuccess();
+    } catch (e) {
+      console.error(e);
+      toast.error('Có lỗi xảy ra khi gộp');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-black/40 border border-gray-100 dark:border-transparent overflow-hidden mt-6">
+      <div className="bg-orange-600 dark:bg-[#2d1b10] flex">
+        <div className="bg-orange-600 dark:bg-[#2d1b10] flex items-center justify-center flex-shrink-0 pl-6">
+          <FaLayerGroup className="text-orange-200 text-2xl" />
+        </div>
+        <div className="flex-1 pl-4 pr-6 py-4">
+          <h3 className="font-bold text-white dark:text-gray-100 flex items-center gap-2">
+            Gộp Quiz
+          </h3>
+          <p className="text-xs text-orange-200 dark:text-orange-300">
+            Kéo thả hoặc nhấn vào quiz từ cột "Quiz Gốc" sang cột "Quiz Gộp".
+          </p>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Source Column */}
+          <div
+            className="flex flex-col border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-900/40 p-4 h-[60vh] max-h-[450px] min-h-[300px]"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDropToSource}
+          >
+            <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <span>Quiz Gốc ({sourceQuizzes.length})</span>
+            </h4>
+            <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar">
+              {sourceQuizzes.map(q => (
+                <div
+                  key={"source_" + q.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, q)}
+                  className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 cursor-grab active:cursor-grabbing hover:border-orange-300 dark:hover:border-orange-500 transition-colors flex justify-between items-center group"
+                >
+                  <div className="flex-1 min-w-0 pointer-events-none">
+                    <p className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate">{q.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{q.questionCount ?? 0} câu hỏi</p>
+                  </div>
+                  <button
+                    onClick={() => moveToTarget(q)}
+                    className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/30 dark:hover:bg-orange-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Chuyển sang gộp"
+                  >
+                    <FaArrowRight className="text-xs pointer-events-none" />
+                  </button>
+                </div>
+              ))}
+              {sourceQuizzes.length === 0 && (
+                <div className="text-center py-10 text-gray-400 italic text-sm pointer-events-none">Trống</div>
+              )}
+            </div>
+          </div>
+
+          {/* Target Column */}
+          <div
+            className="flex flex-col border-2 border-dashed border-orange-300 dark:border-orange-700/50 rounded-xl bg-orange-50/50 dark:bg-orange-900/10 p-4 h-[60vh] max-h-[450px] min-h-[300px]"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDropToTarget}
+          >
+            <h4 className="font-bold text-orange-700 dark:text-orange-400 mb-4 pb-2 border-b border-orange-200 dark:border-orange-800/50 flex justify-between items-center">
+              <span>Quiz Gộp ({targetQuizzes.length})</span>
+            </h4>
+            <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar">
+              {targetQuizzes.map(q => (
+                <div
+                  key={"target_" + q.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, q)}
+                  className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-[0_4px_10px_rgba(234,88,12,0.1)] border border-orange-200 dark:border-orange-700 cursor-grab active:cursor-grabbing flex justify-between items-center group"
+                >
+                  <button
+                    onClick={() => moveToSource(q)}
+                    className="mr-3 w-8 h-8 rounded-full bg-gray-50 text-gray-500 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Xóa khỏi danh sách gộp"
+                  >
+                    <FaArrowLeft className="text-xs pointer-events-none" />
+                  </button>
+                  <div className="flex-1 min-w-0 pointer-events-none">
+                    <p className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate">{q.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{q.questionCount ?? 0} câu hỏi</p>
+                  </div>
+                </div>
+              ))}
+              {targetQuizzes.length === 0 && (
+                <div className="text-center py-10 text-orange-300 dark:text-orange-800/50 italic text-sm pointer-events-none">
+                  Kéo thả quiz sang đây để tiến hành gộp
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={() => {
+              if (targetQuizzes.length < 2) {
+                toast.error('Vui lòng chọn ít nhất 2 quiz để gộp');
+                return;
+              }
+              setShowModal(true);
+            }}
+            disabled={targetQuizzes.length < 2}
+            className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            <FaMagic /> Tiến hành gộp
+          </button>
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-visible animate-slideUp border border-gray-100 dark:border-gray-700">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 rounded-t-2xl">
+              <h3 className="font-bold text-gray-800 dark:text-white text-lg">Lưu Quiz Gộp</h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Tên Quiz Gộp <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all outline-none"
+                  value={mergedQuizTitle}
+                  onChange={e => setMergedQuizTitle(e.target.value)}
+                  placeholder="Ví dụ: Tôi và mẹ bạn..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Mô tả Quiz Gộp
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all outline-none"
+                  value={mergedQuizDescription}
+                  onChange={e => setMergedQuizDescription(e.target.value)}
+                  placeholder="Ví dụ: Bài kiểm tra lọ chéo..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Vị trí lưu Quiz</label>
+                <div className="flex gap-4 mb-3">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="radio"
+                      name="targetClassType"
+                      value="existing"
+                      checked={targetClassType === 'existing'}
+                      onChange={() => setTargetClassType('existing')}
+                      className="text-orange-500 focus:ring-orange-500"
+                    />
+                    Class đã có
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="radio"
+                      name="targetClassType"
+                      value="new"
+                      checked={targetClassType === 'new'}
+                      onChange={() => setTargetClassType('new')}
+                      className="text-orange-500 focus:ring-orange-500"
+                    />
+                    Tạo Class mới
+                  </label>
+                </div>
+
+                {targetClassType === 'existing' ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
+                      className="w-full px-4 py-2.5 flex items-center justify-between rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all outline-none text-left"
+                    >
+                      <span className="truncate">
+                        {userClasses.find(c => c.id === selectedClassId)?.name || '--- Chọn lớp học ---'}
+                        {selectedClassId === currentClassId && ' (Class hiện tại)'}
+                      </span>
+                      <svg className={`w-5 h-5 flex-shrink-0 text-gray-400 transition-transform duration-200 ${isClassDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {isClassDropdownOpen && (
+                      <div className="absolute z-[60] top-full mt-2 left-0 w-full bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                          {userClasses.map(c => (
+                            <button
+                              key={"opt_" + c.id}
+                              onClick={() => { setSelectedClassId(c.id); setIsClassDropdownOpen(false); }}
+                              className={`w-full px-4 py-3 text-left text-sm rounded-lg transition-colors flex items-center justify-between group ${selectedClassId === c.id ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-medium' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                            >
+                              <span className="truncate">{c.name} {c.id === currentClassId && '(Class hiện tại)'}</span>
+                              {selectedClassId === c.id && (
+                                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                          {userClasses.length === 0 && (
+                            <div className="px-4 py-3 text-sm text-gray-500 text-center">Không có lớp học nào</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-2">
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all outline-none"
+                      value={newClassName}
+                      onChange={e => setNewClassName(e.target.value)}
+                      placeholder="Nhập tên Class mới..."
+                    />
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all outline-none"
+                      value={newClassDescription}
+                      onChange={e => setNewClassDescription(e.target.value)}
+                      placeholder="Mô tả Class mới..."
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-end gap-3 rounded-b-2xl">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 rounded-xl text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                disabled={isSaving}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleMergeSubmit}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-medium shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {isSaving ? 'Đang tạo...' : <><FaSave /> Lưu lại</>}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

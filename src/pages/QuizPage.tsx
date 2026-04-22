@@ -3199,7 +3199,7 @@ const DragDropQuestion: React.FC<{
               draggable={!reveal}
               onDragStart={(e) => handleDragStart(e, it.id)}
               onDragEnd={handleDragEnd}
-              className={`p-3 rounded-lg font-medium border-2 text-left transition-all duration-200 ${reveal ? "cursor-default" : "cursor-move"
+              className={`p-3 rounded-lg font-medium border-2 text-center md:text-left transition-all duration-200 ${reveal ? "cursor-default" : "cursor-move"
                 } ${draggedItem === it.id ? "opacity-50 scale-95" : ""} ${reveal && correctMapping[it.id]
                   ? "bg-red-600 border-transparent text-white dark:bg-red-900/40 dark:text-red-200 dark:border-red-500"
                   : "bg-yellow-500 text-white border-yellow-500 shadow-md shadow-yellow-500/20 hover:bg-yellow-600 dark:text-yellow-400 dark:bg-yellow-900/20 dark:border dark:border-yellow-500 dark:shadow-md dark:shadow-yellow-500/20 dark:hover:bg-yellow-900/30"
@@ -3208,7 +3208,7 @@ const DragDropQuestion: React.FC<{
               onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
               disabled={reveal}
             >
-              <span className="flex items-center gap-2 whitespace-pre-wrap text-left">
+              <span className="flex items-center justify-center md:justify-start gap-2 whitespace-pre-wrap text-center md:text-left">
                 <svg
                   className="w-4 h-4 flex-shrink-0"
                   fill="none"
@@ -3317,7 +3317,7 @@ const DragDropQuestion: React.FC<{
               {(itemsByTarget[t.id] || []).map((it) => {
                 const state = isItemCorrect(it);
                 const base =
-                  "w-full p-3 rounded-lg font-medium border-2 text-left transition-all duration-200";
+                  "w-full p-3 rounded-lg font-medium border-2 text-center md:text-left transition-all duration-200";
                 const normal =
                   "bg-primary-500 text-white border-primary-500 shadow-md shadow-primary-500/20 hover:bg-primary-600 dark:bg-primary-900/50 dark:text-primary-100 dark:border dark:border-primary-400 dark:shadow-lg dark:shadow-primary-500/25 dark:hover:bg-primary-900/60";
                 const ok =
@@ -3336,7 +3336,7 @@ const DragDropQuestion: React.FC<{
                     onClick={() => assign(it.id, undefined)}
                     disabled={reveal}
                   >
-                    <span className="flex items-center gap-2 whitespace-pre-wrap text-left">
+                    <span className="flex items-center justify-center md:justify-start gap-2 whitespace-pre-wrap text-center md:text-left">
                       <svg
                         className="w-4 h-4 flex-shrink-0"
                         fill="none"

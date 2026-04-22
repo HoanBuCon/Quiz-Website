@@ -603,8 +603,13 @@ router.post('/claim', authRequired, async (req, res) => {
   let targetId = null;
 
   if (code) {
-    const share = await queryOne('SELECT targetType, targetId, code, isEnabled FROM ShareItem WHERE code = ?', [code]);
+    const share = await queryOne('SELECT targetType, targetId, code, ownerId, isEnabled FROM ShareItem WHERE code = ?', [code]);
     if (!share || !intToBool(share.isEnabled)) return res.status(404).json({ message: 'Liên kết không tồn tại hoặc đã bị đóng' });
+    
+    if (share.ownerId === req.user.id) {
+      return res.status(400).json({ message: 'Bạn không thể tham gia nội dung do chính bạn tạo ra.' });
+    }
+
     targetType = share.targetType;
     targetId = share.targetId;
 
@@ -626,6 +631,11 @@ router.post('/claim', authRequired, async (req, res) => {
     
     targetType = 'class';
     targetId = classId;
+    
+    const cls = await queryOne('SELECT ownerId FROM Class WHERE id = ?', [classId]);
+    if (cls && cls.ownerId === req.user.id) {
+       return res.status(400).json({ message: 'Bạn không thể tham gia nội dung do chính bạn tạo ra.' });
+    }
   } else if (quizId) {
     // ID-ONLY CLAIM -> Only allowed if PUBLIC
     const isPublic = await queryOne('SELECT id FROM PublicItem WHERE targetType = ? AND targetId = ?', ['quiz', quizId]);
@@ -635,6 +645,11 @@ router.post('/claim', authRequired, async (req, res) => {
     
     targetType = 'quiz';
     targetId = quizId;
+
+    const qz = await queryOne('SELECT ownerId FROM Quiz WHERE id = ?', [quizId]);
+    if (qz && qz.ownerId === req.user.id) {
+       return res.status(400).json({ message: 'Bạn không thể tham gia nội dung do chính bạn tạo ra.' });
+    }
   } else {
     return res.status(400).json({ message: 'classId or quizId or code required' });
   }
